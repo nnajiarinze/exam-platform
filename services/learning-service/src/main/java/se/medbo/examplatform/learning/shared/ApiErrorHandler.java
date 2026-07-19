@@ -1,11 +1,15 @@
 package se.medbo.examplatform.learning.shared;
 
+import jakarta.validation.ConstraintViolationException;
 import java.time.Instant;
 import java.util.List;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -33,6 +37,13 @@ public class ApiErrorHandler {
                 .body(new ErrorResponse("VALIDATION_ERROR", "Request validation failed", Instant.now(), errors));
     }
 
+    @ExceptionHandler({ConstraintViolationException.class, HandlerMethodValidationException.class,
+            MethodArgumentTypeMismatchException.class})
+    ResponseEntity<ErrorResponse> requestValidation(Exception exception) {
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse("VALIDATION_ERROR", "Request validation failed", Instant.now(), List.of()));
+    }
+
     @ExceptionHandler(DataIntegrityViolationException.class)
     ResponseEntity<ErrorResponse> constraint(DataIntegrityViolationException exception) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
@@ -43,6 +54,12 @@ public class ApiErrorHandler {
     ResponseEntity<ErrorResponse> unreadable(HttpMessageNotReadableException exception) {
         return ResponseEntity.badRequest()
                 .body(new ErrorResponse("INVALID_REQUEST", "Request body is invalid", Instant.now(), List.of()));
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    ResponseEntity<ErrorResponse> resourceNotFound(NoResourceFoundException exception) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse("RESOURCE_NOT_FOUND", "Resource not found", Instant.now(), List.of()));
     }
 
     @ExceptionHandler(Exception.class)

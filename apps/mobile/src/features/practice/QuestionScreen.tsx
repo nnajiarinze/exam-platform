@@ -1,0 +1,29 @@
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import type { AnswerResult } from '../../api/generated/types.gen';
+import { friendlyError } from '../../api/errors';
+import { learningApi } from '../../api/learningApi';
+import { useAppStore } from '../../app/store';
+import { Screen } from '../../components/Screen';
+import { Button, ErrorState, Loading } from '../../components/ui';
+import type { RootStackParamList } from '../../navigation/types';
+import { QuestionCard } from './QuestionCard';
+
+export function QuestionScreen({ navigation, route }: NativeStackScreenProps<RootStackParamList, 'Question'>) {
+  const identity = useAppStore((s) => s.learnerIdentity); const recordAnswer = useAppStore((s) => s.recordAnswer);
+  const [selectedId, setSelectedId] = useState<string>(); const [result, setResult] = useState<AnswerResult>();
+  const query = useQuery({ queryKey: ['next-question', route.params.sessionId], queryFn: () => learningApi.nextQuestion(identity, route.params.sessionId), retry: 1 });
+  const mutation = useMutation({ mutationFn: (optionId: string) => learningApi.submitAnswer(identity, route.params.sessionId, { sessionQuestionId: query.data!.sessionQuestionId, selectedAnswerOptionId: optionId }), onSuccess: (answer) => { setResult(answer); recordAnswer(answer.correct); } });
+  const next = async () => {
+    if (!result) return;
+    if (result.sessionProgress.answered >= result.sessionProgress.total) { navigation.replace('SessionComplete', { total: result.sessionProgress.total }); return; }
+    setSelectedId(undefined); setResult(undefined); await query.refetch();
+  };
+  if (query.isPending) return <Screen scroll={false}><Loading label="Loading question…" /></Screen>;
+  if (query.isError) return <Screen><ErrorState message={friendlyError(query.error)} retry={() => query.refetch()} /></Screen>;
+  return <Screen><QuestionCard question={query.data} selectedId={selectedId} result={result} submitting={mutation.isPending} onSelect={(id) => { setSelectedId(id); mutation.mutate(id); }} />
+    {mutation.isPending && <Loading label="Checking answer…" />}{mutation.isError && <ErrorState message={friendlyError(mutation.error)} retry={selectedId ? () => mutation.mutate(selectedId) : undefined} />}
+    {result && <Button label={result.sessionProgress.answered >= result.sessionProgress.total ? 'View results' : 'Continue'} onPress={next} />}
+  </Screen>;
+}

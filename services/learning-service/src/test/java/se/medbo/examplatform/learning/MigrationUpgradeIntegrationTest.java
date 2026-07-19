@@ -36,10 +36,16 @@ class MigrationUpgradeIntegrationTest {
                 .migrate();
 
         assertThat(jdbc.sql("SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank")
-                .query(String.class).list()).containsExactly("1", "2");
+                .query(String.class).list()).containsExactly("1", "2", "3");
         assertThat(jdbc.sql("""
                 SELECT is_nullable FROM information_schema.columns
                 WHERE table_name = 'imported_answer_option' AND column_name = 'content_release_id'
                 """).query(String.class).single()).isEqualTo("NO");
+        assertThat(jdbc.sql("""
+                SELECT is_nullable FROM information_schema.columns
+                WHERE table_name = 'practice_response' AND column_name = 'imported_question_id'
+                """).query(String.class).single()).isEqualTo("NO");
+        assertThat(jdbc.sql("SELECT to_regclass('public.idx_active_release_exam_published') IS NOT NULL")
+                .query(Boolean.class).single()).isTrue();
     }
 }

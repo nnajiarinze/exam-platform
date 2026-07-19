@@ -48,9 +48,18 @@ public class ContentImportTransaction {
         existing.ifPresent(value -> jdbc.sql("DELETE FROM imported_content_release WHERE id = :id")
                 .param("id", value.id()).update());
 
-        jdbc.sql("UPDATE imported_content_release SET status = 'SUPERSEDED' "
-                        + "WHERE exam_version_id = :examVersionId AND status = 'ACTIVE'")
-                .param("examVersionId", snapshot.examVersionId()).update();
+        var activeRelease = jdbc.sql("""
+                SELECT published_at FROM imported_content_release
+                WHERE exam_version_id = :examVersionId AND status = 'ACTIVE'
+                """).param("examVersionId", snapshot.examVersionId())
+                .query((rs, row) -> rs.getObject("published_at", OffsetDateTime.class).toInstant())
+                .optional();
+        boolean activate = activeRelease.isEmpty() || snapshot.publishedAt().isAfter(activeRelease.get());
+        if (activate) {
+            jdbc.sql("UPDATE imported_content_release SET status = 'SUPERSEDED' "
+                            + "WHERE exam_version_id = :examVersionId AND status = 'ACTIVE'")
+                    .param("examVersionId", snapshot.examVersionId()).update();
+        }
 
         UUID releaseId = UUID.randomUUID();
         Instant importedAt = clock.instant();
@@ -58,12 +67,13 @@ public class ContentImportTransaction {
                 INSERT INTO imported_content_release
                   (id, external_release_id, exam_id, exam_version_id, release_version, checksum, status,
                    published_at, imported_at)
-                VALUES (:id, :externalId, :examId, :examVersionId, :version, :checksum, 'ACTIVE',
+                VALUES (:id, :externalId, :examId, :examVersionId, :version, :checksum, :status,
                         :publishedAt, :importedAt)
                 """)
                 .params(Map.of("id", releaseId, "externalId", snapshot.externalReleaseId(),
                         "examId", snapshot.examId(), "examVersionId", snapshot.examVersionId(),
                         "version", snapshot.releaseVersion(), "checksum", snapshot.checksum(),
+                        "status", activate ? "ACTIVE" : "SUPERSEDED",
                         "publishedAt", OffsetDateTime.ofInstant(snapshot.publishedAt(), ZoneOffset.UTC),
                         "importedAt", OffsetDateTime.ofInstant(importedAt, ZoneOffset.UTC)))
                 .update();
@@ -126,7 +136,7 @@ public class ContentImportTransaction {
                 }
             }
         }
-        return new ImportResult(releaseId, true, "ACTIVE");
+        return new ImportResult(releaseId, true, activate ? "ACTIVE" : "SUPERSEDED");
     }
 
     public record ImportResult(UUID releaseId, boolean imported, String status) {}

@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
 import java.util.UUID;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -59,9 +60,10 @@ public class PracticeController {
                         request.responseTimeMillis()));
     }
 
-    public record CreatePracticeSessionRequest(@NotBlank String examId, String topicId,
+    public record CreatePracticeSessionRequest(@NotBlank @Size(max = 200) String examId,
+            @Size(max = 200) String topicId,
             @NotNull PracticeMode mode, @Min(1) @Max(50) int questionCount) {}
-    public record SubmitAnswerRequest(@NotNull UUID sessionQuestionId, @NotBlank String selectedAnswerOptionId,
+    public record SubmitAnswerRequest(@NotNull UUID sessionQuestionId,
+            @NotBlank @Size(max = 200) String selectedAnswerOptionId,
             @PositiveOrZero Long responseTimeMillis) {}
 }
-

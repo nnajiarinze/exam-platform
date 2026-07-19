@@ -25,12 +25,15 @@ public class SnapshotValidator {
         }
         var subjectIds = new HashSet<String>();
         var topicIds = new HashSet<String>();
+        var questionIds = new HashSet<String>();
         var questionVersions = new HashSet<String>();
+        var answerOptionIds = new HashSet<String>();
         for (var subject : snapshot.subjects()) {
             if (!subjectIds.add(subject.id())) invalid("Duplicate subject identifier");
             for (var topic : subject.topics()) {
                 if (!topicIds.add(topic.id())) invalid("Duplicate topic identifier");
                 for (var question : topic.questions()) {
+                    if (!questionIds.add(question.id())) invalid("Duplicate question identifier");
                     if (!questionVersions.add(question.versionId())) invalid("Duplicate question version identifier");
                     if (!"SINGLE_CHOICE".equals(question.questionType())) invalid("Unsupported question type");
                     long correct = question.answerOptions().stream().filter(ContentSnapshot.AnswerOption::correct).count();
@@ -38,8 +41,14 @@ public class SnapshotValidator {
                         invalid("A single-choice question requires at least two options and exactly one correct option");
                     }
                     var optionIds = new HashSet<String>();
-                    if (question.answerOptions().stream().anyMatch(option -> !optionIds.add(option.id()))) {
-                        invalid("Duplicate answer option identifier");
+                    var optionSortOrders = new HashSet<Integer>();
+                    for (var option : question.answerOptions()) {
+                        if (!optionIds.add(option.id()) || !answerOptionIds.add(option.id())) {
+                            invalid("Duplicate answer option identifier");
+                        }
+                        if (!optionSortOrders.add(option.sortOrder())) {
+                            invalid("Duplicate answer option sort order");
+                        }
                     }
                 }
             }

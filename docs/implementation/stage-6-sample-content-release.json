@@ -1,0 +1,243 @@
+{
+  "schemaVersion": "1.0",
+  "externalReleaseId": "stage-6-mobile-release-2026.3",
+  "examId": "swedish-citizenship",
+  "examVersionId": "swedish-citizenship-2026",
+  "releaseVersion": "2026.3",
+  "releaseStatus": "PUBLISHED",
+  "publishedAt": "2026-07-19T15:10:00Z",
+  "checksum": "ec5ce8cd37905da153f721d111f49105141b3238bd6afa1ea33ddbcb752d4d5f",
+  "subjects": [
+    {
+      "id": "subject-society",
+      "name": "Swedish Society",
+      "sortOrder": 1,
+      "topics": [
+        {
+          "id": "topic-democracy",
+          "name": "Democracy and government",
+          "description": "Democratic institutions and levels of government.",
+          "sortOrder": 1,
+          "questions": [
+            {
+              "id": "question-001",
+              "versionId": "question-001-v1",
+              "knowledgeFactId": "fact-001",
+              "questionType": "SINGLE_CHOICE",
+              "prompt": "Vilken institution stiftar Sveriges lagar?",
+              "explanation": "Riksdagen beslutar om Sveriges lagar.",
+              "language": "sv",
+              "difficulty": "EASY",
+              "active": true,
+              "answerOptions": [
+                { "id": "answer-001-a", "text": "Riksdagen", "correct": true, "sortOrder": 1 },
+                { "id": "answer-001-b", "text": "Kommunen", "correct": false, "sortOrder": 2 },
+                { "id": "answer-001-c", "text": "Polisen", "correct": false, "sortOrder": 3 }
+              ]
+            },
+            {
+              "id": "question-002",
+              "versionId": "question-002-v1",
+              "knowledgeFactId": "fact-002",
+              "questionType": "SINGLE_CHOICE",
+              "prompt": "Hur ofta hålls ordinarie val till riksdagen?",
+              "explanation": "Ordinarie val till riksdagen hålls vart fjärde år.",
+              "language": "sv",
+              "difficulty": "EASY",
+              "active": true,
+              "answerOptions": [
+                { "id": "answer-002-a", "text": "Vartannat år", "correct": false, "sortOrder": 1 },
+                { "id": "answer-002-b", "text": "Vart fjärde år", "correct": true, "sortOrder": 2 },
+                { "id": "answer-002-c", "text": "Vart sjätte år", "correct": false, "sortOrder": 3 }
+              ]
+            },
+            {
+              "id": "question-003",
+              "versionId": "question-003-v1",
+              "knowledgeFactId": "fact-003",
+              "questionType": "SINGLE_CHOICE",
+              "prompt": "Vilken nivå ansvarar normalt för grundskolan?",
+              "explanation": "Kommunerna ansvarar normalt för grundskolan.",
+              "language": "sv",
+              "difficulty": "MEDIUM",
+              "active": true,
+              "answerOptions": [
+                { "id": "answer-003-a", "text": "Kommunen", "correct": true, "sortOrder": 1 },
+                { "id": "answer-003-b", "text": "EU", "correct": false, "sortOrder": 2 },
+                { "id": "answer-003-c", "text": "Domstolarna", "correct": false, "sortOrder": 3 }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "topic-sweden-basics",
+          "name": "Sweden: geography and national symbols",
+          "description": "Basic knowledge about Sweden, its geography, national symbols and currency.",
+          "sortOrder": 2,
+          "questions": [
+            {
+              "id": "question-basics-001",
+              "versionId": "question-basics-001-v1",
+              "knowledgeFactId": "fact-basics-001",
+              "questionType": "SINGLE_CHOICE",
+              "prompt": "Vad heter Sveriges huvudstad?",
+              "explanation": "Stockholm är Sveriges huvudstad.",
+              "language": "sv",
+              "difficulty": "EASY",
+              "active": true,
+              "answerOptions": [
+                { "id": "answer-basics-001-a", "text": "Stockholm", "correct": true, "sortOrder": 1 },
+                { "id": "answer-basics-001-b", "text": "Göteborg", "correct": false, "sortOrder": 2 },
+                { "id": "answer-basics-001-c", "text": "Malmö", "correct": false, "sortOrder": 3 }
+              ]
+            },
+            {
+              "id": "question-basics-002",
+              "versionId": "question-basics-002-v1",
+              "knowledgeFactId": "fact-basics-002",
+              "questionType": "SINGLE_CHOICE",
+              "prompt": "Vilken valuta används i Sverige?",
+              "explanation": "Sveriges valuta är svenska kronor.",
+              "language": "sv",
+              "difficulty": "EASY",
+              "active": true,
+              "answerOptions": [
+                { "id": "answer-basics-002-a", "text": "Euro", "correct": false, "sortOrder": 1 },
+                { "id": "answer-basics-002-b", "text": "Svenska kronor", "correct": true, "sortOrder": 2 },
+                { "id": "answer-basics-002-c", "text": "Danska kronor", "correct": false, "sortOrder": 3 }
+              ]
+            },
+            {
+              "id": "question-basics-003",
+              "versionId": "question-basics-003-v1",
+              "knowledgeFactId": "fact-basics-003",
+              "questionType": "SINGLE_CHOICE",
+              "prompt": "Vilka färger har Sveriges flagga?",
+              "explanation": "Sveriges flagga är blå med ett gult kors.",
+              "language": "sv",
+              "difficulty": "EASY",
+              "active": true,
+              "answerOptions": [
+                { "id": "answer-basics-003-a", "text": "Blå och gul", "correct": true, "sortOrder": 1 },
+                { "id": "answer-basics-003-b", "text": "Röd och vit", "correct": false, "sortOrder": 2 },
+                { "id": "answer-basics-003-c", "text": "Grön och gul", "correct": false, "sortOrder": 3 }
+              ]
+            },
+            {
+              "id": "question-basics-004",
+              "versionId": "question-basics-004-v1",
+              "knowledgeFactId": "fact-basics-004",
+              "questionType": "SINGLE_CHOICE",
+              "prompt": "Vilket land gränsar inte till Sverige?",
+              "explanation": "Sverige har landgräns mot Norge och Finland, men inte mot Danmark.",
+              "language": "sv",
+              "difficulty": "MEDIUM",
+              "active": true,
+              "answerOptions": [
+                { "id": "answer-basics-004-a", "text": "Norge", "correct": false, "sortOrder": 1 },
+                { "id": "answer-basics-004-b", "text": "Finland", "correct": false, "sortOrder": 2 },
+                { "id": "answer-basics-004-c", "text": "Danmark", "correct": true, "sortOrder": 3 }
+              ]
+            },
+            {
+              "id": "question-basics-005",
+              "versionId": "question-basics-005-v1",
+              "knowledgeFactId": "fact-basics-005",
+              "questionType": "SINGLE_CHOICE",
+              "prompt": "Vad heter Sveriges största sjö?",
+              "explanation": "Vänern är Sveriges största sjö.",
+              "language": "sv",
+              "difficulty": "MEDIUM",
+              "active": true,
+              "answerOptions": [
+                { "id": "answer-basics-005-a", "text": "Vättern", "correct": false, "sortOrder": 1 },
+                { "id": "answer-basics-005-b", "text": "Vänern", "correct": true, "sortOrder": 2 },
+                { "id": "answer-basics-005-c", "text": "Mälaren", "correct": false, "sortOrder": 3 }
+              ]
+            },
+            {
+              "id": "question-basics-006",
+              "versionId": "question-basics-006-v1",
+              "knowledgeFactId": "fact-basics-006",
+              "questionType": "SINGLE_CHOICE",
+              "prompt": "Vilken ö är Sveriges största?",
+              "explanation": "Gotland är Sveriges största ö.",
+              "language": "sv",
+              "difficulty": "MEDIUM",
+              "active": true,
+              "answerOptions": [
+                { "id": "answer-basics-006-a", "text": "Öland", "correct": false, "sortOrder": 1 },
+                { "id": "answer-basics-006-b", "text": "Gotland", "correct": true, "sortOrder": 2 },
+                { "id": "answer-basics-006-c", "text": "Orust", "correct": false, "sortOrder": 3 }
+              ]
+            },
+            {
+              "id": "question-basics-007",
+              "versionId": "question-basics-007-v1",
+              "knowledgeFactId": "fact-basics-007",
+              "questionType": "SINGLE_CHOICE",
+              "prompt": "Vad heter Sveriges högsta berg?",
+              "explanation": "Kebnekaise är Sveriges högsta berg.",
+              "language": "sv",
+              "difficulty": "MEDIUM",
+              "active": true,
+              "answerOptions": [
+                { "id": "answer-basics-007-a", "text": "Åreskutan", "correct": false, "sortOrder": 1 },
+                { "id": "answer-basics-007-b", "text": "Kebnekaise", "correct": true, "sortOrder": 2 },
+                { "id": "answer-basics-007-c", "text": "Sarektjåkkå", "correct": false, "sortOrder": 3 }
+              ]
+            },
+            {
+              "id": "question-basics-008",
+              "versionId": "question-basics-008-v1",
+              "knowledgeFactId": "fact-basics-008",
+              "questionType": "SINGLE_CHOICE",
+              "prompt": "Vilket hav ligger öster om stora delar av Sverige?",
+              "explanation": "Östersjön ligger öster om stora delar av Sverige.",
+              "language": "sv",
+              "difficulty": "EASY",
+              "active": true,
+              "answerOptions": [
+                { "id": "answer-basics-008-a", "text": "Östersjön", "correct": true, "sortOrder": 1 },
+                { "id": "answer-basics-008-b", "text": "Medelhavet", "correct": false, "sortOrder": 2 },
+                { "id": "answer-basics-008-c", "text": "Svarta havet", "correct": false, "sortOrder": 3 }
+              ]
+            },
+            {
+              "id": "question-basics-009",
+              "versionId": "question-basics-009-v1",
+              "knowledgeFactId": "fact-basics-009",
+              "questionType": "SINGLE_CHOICE",
+              "prompt": "Vilken dag firas Sveriges nationaldag?",
+              "explanation": "Sveriges nationaldag firas den 6 juni.",
+              "language": "sv",
+              "difficulty": "EASY",
+              "active": true,
+              "answerOptions": [
+                { "id": "answer-basics-009-a", "text": "6 juni", "correct": true, "sortOrder": 1 },
+                { "id": "answer-basics-009-b", "text": "24 juni", "correct": false, "sortOrder": 2 },
+                { "id": "answer-basics-009-c", "text": "1 maj", "correct": false, "sortOrder": 3 }
+              ]
+            },
+            {
+              "id": "question-basics-010",
+              "versionId": "question-basics-010-v1",
+              "knowledgeFactId": "fact-basics-010",
+              "questionType": "SINGLE_CHOICE",
+              "prompt": "Vilket av följande är ett av Sveriges officiella minoritetsspråk?",
+              "explanation": "Samiska är ett av Sveriges fem nationella minoritetsspråk.",
+              "language": "sv",
+              "difficulty": "MEDIUM",
+              "active": true,
+              "answerOptions": [
+                { "id": "answer-basics-010-a", "text": "Samiska", "correct": true, "sortOrder": 1 },
+                { "id": "answer-basics-010-b", "text": "Danska", "correct": false, "sortOrder": 2 },
+                { "id": "answer-basics-010-c", "text": "Isländska", "correct": false, "sortOrder": 3 }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

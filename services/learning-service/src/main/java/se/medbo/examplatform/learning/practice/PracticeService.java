@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
@@ -105,10 +104,11 @@ public class PracticeService {
         for (var question : selected) {
             jdbc.sql("""
                     INSERT INTO practice_session_question
-                      (id, practice_session_id, imported_question_id, sequence_number, answered)
-                    VALUES (:id, :sessionId, :questionId, :sequence, FALSE)
+                      (id, practice_session_id, imported_question_id, content_release_id,
+                       sequence_number, answered)
+                    VALUES (:id, :sessionId, :questionId, :releaseId, :sequence, FALSE)
                     """).params(Map.of("id", UUID.randomUUID(), "sessionId", sessionId,
-                    "questionId", question.id(), "sequence", sequence++)).update();
+                    "questionId", question.id(), "releaseId", release.id(), "sequence", sequence++)).update();
         }
         log.atInfo().addKeyValue("sessionId", sessionId).addKeyValue("learnerId", learnerId)
                 .addKeyValue("questionCount", selected.size()).log("practice_session_created");
@@ -169,7 +169,8 @@ public class PracticeService {
                 """).param("optionId", command.selectedAnswerOptionId())
                 .param("sessionQuestionId", command.sessionQuestionId()).param("sessionId", sessionId)
                 .query((rs, row) -> new AnswerContext(rs.getObject("session_question_id", UUID.class),
-                        rs.getBoolean("answered"), rs.getObject("topic_id", UUID.class),
+                        rs.getObject("question_id", UUID.class), rs.getBoolean("answered"),
+                        rs.getObject("topic_id", UUID.class),
                         rs.getString("explanation"), rs.getObject("selected_id", UUID.class),
                         AnswerEvaluator.isCorrect(rs.getBoolean("correct")), rs.getString("selected_external_id"),
                         rs.getString("correct_external_id"))).optional()
@@ -178,19 +179,21 @@ public class PracticeService {
             throw new ApiException(HttpStatus.CONFLICT, "DUPLICATE_RESPONSE", "Question was already answered");
         }
         Instant now = clock.instant();
-        try {
-            jdbc.sql("""
-                    INSERT INTO practice_response
-                      (id, practice_session_id, practice_session_question_id, learner_id,
-                       selected_answer_option_id, correct, answered_at, response_time_millis)
-                    VALUES (:id, :sessionId, :sessionQuestionId, :learnerId, :optionId, :correct,
-                            :answeredAt, :responseTime)
-                    """).params(new HashMap<>(Map.of("id", UUID.randomUUID(), "sessionId", sessionId,
-                    "sessionQuestionId", answerContext.sessionQuestionId(), "learnerId", learnerId,
-                    "optionId", answerContext.selectedOptionId(), "correct", answerContext.correct(),
-                    "answeredAt", OffsetDateTime.ofInstant(now, ZoneOffset.UTC))))
-                    .param("responseTime", command.responseTimeMillis()).update();
-        } catch (DataIntegrityViolationException exception) {
+        int inserted = jdbc.sql("""
+                INSERT INTO practice_response
+                  (id, practice_session_id, practice_session_question_id, learner_id,
+                   selected_answer_option_id, imported_question_id, correct, answered_at,
+                   response_time_millis)
+                VALUES (:id, :sessionId, :sessionQuestionId, :learnerId, :optionId, :questionId,
+                        :correct, :answeredAt, :responseTime)
+                ON CONFLICT (practice_session_question_id) DO NOTHING
+                """).params(new HashMap<>(Map.of("id", UUID.randomUUID(), "sessionId", sessionId,
+                "sessionQuestionId", answerContext.sessionQuestionId(), "learnerId", learnerId,
+                "optionId", answerContext.selectedOptionId(), "questionId", answerContext.importedQuestionId(),
+                "correct", answerContext.correct(),
+                "answeredAt", OffsetDateTime.ofInstant(now, ZoneOffset.UTC))))
+                .param("responseTime", command.responseTimeMillis()).update();
+        if (inserted == 0) {
             throw new ApiException(HttpStatus.CONFLICT, "DUPLICATE_RESPONSE", "Question was already answered");
         }
         jdbc.sql("UPDATE practice_session_question SET answered = TRUE WHERE id = :id")
@@ -298,7 +301,7 @@ public class PracticeService {
     private record SessionMetadata(UUID id, PracticeMode mode, String topicExternalId, String status, int total) {}
     private record QuestionRow(UUID sessionQuestionId, String questionId, String prompt, String questionType,
                                int sequenceNumber, int total) {}
-    private record AnswerContext(UUID sessionQuestionId, boolean answered, UUID topicId, String explanation,
-                                 UUID selectedOptionId, boolean correct, String selectedExternalId,
+    private record AnswerContext(UUID sessionQuestionId, UUID importedQuestionId, boolean answered, UUID topicId,
+                                 String explanation, UUID selectedOptionId, boolean correct, String selectedExternalId,
                                  String correctExternalId) {}
 }
