@@ -38,3 +38,10 @@ The importer consumes published release events, downloads the checksummed snapsh
 
 The service does not author, approve, mutate, or publish canonical content; call the Content Service for every question; execute general AI workloads; decide official exam rules; or access other service databases.
 
+## Stage 5 implementation notes
+
+The initial implementation uses Java 21, Spring Boot, JDBC, PostgreSQL, and Flyway in `services/learning-service`. Content snapshot schema `1.0` is defined in `contracts/openapi/content-snapshot-v1.schema.json`; its SHA-256 covers canonical JSON with the checksum field omitted. Import activation uses a transaction, a PostgreSQL advisory lock per exam version, and a partial unique index enforcing one active release per exam version.
+
+Practice supports `TOPIC` and `MIXED`. Selection is injectable for deterministic tests, prefers distinct knowledge facts, and persists the complete question set before returning. Answer submission locks the learner session and session question, relies on a unique response constraint, updates topic progress atomically, and completes the session with the last accepted answer.
+
+`X-Learner-Identity` is a temporary development/test adapter and is disabled by default. It is not production authentication. The internal import endpoint requires a configured temporary service key. Both must be replaced by the identity/workload-identity decisions described in [security and privacy](security-and-privacy.md) before production.

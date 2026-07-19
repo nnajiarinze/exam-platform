@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: learning-service
+  datasource:
+    url: ${LEARNING_DATABASE_URL:jdbc:postgresql://localhost:5433/learning}
+    username: ${LEARNING_DATABASE_USERNAME:learning}
+    password: ${LEARNING_DATABASE_PASSWORD:learning}
+  flyway:
+    enabled: true
+  jackson:
+    default-property-inclusion: non_null
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+learning:
+  identity:
+    development-header-enabled: ${LEARNING_DEV_IDENTITY_ENABLED:false}
+  practice:
+    max-question-count: ${LEARNING_MAX_PRACTICE_QUESTIONS:50}
+

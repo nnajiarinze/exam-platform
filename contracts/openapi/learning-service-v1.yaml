@@ -1,0 +1,265 @@
+openapi: 3.1.0
+info:
+  title: Learning Service API
+  version: 1.0.0
+  description: Learner runtime API. The internal import operation requires service authentication.
+  license:
+    name: Proprietary
+    identifier: LicenseRef-Proprietary
+servers:
+  - url: /
+paths:
+  /internal/v1/content-releases/import:
+    description: The version segment is required; there is no `/internal/content-releases/import` alias.
+    post:
+      summary: Import a published content release
+      operationId: importContentRelease
+      tags: [Internal content projection]
+      security: [{ internalApiKey: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./content-snapshot-v1.schema.json
+      responses:
+        "200":
+          description: Imported or previously imported with the same checksum.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentImportResponse"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+  /api/v1/practice-sessions:
+    post:
+      summary: Create a practice session
+      operationId: createPracticeSession
+      tags: [Practice]
+      security: [{ learnerIdentity: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreatePracticeSessionRequest" }
+      responses:
+        "200":
+          description: Stable practice session created.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PracticeSession" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+  /api/v1/practice-sessions/{sessionId}:
+    parameters:
+      - $ref: "#/components/parameters/SessionId"
+    get:
+      summary: Get a practice session
+      operationId: getPracticeSession
+      tags: [Practice]
+      security: [{ learnerIdentity: [] }]
+      responses:
+        "200":
+          description: Session owned by the current learner.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PracticeSession" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /api/v1/practice-sessions/{sessionId}/next:
+    parameters:
+      - $ref: "#/components/parameters/SessionId"
+    get:
+      summary: Get the next unanswered question
+      operationId: getNextPracticeQuestion
+      tags: [Practice]
+      security: [{ learnerIdentity: [] }]
+      responses:
+        "200":
+          description: Next unanswered question. Correctness and explanation are intentionally absent.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PracticeQuestion" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /api/v1/practice-sessions/{sessionId}/responses:
+    parameters:
+      - $ref: "#/components/parameters/SessionId"
+    post:
+      summary: Submit one answer
+      operationId: submitPracticeResponse
+      tags: [Practice]
+      security: [{ learnerIdentity: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SubmitAnswerRequest" }
+      responses:
+        "200":
+          description: Accepted answer evaluation based on imported published content.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AnswerResult" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /api/v1/progress/topics:
+    get:
+      summary: List topic progress
+      operationId: getTopicProgress
+      tags: [Progress]
+      security: [{ learnerIdentity: [] }]
+      responses:
+        "200":
+          description: Basic topic aggregates; not a readiness score.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/TopicProgress" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+components:
+  securitySchemes:
+    internalApiKey:
+      type: apiKey
+      in: header
+      name: X-Internal-Api-Key
+      description: Temporary service credential pending the production workload-identity adapter.
+    learnerIdentity:
+      type: apiKey
+      in: header
+      name: X-Learner-Identity
+      description: Development/test identity only; disabled by default and not production authentication.
+  parameters:
+    SessionId:
+      name: sessionId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+  responses:
+    BadRequest:
+      description: Invalid request.
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    Unauthorized:
+      description: Authentication is absent or invalid.
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    NotFound:
+      description: Learner-owned or requested resource was not found.
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    Conflict:
+      description: Request conflicts with current or previously accepted state.
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    Unprocessable:
+      description: Structurally valid request violates content or selection rules.
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  schemas:
+    PracticeMode:
+      type: string
+      enum: [TOPIC, MIXED, INCORRECT_REVIEW]
+      description: INCORRECT_REVIEW is reserved but not executable in v1.
+    PracticeStatus:
+      type: string
+      enum: [ACTIVE, COMPLETED, ABANDONED]
+    CreatePracticeSessionRequest:
+      type: object
+      additionalProperties: false
+      required: [examId, mode, questionCount]
+      properties:
+        examId: { type: string, minLength: 1 }
+        topicId: { type: [string, "null"] }
+        mode: { $ref: "#/components/schemas/PracticeMode" }
+        questionCount: { type: integer, minimum: 1, maximum: 50 }
+    PracticeSession:
+      type: object
+      required: [sessionId, mode, status, answered, total]
+      properties:
+        sessionId: { type: string, format: uuid }
+        mode: { $ref: "#/components/schemas/PracticeMode" }
+        topicId: { type: [string, "null"] }
+        status: { $ref: "#/components/schemas/PracticeStatus" }
+        answered: { type: integer, minimum: 0 }
+        total: { type: integer, minimum: 1 }
+        nextQuestion:
+          oneOf:
+            - $ref: "#/components/schemas/PracticeQuestion"
+            - type: "null"
+    PracticeQuestion:
+      type: object
+      additionalProperties: false
+      required: [sessionQuestionId, questionId, prompt, questionType, answerOptions, sequenceNumber, totalQuestionCount]
+      properties:
+        sessionQuestionId: { type: string, format: uuid }
+        questionId: { type: string }
+        prompt: { type: string }
+        questionType: { type: string, enum: [SINGLE_CHOICE] }
+        answerOptions:
+          type: array
+          minItems: 2
+          items: { $ref: "#/components/schemas/AnswerOption" }
+        sequenceNumber: { type: integer, minimum: 1 }
+        totalQuestionCount: { type: integer, minimum: 1 }
+    AnswerOption:
+      type: object
+      additionalProperties: false
+      required: [id, text]
+      properties:
+        id: { type: string }
+        text: { type: string }
+    SubmitAnswerRequest:
+      type: object
+      additionalProperties: false
+      required: [sessionQuestionId, selectedAnswerOptionId]
+      properties:
+        sessionQuestionId: { type: string, format: uuid }
+        selectedAnswerOptionId: { type: string, minLength: 1 }
+        responseTimeMillis: { type: [integer, "null"], format: int64, minimum: 0 }
+    AnswerResult:
+      type: object
+      required: [correct, selectedAnswerOptionId, correctAnswerOptionId, explanation, sessionProgress]
+      properties:
+        correct: { type: boolean }
+        selectedAnswerOptionId: { type: string }
+        correctAnswerOptionId: { type: string }
+        explanation: { type: string }
+        sessionProgress:
+          type: object
+          required: [answered, total]
+          properties:
+            answered: { type: integer, minimum: 0 }
+            total: { type: integer, minimum: 1 }
+    TopicProgress:
+      type: object
+      required: [topicId, questionsAnswered, correctAnswers, accuracyPercentage, lastPractisedAt]
+      properties:
+        topicId: { type: string }
+        questionsAnswered: { type: integer, minimum: 0 }
+        correctAnswers: { type: integer, minimum: 0 }
+        accuracyPercentage: { type: number, minimum: 0, maximum: 100 }
+        lastPractisedAt: { type: string, format: date-time }
+    ContentImportResponse:
+      type: object
+      required: [releaseId, imported, status]
+      properties:
+        releaseId: { type: string, format: uuid }
+        imported: { type: boolean }
+        status: { type: string, enum: [ACTIVE, SUPERSEDED] }
+    Error:
+      type: object
+      required: [code, message, timestamp, errors]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        timestamp: { type: string, format: date-time }
+        errors:
+          type: array
+          items:
+            type: object
+            required: [field, message]
+            properties:
+              field: { type: string }
+              message: { type: string }
