@@ -30,3 +30,5 @@ question and fact versions. Publication stores one immutable JSONB snapshot and
 SHA-256 checksum. Delivery uses the server-side Learning Service URL and internal
 API key, records every attempt, and retries the same stored snapshot. Activation
 is explicit after import. Mutations require `CONTENT_PUBLISHER` or `ADMIN`.
+
+Operational reports use `/api/v1/admin/reports`; immutable audit search uses `/api/v1/admin/audit-events`. Learner health is fetched through authenticated service-to-service HTTP and contains aggregates only. Sensitive writes have configurable per-instance rate limits; production also requires gateway limits and tamper-resistant audit export.

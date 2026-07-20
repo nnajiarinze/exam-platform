@@ -106,7 +106,28 @@ class ContentServiceIntegrationTest {
     void flywayAppliesTheOwnedFoundationMigration() {
         var versions = jdbc.sql("SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank")
                 .query(String.class).list();
-        org.assertj.core.api.Assertions.assertThat(versions).containsExactly("1", "2", "3", "4", "5", "6");
+        org.assertj.core.api.Assertions.assertThat(versions).containsExactly("1", "2", "3", "4", "5", "6", "7");
+    }
+
+    @Test
+    void reportsAreAuthorizedAndAuditEventsAreAppendOnly() throws Exception {
+        mvc.perform(get("/api/v1/admin/reports/content-health").headers(author()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.questionsMissingFacts").isNumber());
+        mvc.perform(get("/api/v1/admin/reports/review-health").headers(reviewer()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.pending").isNumber());
+        mvc.perform(get("/api/v1/admin/reports/source-health").headers(author()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.unused").isNumber());
+        mvc.perform(get("/api/v1/admin/reports/release-health").headers(publisher()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.published").isNumber());
+        var code="AUDIT_"+java.util.UUID.randomUUID();
+        mvc.perform(post("/api/v1/admin/exams").headers(author()).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"code\":\""+code+"\",\"name\":\"Audit test\",\"countryCode\":\"SE\",\"status\":\"DRAFT\"}"))
+                .andExpect(status().isCreated());
+        mvc.perform(get("/api/v1/admin/audit-events").headers(author()).queryParam("entityType","Exam").queryParam("action","CREATE"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.items[0].newState.code").value(code));
+        var auditId=jdbc.sql("SELECT id FROM audit_event WHERE new_state->>'code'=:code").param("code",code).query(java.util.UUID.class).single();
+        org.assertj.core.api.Assertions.assertThatThrownBy(()->jdbc.sql("DELETE FROM audit_event WHERE id=:id").param("id",auditId).update())
+                .isInstanceOf(org.springframework.dao.DataAccessException.class);
     }
 
     @Test

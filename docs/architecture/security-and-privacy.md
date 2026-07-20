@@ -17,6 +17,8 @@ Admin access uses least-privilege roles such as author, reviewer, publisher, sup
 
 ## GDPR and minimization
 
+Operational learner reporting exposes aggregate counts, score, pass rate, and duration only. It excludes learner identifiers, questions, and answers. Sensitive administrative writes and mock-exam starts have configurable application-instance limits; production also requires distributed gateway enforcement. Responses carry safe request identifiers for diagnostics, and operational logs must exclude secrets and content payloads.
+
 Maintain a data inventory, lawful purpose, retention period, and processor list. Support authenticated export and deletion workflows across service-owned data; use a coordinated request ID rather than cross-database access. Deletion must reconcile legal/financial retention and de-identify learning analytics. Collect no immigration case files, identity documents, national identity numbers, precise location, contacts, or unrelated sensitive demographics for the initial product.
 
 Analytics is consent/configuration aware, pseudonymous where possible, and excludes question free text or sensitive profile content. Stripe handles payment instruments; the platform stores provider/customer references and entitlement evidence, not card data.
@@ -24,4 +26,3 @@ Analytics is consent/configuration aware, pseudonymous where possible, and exclu
 ## AI privacy boundary
 
 Send only operation-required content. Do not send learner identity, immigration details, subscription/payment data, raw analytics history, or special-category data to AI providers. Contractually disable provider training/retention where available, set bounded retention, redact logs, validate output, and record provider/model provenance. A new personal-data AI use requires privacy/security review and a documented lawful basis. See [AI Service](ai-service.md) and the [legal boundaries](../product/legal-and-content-boundaries.md).
-

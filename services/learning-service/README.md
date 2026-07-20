@@ -54,3 +54,5 @@ release and projected questions in PostgreSQL. OpenAPI validation should use:
 ```bash
 npx -y @redocly/cli lint contracts/openapi/learning-service-v1.yaml
 ```
+
+`GET /internal/v1/reports/learner-health` returns authenticated aggregate counts and averages without learner identity. Mock starts have configurable per-instance rate limiting; production should additionally enforce distributed gateway limits.

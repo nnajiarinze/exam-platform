@@ -5,7 +5,6 @@ import { DashboardPage } from '../../features/dashboard/DashboardPage';
 import { LoginPage } from '../../features/auth/LoginPage';
 import { UnauthorizedPage } from '../../features/errors/UnauthorizedPage';
 import { NotFoundPage } from '../../features/errors/NotFoundPage';
-import { FeaturePlaceholder } from '../../features/placeholders/FeaturePlaceholder';
 import { ExamListPage } from '../../features/exam-structure/pages/ExamListPage';
 import { ExamEditorPage } from '../../features/exam-structure/pages/ExamEditorPage';
 import { ExamVersionPage } from '../../features/exam-structure/pages/ExamVersionPage';
@@ -22,10 +21,8 @@ import { ReviewDetailPage } from '../../features/reviews/pages/ReviewDetailPage'
 import { ReleaseListPage } from '../../features/releases/pages/ReleaseListPage';
 import { ReleaseCreatePage } from '../../features/releases/pages/ReleaseCreatePage';
 import { ReleaseWorkspacePage } from '../../features/releases/pages/ReleaseWorkspacePage';
-
-const placeholders = [
-  ['reports', 'Reports'], ['audit', 'Audit Log'],
-] as const;
+import { ReportsPage } from '../../features/reports/ReportsPage';
+import { AuditPage } from '../../features/audit/AuditPage';
 
 export function AppRouter() {
   return <Routes>
@@ -56,7 +53,8 @@ export function AppRouter() {
         <Route path="releases" element={<ReleaseListPage />} />
         <Route path="releases/new" element={<ReleaseCreatePage />} />
         <Route path="releases/:id" element={<ReleaseWorkspacePage />} />
-        {placeholders.map(([path, name]) => <Route key={path} path={path} element={<FeaturePlaceholder name={name} />} />)}
+        <Route path="reports" element={<ReportsPage />} />
+        <Route path="audit" element={<AuditPage />} />
       </Route>
     </Route>
     <Route path="*" element={<NotFoundPage />} />

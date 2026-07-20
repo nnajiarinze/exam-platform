@@ -9,6 +9,16 @@ info:
 servers:
   - url: /
 paths:
+  /internal/v1/reports/learner-health:
+    get:
+      operationId: getInternalLearnerHealth
+      summary: Aggregate learner runtime health for trusted operational reporting
+      tags: [Internal reporting]
+      security: [{internalApiKey: []}]
+      responses:
+        "200": {description: Aggregate counts and averages without learner PII,content: {application/json: {schema: {type: object,additionalProperties: true}}}}
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "500": {description: Unexpected error,content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}}
   /api/v1/content/subjects:
     get:
       summary: List active subjects and topics

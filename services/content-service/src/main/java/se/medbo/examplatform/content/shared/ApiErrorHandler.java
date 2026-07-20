@@ -10,6 +10,7 @@ import java.util.List;
 
 @RestControllerAdvice
 final class ApiErrorHandler {
+    private static final org.slf4j.Logger log=org.slf4j.LoggerFactory.getLogger(ApiErrorHandler.class);
     @ExceptionHandler(DomainException.class)
     ResponseEntity<ApiErrorResponse> domain(DomainException exception) {
         return ResponseEntity.status(exception.status()).body(ApiErrorResponse.of(exception.code(), exception.getMessage()));
@@ -28,6 +29,7 @@ final class ApiErrorHandler {
     }
     @ExceptionHandler(Exception.class)
     ResponseEntity<ApiErrorResponse> unexpected(Exception exception) {
+        log.error("unhandled_admin_request_error requestId={} type={}",org.slf4j.MDC.get("requestId"),exception.getClass().getSimpleName(),exception);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiErrorResponse.of("INTERNAL_ERROR", "The Content Service encountered an unexpected error"));
     }

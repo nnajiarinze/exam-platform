@@ -82,3 +82,7 @@ comments, priority, and history. Knowledge and question services continue to own
 content-specific transitions and approval validation, then atomically record the
 governance event in the same transaction. Review status, content lifecycle, and
 future release status remain separate concepts.
+
+## Operational audit and reporting
+
+Content, review, source, and release health queries stay inside Content Service ownership. Learner health crosses the boundary only through an authenticated, aggregate Learning Service API; there is no cross-database query. Database triggers append previous/new state to immutable audit rows and reject audit updates/deletes. Production additionally requires external tamper-resistant audit export because database superusers remain outside application enforcement.

@@ -24,7 +24,9 @@ class SecurityConfiguration {
     private static final String[] ADMIN_ROLES = {"CONTENT_AUTHOR", "CONTENT_REVIEWER", "CONTENT_PUBLISHER", "ADMIN"};
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, DevelopmentAdminAuthenticationFilter filter, ObjectMapper mapper)
+    SecurityFilterChain securityFilterChain(HttpSecurity http, DevelopmentAdminAuthenticationFilter filter,
+            AdministrativeRateLimitFilter rateLimitFilter,
+            se.medbo.examplatform.content.shared.RequestCorrelationFilter correlationFilter, ObjectMapper mapper)
             throws Exception {
         return http
                 .csrf(csrf -> csrf.disable())
@@ -49,6 +51,8 @@ class SecurityConfiguration {
                         .authenticationEntryPoint((request, response, exception) -> writeError(mapper, response, 401, "AUTHENTICATION_REQUIRED", "Valid admin authentication is required"))
                         .accessDeniedHandler((request, response, exception) -> writeError(mapper, response, 403, "FORBIDDEN", "The administrator does not have a required role")))
                 .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(rateLimitFilter, DevelopmentAdminAuthenticationFilter.class)
+                .addFilterBefore(correlationFilter, AdministrativeRateLimitFilter.class)
                 .build();
     }
 

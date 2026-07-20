@@ -17,6 +17,9 @@ management:
         include: health,info
 
 content:
+  rate-limit:
+    sensitive-writes-per-window: ${CONTENT_SENSITIVE_WRITE_LIMIT:30}
+    window-seconds: ${CONTENT_RATE_LIMIT_WINDOW_SECONDS:60}
   identity:
     development-header-enabled: ${CONTENT_DEV_IDENTITY_ENABLED:false}
     development-allowed-origins: ${CONTENT_DEV_ALLOWED_ORIGINS:http://localhost:*,http://127.0.0.1:*}

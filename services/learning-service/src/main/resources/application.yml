@@ -17,6 +17,9 @@ management:
         include: health,info
 
 learning:
+  rate-limit:
+    mock-exam-starts-per-window: ${LEARNING_MOCK_EXAM_START_LIMIT:10}
+    window-seconds: ${LEARNING_RATE_LIMIT_WINDOW_SECONDS:60}
   identity:
     development-header-enabled: ${LEARNING_DEV_IDENTITY_ENABLED:false}
   practice:

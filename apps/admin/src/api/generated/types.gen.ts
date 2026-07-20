@@ -4,6 +4,42 @@ export type ClientOptions = {
     baseUrl: `${string}://${string}` | (string & {});
 };
 
+export type OperationalReport = {
+    [key: string]: unknown;
+};
+
+export type AuditEvent = {
+    id: string;
+    timestamp: string;
+    actorId: string;
+    actorName: string;
+    actorRole: string;
+    action: string;
+    entityType: string;
+    entityId: string;
+    entityVersion?: number | null;
+    previousState?: {
+        [key: string]: unknown;
+    } | null;
+    newState?: {
+        [key: string]: unknown;
+    } | null;
+    reason?: string | null;
+    metadata: {
+        [key: string]: unknown;
+    };
+    ipAddress?: string | null;
+    requestId: string;
+};
+
+export type AuditEventPage = {
+    items: Array<AuditEvent>;
+    page: number;
+    size: number;
+    totalItems: number;
+    totalPages: number;
+};
+
 export type StructureStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
 
 export type SourceType = 'GOVERNMENT_WEBPAGE' | 'GOVERNMENT_DOCUMENT' | 'LEGISLATION' | 'PUBLIC_AUTHORITY_GUIDANCE' | 'LICENSED_MATERIAL' | 'INTERNAL_RESEARCH' | 'OTHER';
@@ -2628,3 +2664,214 @@ export type RetireReleaseResponses = {
 };
 
 export type RetireReleaseResponse = RetireReleaseResponses[keyof RetireReleaseResponses];
+
+export type SearchAuditEventsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        actor?: string;
+        entityType?: string;
+        action?: string;
+        requestId?: string;
+        from?: string;
+        to?: string;
+        page?: number;
+        size?: number;
+    };
+    url: '/api/v1/admin/audit-events';
+};
+
+export type SearchAuditEventsErrors = {
+    /**
+     * Valid admin authentication is required
+     */
+    401: ApiError;
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Unexpected server failure
+     */
+    500: ApiError;
+};
+
+export type SearchAuditEventsError = SearchAuditEventsErrors[keyof SearchAuditEventsErrors];
+
+export type SearchAuditEventsResponses = {
+    /**
+     * Paginated audit events
+     */
+    200: AuditEventPage;
+};
+
+export type SearchAuditEventsResponse = SearchAuditEventsResponses[keyof SearchAuditEventsResponses];
+
+export type GetContentHealthReportData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/reports/content-health';
+};
+
+export type GetContentHealthReportErrors = {
+    /**
+     * Valid admin authentication is required
+     */
+    401: ApiError;
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Unexpected server failure
+     */
+    500: ApiError;
+};
+
+export type GetContentHealthReportError = GetContentHealthReportErrors[keyof GetContentHealthReportErrors];
+
+export type GetContentHealthReportResponses = {
+    /**
+     * Content health
+     */
+    200: OperationalReport;
+};
+
+export type GetContentHealthReportResponse = GetContentHealthReportResponses[keyof GetContentHealthReportResponses];
+
+export type GetReviewHealthReportData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/reports/review-health';
+};
+
+export type GetReviewHealthReportErrors = {
+    /**
+     * Valid admin authentication is required
+     */
+    401: ApiError;
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Unexpected server failure
+     */
+    500: ApiError;
+};
+
+export type GetReviewHealthReportError = GetReviewHealthReportErrors[keyof GetReviewHealthReportErrors];
+
+export type GetReviewHealthReportResponses = {
+    /**
+     * Review health
+     */
+    200: OperationalReport;
+};
+
+export type GetReviewHealthReportResponse = GetReviewHealthReportResponses[keyof GetReviewHealthReportResponses];
+
+export type GetSourceHealthReportData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/reports/source-health';
+};
+
+export type GetSourceHealthReportErrors = {
+    /**
+     * Valid admin authentication is required
+     */
+    401: ApiError;
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Unexpected server failure
+     */
+    500: ApiError;
+};
+
+export type GetSourceHealthReportError = GetSourceHealthReportErrors[keyof GetSourceHealthReportErrors];
+
+export type GetSourceHealthReportResponses = {
+    /**
+     * Source health
+     */
+    200: OperationalReport;
+};
+
+export type GetSourceHealthReportResponse = GetSourceHealthReportResponses[keyof GetSourceHealthReportResponses];
+
+export type GetReleaseHealthReportData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/reports/release-health';
+};
+
+export type GetReleaseHealthReportErrors = {
+    /**
+     * Valid admin authentication is required
+     */
+    401: ApiError;
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Unexpected server failure
+     */
+    500: ApiError;
+};
+
+export type GetReleaseHealthReportError = GetReleaseHealthReportErrors[keyof GetReleaseHealthReportErrors];
+
+export type GetReleaseHealthReportResponses = {
+    /**
+     * Release health
+     */
+    200: OperationalReport;
+};
+
+export type GetReleaseHealthReportResponse = GetReleaseHealthReportResponses[keyof GetReleaseHealthReportResponses];
+
+export type GetLearnerHealthReportData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/reports/learner-health';
+};
+
+export type GetLearnerHealthReportErrors = {
+    /**
+     * Valid admin authentication is required
+     */
+    401: ApiError;
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Unexpected server failure
+     */
+    500: ApiError;
+    /**
+     * Learning Service reporting unavailable
+     */
+    503: ApiError;
+};
+
+export type GetLearnerHealthReportError = GetLearnerHealthReportErrors[keyof GetLearnerHealthReportErrors];
+
+export type GetLearnerHealthReportResponses = {
+    /**
+     * Learner health
+     */
+    200: OperationalReport;
+};
+
+export type GetLearnerHealthReportResponse = GetLearnerHealthReportResponses[keyof GetLearnerHealthReportResponses];

@@ -230,6 +230,35 @@ paths:
   /api/v1/admin/releases/{releaseId}/retire:
     parameters: [{$ref: '#/components/parameters/ReleaseId'}]
     post: {operationId: retireRelease,summary: Retire non-active release,security: [{developmentAdminIdentity: [],developmentAdminRoles: []}],requestBody: {$ref: '#/components/requestBodies/VersionOnly'},responses: {'200': {description: Retired,content: {application/json: {schema: {$ref: '#/components/schemas/ReleaseDetail'}}}}}}
+  /api/v1/admin/audit-events:
+    get:
+      operationId: searchAuditEvents
+      summary: Search immutable administrative audit events
+      security: [{developmentAdminIdentity: [], developmentAdminRoles: []}]
+      parameters:
+        - {name: actor, in: query, schema: {type: string}}
+        - {name: entityType, in: query, schema: {type: string}}
+        - {name: action, in: query, schema: {type: string}}
+        - {name: requestId, in: query, schema: {type: string}}
+        - {name: from, in: query, schema: {type: string, format: date-time}}
+        - {name: to, in: query, schema: {type: string, format: date-time}}
+        - {name: page, in: query, schema: {type: integer, minimum: 0, default: 0}}
+        - {name: size, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 50}}
+      responses:
+        '200': {description: Paginated audit events, content: {application/json: {schema: {$ref: '#/components/schemas/AuditEventPage'}}}}
+        '401': {$ref: '#/components/responses/AuthenticationRequired'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '500': {$ref: '#/components/responses/UnexpectedError'}
+  /api/v1/admin/reports/content-health:
+    get: {operationId: getContentHealthReport, summary: Content coverage and lifecycle health, security: [{developmentAdminIdentity: [],developmentAdminRoles: []}], responses: {'200': {description: Content health,content: {application/json: {schema: {$ref: '#/components/schemas/OperationalReport'}}}},'401': {$ref: '#/components/responses/AuthenticationRequired'},'403': {$ref: '#/components/responses/Forbidden'},'500': {$ref: '#/components/responses/UnexpectedError'}}}
+  /api/v1/admin/reports/review-health:
+    get: {operationId: getReviewHealthReport, summary: Review queue health, security: [{developmentAdminIdentity: [],developmentAdminRoles: []}], responses: {'200': {description: Review health,content: {application/json: {schema: {$ref: '#/components/schemas/OperationalReport'}}}},'401': {$ref: '#/components/responses/AuthenticationRequired'},'403': {$ref: '#/components/responses/Forbidden'},'500': {$ref: '#/components/responses/UnexpectedError'}}}
+  /api/v1/admin/reports/source-health:
+    get: {operationId: getSourceHealthReport, summary: Source freshness and usage health, security: [{developmentAdminIdentity: [],developmentAdminRoles: []}], responses: {'200': {description: Source health,content: {application/json: {schema: {$ref: '#/components/schemas/OperationalReport'}}}},'401': {$ref: '#/components/responses/AuthenticationRequired'},'403': {$ref: '#/components/responses/Forbidden'},'500': {$ref: '#/components/responses/UnexpectedError'}}}
+  /api/v1/admin/reports/release-health:
+    get: {operationId: getReleaseHealthReport, summary: Release delivery and activation health, security: [{developmentAdminIdentity: [],developmentAdminRoles: []}], responses: {'200': {description: Release health,content: {application/json: {schema: {$ref: '#/components/schemas/OperationalReport'}}}},'401': {$ref: '#/components/responses/AuthenticationRequired'},'403': {$ref: '#/components/responses/Forbidden'},'500': {$ref: '#/components/responses/UnexpectedError'}}}
+  /api/v1/admin/reports/learner-health:
+    get: {operationId: getLearnerHealthReport, summary: Aggregate learner runtime health without learner PII, security: [{developmentAdminIdentity: [],developmentAdminRoles: []}], responses: {'200': {description: Learner health,content: {application/json: {schema: {$ref: '#/components/schemas/OperationalReport'}}}},'401': {$ref: '#/components/responses/AuthenticationRequired'},'403': {$ref: '#/components/responses/Forbidden'},'503': {description: Learning Service reporting unavailable,content: {application/json: {schema: {$ref: '#/components/schemas/ApiError'}}}},'500': {$ref: '#/components/responses/UnexpectedError'}}}
 components:
   securitySchemes:
     developmentAdminIdentity:
@@ -280,6 +309,37 @@ components:
     NotFound: {description: Resource not found,content: {application/json: {schema: {$ref: '#/components/schemas/ApiError'}}}}
     Conflict: {description: Conflict or stale version,content: {application/json: {schema: {$ref: '#/components/schemas/ApiError'}}}}
   schemas:
+    OperationalReport:
+      type: object
+      additionalProperties: true
+    AuditEvent:
+      type: object
+      required: [id,timestamp,actorId,actorName,actorRole,action,entityType,entityId,metadata,requestId]
+      properties:
+        id: {type: string,format: uuid}
+        timestamp: {type: string,format: date-time}
+        actorId: {type: string}
+        actorName: {type: string}
+        actorRole: {type: string}
+        action: {type: string}
+        entityType: {type: string}
+        entityId: {type: string,format: uuid}
+        entityVersion: {type: [integer,'null'],format: int64}
+        previousState: {type: [object,'null'],additionalProperties: true}
+        newState: {type: [object,'null'],additionalProperties: true}
+        reason: {type: [string,'null']}
+        metadata: {type: object,additionalProperties: true}
+        ipAddress: {type: [string,'null']}
+        requestId: {type: string}
+    AuditEventPage:
+      type: object
+      required: [items,page,size,totalItems,totalPages]
+      properties:
+        items: {type: array,items: {$ref: '#/components/schemas/AuditEvent'}}
+        page: {type: integer}
+        size: {type: integer}
+        totalItems: {type: integer,format: int64}
+        totalPages: {type: integer,format: int64}
     StructureStatus: {type: string, enum: [DRAFT, ACTIVE, ARCHIVED]}
     SourceType: {type: string, enum: [GOVERNMENT_WEBPAGE,GOVERNMENT_DOCUMENT,LEGISLATION,PUBLIC_AUTHORITY_GUIDANCE,LICENSED_MATERIAL,INTERNAL_RESEARCH,OTHER]}
     ReviewStatus: {type: string, enum: [UNREVIEWED,REVIEWED,REQUIRES_UPDATE]}

@@ -92,3 +92,5 @@ only explicit Vite origins while development-header authentication is enabled.
 
 Production identity, tamper-resistant external audit export, bulk operations,
 and real-time push updates remain deferred.
+
+Phase 7 adds `/reports` and `/audit`. Reports include Content health and a secured, PII-free Learning aggregate. Audit rows are database-enforced append-only. See `docs/implementation/admin-phase-7-validation.md`.
