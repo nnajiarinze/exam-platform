@@ -23,6 +23,7 @@ import { ReleaseCreatePage } from '../../features/releases/pages/ReleaseCreatePa
 import { ReleaseWorkspacePage } from '../../features/releases/pages/ReleaseWorkspacePage';
 import { ReportsPage } from '../../features/reports/ReportsPage';
 import { AuditPage } from '../../features/audit/AuditPage';
+import { ContentSystemGuidePage } from '../../features/help/content-system/ContentSystemGuidePage';
 
 export function AppRouter() {
   return <Routes>
@@ -55,6 +56,7 @@ export function AppRouter() {
         <Route path="releases/:id" element={<ReleaseWorkspacePage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="audit" element={<AuditPage />} />
+        <Route path="help/content-system" element={<ContentSystemGuidePage />} />
       </Route>
     </Route>
     <Route path="*" element={<NotFoundPage />} />

@@ -1,7 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../app/auth/AuthContext';
 
-const links = [['/dashboard', 'Dashboard'], ['/exam-structure', 'Exam Structure'], ['/sources', 'Sources'], ['/knowledge', 'Knowledge Base'], ['/questions', 'Questions'], ['/reviews', 'Review Queue'], ['/releases', 'Releases'], ['/reports', 'Reports'], ['/audit', 'Audit Log']] as const;
+const links = [['/dashboard', 'Dashboard'], ['/exam-structure', 'Exam Structure'], ['/sources', 'Sources'], ['/knowledge', 'Knowledge Base'], ['/questions', 'Questions'], ['/reviews', 'Review Queue'], ['/releases', 'Releases'], ['/reports', 'Reports'], ['/audit', 'Audit Log'], ['/help/content-system', 'How the Content System Works']] as const;
 export function AdminLayout() {
   const { admin, signOut } = useAuth();
   return <div className="app-shell">

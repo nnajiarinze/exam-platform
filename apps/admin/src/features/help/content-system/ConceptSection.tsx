@@ -1,0 +1,2 @@
+import type { Concept } from './content';
+export function ConceptSection({concept}: {concept:Concept}){return <article className="card concept-card" id={concept.id}><h3>{concept.term}</h3><p>{concept.definition}</p><dl><div><dt>Example</dt><dd>{concept.example}</dd></div><div><dt>Why it exists</dt><dd>{concept.purpose}</dd></div><div><dt>Connections</dt><dd>{concept.connects}</dd></div>{concept.mistake&&<div><dt>Common mistake</dt><dd>{concept.mistake}</dd></div>}</dl></article>}

@@ -86,3 +86,5 @@ future release status remain separate concepts.
 ## Operational audit and reporting
 
 Content, review, source, and release health queries stay inside Content Service ownership. Learner health crosses the boundary only through an authenticated, aggregate Learning Service API; there is no cross-database query. Database triggers append previous/new state to immutable audit rows and reject audit updates/deletes. Production additionally requires external tamper-resistant audit export because database superusers remain outside application enforcement.
+
+The Admin Portal page `/help/content-system` is the primary operational onboarding reference for content administrators. It explains the implemented hierarchy, source-backed fact model, question governance, review/version states, immutable release delivery, and Content/Learning ownership boundary without changing either service's domain behavior.

@@ -94,3 +94,7 @@ Production identity, tamper-resistant external audit export, bulk operations,
 and real-time push updates remain deferred.
 
 Phase 7 adds `/reports` and `/audit`. Reports include Content health and a secured, PII-free Learning aggregate. Audit rows are database-enforced append-only. See `docs/implementation/admin-phase-7-validation.md`.
+
+## Administrator content-system guide
+
+All authenticated content roles can open `/help/content-system` from “How the Content System Works” in the main navigation. This read-only page is the primary operational explanation of the content model, review/version lifecycle, immutable release delivery, practice/mock-exam distinction, and service ownership. Its structured content lives under `src/features/help/content-system`; update the centralized supported-question-type wording when learner delivery support changes.
