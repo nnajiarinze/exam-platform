@@ -24,6 +24,9 @@ export type PracticeMode = 'TOPIC' | 'MIXED' | 'INCORRECT_REVIEW';
 export type PracticeStatus = 'ACTIVE' | 'COMPLETED' | 'ABANDONED';
 
 export type CreatePracticeSessionRequest = {
+    /**
+     * Canonical lowercase kebab-case exam identifier; legacy representations are normalized on input.
+     */
     examId: string;
     topicId?: string | null;
     mode: PracticeMode;
@@ -83,10 +86,19 @@ export type TopicProgress = {
 export type ContentImportResponse = {
     releaseId: string;
     imported: boolean;
-    status: 'ACTIVE' | 'SUPERSEDED';
+    status: 'IMPORTED' | 'ACTIVE' | 'RETIRED';
+};
+
+export type ContentActivationResponse = {
+    releaseId: string;
+    activated: boolean;
+    status: 'ACTIVE';
 };
 
 export type CreateMockExamRequest = {
+    /**
+     * Canonical lowercase kebab-case exam identifier; legacy representations are normalized on input.
+     */
     examId: string;
 };
 
@@ -205,6 +217,9 @@ export type Error = {
 export type ContentSnapshotV1Schema = {
     schemaVersion: '1.0';
     externalReleaseId: string;
+    /**
+     * Canonical lowercase kebab-case cross-service exam identifier.
+     */
     examId: string;
     examVersionId: string;
     releaseVersion: string;
@@ -249,6 +264,9 @@ export type GetSubjectsData = {
     body?: never;
     path?: never;
     query: {
+        /**
+         * Canonical lowercase kebab-case exam identifier. Legacy case and separator variants are normalized temporarily.
+         */
         examId: string;
     };
     url: '/api/v1/content/subjects';
@@ -308,6 +326,41 @@ export type ImportContentReleaseResponses = {
 };
 
 export type ImportContentReleaseResponse = ImportContentReleaseResponses[keyof ImportContentReleaseResponses];
+
+export type ActivateImportedContentReleaseData = {
+    body?: never;
+    path: {
+        externalReleaseId: string;
+    };
+    query?: never;
+    url: '/internal/v1/content-releases/{externalReleaseId}/activate';
+};
+
+export type ActivateImportedContentReleaseErrors = {
+    /**
+     * Authentication is absent or invalid.
+     */
+    401: Error;
+    /**
+     * Learner-owned or requested resource was not found.
+     */
+    404: Error;
+    /**
+     * Request conflicts with current or previously accepted state.
+     */
+    409: Error;
+};
+
+export type ActivateImportedContentReleaseError = ActivateImportedContentReleaseErrors[keyof ActivateImportedContentReleaseErrors];
+
+export type ActivateImportedContentReleaseResponses = {
+    /**
+     * Activated or already active.
+     */
+    200: ContentActivationResponse;
+};
+
+export type ActivateImportedContentReleaseResponse = ActivateImportedContentReleaseResponses[keyof ActivateImportedContentReleaseResponses];
 
 export type CreatePracticeSessionData = {
     body: CreatePracticeSessionRequest;

@@ -15,6 +15,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.medbo.examplatform.learning.shared.ApiException;
+import se.medbo.examplatform.learning.shared.ExternalExamIdentifier;
 
 @Service
 public class MockExamService {
@@ -35,11 +36,12 @@ public class MockExamService {
 
     @Transactional
     public AttemptView create(UUID learnerId, String examId) {
+        String canonicalExamId = ExternalExamIdentifier.normalize(examId);
         var blueprint = jdbc.sql("""
                 SELECT id, name, total_questions, duration_minutes, passing_percentage
                 FROM mock_exam_blueprint WHERE exam_id = :examId AND active
                 FOR SHARE
-                """).param("examId", examId).query((rs, row) -> new Blueprint(
+                """).param("examId", canonicalExamId).query((rs, row) -> new Blueprint(
                         rs.getObject("id", UUID.class), rs.getString("name"), rs.getInt("total_questions"),
                         rs.getInt("duration_minutes"), rs.getBigDecimal("passing_percentage")))
                 .optional().orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "MOCK_BLUEPRINT_NOT_FOUND",
@@ -48,7 +50,7 @@ public class MockExamService {
                 SELECT id FROM imported_content_release
                 WHERE exam_id = :examId AND status = 'ACTIVE'
                 ORDER BY published_at DESC, external_release_id LIMIT 1
-                """).param("examId", examId).query(UUID.class).optional()
+                """).param("examId", canonicalExamId).query(UUID.class).optional()
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "NO_ACTIVE_CONTENT_RELEASE",
                         "No active content release exists for the exam"));
         var allocations = jdbc.sql("""

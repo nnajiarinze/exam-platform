@@ -395,6 +395,126 @@ export type ReviewCommentRequest = {
     body: string;
 };
 
+export type ReleaseStatus = 'DRAFT' | 'VALIDATED' | 'PUBLISHED' | 'DELIVERY_FAILED' | 'DELIVERED' | 'ACTIVE' | 'RETIRED';
+
+export type ReleaseRequest = {
+    examVersionId: string;
+    releaseNumber: string;
+    displayName: string;
+    description?: string | null;
+    version?: number;
+};
+
+export type ReleaseSelectionRequest = {
+    questionIds?: Array<string>;
+    factIds?: Array<string>;
+    version: number;
+};
+
+export type ReleaseSummary = AuditFields & {
+    examId: string;
+    examVersionId: string;
+    releaseNumber: string;
+    displayName: string;
+    description?: string | null;
+    status: ReleaseStatus;
+    createdBy: string;
+    validatedAt?: string | null;
+    validatedBy?: string | null;
+    publishedAt?: string | null;
+    publishedBy?: string | null;
+    deliveredAt?: string | null;
+    activatedAt?: string | null;
+    retiredAt?: string | null;
+    checksum?: string | null;
+    snapshotSchemaVersion: string;
+    knowledgeFactCount: number;
+    questionCount: number;
+    lastValidatedVersion?: number | null;
+    previousReleaseId?: string | null;
+    examName: string;
+    examCode: string;
+    examVersionName: string;
+    examVersionCode: string;
+};
+
+export type ReleaseDetail = ReleaseSummary & {
+    items: Array<{
+        [key: string]: unknown;
+    }>;
+    coverage: {
+        [key: string]: unknown;
+    };
+    validation?: {
+        [key: string]: unknown;
+    } | null;
+    deliveryAttempts: Array<ReleaseDeliveryAttempt>;
+    diff: {
+        [key: string]: unknown;
+    };
+};
+
+export type ReleasePage = {
+    items: Array<ReleaseSummary>;
+    page: number;
+    size: number;
+    totalItems: number;
+    totalPages: number;
+};
+
+export type EligibleContentItem = {
+    id: string;
+    versionId: string;
+    code?: string | null;
+    text: string;
+    learningObjectiveId: string;
+    learningObjectiveTitle: string;
+    topicId: string;
+    topicName: string;
+    subjectId: string;
+    subjectName: string;
+};
+
+export type EligibleContentResponse = {
+    items: Array<EligibleContentItem>;
+};
+
+export type ReleaseValidationIssue = {
+    code: string;
+    severity: 'ERROR' | 'WARNING' | 'INFO';
+    message: string;
+    contentType?: string | null;
+    contentId?: string | null;
+    contentVersionId?: string | null;
+    path?: string | null;
+    metadata?: {
+        [key: string]: unknown;
+    };
+};
+
+export type ReleaseValidationReport = {
+    valid: boolean;
+    errors: Array<ReleaseValidationIssue>;
+    warnings: Array<ReleaseValidationIssue>;
+    summary: {
+        [key: string]: unknown;
+    };
+};
+
+export type ReleaseDeliveryAttempt = {
+    id: string;
+    attemptNumber: number;
+    status: 'PENDING' | 'SUCCESS' | 'FAILED';
+    startedAt: string;
+    completedAt?: string | null;
+    targetService: string;
+    responseCode?: number | null;
+    errorCode?: string | null;
+    errorMessage?: string | null;
+    checksum: string;
+    requestedBy: string;
+};
+
 export type ContentServiceStatus = {
     service: 'content-service';
     status: 'READY';
@@ -427,6 +547,8 @@ export type KnowledgeFactId = string;
 export type QuestionId = string;
 
 export type ReviewItemId = string;
+
+export type ReleaseId = string;
 
 export type Page = number;
 
@@ -2126,3 +2248,383 @@ export type ChangeReviewPriorityResponses = {
 };
 
 export type ChangeReviewPriorityResponse = ChangeReviewPriorityResponses[keyof ChangeReviewPriorityResponses];
+
+export type ListReleasesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        page?: number;
+        size?: number;
+        search?: string;
+        examId?: string;
+        examVersionId?: string;
+        status?: ReleaseStatus;
+        activeOnly?: boolean;
+    };
+    url: '/api/v1/admin/releases';
+};
+
+export type ListReleasesResponses = {
+    /**
+     * Release page
+     */
+    200: ReleasePage;
+};
+
+export type ListReleasesResponse = ListReleasesResponses[keyof ListReleasesResponses];
+
+export type CreateReleaseData = {
+    body: ReleaseRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/releases';
+};
+
+export type CreateReleaseErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type CreateReleaseError = CreateReleaseErrors[keyof CreateReleaseErrors];
+
+export type CreateReleaseResponses = {
+    /**
+     * Created
+     */
+    201: ReleaseDetail;
+};
+
+export type CreateReleaseResponse = CreateReleaseResponses[keyof CreateReleaseResponses];
+
+export type GetReleaseData = {
+    body?: never;
+    path: {
+        releaseId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/releases/{releaseId}';
+};
+
+export type GetReleaseResponses = {
+    /**
+     * Release
+     */
+    200: ReleaseDetail;
+};
+
+export type GetReleaseResponse = GetReleaseResponses[keyof GetReleaseResponses];
+
+export type UpdateReleaseData = {
+    body: ReleaseRequest;
+    path: {
+        releaseId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/releases/{releaseId}';
+};
+
+export type UpdateReleaseErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type UpdateReleaseError = UpdateReleaseErrors[keyof UpdateReleaseErrors];
+
+export type UpdateReleaseResponses = {
+    /**
+     * Updated
+     */
+    200: ReleaseDetail;
+};
+
+export type UpdateReleaseResponse = UpdateReleaseResponses[keyof UpdateReleaseResponses];
+
+export type ReplaceReleaseSelectionData = {
+    body: ReleaseSelectionRequest;
+    path: {
+        releaseId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/releases/{releaseId}/selection';
+};
+
+export type ReplaceReleaseSelectionErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type ReplaceReleaseSelectionError = ReplaceReleaseSelectionErrors[keyof ReplaceReleaseSelectionErrors];
+
+export type ReplaceReleaseSelectionResponses = {
+    /**
+     * Updated
+     */
+    200: ReleaseDetail;
+};
+
+export type ReplaceReleaseSelectionResponse = ReplaceReleaseSelectionResponses[keyof ReplaceReleaseSelectionResponses];
+
+export type ListEligibleReleaseQuestionsData = {
+    body?: never;
+    path: {
+        releaseId: string;
+    };
+    query?: {
+        search?: string;
+        subjectId?: string;
+        topicId?: string;
+        learningObjectiveId?: string;
+    };
+    url: '/api/v1/admin/releases/{releaseId}/eligible-questions';
+};
+
+export type ListEligibleReleaseQuestionsResponses = {
+    /**
+     * Eligible questions
+     */
+    200: EligibleContentResponse;
+};
+
+export type ListEligibleReleaseQuestionsResponse = ListEligibleReleaseQuestionsResponses[keyof ListEligibleReleaseQuestionsResponses];
+
+export type ListEligibleReleaseFactsData = {
+    body?: never;
+    path: {
+        releaseId: string;
+    };
+    query?: {
+        search?: string;
+        subjectId?: string;
+        topicId?: string;
+        learningObjectiveId?: string;
+    };
+    url: '/api/v1/admin/releases/{releaseId}/eligible-facts';
+};
+
+export type ListEligibleReleaseFactsResponses = {
+    /**
+     * Eligible facts
+     */
+    200: EligibleContentResponse;
+};
+
+export type ListEligibleReleaseFactsResponse = ListEligibleReleaseFactsResponses[keyof ListEligibleReleaseFactsResponses];
+
+export type ValidateReleaseData = {
+    body: VersionOnly2;
+    path: {
+        releaseId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/releases/{releaseId}/validate';
+};
+
+export type ValidateReleaseResponses = {
+    /**
+     * Validation report
+     */
+    200: ReleaseValidationReport;
+};
+
+export type ValidateReleaseResponse = ValidateReleaseResponses[keyof ValidateReleaseResponses];
+
+export type PreviewReleaseData = {
+    body?: never;
+    path: {
+        releaseId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/releases/{releaseId}/preview';
+};
+
+export type PreviewReleaseResponses = {
+    /**
+     * Preview
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type PreviewReleaseResponse = PreviewReleaseResponses[keyof PreviewReleaseResponses];
+
+export type GetPublishedReleaseSnapshotData = {
+    body?: never;
+    path: {
+        releaseId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/releases/{releaseId}/snapshot';
+};
+
+export type GetPublishedReleaseSnapshotResponses = {
+    /**
+     * Snapshot
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type GetPublishedReleaseSnapshotResponse = GetPublishedReleaseSnapshotResponses[keyof GetPublishedReleaseSnapshotResponses];
+
+export type GetReleaseDiffData = {
+    body?: never;
+    path: {
+        releaseId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/releases/{releaseId}/diff';
+};
+
+export type GetReleaseDiffResponses = {
+    /**
+     * Diff
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type GetReleaseDiffResponse = GetReleaseDiffResponses[keyof GetReleaseDiffResponses];
+
+export type ListReleaseDeliveryAttemptsData = {
+    body?: never;
+    path: {
+        releaseId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/releases/{releaseId}/delivery-attempts';
+};
+
+export type ListReleaseDeliveryAttemptsResponses = {
+    /**
+     * Attempts
+     */
+    200: Array<ReleaseDeliveryAttempt>;
+};
+
+export type ListReleaseDeliveryAttemptsResponse = ListReleaseDeliveryAttemptsResponses[keyof ListReleaseDeliveryAttemptsResponses];
+
+export type PublishReleaseData = {
+    body: VersionOnly2;
+    path: {
+        releaseId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/releases/{releaseId}/publish';
+};
+
+export type PublishReleaseErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type PublishReleaseError = PublishReleaseErrors[keyof PublishReleaseErrors];
+
+export type PublishReleaseResponses = {
+    /**
+     * Published
+     */
+    200: ReleaseDetail;
+};
+
+export type PublishReleaseResponse = PublishReleaseResponses[keyof PublishReleaseResponses];
+
+export type DeliverReleaseData = {
+    body?: never;
+    path: {
+        releaseId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/releases/{releaseId}/deliver';
+};
+
+export type DeliverReleaseErrors = {
+    /**
+     * Unexpected server failure
+     */
+    503: ApiError;
+};
+
+export type DeliverReleaseError = DeliverReleaseErrors[keyof DeliverReleaseErrors];
+
+export type DeliverReleaseResponses = {
+    /**
+     * Delivered
+     */
+    200: ReleaseDetail;
+};
+
+export type DeliverReleaseResponse = DeliverReleaseResponses[keyof DeliverReleaseResponses];
+
+export type RetryReleaseDeliveryData = {
+    body?: never;
+    path: {
+        releaseId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/releases/{releaseId}/retry-delivery';
+};
+
+export type RetryReleaseDeliveryResponses = {
+    /**
+     * Delivered
+     */
+    200: ReleaseDetail;
+};
+
+export type RetryReleaseDeliveryResponse = RetryReleaseDeliveryResponses[keyof RetryReleaseDeliveryResponses];
+
+export type ActivateReleaseData = {
+    body?: never;
+    path: {
+        releaseId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/releases/{releaseId}/activate';
+};
+
+export type ActivateReleaseErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type ActivateReleaseError = ActivateReleaseErrors[keyof ActivateReleaseErrors];
+
+export type ActivateReleaseResponses = {
+    /**
+     * Active
+     */
+    200: ReleaseDetail;
+};
+
+export type ActivateReleaseResponse = ActivateReleaseResponses[keyof ActivateReleaseResponses];
+
+export type RetireReleaseData = {
+    body: VersionOnly2;
+    path: {
+        releaseId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/releases/{releaseId}/retire';
+};
+
+export type RetireReleaseResponses = {
+    /**
+     * Retired
+     */
+    200: ReleaseDetail;
+};
+
+export type RetireReleaseResponse = RetireReleaseResponses[keyof RetireReleaseResponses];

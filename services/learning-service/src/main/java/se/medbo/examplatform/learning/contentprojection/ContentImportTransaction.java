@@ -12,6 +12,7 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import se.medbo.examplatform.learning.shared.ApiException;
+import se.medbo.examplatform.learning.shared.ExternalExamIdentifier;
 
 @Component
 public class ContentImportTransaction {
@@ -30,6 +31,7 @@ public class ContentImportTransaction {
 
     @Transactional
     public ImportResult importSnapshot(ContentSnapshot snapshot) {
+        String canonicalExamId = ExternalExamIdentifier.normalize(snapshot.examId());
         jdbc.sql("SELECT pg_advisory_xact_lock(hashtext(:examVersionId))")
                 .param("examVersionId", snapshot.examVersionId()).query((rs, row) -> true).single();
 
@@ -48,19 +50,6 @@ public class ContentImportTransaction {
         existing.ifPresent(value -> jdbc.sql("DELETE FROM imported_content_release WHERE id = :id")
                 .param("id", value.id()).update());
 
-        var activeRelease = jdbc.sql("""
-                SELECT published_at FROM imported_content_release
-                WHERE exam_version_id = :examVersionId AND status = 'ACTIVE'
-                """).param("examVersionId", snapshot.examVersionId())
-                .query((rs, row) -> rs.getObject("published_at", OffsetDateTime.class).toInstant())
-                .optional();
-        boolean activate = activeRelease.isEmpty() || snapshot.publishedAt().isAfter(activeRelease.get());
-        if (activate) {
-            jdbc.sql("UPDATE imported_content_release SET status = 'SUPERSEDED' "
-                            + "WHERE exam_version_id = :examVersionId AND status = 'ACTIVE'")
-                    .param("examVersionId", snapshot.examVersionId()).update();
-        }
-
         UUID releaseId = UUID.randomUUID();
         Instant importedAt = clock.instant();
         jdbc.sql("""
@@ -71,9 +60,9 @@ public class ContentImportTransaction {
                         :publishedAt, :importedAt)
                 """)
                 .params(Map.of("id", releaseId, "externalId", snapshot.externalReleaseId(),
-                        "examId", snapshot.examId(), "examVersionId", snapshot.examVersionId(),
+                        "examId", canonicalExamId, "examVersionId", snapshot.examVersionId(),
                         "version", snapshot.releaseVersion(), "checksum", snapshot.checksum(),
-                        "status", activate ? "ACTIVE" : "SUPERSEDED",
+                        "status", "IMPORTED",
                         "publishedAt", OffsetDateTime.ofInstant(snapshot.publishedAt(), ZoneOffset.UTC),
                         "importedAt", OffsetDateTime.ofInstant(importedAt, ZoneOffset.UTC)))
                 .update();
@@ -136,7 +125,7 @@ public class ContentImportTransaction {
                 }
             }
         }
-        return new ImportResult(releaseId, true, activate ? "ACTIVE" : "SUPERSEDED");
+        return new ImportResult(releaseId, true, "IMPORTED");
     }
 
     public record ImportResult(UUID releaseId, boolean imported, String status) {}

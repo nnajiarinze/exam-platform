@@ -16,7 +16,7 @@ class ContentServiceContractTest {
                 "/api/v1/admin/learning-objectives:", "/api/v1/admin/knowledge-facts:",
                 "operationId: submitKnowledgeFact", "operationId: approveKnowledgeFact", "operationId: listKnowledgeFactVersions",
                 "/api/v1/admin/questions:", "operationId: createQuestion", "operationId: searchQuestions", "operationId: listQuestionVersions",
-                "/api/v1/admin/reviews:", "operationId: claimReview", "operationId: addReviewComment", "operationId: listReviewHistory");
-        assertThat(contract).doesNotContain("/api/v1/admin/releases");
+                "/api/v1/admin/reviews:", "operationId: claimReview", "operationId: addReviewComment", "operationId: listReviewHistory",
+                "/api/v1/admin/releases:", "operationId: validateRelease", "operationId: publishRelease", "operationId: deliverRelease", "operationId: activateRelease");
     }
 }

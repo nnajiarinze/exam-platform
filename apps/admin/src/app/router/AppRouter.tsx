@@ -19,9 +19,12 @@ import { QuestionListPage } from '../../features/questions/pages/QuestionListPag
 import { QuestionEditorPage } from '../../features/questions/pages/QuestionEditorPage';
 import { ReviewQueuePage } from '../../features/reviews/pages/ReviewQueuePage';
 import { ReviewDetailPage } from '../../features/reviews/pages/ReviewDetailPage';
+import { ReleaseListPage } from '../../features/releases/pages/ReleaseListPage';
+import { ReleaseCreatePage } from '../../features/releases/pages/ReleaseCreatePage';
+import { ReleaseWorkspacePage } from '../../features/releases/pages/ReleaseWorkspacePage';
 
 const placeholders = [
-  ['releases', 'Releases'], ['reports', 'Reports'], ['audit', 'Audit Log'],
+  ['reports', 'Reports'], ['audit', 'Audit Log'],
 ] as const;
 
 export function AppRouter() {
@@ -50,6 +53,9 @@ export function AppRouter() {
         <Route path="questions/:id" element={<QuestionEditorPage />} />
         <Route path="reviews" element={<ReviewQueuePage />} />
         <Route path="reviews/:id" element={<ReviewDetailPage />} />
+        <Route path="releases" element={<ReleaseListPage />} />
+        <Route path="releases/new" element={<ReleaseCreatePage />} />
+        <Route path="releases/:id" element={<ReleaseWorkspacePage />} />
         {placeholders.map(([path, name]) => <Route key={path} path={path} element={<FeaturePlaceholder name={name} />} />)}
       </Route>
     </Route>

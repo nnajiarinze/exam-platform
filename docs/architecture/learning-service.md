@@ -1,5 +1,16 @@
 # Learning Service
 
+## Canonical exam identifiers
+
+External exam identifiers are normalized once at service boundaries to
+lowercase kebab-case. Imports, activation namespaces, content lookup, practice
+creation, and mock-exam lookup therefore resolve `SWEDISH_CITIZENSHIP`,
+`Swedish Citizenship`, and `swedish-citizenship` as the same logical exam. New
+database writes are constrained to canonical values. The migration keeps all
+historical releases and session foreign keys; if legacy namespaces each had an
+active release, the most recently activated release wins, with publication and
+import time as deterministic fallbacks.
+
 ## Responsibilities and owned data
 
 The service owns user/account-related state, profiles, language preferences, practice sessions, mock attempts, responses, scoring results, mastery evidence, readiness estimates, recommendations, bookmarks, incorrect-answer review state, subscriptions, entitlements, and the learner-facing content projection.

@@ -23,11 +23,15 @@ services:
       CONTENT_DATABASE_USERNAME: content
       CONTENT_DATABASE_PASSWORD: content
       CONTENT_DEV_IDENTITY_ENABLED: "true"
+      LEARNING_SERVICE_BASE_URL: http://learning-service:8080
+      LEARNING_INTERNAL_API_KEY: ${LEARNING_INTERNAL_API_KEY:-local-development-only}
     ports:
       - "8082:8080"
     depends_on:
       content-database:
         condition: service_healthy
+      learning-service:
+        condition: service_started
 
   learning-database:
     image: postgres:16-alpine

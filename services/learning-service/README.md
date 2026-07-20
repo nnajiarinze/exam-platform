@@ -39,7 +39,13 @@ docker compose up -d --build learning-service
 curl --fail http://localhost:8080/actuator/health
 ```
 
-An HTTP integration test posts a complete published snapshot through the registered route and verifies the active release and projected questions in PostgreSQL. OpenAPI validation should use:
+Import and activation are separate. Import leaves a verified projection in
+`IMPORTED`; Content Service then calls
+`POST /internal/v1/content-releases/{externalReleaseId}/activate`. Only one
+release per exam is active, and existing sessions retain their original release.
+
+An HTTP integration test imports, explicitly activates, and verifies the active
+release and projected questions in PostgreSQL. OpenAPI validation should use:
 
 ```bash
 npx -y @redocly/cli lint contracts/openapi/learning-service-v1.yaml

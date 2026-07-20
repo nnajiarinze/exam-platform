@@ -20,3 +20,6 @@ content:
   identity:
     development-header-enabled: ${CONTENT_DEV_IDENTITY_ENABLED:false}
     development-allowed-origins: ${CONTENT_DEV_ALLOWED_ORIGINS:http://localhost:*,http://127.0.0.1:*}
+  learning-service:
+    base-url: ${LEARNING_SERVICE_BASE_URL:http://localhost:8080}
+    internal-api-key: ${LEARNING_INTERNAL_API_KEY:}

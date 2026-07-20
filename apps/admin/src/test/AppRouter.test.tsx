@@ -71,12 +71,12 @@ describe('admin routing', () => {
     expect(screen.getByText('The Content Service could not be reached.')).toBeInTheDocument();
   });
 
-  it('navigates to an explicit feature placeholder', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(statusResponse()));
+  it('navigates to release management', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockImplementation((request: Request) => Promise.resolve(request.url.includes('/releases') ? new Response(JSON.stringify({items:[],page:0,size:20,totalItems:0,totalPages:0}),{status:200,headers:{'content-type':'application/json'}}) : statusResponse())));
     renderRouter('/dashboard', { id: 'admin', displayName: 'Admin', roles: [AdminRole.Admin] });
     await userEvent.click(screen.getByRole('link', { name: 'Releases' }));
     expect(screen.getByRole('heading', { name: 'Releases' })).toBeInTheDocument();
-    expect(screen.getByText('Not implemented in Admin Phase 1.')).toBeInTheDocument();
+    expect(await screen.findByText('No releases match these filters.')).toBeInTheDocument();
   });
 
   it('renders the not-found page safely', () => {

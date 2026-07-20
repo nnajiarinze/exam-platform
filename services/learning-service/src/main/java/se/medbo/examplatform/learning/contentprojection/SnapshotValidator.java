@@ -10,6 +10,7 @@ import java.util.HexFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import se.medbo.examplatform.learning.shared.ApiException;
+import se.medbo.examplatform.learning.shared.ExternalExamIdentifier;
 
 @Component
 public class SnapshotValidator {
@@ -20,6 +21,7 @@ public class SnapshotValidator {
     }
 
     public void validate(ContentSnapshot snapshot) {
+        ExternalExamIdentifier.normalize(snapshot.examId());
         if (!"1.0".equals(snapshot.schemaVersion()) || !"PUBLISHED".equals(snapshot.releaseStatus())) {
             invalid("Only published content snapshot schema 1.0 is accepted");
         }

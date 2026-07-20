@@ -8,7 +8,7 @@
   "properties": {
     "schemaVersion": { "const": "1.0" },
     "externalReleaseId": { "type": "string", "minLength": 1, "maxLength": 200 },
-    "examId": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "examId": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$", "example": "swedish-citizenship", "description": "Canonical lowercase kebab-case cross-service exam identifier." },
     "examVersionId": { "type": "string", "minLength": 1, "maxLength": 200 },
     "releaseVersion": { "type": "string", "minLength": 1, "maxLength": 100 },
     "releaseStatus": { "const": "PUBLISHED" },

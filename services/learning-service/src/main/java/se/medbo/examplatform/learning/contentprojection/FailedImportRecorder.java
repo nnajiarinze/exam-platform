@@ -9,6 +9,7 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import se.medbo.examplatform.learning.shared.ExternalExamIdentifier;
 
 @Component
 public class FailedImportRecorder {
@@ -30,7 +31,7 @@ public class FailedImportRecorder {
         var params = new HashMap<String, Object>();
         params.put("id", UUID.randomUUID());
         params.put("externalId", snapshot.externalReleaseId());
-        params.put("examId", snapshot.examId());
+        params.put("examId", ExternalExamIdentifier.normalize(snapshot.examId()));
         params.put("examVersionId", snapshot.examVersionId());
         params.put("version", snapshot.releaseVersion());
         params.put("checksum", snapshot.checksum());

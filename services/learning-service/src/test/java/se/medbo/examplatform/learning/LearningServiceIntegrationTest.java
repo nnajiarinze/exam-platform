@@ -30,6 +30,8 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import se.medbo.examplatform.learning.contentprojection.ContentImportService;
+import se.medbo.examplatform.learning.contentprojection.ContentImportTransaction;
+import se.medbo.examplatform.learning.contentprojection.ContentReleaseActivationService;
 import se.medbo.examplatform.learning.contentprojection.ContentSnapshot;
 import se.medbo.examplatform.learning.contentprojection.SnapshotValidator;
 import se.medbo.examplatform.learning.practice.PracticeMode;
@@ -52,6 +54,7 @@ class LearningServiceIntegrationTest {
 
     @Autowired JdbcClient jdbc;
     @Autowired ContentImportService importService;
+    @Autowired ContentReleaseActivationService activationService;
     @Autowired SnapshotValidator snapshotValidator;
     @Autowired PracticeService practiceService;
     @Autowired MockExamService mockExamService;
@@ -99,6 +102,12 @@ class LearningServiceIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.releaseId").exists())
                 .andExpect(jsonPath("$.imported").value(true))
+                .andExpect(jsonPath("$.status").value("IMPORTED"));
+
+        mockMvc.perform(post("/internal/v1/content-releases/http-release/activate")
+                        .header("X-Internal-Api-Key", "test-internal-key"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.activated").value(true))
                 .andExpect(jsonPath("$.status").value("ACTIVE"));
 
         assertThat(jdbc.sql("""
@@ -122,7 +131,7 @@ class LearningServiceIntegrationTest {
 
     @Test
     void listsSubjectsAndTopicsFromTheActiveProjection() throws Exception {
-        importService.importSnapshot(snapshot("content-list-release", "1"));
+        importAndActivate(snapshot("content-list-release", "1"));
 
         mockMvc.perform(get("/api/v1/content/subjects")
                         .header("X-Learner-Identity", "developer-learner")
@@ -134,18 +143,39 @@ class LearningServiceIntegrationTest {
     }
 
     @Test
+    void uppercaseImportAndRequestsResolveTheCanonicalActiveExam() throws Exception {
+        var canonical = snapshot("canonical-release", "1");
+        var uppercase = withChecksum(new ContentSnapshot(canonical.schemaVersion(), canonical.externalReleaseId(),
+                "SWEDISH_CITIZENSHIP", canonical.examVersionId(), canonical.releaseVersion(),
+                canonical.releaseStatus(), canonical.publishedAt(), "pending", canonical.subjects()));
+        importAndActivate(uppercase);
+
+        assertThat(jdbc.sql("SELECT exam_id FROM imported_content_release WHERE external_release_id='canonical-release'")
+                .query(String.class).single()).isEqualTo("swedish-citizenship");
+        assertThat(jdbc.sql("SELECT count(*) FROM imported_content_release WHERE exam_id='swedish-citizenship' AND status='ACTIVE'")
+                .query(Integer.class).single()).isEqualTo(1);
+        mockMvc.perform(get("/api/v1/content/subjects").header("X-Learner-Identity", "developer-learner")
+                        .queryParam("examId", "SWEDISH_CITIZENSHIP"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].topics[0].id").value("topic-a"));
+        var session=practiceService.create(learnerId,
+                new PracticeService.CreateSession("Swedish Citizenship", "topic-a", PracticeMode.TOPIC, 1));
+        assertThat(jdbc.sql("SELECT exam_id FROM practice_session WHERE id=:id").param("id",session.sessionId())
+                .query(String.class).single()).isEqualTo("swedish-citizenship");
+    }
+
+    @Test
     void importsIdempotentlyAndSupersedesWithoutBreakingHistoricalSession() {
         var releaseOne = snapshot("release-1", "1");
-        var first = importService.importSnapshot(releaseOne);
+        var first = importAndActivate(releaseOne);
         assertThat(importService.importSnapshot(releaseOne).imported()).isFalse();
 
         var session = practiceService.create(learnerId,
                 new PracticeService.CreateSession("swedish-citizenship", "topic-a", PracticeMode.TOPIC, 2));
         var releaseTwo = snapshot("release-2", "2");
-        importService.importSnapshot(releaseTwo);
+        importAndActivate(releaseTwo);
 
         assertThat(jdbc.sql("SELECT status FROM imported_content_release WHERE id = :id")
-                .param("id", first.releaseId()).query(String.class).single()).isEqualTo("SUPERSEDED");
+                .param("id", first.releaseId()).query(String.class).single()).isEqualTo("IMPORTED");
         assertThat(jdbc.sql("SELECT count(*) FROM imported_content_release WHERE exam_version_id = 'exam-v1' AND status = 'ACTIVE'")
                 .query(Integer.class).single()).isEqualTo(1);
         assertThat(jdbc.sql("""
@@ -157,12 +187,12 @@ class LearningServiceIntegrationTest {
 
     @Test
     void importsAnOlderReleaseWithoutRollingBackTheActiveProjection() {
-        var newer = importService.importSnapshot(snapshot("newer-release", "2",
+        var newer = importAndActivate(snapshot("newer-release", "2",
                 Instant.parse("2026-02-02T00:00:00Z")));
         var delayedOlder = importService.importSnapshot(snapshot("delayed-older-release", "1",
                 Instant.parse("2026-02-01T00:00:00Z")));
 
-        assertThat(delayedOlder.status()).isEqualTo("SUPERSEDED");
+        assertThat(delayedOlder.status()).isEqualTo("IMPORTED");
         assertThat(jdbc.sql("SELECT status FROM imported_content_release WHERE id = :id")
                 .param("id", newer.releaseId()).query(String.class).single()).isEqualTo("ACTIVE");
         assertThat(jdbc.sql("""
@@ -254,7 +284,7 @@ class LearningServiceIntegrationTest {
 
     @Test
     void practiceDeliversNoCorrectFlagsAndUpdatesProgressForCorrectAndIncorrectAnswers() throws Exception {
-        importService.importSnapshot(snapshot("release-1", "1"));
+        importAndActivate(snapshot("release-1", "1"));
         var session = practiceService.create(learnerId,
                 new PracticeService.CreateSession("swedish-citizenship", "topic-a", PracticeMode.TOPIC, 2));
 
@@ -306,7 +336,7 @@ class LearningServiceIntegrationTest {
 
     @Test
     void mixedSelectionUsesActiveQuestionsAcrossTopicsAndRejectsInsufficientCount() {
-        importService.importSnapshot(snapshot("release-1", "1"));
+        importAndActivate(snapshot("release-1", "1"));
         var mixed = practiceService.create(learnerId,
                 new PracticeService.CreateSession("swedish-citizenship", null, PracticeMode.MIXED, 4));
         assertThat(mixed.total()).isEqualTo(4);
@@ -318,7 +348,7 @@ class LearningServiceIntegrationTest {
 
     @Test
     void databaseConstraintProtectsConcurrentDuplicateResponses() throws Exception {
-        importService.importSnapshot(snapshot("release-1", "1"));
+        importAndActivate(snapshot("release-1", "1"));
         var session = practiceService.create(learnerId,
                 new PracticeService.CreateSession("swedish-citizenship", "topic-b", PracticeMode.TOPIC, 1));
         var question = practiceService.nextQuestion(learnerId, session.sessionId());
@@ -346,8 +376,8 @@ class LearningServiceIntegrationTest {
 
     @Test
     void databaseConstraintsPreventMixingQuestionsAcrossContentReleases() {
-        var oldRelease = importService.importSnapshot(snapshot("old-release", "1"));
-        var activeRelease = importService.importSnapshot(snapshot("active-release", "2"));
+        var oldRelease = importAndActivate(snapshot("old-release", "1"));
+        var activeRelease = importAndActivate(snapshot("active-release", "2"));
         var session = practiceService.create(learnerId,
                 new PracticeService.CreateSession("swedish-citizenship", "topic-a", PracticeMode.TOPIC, 1));
         UUID oldQuestion = jdbc.sql("""
@@ -365,7 +395,7 @@ class LearningServiceIntegrationTest {
 
     @Test
     void learnerCannotReadAnotherLearnersPracticeSession() throws Exception {
-        importService.importSnapshot(snapshot("ownership-release", "1"));
+        importAndActivate(snapshot("ownership-release", "1"));
         var session = practiceService.create(learnerId,
                 new PracticeService.CreateSession("swedish-citizenship", "topic-a", PracticeMode.TOPIC, 1));
         jdbc.sql("""
@@ -382,7 +412,7 @@ class LearningServiceIntegrationTest {
 
     @Test
     void createsNavigatesSubmitsAndStoresMockExamResultsAndHistory() {
-        importService.importSnapshot(snapshot("mock-release", "1"));
+        importAndActivate(snapshot("mock-release", "1"));
         insertMockBlueprint(3, 30, "67.00");
 
         var attempt = mockExamService.create(learnerId, "swedish-citizenship");
@@ -423,7 +453,7 @@ class LearningServiceIntegrationTest {
 
     @Test
     void mockExamHttpEndpointsAreRegisteredAndHideCorrectnessBeforeSubmission() throws Exception {
-        importService.importSnapshot(snapshot("mock-http-release", "1"));
+        importAndActivate(snapshot("mock-http-release", "1"));
         insertMockBlueprint(3, 30, "50.00");
         String response = mockMvc.perform(post("/api/v1/mock-exams")
                         .header("X-Learner-Identity", "developer-learner")
@@ -447,7 +477,7 @@ class LearningServiceIntegrationTest {
 
     @Test
     void expiresMockExamUsingServerTimeAndRejectsFurtherAnswers() {
-        importService.importSnapshot(snapshot("expired-mock-release", "1"));
+        importAndActivate(snapshot("expired-mock-release", "1"));
         insertMockBlueprint(3, 1, "50.00");
         var attempt = mockExamService.create(learnerId, "swedish-citizenship");
         jdbc.sql("UPDATE mock_exam_attempt SET started_at = now() - interval '2 minutes' WHERE id = :id")
@@ -465,7 +495,7 @@ class LearningServiceIntegrationTest {
 
     @Test
     void learnerCannotAccessAnotherLearnersMockExam() {
-        importService.importSnapshot(snapshot("mock-owner-release", "1"));
+        importAndActivate(snapshot("mock-owner-release", "1"));
         insertMockBlueprint(3, 30, "50.00");
         var attempt = mockExamService.create(learnerId, "swedish-citizenship");
         UUID other = UUID.randomUUID();
@@ -528,6 +558,12 @@ class LearningServiceIntegrationTest {
     private ContentSnapshot snapshot(String releaseId, String releaseVersion) {
         return snapshot(releaseId, releaseVersion,
                 Instant.parse("2026-01-%02dT00:00:00Z".formatted(Integer.parseInt(releaseVersion))));
+    }
+
+    private ContentImportTransaction.ImportResult importAndActivate(ContentSnapshot snapshot) {
+        var result = importService.importSnapshot(snapshot);
+        activationService.activate(snapshot.externalReleaseId());
+        return result;
     }
 
     private ContentSnapshot snapshot(String releaseId, String releaseVersion, Instant publishedAt) {

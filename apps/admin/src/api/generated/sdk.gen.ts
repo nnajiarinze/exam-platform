@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AddReviewCommentData, AddReviewCommentErrors, AddReviewCommentResponses, ApproveKnowledgeFactData, ApproveKnowledgeFactErrors, ApproveKnowledgeFactResponses, ApproveQuestionData, ApproveQuestionErrors, ApproveQuestionResponses, ArchiveExamData, ArchiveExamErrors, ArchiveExamResponses, ArchiveExamVersionData, ArchiveExamVersionResponses, ArchiveLearningObjectiveData, ArchiveLearningObjectiveErrors, ArchiveLearningObjectiveResponses, ArchiveSubjectData, ArchiveSubjectResponses, ArchiveTopicData, ArchiveTopicResponses, AssignReviewData, AssignReviewErrors, AssignReviewResponses, ChangeReviewPriorityData, ChangeReviewPriorityErrors, ChangeReviewPriorityResponses, ClaimReviewData, ClaimReviewErrors, ClaimReviewResponses, CreateExamData, CreateExamErrors, CreateExamResponses, CreateExamVersionData, CreateExamVersionErrors, CreateExamVersionResponses, CreateKnowledgeFactData, CreateKnowledgeFactErrors, CreateKnowledgeFactResponses, CreateLearningObjectiveData, CreateLearningObjectiveErrors, CreateLearningObjectiveResponses, CreateQuestionData, CreateQuestionErrors, CreateQuestionResponses, CreateSourceData, CreateSourceErrors, CreateSourceResponses, CreateSubjectData, CreateSubjectResponses, CreateTopicData, CreateTopicResponses, GetContentServiceStatusData, GetContentServiceStatusErrors, GetContentServiceStatusResponses, GetExamData, GetExamErrors, GetExamResponses, GetExamVersionData, GetExamVersionErrors, GetExamVersionResponses, GetKnowledgeFactData, GetKnowledgeFactErrors, GetKnowledgeFactResponses, GetLearningObjectiveData, GetLearningObjectiveErrors, GetLearningObjectiveResponses, GetQuestionData, GetQuestionErrors, GetQuestionResponses, GetReviewData, GetReviewErrors, GetReviewResponses, GetReviewSummaryData, GetReviewSummaryResponses, GetSourceData, GetSourceErrors, GetSourceResponses, GetSubjectData, GetSubjectResponses, GetTopicData, GetTopicResponses, ListExamsData, ListExamsErrors, ListExamsResponses, ListExamVersionsData, ListExamVersionsResponses, ListKnowledgeFactsData, ListKnowledgeFactsErrors, ListKnowledgeFactsResponses, ListKnowledgeFactVersionsData, ListKnowledgeFactVersionsErrors, ListKnowledgeFactVersionsResponses, ListLearningObjectivesData, ListLearningObjectivesErrors, ListLearningObjectivesResponses, ListQuestionsData, ListQuestionsResponses, ListQuestionVersionsData, ListQuestionVersionsResponses, ListReviewCommentsData, ListReviewCommentsResponses, ListReviewHistoryData, ListReviewHistoryResponses, ListReviewsData, ListReviewsResponses, ListSourcesData, ListSourcesResponses, ListSubjectsData, ListSubjectsResponses, ListTopicsData, ListTopicsResponses, RejectKnowledgeFactData, RejectKnowledgeFactErrors, RejectKnowledgeFactResponses, RejectQuestionData, RejectQuestionResponses, ReorderSubjectsData, ReorderSubjectsErrors, ReorderSubjectsResponses, ReorderTopicsData, ReorderTopicsErrors, ReorderTopicsResponses, RequireKnowledgeFactUpdateData, RequireKnowledgeFactUpdateErrors, RequireKnowledgeFactUpdateResponses, RequireQuestionUpdateData, RequireQuestionUpdateResponses, RequireSourceUpdateData, RequireSourceUpdateResponses, RetireKnowledgeFactData, RetireKnowledgeFactErrors, RetireKnowledgeFactResponses, RetireQuestionData, RetireQuestionResponses, RetireSourceData, RetireSourceErrors, RetireSourceResponses, ReviewSourceData, ReviewSourceResponses, SearchQuestionsData, SearchQuestionsResponses, SubmitKnowledgeFactData, SubmitKnowledgeFactErrors, SubmitKnowledgeFactResponses, SubmitQuestionData, SubmitQuestionResponses, UnclaimReviewData, UnclaimReviewErrors, UnclaimReviewResponses, UpdateExamData, UpdateExamErrors, UpdateExamResponses, UpdateExamVersionData, UpdateExamVersionErrors, UpdateExamVersionResponses, UpdateKnowledgeFactData, UpdateKnowledgeFactErrors, UpdateKnowledgeFactResponses, UpdateLearningObjectiveData, UpdateLearningObjectiveErrors, UpdateLearningObjectiveResponses, UpdateQuestionData, UpdateQuestionErrors, UpdateQuestionResponses, UpdateSourceData, UpdateSourceErrors, UpdateSourceResponses, UpdateSubjectData, UpdateSubjectErrors, UpdateSubjectResponses, UpdateTopicData, UpdateTopicErrors, UpdateTopicResponses } from './types.gen';
+import type { ActivateReleaseData, ActivateReleaseErrors, ActivateReleaseResponses, AddReviewCommentData, AddReviewCommentErrors, AddReviewCommentResponses, ApproveKnowledgeFactData, ApproveKnowledgeFactErrors, ApproveKnowledgeFactResponses, ApproveQuestionData, ApproveQuestionErrors, ApproveQuestionResponses, ArchiveExamData, ArchiveExamErrors, ArchiveExamResponses, ArchiveExamVersionData, ArchiveExamVersionResponses, ArchiveLearningObjectiveData, ArchiveLearningObjectiveErrors, ArchiveLearningObjectiveResponses, ArchiveSubjectData, ArchiveSubjectResponses, ArchiveTopicData, ArchiveTopicResponses, AssignReviewData, AssignReviewErrors, AssignReviewResponses, ChangeReviewPriorityData, ChangeReviewPriorityErrors, ChangeReviewPriorityResponses, ClaimReviewData, ClaimReviewErrors, ClaimReviewResponses, CreateExamData, CreateExamErrors, CreateExamResponses, CreateExamVersionData, CreateExamVersionErrors, CreateExamVersionResponses, CreateKnowledgeFactData, CreateKnowledgeFactErrors, CreateKnowledgeFactResponses, CreateLearningObjectiveData, CreateLearningObjectiveErrors, CreateLearningObjectiveResponses, CreateQuestionData, CreateQuestionErrors, CreateQuestionResponses, CreateReleaseData, CreateReleaseErrors, CreateReleaseResponses, CreateSourceData, CreateSourceErrors, CreateSourceResponses, CreateSubjectData, CreateSubjectResponses, CreateTopicData, CreateTopicResponses, DeliverReleaseData, DeliverReleaseErrors, DeliverReleaseResponses, GetContentServiceStatusData, GetContentServiceStatusErrors, GetContentServiceStatusResponses, GetExamData, GetExamErrors, GetExamResponses, GetExamVersionData, GetExamVersionErrors, GetExamVersionResponses, GetKnowledgeFactData, GetKnowledgeFactErrors, GetKnowledgeFactResponses, GetLearningObjectiveData, GetLearningObjectiveErrors, GetLearningObjectiveResponses, GetPublishedReleaseSnapshotData, GetPublishedReleaseSnapshotResponses, GetQuestionData, GetQuestionErrors, GetQuestionResponses, GetReleaseData, GetReleaseDiffData, GetReleaseDiffResponses, GetReleaseResponses, GetReviewData, GetReviewErrors, GetReviewResponses, GetReviewSummaryData, GetReviewSummaryResponses, GetSourceData, GetSourceErrors, GetSourceResponses, GetSubjectData, GetSubjectResponses, GetTopicData, GetTopicResponses, ListEligibleReleaseFactsData, ListEligibleReleaseFactsResponses, ListEligibleReleaseQuestionsData, ListEligibleReleaseQuestionsResponses, ListExamsData, ListExamsErrors, ListExamsResponses, ListExamVersionsData, ListExamVersionsResponses, ListKnowledgeFactsData, ListKnowledgeFactsErrors, ListKnowledgeFactsResponses, ListKnowledgeFactVersionsData, ListKnowledgeFactVersionsErrors, ListKnowledgeFactVersionsResponses, ListLearningObjectivesData, ListLearningObjectivesErrors, ListLearningObjectivesResponses, ListQuestionsData, ListQuestionsResponses, ListQuestionVersionsData, ListQuestionVersionsResponses, ListReleaseDeliveryAttemptsData, ListReleaseDeliveryAttemptsResponses, ListReleasesData, ListReleasesResponses, ListReviewCommentsData, ListReviewCommentsResponses, ListReviewHistoryData, ListReviewHistoryResponses, ListReviewsData, ListReviewsResponses, ListSourcesData, ListSourcesResponses, ListSubjectsData, ListSubjectsResponses, ListTopicsData, ListTopicsResponses, PreviewReleaseData, PreviewReleaseResponses, PublishReleaseData, PublishReleaseErrors, PublishReleaseResponses, RejectKnowledgeFactData, RejectKnowledgeFactErrors, RejectKnowledgeFactResponses, RejectQuestionData, RejectQuestionResponses, ReorderSubjectsData, ReorderSubjectsErrors, ReorderSubjectsResponses, ReorderTopicsData, ReorderTopicsErrors, ReorderTopicsResponses, ReplaceReleaseSelectionData, ReplaceReleaseSelectionErrors, ReplaceReleaseSelectionResponses, RequireKnowledgeFactUpdateData, RequireKnowledgeFactUpdateErrors, RequireKnowledgeFactUpdateResponses, RequireQuestionUpdateData, RequireQuestionUpdateResponses, RequireSourceUpdateData, RequireSourceUpdateResponses, RetireKnowledgeFactData, RetireKnowledgeFactErrors, RetireKnowledgeFactResponses, RetireQuestionData, RetireQuestionResponses, RetireReleaseData, RetireReleaseResponses, RetireSourceData, RetireSourceErrors, RetireSourceResponses, RetryReleaseDeliveryData, RetryReleaseDeliveryResponses, ReviewSourceData, ReviewSourceResponses, SearchQuestionsData, SearchQuestionsResponses, SubmitKnowledgeFactData, SubmitKnowledgeFactErrors, SubmitKnowledgeFactResponses, SubmitQuestionData, SubmitQuestionResponses, UnclaimReviewData, UnclaimReviewErrors, UnclaimReviewResponses, UpdateExamData, UpdateExamErrors, UpdateExamResponses, UpdateExamVersionData, UpdateExamVersionErrors, UpdateExamVersionResponses, UpdateKnowledgeFactData, UpdateKnowledgeFactErrors, UpdateKnowledgeFactResponses, UpdateLearningObjectiveData, UpdateLearningObjectiveErrors, UpdateLearningObjectiveResponses, UpdateQuestionData, UpdateQuestionErrors, UpdateQuestionResponses, UpdateReleaseData, UpdateReleaseErrors, UpdateReleaseResponses, UpdateSourceData, UpdateSourceErrors, UpdateSourceResponses, UpdateSubjectData, UpdateSubjectErrors, UpdateSubjectResponses, UpdateTopicData, UpdateTopicErrors, UpdateTopicResponses, ValidateReleaseData, ValidateReleaseResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -564,7 +564,7 @@ export const createQuestion = <ThrowOnError extends boolean = false>(options: Op
 });
 
 /**
- * Search question text
+ * Search question text, codes, and linked facts
  */
 export const searchQuestions = <ThrowOnError extends boolean = false>(options?: Options<SearchQuestionsData, ThrowOnError>) => (options?.client ?? client).get<SearchQuestionsResponses, unknown, ThrowOnError>({
     security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
@@ -771,6 +771,183 @@ export const assignReview = <ThrowOnError extends boolean = false>(options: Opti
 export const changeReviewPriority = <ThrowOnError extends boolean = false>(options: Options<ChangeReviewPriorityData, ThrowOnError>) => (options.client ?? client).post<ChangeReviewPriorityResponses, ChangeReviewPriorityErrors, ThrowOnError>({
     security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
     url: '/api/v1/admin/reviews/{reviewItemId}/priority',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List content releases
+ */
+export const listReleases = <ThrowOnError extends boolean = false>(options?: Options<ListReleasesData, ThrowOnError>) => (options?.client ?? client).get<ListReleasesResponses, unknown, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/releases',
+    ...options
+});
+
+/**
+ * Create draft release
+ */
+export const createRelease = <ThrowOnError extends boolean = false>(options: Options<CreateReleaseData, ThrowOnError>) => (options.client ?? client).post<CreateReleaseResponses, CreateReleaseErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/releases',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get release workspace
+ */
+export const getRelease = <ThrowOnError extends boolean = false>(options: Options<GetReleaseData, ThrowOnError>) => (options.client ?? client).get<GetReleaseResponses, unknown, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/releases/{releaseId}',
+    ...options
+});
+
+/**
+ * Update draft metadata
+ */
+export const updateRelease = <ThrowOnError extends boolean = false>(options: Options<UpdateReleaseData, ThrowOnError>) => (options.client ?? client).put<UpdateReleaseResponses, UpdateReleaseErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/releases/{releaseId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Freeze explicit question/fact version selection
+ */
+export const replaceReleaseSelection = <ThrowOnError extends boolean = false>(options: Options<ReplaceReleaseSelectionData, ThrowOnError>) => (options.client ?? client).put<ReplaceReleaseSelectionResponses, ReplaceReleaseSelectionErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/releases/{releaseId}/selection',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List eligible approved questions
+ */
+export const listEligibleReleaseQuestions = <ThrowOnError extends boolean = false>(options: Options<ListEligibleReleaseQuestionsData, ThrowOnError>) => (options.client ?? client).get<ListEligibleReleaseQuestionsResponses, unknown, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/releases/{releaseId}/eligible-questions',
+    ...options
+});
+
+/**
+ * List eligible approved facts
+ */
+export const listEligibleReleaseFacts = <ThrowOnError extends boolean = false>(options: Options<ListEligibleReleaseFactsData, ThrowOnError>) => (options.client ?? client).get<ListEligibleReleaseFactsResponses, unknown, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/releases/{releaseId}/eligible-facts',
+    ...options
+});
+
+/**
+ * Validate without publishing
+ */
+export const validateRelease = <ThrowOnError extends boolean = false>(options: Options<ValidateReleaseData, ThrowOnError>) => (options.client ?? client).post<ValidateReleaseResponses, unknown, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/releases/{releaseId}/validate',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Preview exact hierarchy and snapshot
+ */
+export const previewRelease = <ThrowOnError extends boolean = false>(options: Options<PreviewReleaseData, ThrowOnError>) => (options.client ?? client).get<PreviewReleaseResponses, unknown, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/releases/{releaseId}/preview',
+    ...options
+});
+
+/**
+ * Retrieve immutable published snapshot
+ */
+export const getPublishedReleaseSnapshot = <ThrowOnError extends boolean = false>(options: Options<GetPublishedReleaseSnapshotData, ThrowOnError>) => (options.client ?? client).get<GetPublishedReleaseSnapshotResponses, unknown, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/releases/{releaseId}/snapshot',
+    ...options
+});
+
+/**
+ * Compare exact IDs and versions with previous release
+ */
+export const getReleaseDiff = <ThrowOnError extends boolean = false>(options: Options<GetReleaseDiffData, ThrowOnError>) => (options.client ?? client).get<GetReleaseDiffResponses, unknown, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/releases/{releaseId}/diff',
+    ...options
+});
+
+/**
+ * List delivery history
+ */
+export const listReleaseDeliveryAttempts = <ThrowOnError extends boolean = false>(options: Options<ListReleaseDeliveryAttemptsData, ThrowOnError>) => (options.client ?? client).get<ListReleaseDeliveryAttemptsResponses, unknown, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/releases/{releaseId}/delivery-attempts',
+    ...options
+});
+
+/**
+ * Irreversibly publish validated snapshot
+ */
+export const publishRelease = <ThrowOnError extends boolean = false>(options: Options<PublishReleaseData, ThrowOnError>) => (options.client ?? client).post<PublishReleaseResponses, PublishReleaseErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/releases/{releaseId}/publish',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Import snapshot into Learning Service
+ */
+export const deliverRelease = <ThrowOnError extends boolean = false>(options: Options<DeliverReleaseData, ThrowOnError>) => (options.client ?? client).post<DeliverReleaseResponses, DeliverReleaseErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/releases/{releaseId}/deliver',
+    ...options
+});
+
+/**
+ * Retry immutable snapshot delivery
+ */
+export const retryReleaseDelivery = <ThrowOnError extends boolean = false>(options: Options<RetryReleaseDeliveryData, ThrowOnError>) => (options.client ?? client).post<RetryReleaseDeliveryResponses, unknown, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/releases/{releaseId}/retry-delivery',
+    ...options
+});
+
+/**
+ * Activate imported release for new learner sessions
+ */
+export const activateRelease = <ThrowOnError extends boolean = false>(options: Options<ActivateReleaseData, ThrowOnError>) => (options.client ?? client).post<ActivateReleaseResponses, ActivateReleaseErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/releases/{releaseId}/activate',
+    ...options
+});
+
+/**
+ * Retire non-active release
+ */
+export const retireRelease = <ThrowOnError extends boolean = false>(options: Options<RetireReleaseData, ThrowOnError>) => (options.client ?? client).post<RetireReleaseResponses, unknown, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/releases/{releaseId}/retire',
     ...options,
     headers: {
         'Content-Type': 'application/json',

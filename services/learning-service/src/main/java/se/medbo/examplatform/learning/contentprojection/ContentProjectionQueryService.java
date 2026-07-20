@@ -7,6 +7,7 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.medbo.examplatform.learning.shared.ApiException;
+import se.medbo.examplatform.learning.shared.ExternalExamIdentifier;
 
 @Service
 public class ContentProjectionQueryService {
@@ -18,11 +19,12 @@ public class ContentProjectionQueryService {
 
     @Transactional(readOnly = true)
     public List<SubjectView> subjects(String examId) {
+        String canonicalExamId = ExternalExamIdentifier.normalize(examId);
         UUID releaseId = jdbc.sql("""
                 SELECT id FROM imported_content_release
                 WHERE exam_id = :examId AND status = 'ACTIVE'
                 ORDER BY published_at DESC LIMIT 1
-                """).param("examId", examId).query(UUID.class).optional()
+                """).param("examId", canonicalExamId).query(UUID.class).optional()
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "NO_ACTIVE_CONTENT_RELEASE",
                         "No active content release exists for the exam"));
 
@@ -54,4 +56,3 @@ public class ContentProjectionQueryService {
     public record TopicView(String id, String name, String description) {}
     private record SubjectRow(UUID id, String externalId, String name) {}
 }
-

@@ -19,7 +19,8 @@ paths:
         - name: examId
           in: query
           required: true
-          schema: { type: string, minLength: 1, maxLength: 200 }
+          schema: { type: string, minLength: 1, maxLength: 200, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$', example: swedish-citizenship }
+          description: Canonical lowercase kebab-case exam identifier. Legacy case and separator variants are normalized temporarily.
       responses:
         "200":
           description: Subjects and topics from the active learner-facing content release.
@@ -53,6 +54,26 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "409": { $ref: "#/components/responses/Conflict" }
         "422": { $ref: "#/components/responses/Unprocessable" }
+  /internal/v1/content-releases/{externalReleaseId}/activate:
+    post:
+      summary: Explicitly activate an imported release for new learner sessions
+      operationId: activateImportedContentRelease
+      tags: [Internal content projection]
+      security: [{ internalApiKey: [] }]
+      parameters:
+        - name: externalReleaseId
+          in: path
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 200 }
+      responses:
+        "200":
+          description: Activated or already active.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ContentActivationResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
   /api/v1/practice-sessions:
     post:
       summary: Create a practice session
@@ -356,7 +377,7 @@ components:
       additionalProperties: false
       required: [examId, mode, questionCount]
       properties:
-        examId: { type: string, minLength: 1, maxLength: 200 }
+        examId: { type: string, minLength: 1, maxLength: 200, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$', example: swedish-citizenship, description: Canonical lowercase kebab-case exam identifier; legacy representations are normalized on input. }
         topicId: { type: [string, "null"], maxLength: 200 }
         mode: { $ref: "#/components/schemas/PracticeMode" }
         questionCount: { type: integer, minimum: 1, maximum: 50 }
@@ -433,13 +454,20 @@ components:
       properties:
         releaseId: { type: string, format: uuid }
         imported: { type: boolean }
-        status: { type: string, enum: [ACTIVE, SUPERSEDED] }
+        status: { type: string, enum: [IMPORTED, ACTIVE, RETIRED] }
+    ContentActivationResponse:
+      type: object
+      required: [releaseId, activated, status]
+      properties:
+        releaseId: { type: string, format: uuid }
+        activated: { type: boolean }
+        status: { type: string, const: ACTIVE }
     CreateMockExamRequest:
       type: object
       additionalProperties: false
       required: [examId]
       properties:
-        examId: { type: string, minLength: 1, maxLength: 200 }
+        examId: { type: string, minLength: 1, maxLength: 200, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$', example: swedish-citizenship, description: Canonical lowercase kebab-case exam identifier; legacy representations are normalized on input. }
     MockExamStatus:
       type: string
       enum: [ACTIVE, SUBMITTED, EXPIRED, ABANDONED]

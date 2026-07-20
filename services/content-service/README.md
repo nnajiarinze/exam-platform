@@ -22,3 +22,11 @@ to recognized content roles. Claiming, unclaiming, and comments require
 `CONTENT_REVIEWER` or `ADMIN`; assignment and priority changes require `ADMIN`.
 Content-specific fact and question services remain responsible for approval
 validation and self-review prevention.
+
+## Phase 6 releases
+
+Release APIs are rooted at `/api/v1/admin/releases`. They freeze explicit
+question and fact versions. Publication stores one immutable JSONB snapshot and
+SHA-256 checksum. Delivery uses the server-side Learning Service URL and internal
+API key, records every attempt, and retries the same stored snapshot. Activation
+is explicit after import. Mutations require `CONTENT_PUBLISHER` or `ADMIN`.

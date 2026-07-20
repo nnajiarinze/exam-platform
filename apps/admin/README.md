@@ -64,6 +64,10 @@ priority, structured return feedback, version-specific comments, impact context,
 and immutable review history. Mutations update the detail cache and invalidate
 only review, fact, and question query families so queue state changes immediately.
 
+Phase 6 adds `/releases`, `/releases/new`, and `/releases/:releaseId`. A
+`CONTENT_PUBLISHER` or `ADMIN` can freeze approved versions, validate a draft,
+publish an immutable snapshot, deliver it, and activate it for new sessions.
+
 From the repository root, build and start the Content Service before the portal:
 
 ```bash
@@ -87,4 +91,4 @@ documented CSRF mechanism. Production CORS remains undecided. The backend enable
 only explicit Vite origins while development-header authentication is enabled.
 
 Production identity, tamper-resistant external audit export, bulk operations,
-publishing, releases, and real-time push updates remain deferred.
+and real-time push updates remain deferred.

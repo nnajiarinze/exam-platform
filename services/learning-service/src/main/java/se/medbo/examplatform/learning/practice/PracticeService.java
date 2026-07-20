@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import se.medbo.examplatform.learning.shared.ApiException;
+import se.medbo.examplatform.learning.shared.ExternalExamIdentifier;
 
 @Service
 public class PracticeService {
@@ -43,6 +44,7 @@ public class PracticeService {
 
     @Transactional
     public SessionView create(UUID learnerId, CreateSession command) {
+        String canonicalExamId = ExternalExamIdentifier.normalize(command.examId());
         if (command.questionCount() < 1 || command.questionCount() > maxQuestionCount) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_QUESTION_COUNT",
                     "Question count must be between 1 and " + maxQuestionCount);
@@ -62,7 +64,7 @@ public class PracticeService {
                 SELECT id, exam_id FROM imported_content_release
                 WHERE exam_id = :examId AND status = 'ACTIVE'
                 ORDER BY published_at DESC LIMIT 1
-                """).param("examId", command.examId())
+                """).param("examId", canonicalExamId)
                 .query((rs, row) -> new ActiveRelease(rs.getObject("id", UUID.class), rs.getString("exam_id")))
                 .optional().orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "NO_ACTIVE_CONTENT_RELEASE",
                         "No active content release exists for the exam"));
@@ -90,7 +92,7 @@ public class PracticeService {
         var sessionParams = new HashMap<String, Object>();
         sessionParams.put("id", sessionId);
         sessionParams.put("learnerId", learnerId);
-        sessionParams.put("examId", command.examId());
+        sessionParams.put("examId", canonicalExamId);
         sessionParams.put("releaseId", release.id());
         sessionParams.put("topicId", topicId);
         sessionParams.put("mode", command.mode().name());
