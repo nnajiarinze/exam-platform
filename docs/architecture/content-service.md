@@ -34,3 +34,38 @@ The admin API can create drafts, submit reviews, record decisions, inspect relea
 
 The service does not own users, sessions, scoring, mastery, readiness, payments, entitlements, AI execution, or the learner runtime projection. It does not serve a question on each learner interaction or access another database. See [ADR-004](../decisions/ADR-004-runtime-content-projection.md).
 
+## Admin Phase 2 implementation
+
+The first editorial slice is implemented as the `exam` and `source` modules. The
+Content Service owns `exam`, `exam_version`, `subject`, `topic`, and
+`source_reference` tables. Foreign keys do not cascade deletes; records are
+archived or retired. Unique constraints protect hierarchy-local codes and
+ordering, and mutable records carry an optimistic-lock `version`.
+
+The admin API is rooted at `/api/v1/admin`. Reads require a recognized admin
+role. Authoring requires `CONTENT_AUTHOR` or `ADMIN`; source workflow decisions
+require `CONTENT_REVIEWER` or `ADMIN`. Writes are transactional. Reordering
+requires the complete child set and uses a temporary ordering pass to preserve
+unique constraints. Important actions emit structured logs without payloads or
+internal notes.
+
+## Admin Phase 3 knowledge base
+
+Learning objectives belong to topics and describe learner understanding goals.
+Knowledge facts belong to objectives and are the canonical, source-backed truth
+from which later assessment content is derived. A stable `knowledge_fact` points
+to its current `knowledge_fact_version`; source links belong to that exact
+version. Approved versions are never updated in place. Editing an approved fact
+creates a new draft version while approved history remains traceable.
+
+Facts move through `UNREVIEWED → UNDER_REVIEW → APPROVED`, with rejection and
+required-update paths returning work to draft. Approval requires an active
+source and a reviewer other than the version author. Retirement retains history.
+
+## Admin Phase 4 question management
+
+`question` is the stable administrative aggregate and points to its current `question_version`. Options, tags, and knowledge-fact links belong to a version. `question_knowledge_fact` references an exact approved `knowledge_fact_version`, preserving provenance even when the fact later receives a new draft version.
+
+Question creation and draft editing are transactional. Approved versions are never updated: editing an approved question creates a new draft version and atomically moves the aggregate's current-version pointer. Optimistic locking on the aggregate rejects concurrent administrative updates.
+
+Question review follows the same author/reviewer separation as knowledge facts. Only approved active knowledge facts from the question's learning objective may be linked. Publishing and release assembly are outside the Phase 4 API.

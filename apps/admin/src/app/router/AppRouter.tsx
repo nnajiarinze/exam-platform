@@ -15,9 +15,10 @@ import { KnowledgeFactListPage } from '../../features/knowledge/pages/KnowledgeF
 import { KnowledgeFactEditorPage } from '../../features/knowledge/pages/KnowledgeFactEditorPage';
 import { LearningObjectiveListPage } from '../../features/knowledge/pages/LearningObjectiveListPage';
 import { LearningObjectiveEditorPage } from '../../features/knowledge/pages/LearningObjectiveEditorPage';
+import { QuestionListPage } from '../../features/questions/pages/QuestionListPage';
+import { QuestionEditorPage } from '../../features/questions/pages/QuestionEditorPage';
 
 const placeholders = [
-  ['questions', 'Questions'],
   ['reviews', 'Review Queue'], ['releases', 'Releases'], ['reports', 'Reports'], ['audit', 'Audit Log'],
 ] as const;
 
@@ -42,6 +43,9 @@ export function AppRouter() {
         <Route path="knowledge/objectives" element={<LearningObjectiveListPage />} />
         <Route path="knowledge/objectives/new" element={<LearningObjectiveEditorPage />} />
         <Route path="knowledge/objectives/:id" element={<LearningObjectiveEditorPage />} />
+        <Route path="questions" element={<QuestionListPage />} />
+        <Route path="questions/new" element={<QuestionEditorPage />} />
+        <Route path="questions/:id" element={<QuestionEditorPage />} />
         {placeholders.map(([path, name]) => <Route key={path} path={path} element={<FeaturePlaceholder name={name} />} />)}
       </Route>
     </Route>

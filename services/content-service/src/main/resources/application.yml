@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: content-service
+  datasource:
+    url: ${CONTENT_DATABASE_URL:jdbc:postgresql://localhost:5434/content}
+    username: ${CONTENT_DATABASE_USERNAME:content}
+    password: ${CONTENT_DATABASE_PASSWORD:content}
+  flyway:
+    enabled: true
+  jackson:
+    default-property-inclusion: non_null
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+content:
+  identity:
+    development-header-enabled: ${CONTENT_DEV_IDENTITY_ENABLED:false}
+    development-allowed-origins: ${CONTENT_DEV_ALLOWED_ORIGINS:http://localhost:*,http://127.0.0.1:*}

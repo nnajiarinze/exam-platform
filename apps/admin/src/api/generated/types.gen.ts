@@ -200,6 +200,98 @@ export type FactActionRequest = {
     reason?: string | null;
 };
 
+export type QuestionType = 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TRUE_FALSE';
+
+export type QuestionDifficulty = 'EASY' | 'MEDIUM' | 'HARD';
+
+export type QuestionOptionRequest = {
+    id?: string;
+    displayOrder: number;
+    text: string;
+    correct: boolean;
+    feedback?: string | null;
+};
+
+export type QuestionOption = QuestionOptionRequest & {
+    id: string;
+};
+
+export type LinkedKnowledgeFact = {
+    id: string;
+    versionId: string;
+    canonicalStatement: string;
+};
+
+export type QuestionRequest = {
+    learningObjectiveId: string;
+    code: string;
+    questionType: QuestionType;
+    questionText: string;
+    difficulty: QuestionDifficulty;
+    explanation?: string | null;
+    factIds: Array<string>;
+    tags?: Array<string>;
+    options?: Array<QuestionOptionRequest>;
+    trueFalseCorrect?: boolean | null;
+    version?: number;
+};
+
+export type QuestionSummary = AuditFields & {
+    learningObjectiveId: string;
+    currentVersionId: string;
+    code: string;
+    questionType: QuestionType;
+    questionText: string;
+    difficulty: QuestionDifficulty;
+    reviewStatus: FactReviewStatus;
+    status: FactStatus;
+    learningObjectiveTitle: string;
+    topicId: string;
+    topicName: string;
+    subjectId: string;
+    subjectName: string;
+    knowledgeFactCount: number;
+};
+
+export type Question = QuestionSummary & {
+    explanation?: string | null;
+    options: Array<QuestionOption>;
+    knowledgeFacts: Array<LinkedKnowledgeFact>;
+    factIds: Array<string>;
+    tags: Array<string>;
+    authorId: string;
+    reviewerId?: string | null;
+    reviewNote?: string | null;
+};
+
+export type QuestionPage = {
+    items: Array<QuestionSummary>;
+    page: number;
+    size: number;
+    totalItems: number;
+    totalPages: number;
+};
+
+export type QuestionVersion = {
+    id: string;
+    questionId: string;
+    versionNumber: number;
+    learningObjectiveId: string;
+    questionType: QuestionType;
+    questionText: string;
+    difficulty: QuestionDifficulty;
+    explanation?: string | null;
+    reviewStatus: FactReviewStatus;
+    authorId: string;
+    reviewerId?: string | null;
+    reviewNote?: string | null;
+    options: Array<QuestionOption>;
+    knowledgeFacts: Array<LinkedKnowledgeFact>;
+    tags: Array<string>;
+    createdAt: string;
+    updatedAt: string;
+};
+
 export type ContentServiceStatus = {
     service: 'content-service';
     status: 'READY';
@@ -228,6 +320,14 @@ export type SourceId = string;
 export type LearningObjectiveId = string;
 
 export type KnowledgeFactId = string;
+
+export type QuestionId = string;
+
+export type Page = number;
+
+export type Size = number;
+
+export type Search = string;
 
 export type VersionOnly2 = VersionOnly;
 
@@ -1417,3 +1517,257 @@ export type RetireKnowledgeFactResponses = {
 };
 
 export type RetireKnowledgeFactResponse = RetireKnowledgeFactResponses[keyof RetireKnowledgeFactResponses];
+
+export type ListQuestionsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        page?: number;
+        size?: number;
+        search?: string;
+        learningObjectiveId?: string;
+        questionType?: QuestionType;
+        difficulty?: QuestionDifficulty;
+        reviewStatus?: FactReviewStatus;
+        status?: FactStatus;
+    };
+    url: '/api/v1/admin/questions';
+};
+
+export type ListQuestionsResponses = {
+    /**
+     * Question page
+     */
+    200: QuestionPage;
+};
+
+export type ListQuestionsResponse = ListQuestionsResponses[keyof ListQuestionsResponses];
+
+export type CreateQuestionData = {
+    body: QuestionRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/questions';
+};
+
+export type CreateQuestionErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+    /**
+     * Request validation failed
+     */
+    422: ApiError;
+};
+
+export type CreateQuestionError = CreateQuestionErrors[keyof CreateQuestionErrors];
+
+export type CreateQuestionResponses = {
+    /**
+     * Created
+     */
+    201: Question;
+};
+
+export type CreateQuestionResponse = CreateQuestionResponses[keyof CreateQuestionResponses];
+
+export type SearchQuestionsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        page?: number;
+        size?: number;
+        search?: string;
+        learningObjectiveId?: string;
+        questionType?: QuestionType;
+        difficulty?: QuestionDifficulty;
+        reviewStatus?: FactReviewStatus;
+        status?: FactStatus;
+    };
+    url: '/api/v1/admin/questions/search';
+};
+
+export type SearchQuestionsResponses = {
+    /**
+     * Question page
+     */
+    200: QuestionPage;
+};
+
+export type SearchQuestionsResponse = SearchQuestionsResponses[keyof SearchQuestionsResponses];
+
+export type GetQuestionData = {
+    body?: never;
+    path: {
+        questionId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/questions/{questionId}';
+};
+
+export type GetQuestionErrors = {
+    /**
+     * Resource not found
+     */
+    404: ApiError;
+};
+
+export type GetQuestionError = GetQuestionErrors[keyof GetQuestionErrors];
+
+export type GetQuestionResponses = {
+    /**
+     * Question
+     */
+    200: Question;
+};
+
+export type GetQuestionResponse = GetQuestionResponses[keyof GetQuestionResponses];
+
+export type UpdateQuestionData = {
+    body: QuestionRequest;
+    path: {
+        questionId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/questions/{questionId}';
+};
+
+export type UpdateQuestionErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+    /**
+     * Request validation failed
+     */
+    422: ApiError;
+};
+
+export type UpdateQuestionError = UpdateQuestionErrors[keyof UpdateQuestionErrors];
+
+export type UpdateQuestionResponses = {
+    /**
+     * Updated
+     */
+    200: Question;
+};
+
+export type UpdateQuestionResponse = UpdateQuestionResponses[keyof UpdateQuestionResponses];
+
+export type ListQuestionVersionsData = {
+    body?: never;
+    path: {
+        questionId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/questions/{questionId}/versions';
+};
+
+export type ListQuestionVersionsResponses = {
+    /**
+     * Versions
+     */
+    200: Array<QuestionVersion>;
+};
+
+export type ListQuestionVersionsResponse = ListQuestionVersionsResponses[keyof ListQuestionVersionsResponses];
+
+export type SubmitQuestionData = {
+    body: FactAction;
+    path: {
+        questionId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/questions/{questionId}/submit';
+};
+
+export type SubmitQuestionResponses = {
+    /**
+     * Submitted
+     */
+    200: Question;
+};
+
+export type SubmitQuestionResponse = SubmitQuestionResponses[keyof SubmitQuestionResponses];
+
+export type ApproveQuestionData = {
+    body: FactAction;
+    path: {
+        questionId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/questions/{questionId}/approve';
+};
+
+export type ApproveQuestionErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+};
+
+export type ApproveQuestionError = ApproveQuestionErrors[keyof ApproveQuestionErrors];
+
+export type ApproveQuestionResponses = {
+    /**
+     * Approved
+     */
+    200: Question;
+};
+
+export type ApproveQuestionResponse = ApproveQuestionResponses[keyof ApproveQuestionResponses];
+
+export type RejectQuestionData = {
+    body: FactAction;
+    path: {
+        questionId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/questions/{questionId}/reject';
+};
+
+export type RejectQuestionResponses = {
+    /**
+     * Rejected
+     */
+    200: Question;
+};
+
+export type RejectQuestionResponse = RejectQuestionResponses[keyof RejectQuestionResponses];
+
+export type RequireQuestionUpdateData = {
+    body: FactAction;
+    path: {
+        questionId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/questions/{questionId}/require-update';
+};
+
+export type RequireQuestionUpdateResponses = {
+    /**
+     * Update required
+     */
+    200: Question;
+};
+
+export type RequireQuestionUpdateResponse = RequireQuestionUpdateResponses[keyof RequireQuestionUpdateResponses];
+
+export type RetireQuestionData = {
+    body: FactAction;
+    path: {
+        questionId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/questions/{questionId}/retire';
+};
+
+export type RetireQuestionResponses = {
+    /**
+     * Retired
+     */
+    200: Question;
+};
+
+export type RetireQuestionResponse = RetireQuestionResponses[keyof RetireQuestionResponses];

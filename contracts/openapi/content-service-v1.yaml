@@ -1,0 +1,268 @@
+openapi: 3.1.0
+info:
+  title: Content Service Admin API
+  version: 1.0.0
+  description: Minimal Phase 1.5 admin integration contract. Development header authentication is non-production.
+  license:
+    name: Proprietary
+    identifier: LicenseRef-Proprietary
+servers:
+  - url: /
+    description: Deployment-relative; clients configure the environment-specific origin
+paths:
+  /api/v1/status:
+    get:
+      operationId: getContentServiceStatus
+      summary: Check authenticated Content Service readiness
+      description: Requires at least one recognized admin role. The development headers are replaced by bearer authentication in production.
+      security:
+        - developmentAdminIdentity: []
+          developmentAdminRoles: []
+      responses:
+        '200':
+          description: Service and owned database are ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentServiceStatus'
+        '401':
+          $ref: '#/components/responses/AuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/UnexpectedError'
+  /api/v1/admin/exams:
+    get: { operationId: listExams, summary: listExams, security: [{developmentAdminIdentity: [], developmentAdminRoles: []}], parameters: [{name: page, in: query, schema: {type: integer, default: 0}}, {name: size, in: query, schema: {type: integer, default: 20}}, {name: search, in: query, schema: {type: string}}, {name: status, in: query, schema: {$ref: '#/components/schemas/StructureStatus'}}, {name: countryCode, in: query, schema: {type: string}}, {name: sort, in: query, schema: {type: string}}], responses: {'200': {description: Exam page, content: {application/json: {schema: {$ref: '#/components/schemas/ExamPage'}}}}, '401': {$ref: '#/components/responses/AuthenticationRequired'}, '403': {$ref: '#/components/responses/Forbidden'}} }
+    post: { operationId: createExam, summary: createExam, security: [{developmentAdminIdentity: [], developmentAdminRoles: []}], requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ExamRequest'}}}}, responses: {'201': {description: Created, content: {application/json: {schema: {$ref: '#/components/schemas/Exam'}}}}, '401': {$ref: '#/components/responses/AuthenticationRequired'}, '403': {$ref: '#/components/responses/Forbidden'}, '409': {$ref: '#/components/responses/Conflict'}, '422': {$ref: '#/components/responses/Validation'}} }
+  /api/v1/admin/exams/{examId}:
+    parameters: [{$ref: '#/components/parameters/ExamId'}]
+    get: {operationId: getExam, summary: getExam, security: [{developmentAdminIdentity: [], developmentAdminRoles: []}], responses: {'200': {description: Exam, content: {application/json: {schema: {$ref: '#/components/schemas/Exam'}}}}, '404': {$ref: '#/components/responses/NotFound'}}}
+    put: {operationId: updateExam, summary: updateExam, security: [{developmentAdminIdentity: [], developmentAdminRoles: []}], requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ExamRequest'}}}}, responses: {'200': {description: Updated, content: {application/json: {schema: {$ref: '#/components/schemas/Exam'}}}}, '409': {$ref: '#/components/responses/Conflict'}, '422': {$ref: '#/components/responses/Validation'}}}
+  /api/v1/admin/exams/{examId}/archive:
+    parameters: [{$ref: '#/components/parameters/ExamId'}]
+    post: {operationId: archiveExam, summary: archiveExam, security: [{developmentAdminIdentity: [], developmentAdminRoles: []}], requestBody: {$ref: '#/components/requestBodies/VersionOnly'}, responses: {'200': {description: Archived, content: {application/json: {schema: {$ref: '#/components/schemas/Exam'}}}}, '409': {$ref: '#/components/responses/Conflict'}}}
+  /api/v1/admin/exams/{examId}/versions:
+    parameters: [{$ref: '#/components/parameters/ExamId'}]
+    get: {operationId: listExamVersions, summary: listExamVersions, security: [{developmentAdminIdentity: [], developmentAdminRoles: []}], parameters: [{name: status, in: query, schema: {$ref: '#/components/schemas/StructureStatus'}}, {name: validAt, in: query, schema: {type: string, format: date}}, {name: search, in: query, schema: {type: string}}], responses: {'200': {description: Versions, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/ExamVersion'}}}}}}}
+    post: {operationId: createExamVersion, summary: createExamVersion, security: [{developmentAdminIdentity: [], developmentAdminRoles: []}], requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ExamVersionRequest'}}}}, responses: {'201': {description: Created, content: {application/json: {schema: {$ref: '#/components/schemas/ExamVersion'}}}}, '409': {$ref: '#/components/responses/Conflict'}, '422': {$ref: '#/components/responses/Validation'}}}
+  /api/v1/admin/exam-versions/{examVersionId}:
+    parameters: [{$ref: '#/components/parameters/ExamVersionId'}]
+    get: {operationId: getExamVersion, summary: getExamVersion, security: [{developmentAdminIdentity: [], developmentAdminRoles: []}], responses: {'200': {description: Version, content: {application/json: {schema: {$ref: '#/components/schemas/ExamVersion'}}}}, '404': {$ref: '#/components/responses/NotFound'}}}
+    put: {operationId: updateExamVersion, summary: updateExamVersion, security: [{developmentAdminIdentity: [], developmentAdminRoles: []}], requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ExamVersionRequest'}}}}, responses: {'200': {description: Updated, content: {application/json: {schema: {$ref: '#/components/schemas/ExamVersion'}}}}, '409': {$ref: '#/components/responses/Conflict'}}}
+  /api/v1/admin/exam-versions/{examVersionId}/archive:
+    parameters: [{$ref: '#/components/parameters/ExamVersionId'}]
+    post: {operationId: archiveExamVersion, summary: archiveExamVersion, security: [{developmentAdminIdentity: [], developmentAdminRoles: []}], requestBody: {$ref: '#/components/requestBodies/VersionOnly'}, responses: {'200': {description: Archived, content: {application/json: {schema: {$ref: '#/components/schemas/ExamVersion'}}}}}}
+  /api/v1/admin/exam-versions/{examVersionId}/subjects:
+    parameters: [{$ref: '#/components/parameters/ExamVersionId'}]
+    get: {operationId: listSubjects, summary: listSubjects, security: [{developmentAdminIdentity: [], developmentAdminRoles: []}], responses: {'200': {description: Subjects, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Subject'}}}}}}}
+    post: {operationId: createSubject, summary: createSubject, security: [{developmentAdminIdentity: [], developmentAdminRoles: []}], requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/NodeRequest'}}}}, responses: {'201': {description: Created, content: {application/json: {schema: {$ref: '#/components/schemas/Subject'}}}}}}
+  /api/v1/admin/exam-versions/{examVersionId}/subjects/order:
+    parameters: [{$ref: '#/components/parameters/ExamVersionId'}]
+    put: {operationId: reorderSubjects, summary: reorderSubjects, security: [{developmentAdminIdentity: [], developmentAdminRoles: []}], requestBody: {$ref: '#/components/requestBodies/Order'}, responses: {'204': {description: Reordered}, '409': {$ref: '#/components/responses/Conflict'}}}
+  /api/v1/admin/subjects/{subjectId}:
+    parameters: [{$ref: '#/components/parameters/SubjectId'}]
+    get: {operationId: getSubject, summary: getSubject, security: [{developmentAdminIdentity: [], developmentAdminRoles: []}], responses: {'200': {description: Subject, content: {application/json: {schema: {$ref: '#/components/schemas/Subject'}}}}}}
+    put: {operationId: updateSubject, summary: updateSubject, security: [{developmentAdminIdentity: [], developmentAdminRoles: []}], requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/NodeRequest'}}}}, responses: {'200': {description: Updated, content: {application/json: {schema: {$ref: '#/components/schemas/Subject'}}}}, '409': {$ref: '#/components/responses/Conflict'}}}
+  /api/v1/admin/subjects/{subjectId}/archive:
+    parameters: [{$ref: '#/components/parameters/SubjectId'}]
+    post: {operationId: archiveSubject, summary: archiveSubject, security: [{developmentAdminIdentity: [], developmentAdminRoles: []}], requestBody: {$ref: '#/components/requestBodies/VersionOnly'}, responses: {'200': {description: Archived, content: {application/json: {schema: {$ref: '#/components/schemas/Subject'}}}}}}
+  /api/v1/admin/subjects/{subjectId}/topics:
+    parameters: [{$ref: '#/components/parameters/SubjectId'}]
+    get: {operationId: listTopics, summary: listTopics, security: [{developmentAdminIdentity: [], developmentAdminRoles: []}], responses: {'200': {description: Topics, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Topic'}}}}}}}
+    post: {operationId: createTopic, summary: createTopic, security: [{developmentAdminIdentity: [], developmentAdminRoles: []}], requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/NodeRequest'}}}}, responses: {'201': {description: Created, content: {application/json: {schema: {$ref: '#/components/schemas/Topic'}}}}}}
+  /api/v1/admin/subjects/{subjectId}/topics/order:
+    parameters: [{$ref: '#/components/parameters/SubjectId'}]
+    put: {operationId: reorderTopics, summary: reorderTopics, security: [{developmentAdminIdentity: [], developmentAdminRoles: []}], requestBody: {$ref: '#/components/requestBodies/Order'}, responses: {'204': {description: Reordered}, '409': {$ref: '#/components/responses/Conflict'}}}
+  /api/v1/admin/topics/{topicId}:
+    parameters: [{$ref: '#/components/parameters/TopicId'}]
+    get: {operationId: getTopic, summary: getTopic, security: [{developmentAdminIdentity: [], developmentAdminRoles: []}], responses: {'200': {description: Topic, content: {application/json: {schema: {$ref: '#/components/schemas/Topic'}}}}}}
+    put: {operationId: updateTopic, summary: updateTopic, security: [{developmentAdminIdentity: [], developmentAdminRoles: []}], requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/NodeRequest'}}}}, responses: {'200': {description: Updated, content: {application/json: {schema: {$ref: '#/components/schemas/Topic'}}}}, '409': {$ref: '#/components/responses/Conflict'}}}
+  /api/v1/admin/topics/{topicId}/archive:
+    parameters: [{$ref: '#/components/parameters/TopicId'}]
+    post: {operationId: archiveTopic, summary: archiveTopic, security: [{developmentAdminIdentity: [], developmentAdminRoles: []}], requestBody: {$ref: '#/components/requestBodies/VersionOnly'}, responses: {'200': {description: Archived, content: {application/json: {schema: {$ref: '#/components/schemas/Topic'}}}}}}
+  /api/v1/admin/sources:
+    get: {operationId: listSources, summary: listSources, security: [{developmentAdminIdentity: [], developmentAdminRoles: []}], parameters: [{name: page,in: query,schema: {type: integer,default: 0}}, {name: size,in: query,schema: {type: integer,default: 20}}, {name: search,in: query,schema: {type: string}}, {name: publisher,in: query,schema: {type: string}}, {name: sourceType,in: query,schema: {$ref: '#/components/schemas/SourceType'}}, {name: reviewStatus,in: query,schema: {$ref: '#/components/schemas/ReviewStatus'}}, {name: status,in: query,schema: {$ref: '#/components/schemas/SourceStatus'}}, {name: accessedBefore,in: query,schema: {type: string,format: date}}, {name: accessedAfter,in: query,schema: {type: string,format: date}}, {name: sort,in: query,schema: {type: string}}], responses: {'200': {description: Source page,content: {application/json: {schema: {$ref: '#/components/schemas/SourcePage'}}}}}}
+    post: {operationId: createSource, summary: createSource,security: [{developmentAdminIdentity: [],developmentAdminRoles: []}],requestBody: {required: true,content: {application/json: {schema: {$ref: '#/components/schemas/SourceRequest'}}}},responses: {'201': {description: Created,content: {application/json: {schema: {$ref: '#/components/schemas/Source'}}}},'409': {$ref: '#/components/responses/Conflict'},'422': {$ref: '#/components/responses/Validation'}}}
+  /api/v1/admin/sources/{sourceId}:
+    parameters: [{$ref: '#/components/parameters/SourceId'}]
+    get: {operationId: getSource, summary: getSource,security: [{developmentAdminIdentity: [],developmentAdminRoles: []}],responses: {'200': {description: Source,content: {application/json: {schema: {$ref: '#/components/schemas/Source'}}}},'404': {$ref: '#/components/responses/NotFound'}}}
+    put: {operationId: updateSource, summary: updateSource,security: [{developmentAdminIdentity: [],developmentAdminRoles: []}],requestBody: {required: true,content: {application/json: {schema: {$ref: '#/components/schemas/SourceRequest'}}}},responses: {'200': {description: Updated,content: {application/json: {schema: {$ref: '#/components/schemas/Source'}}}},'409': {$ref: '#/components/responses/Conflict'}}}
+  /api/v1/admin/sources/{sourceId}/review:
+    parameters: [{$ref: '#/components/parameters/SourceId'}]
+    post: {operationId: reviewSource, summary: reviewSource,security: [{developmentAdminIdentity: [],developmentAdminRoles: []}],requestBody: {$ref: '#/components/requestBodies/VersionOnly'},responses: {'200': {description: Reviewed,content: {application/json: {schema: {$ref: '#/components/schemas/Source'}}}}}}
+  /api/v1/admin/sources/{sourceId}/require-update:
+    parameters: [{$ref: '#/components/parameters/SourceId'}]
+    post: {operationId: requireSourceUpdate, summary: requireSourceUpdate,security: [{developmentAdminIdentity: [],developmentAdminRoles: []}],requestBody: {$ref: '#/components/requestBodies/VersionOnly'},responses: {'200': {description: Marked,content: {application/json: {schema: {$ref: '#/components/schemas/Source'}}}}}}
+  /api/v1/admin/sources/{sourceId}/retire:
+    parameters: [{$ref: '#/components/parameters/SourceId'}]
+    post: {operationId: retireSource, summary: retireSource,security: [{developmentAdminIdentity: [],developmentAdminRoles: []}],requestBody: {required: true,content: {application/json: {schema: {$ref: '#/components/schemas/RetireSourceRequest'}}}},responses: {'200': {description: Retired,content: {application/json: {schema: {$ref: '#/components/schemas/Source'}}}},'409': {$ref: '#/components/responses/Conflict'}}}
+  /api/v1/admin/learning-objectives:
+    get: {operationId: listLearningObjectives, summary: List learning objectives, security: [{developmentAdminIdentity: [],developmentAdminRoles: []}], parameters: [{name: page,in: query,schema: {type: integer,default: 0}}, {name: size,in: query,schema: {type: integer,default: 20}}, {name: search,in: query,schema: {type: string}}, {name: topicId,in: query,schema: {type: string,format: uuid}}, {name: status,in: query,schema: {$ref: '#/components/schemas/StructureStatus'}}], responses: {'200': {description: Learning objective page,content: {application/json: {schema: {$ref: '#/components/schemas/LearningObjectivePage'}}}},'401': {$ref: '#/components/responses/AuthenticationRequired'},'403': {$ref: '#/components/responses/Forbidden'}}}
+    post: {operationId: createLearningObjective, summary: Create learning objective, security: [{developmentAdminIdentity: [],developmentAdminRoles: []}], requestBody: {required: true,content: {application/json: {schema: {$ref: '#/components/schemas/LearningObjectiveRequest'}}}}, responses: {'201': {description: Created,content: {application/json: {schema: {$ref: '#/components/schemas/LearningObjective'}}}},'409': {$ref: '#/components/responses/Conflict'},'422': {$ref: '#/components/responses/Validation'}}}
+  /api/v1/admin/learning-objectives/{learningObjectiveId}:
+    parameters: [{$ref: '#/components/parameters/LearningObjectiveId'}]
+    get: {operationId: getLearningObjective, summary: Get learning objective, security: [{developmentAdminIdentity: [],developmentAdminRoles: []}], responses: {'200': {description: Learning objective,content: {application/json: {schema: {$ref: '#/components/schemas/LearningObjective'}}}},'404': {$ref: '#/components/responses/NotFound'}}}
+    put: {operationId: updateLearningObjective, summary: Update learning objective, security: [{developmentAdminIdentity: [],developmentAdminRoles: []}], requestBody: {required: true,content: {application/json: {schema: {$ref: '#/components/schemas/LearningObjectiveRequest'}}}}, responses: {'200': {description: Updated,content: {application/json: {schema: {$ref: '#/components/schemas/LearningObjective'}}}},'409': {$ref: '#/components/responses/Conflict'},'422': {$ref: '#/components/responses/Validation'}}}
+  /api/v1/admin/learning-objectives/{learningObjectiveId}/archive:
+    parameters: [{$ref: '#/components/parameters/LearningObjectiveId'}]
+    post: {operationId: archiveLearningObjective, summary: Archive learning objective, security: [{developmentAdminIdentity: [],developmentAdminRoles: []}], requestBody: {$ref: '#/components/requestBodies/VersionOnly'}, responses: {'200': {description: Archived,content: {application/json: {schema: {$ref: '#/components/schemas/LearningObjective'}}}},'409': {$ref: '#/components/responses/Conflict'}}}
+  /api/v1/admin/knowledge-facts:
+    get: {operationId: listKnowledgeFacts, summary: Search knowledge facts, security: [{developmentAdminIdentity: [],developmentAdminRoles: []}], parameters: [{name: page,in: query,schema: {type: integer,default: 0}}, {name: size,in: query,schema: {type: integer,default: 20}}, {name: search,in: query,schema: {type: string}}, {name: learningObjectiveId,in: query,schema: {type: string,format: uuid}}, {name: topicId,in: query,schema: {type: string,format: uuid}}, {name: subjectId,in: query,schema: {type: string,format: uuid}}, {name: sourcePublisher,in: query,schema: {type: string}}, {name: reviewStatus,in: query,schema: {$ref: '#/components/schemas/FactReviewStatus'}}, {name: status,in: query,schema: {$ref: '#/components/schemas/FactStatus'}}, {name: validAt,in: query,schema: {type: string,format: date}}], responses: {'200': {description: Knowledge fact page,content: {application/json: {schema: {$ref: '#/components/schemas/KnowledgeFactPage'}}}},'401': {$ref: '#/components/responses/AuthenticationRequired'},'403': {$ref: '#/components/responses/Forbidden'}}}
+    post: {operationId: createKnowledgeFact, summary: Create knowledge fact, security: [{developmentAdminIdentity: [],developmentAdminRoles: []}], requestBody: {required: true,content: {application/json: {schema: {$ref: '#/components/schemas/KnowledgeFactRequest'}}}}, responses: {'201': {description: Created,content: {application/json: {schema: {$ref: '#/components/schemas/KnowledgeFact'}}}},'409': {$ref: '#/components/responses/Conflict'},'422': {$ref: '#/components/responses/Validation'}}}
+  /api/v1/admin/knowledge-facts/{knowledgeFactId}:
+    parameters: [{$ref: '#/components/parameters/KnowledgeFactId'}]
+    get: {operationId: getKnowledgeFact, summary: Get knowledge fact, security: [{developmentAdminIdentity: [],developmentAdminRoles: []}], responses: {'200': {description: Knowledge fact,content: {application/json: {schema: {$ref: '#/components/schemas/KnowledgeFact'}}}},'404': {$ref: '#/components/responses/NotFound'}}}
+    put: {operationId: updateKnowledgeFact, summary: Update knowledge fact or create a draft version from an approved fact, security: [{developmentAdminIdentity: [],developmentAdminRoles: []}], requestBody: {required: true,content: {application/json: {schema: {$ref: '#/components/schemas/KnowledgeFactRequest'}}}}, responses: {'200': {description: Updated fact,content: {application/json: {schema: {$ref: '#/components/schemas/KnowledgeFact'}}}},'409': {$ref: '#/components/responses/Conflict'},'422': {$ref: '#/components/responses/Validation'}}}
+  /api/v1/admin/knowledge-facts/{knowledgeFactId}/versions:
+    parameters: [{$ref: '#/components/parameters/KnowledgeFactId'}]
+    get: {operationId: listKnowledgeFactVersions, summary: List immutable fact version history, security: [{developmentAdminIdentity: [],developmentAdminRoles: []}], responses: {'200': {description: Version history,content: {application/json: {schema: {type: array,items: {$ref: '#/components/schemas/KnowledgeFactVersion'}}}}},'404': {$ref: '#/components/responses/NotFound'}}}
+  /api/v1/admin/knowledge-facts/{knowledgeFactId}/submit:
+    parameters: [{$ref: '#/components/parameters/KnowledgeFactId'}]
+    post: {operationId: submitKnowledgeFact, summary: Submit fact for review, security: [{developmentAdminIdentity: [],developmentAdminRoles: []}], requestBody: {$ref: '#/components/requestBodies/FactAction'}, responses: {'200': {description: Submitted,content: {application/json: {schema: {$ref: '#/components/schemas/KnowledgeFact'}}}},'409': {$ref: '#/components/responses/Conflict'}}}
+  /api/v1/admin/knowledge-facts/{knowledgeFactId}/approve:
+    parameters: [{$ref: '#/components/parameters/KnowledgeFactId'}]
+    post: {operationId: approveKnowledgeFact, summary: Approve fact, security: [{developmentAdminIdentity: [],developmentAdminRoles: []}], requestBody: {$ref: '#/components/requestBodies/FactAction'}, responses: {'200': {description: Approved,content: {application/json: {schema: {$ref: '#/components/schemas/KnowledgeFact'}}}},'403': {$ref: '#/components/responses/Forbidden'},'409': {$ref: '#/components/responses/Conflict'}}}
+  /api/v1/admin/knowledge-facts/{knowledgeFactId}/reject:
+    parameters: [{$ref: '#/components/parameters/KnowledgeFactId'}]
+    post: {operationId: rejectKnowledgeFact, summary: Reject fact, security: [{developmentAdminIdentity: [],developmentAdminRoles: []}], requestBody: {$ref: '#/components/requestBodies/FactAction'}, responses: {'200': {description: Rejected,content: {application/json: {schema: {$ref: '#/components/schemas/KnowledgeFact'}}}},'409': {$ref: '#/components/responses/Conflict'}}}
+  /api/v1/admin/knowledge-facts/{knowledgeFactId}/require-update:
+    parameters: [{$ref: '#/components/parameters/KnowledgeFactId'}]
+    post: {operationId: requireKnowledgeFactUpdate, summary: Require fact update, security: [{developmentAdminIdentity: [],developmentAdminRoles: []}], requestBody: {$ref: '#/components/requestBodies/FactAction'}, responses: {'200': {description: Update required,content: {application/json: {schema: {$ref: '#/components/schemas/KnowledgeFact'}}}},'409': {$ref: '#/components/responses/Conflict'}}}
+  /api/v1/admin/knowledge-facts/{knowledgeFactId}/retire:
+    parameters: [{$ref: '#/components/parameters/KnowledgeFactId'}]
+    post: {operationId: retireKnowledgeFact, summary: Retire fact, security: [{developmentAdminIdentity: [],developmentAdminRoles: []}], requestBody: {$ref: '#/components/requestBodies/FactAction'}, responses: {'200': {description: Retired,content: {application/json: {schema: {$ref: '#/components/schemas/KnowledgeFact'}}}},'409': {$ref: '#/components/responses/Conflict'}}}
+  /api/v1/admin/questions:
+    get: {operationId: listQuestions, summary: Search and filter questions, security: [{developmentAdminIdentity: [],developmentAdminRoles: []}], parameters: [{$ref: '#/components/parameters/Page'},{$ref: '#/components/parameters/Size'},{$ref: '#/components/parameters/Search'},{name: learningObjectiveId,in: query,schema: {type: string,format: uuid}},{name: questionType,in: query,schema: {$ref: '#/components/schemas/QuestionType'}},{name: difficulty,in: query,schema: {$ref: '#/components/schemas/QuestionDifficulty'}},{name: reviewStatus,in: query,schema: {$ref: '#/components/schemas/FactReviewStatus'}},{name: status,in: query,schema: {$ref: '#/components/schemas/FactStatus'}}], responses: {'200': {description: Question page,content: {application/json: {schema: {$ref: '#/components/schemas/QuestionPage'}}}}}}
+    post: {operationId: createQuestion, summary: Create a draft question, security: [{developmentAdminIdentity: [],developmentAdminRoles: []}], requestBody: {required: true,content: {application/json: {schema: {$ref: '#/components/schemas/QuestionRequest'}}}}, responses: {'201': {description: Created,content: {application/json: {schema: {$ref: '#/components/schemas/Question'}}}},'409': {$ref: '#/components/responses/Conflict'},'422': {$ref: '#/components/responses/Validation'}}}
+  /api/v1/admin/questions/search:
+    get: {operationId: searchQuestions, summary: Search question text, codes, and linked facts, security: [{developmentAdminIdentity: [],developmentAdminRoles: []}], parameters: [{$ref: '#/components/parameters/Page'},{$ref: '#/components/parameters/Size'},{$ref: '#/components/parameters/Search'},{name: learningObjectiveId,in: query,schema: {type: string,format: uuid}},{name: questionType,in: query,schema: {$ref: '#/components/schemas/QuestionType'}},{name: difficulty,in: query,schema: {$ref: '#/components/schemas/QuestionDifficulty'}},{name: reviewStatus,in: query,schema: {$ref: '#/components/schemas/FactReviewStatus'}},{name: status,in: query,schema: {$ref: '#/components/schemas/FactStatus'}}], responses: {'200': {description: Question page,content: {application/json: {schema: {$ref: '#/components/schemas/QuestionPage'}}}}}}
+  /api/v1/admin/questions/{questionId}:
+    parameters: [{$ref: '#/components/parameters/QuestionId'}]
+    get: {operationId: getQuestion, summary: Get question details, security: [{developmentAdminIdentity: [],developmentAdminRoles: []}], responses: {'200': {description: Question,content: {application/json: {schema: {$ref: '#/components/schemas/Question'}}}},'404': {$ref: '#/components/responses/NotFound'}}}
+    put: {operationId: updateQuestion, summary: Update a draft or create a new draft version from an approved question, security: [{developmentAdminIdentity: [],developmentAdminRoles: []}], requestBody: {required: true,content: {application/json: {schema: {$ref: '#/components/schemas/QuestionRequest'}}}}, responses: {'200': {description: Updated,content: {application/json: {schema: {$ref: '#/components/schemas/Question'}}}},'409': {$ref: '#/components/responses/Conflict'},'422': {$ref: '#/components/responses/Validation'}}}
+  /api/v1/admin/questions/{questionId}/versions:
+    parameters: [{$ref: '#/components/parameters/QuestionId'}]
+    get: {operationId: listQuestionVersions, summary: List question version history, security: [{developmentAdminIdentity: [],developmentAdminRoles: []}], responses: {'200': {description: Versions,content: {application/json: {schema: {type: array,items: {$ref: '#/components/schemas/QuestionVersion'}}}}}}}
+  /api/v1/admin/questions/{questionId}/submit:
+    parameters: [{$ref: '#/components/parameters/QuestionId'}]
+    post: {operationId: submitQuestion, summary: Submit question for review, security: [{developmentAdminIdentity: [],developmentAdminRoles: []}], requestBody: {$ref: '#/components/requestBodies/FactAction'}, responses: {'200': {description: Submitted,content: {application/json: {schema: {$ref: '#/components/schemas/Question'}}}}}}
+  /api/v1/admin/questions/{questionId}/approve:
+    parameters: [{$ref: '#/components/parameters/QuestionId'}]
+    post: {operationId: approveQuestion, summary: Approve question, security: [{developmentAdminIdentity: [],developmentAdminRoles: []}], requestBody: {$ref: '#/components/requestBodies/FactAction'}, responses: {'200': {description: Approved,content: {application/json: {schema: {$ref: '#/components/schemas/Question'}}}},'403': {$ref: '#/components/responses/Forbidden'}}}
+  /api/v1/admin/questions/{questionId}/reject:
+    parameters: [{$ref: '#/components/parameters/QuestionId'}]
+    post: {operationId: rejectQuestion, summary: Reject question, security: [{developmentAdminIdentity: [],developmentAdminRoles: []}], requestBody: {$ref: '#/components/requestBodies/FactAction'}, responses: {'200': {description: Rejected,content: {application/json: {schema: {$ref: '#/components/schemas/Question'}}}}}}
+  /api/v1/admin/questions/{questionId}/require-update:
+    parameters: [{$ref: '#/components/parameters/QuestionId'}]
+    post: {operationId: requireQuestionUpdate, summary: Require question changes, security: [{developmentAdminIdentity: [],developmentAdminRoles: []}], requestBody: {$ref: '#/components/requestBodies/FactAction'}, responses: {'200': {description: Update required,content: {application/json: {schema: {$ref: '#/components/schemas/Question'}}}}}}
+  /api/v1/admin/questions/{questionId}/retire:
+    parameters: [{$ref: '#/components/parameters/QuestionId'}]
+    post: {operationId: retireQuestion, summary: Retire question, security: [{developmentAdminIdentity: [],developmentAdminRoles: []}], requestBody: {$ref: '#/components/requestBodies/FactAction'}, responses: {'200': {description: Retired,content: {application/json: {schema: {$ref: '#/components/schemas/Question'}}}}}}
+components:
+  securitySchemes:
+    developmentAdminIdentity:
+      type: apiKey
+      in: header
+      name: X-Admin-Identity
+      description: Non-production identity header.
+    developmentAdminRoles:
+      type: apiKey
+      in: header
+      name: X-Admin-Roles
+      description: Non-production comma-separated roles. Recognized roles are CONTENT_AUTHOR, CONTENT_REVIEWER, CONTENT_PUBLISHER, and ADMIN.
+  parameters:
+    ExamId: {name: examId, in: path, required: true, schema: {type: string, format: uuid}}
+    ExamVersionId: {name: examVersionId, in: path, required: true, schema: {type: string, format: uuid}}
+    SubjectId: {name: subjectId, in: path, required: true, schema: {type: string, format: uuid}}
+    TopicId: {name: topicId, in: path, required: true, schema: {type: string, format: uuid}}
+    SourceId: {name: sourceId, in: path, required: true, schema: {type: string, format: uuid}}
+    LearningObjectiveId: {name: learningObjectiveId, in: path, required: true, schema: {type: string, format: uuid}}
+    KnowledgeFactId: {name: knowledgeFactId, in: path, required: true, schema: {type: string, format: uuid}}
+    QuestionId: {name: questionId, in: path, required: true, schema: {type: string, format: uuid}}
+    Page: {name: page,in: query,schema: {type: integer,default: 0,minimum: 0}}
+    Size: {name: size,in: query,schema: {type: integer,default: 20,minimum: 1,maximum: 100}}
+    Search: {name: search,in: query,schema: {type: string}}
+  requestBodies:
+    VersionOnly: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/VersionOnly'}}}}
+    Order: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/OrderRequest'}}}}
+    FactAction: {required: true,content: {application/json: {schema: {$ref: '#/components/schemas/FactActionRequest'}}}}
+  responses:
+    AuthenticationRequired:
+      description: Valid admin authentication is required
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    Forbidden:
+      description: The authenticated identity lacks a required role
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    UnexpectedError:
+      description: Unexpected server failure
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    Validation: {description: Request validation failed,content: {application/json: {schema: {$ref: '#/components/schemas/ApiError'}}}}
+    NotFound: {description: Resource not found,content: {application/json: {schema: {$ref: '#/components/schemas/ApiError'}}}}
+    Conflict: {description: Conflict or stale version,content: {application/json: {schema: {$ref: '#/components/schemas/ApiError'}}}}
+  schemas:
+    StructureStatus: {type: string, enum: [DRAFT, ACTIVE, ARCHIVED]}
+    SourceType: {type: string, enum: [GOVERNMENT_WEBPAGE,GOVERNMENT_DOCUMENT,LEGISLATION,PUBLIC_AUTHORITY_GUIDANCE,LICENSED_MATERIAL,INTERNAL_RESEARCH,OTHER]}
+    ReviewStatus: {type: string, enum: [UNREVIEWED,REVIEWED,REQUIRES_UPDATE]}
+    SourceStatus: {type: string, enum: [ACTIVE,RETIRED]}
+    VersionOnly: {type: object,required: [version],properties: {version: {type: integer,format: int64,minimum: 0}}}
+    OrderRequest: {type: object,required: [ids],properties: {ids: {type: array,items: {type: string,format: uuid}}}}
+    AuditFields: {type: object,required: [id,createdAt,updatedAt,version],properties: {id: {type: string,format: uuid},createdAt: {type: string,format: date-time},updatedAt: {type: string,format: date-time},version: {type: integer,format: int64}}}
+    Exam: {allOf: [{$ref: '#/components/schemas/AuditFields'},{type: object,required: [code,name,countryCode,status,versionCount],properties: {code: {type: string},name: {type: string},countryCode: {type: string},status: {$ref: '#/components/schemas/StructureStatus'},versionCount: {type: integer,format: int64}}}]}
+    ExamRequest: {type: object,required: [code,name,countryCode,status],properties: {code: {type: string},name: {type: string},countryCode: {type: string},status: {$ref: '#/components/schemas/StructureStatus'},version: {type: integer,format: int64}}}
+    ExamPage: {type: object,required: [items,page,size,totalItems,totalPages],properties: {items: {type: array,items: {$ref: '#/components/schemas/Exam'}},page: {type: integer},size: {type: integer},totalItems: {type: integer,format: int64},totalPages: {type: integer,format: int64}}}
+    ExamVersion: {allOf: [{$ref: '#/components/schemas/AuditFields'},{type: object,required: [examId,versionCode,displayName,status],properties: {examId: {type: string,format: uuid},versionCode: {type: string},displayName: {type: string},status: {$ref: '#/components/schemas/StructureStatus'},validFrom: {type: [string,'null'],format: date},validTo: {type: [string,'null'],format: date}}}]}
+    ExamVersionRequest: {type: object,required: [versionCode,displayName,status],properties: {versionCode: {type: string},displayName: {type: string},status: {$ref: '#/components/schemas/StructureStatus'},validFrom: {type: [string,'null'],format: date},validTo: {type: [string,'null'],format: date},version: {type: integer,format: int64}}}
+    NodeRequest: {type: object,required: [code,name,sortOrder,status],properties: {code: {type: string},name: {type: string},description: {type: [string,'null']},sortOrder: {type: integer,minimum: 0},status: {$ref: '#/components/schemas/StructureStatus'},version: {type: integer,format: int64}}}
+    Subject: {allOf: [{$ref: '#/components/schemas/AuditFields'},{$ref: '#/components/schemas/NodeRequest'},{type: object,required: [examVersionId],properties: {examVersionId: {type: string,format: uuid}}}]}
+    Topic: {allOf: [{$ref: '#/components/schemas/AuditFields'},{$ref: '#/components/schemas/NodeRequest'},{type: object,required: [subjectId],properties: {subjectId: {type: string,format: uuid}}}]}
+    SourceRequest: {type: object,required: [publisher,title,sourceType,accessedAt],properties: {publisher: {type: string},title: {type: string},url: {type: [string,'null'],format: uri},sourceType: {$ref: '#/components/schemas/SourceType'},documentVersion: {type: [string,'null']},publicationDate: {type: [string,'null'],format: date},accessedAt: {type: string,format: date},copyrightNotes: {type: [string,'null']},internalNotes: {type: [string,'null']},replacementSourceId: {type: [string,'null'],format: uuid},version: {type: integer,format: int64}}}
+    Source: {allOf: [{$ref: '#/components/schemas/AuditFields'},{$ref: '#/components/schemas/SourceRequest'},{type: object,required: [reviewStatus,status],properties: {reviewStatus: {$ref: '#/components/schemas/ReviewStatus'},status: {$ref: '#/components/schemas/SourceStatus'}}}]}
+    SourcePage: {type: object,required: [items,page,size,totalItems,totalPages],properties: {items: {type: array,items: {$ref: '#/components/schemas/Source'}},page: {type: integer},size: {type: integer},totalItems: {type: integer,format: int64},totalPages: {type: integer,format: int64}}}
+    RetireSourceRequest: {type: object,required: [version],properties: {replacementSourceId: {type: [string,'null'],format: uuid},version: {type: integer,format: int64,minimum: 0}}}
+    FactReviewStatus: {type: string,enum: [UNREVIEWED,UNDER_REVIEW,APPROVED,REJECTED,REQUIRES_UPDATE]}
+    FactStatus: {type: string,enum: [DRAFT,ACTIVE,RETIRED]}
+    LearningObjectiveRequest: {type: object,required: [topicId,code,title,status],properties: {topicId: {type: string,format: uuid},code: {type: string,minLength: 1},title: {type: string,minLength: 1},description: {type: [string,'null']},status: {$ref: '#/components/schemas/StructureStatus'},version: {type: integer,format: int64,minimum: 0}}}
+    LearningObjective: {allOf: [{$ref: '#/components/schemas/AuditFields'},{$ref: '#/components/schemas/LearningObjectiveRequest'},{type: object,required: [topicName,subjectId,subjectName],properties: {topicName: {type: string},subjectId: {type: string,format: uuid},subjectName: {type: string}}}]}
+    LearningObjectivePage: {type: object,required: [items,page,size,totalItems,totalPages],properties: {items: {type: array,items: {$ref: '#/components/schemas/LearningObjective'}},page: {type: integer},size: {type: integer},totalItems: {type: integer,format: int64},totalPages: {type: integer,format: int64}}}
+    KnowledgeFactRequest: {type: object,required: [learningObjectiveId,canonicalStatement,sourceIds],properties: {learningObjectiveId: {type: string,format: uuid},canonicalStatement: {type: string,minLength: 1},validFrom: {type: [string,'null'],format: date},validTo: {type: [string,'null'],format: date},sourceIds: {type: array,minItems: 1,uniqueItems: true,items: {type: string,format: uuid}},version: {type: integer,format: int64,minimum: 0}}}
+    KnowledgeFact: {allOf: [{$ref: '#/components/schemas/AuditFields'},{type: object,required: [learningObjectiveId,currentVersionId,canonicalStatement,reviewStatus,status,learningObjectiveTitle,topicId,topicName,subjectId,subjectName,sourceCount,sourceIds],properties: {learningObjectiveId: {type: string,format: uuid},currentVersionId: {type: string,format: uuid},canonicalStatement: {type: string},reviewStatus: {$ref: '#/components/schemas/FactReviewStatus'},status: {$ref: '#/components/schemas/FactStatus'},validFrom: {type: [string,'null'],format: date},validTo: {type: [string,'null'],format: date},learningObjectiveTitle: {type: string},topicId: {type: string,format: uuid},topicName: {type: string},subjectId: {type: string,format: uuid},subjectName: {type: string},sourceCount: {type: integer,format: int64},sourceIds: {type: array,items: {type: string,format: uuid}}}}]}
+    KnowledgeFactPage: {type: object,required: [items,page,size,totalItems,totalPages],properties: {items: {type: array,items: {$ref: '#/components/schemas/KnowledgeFact'}},page: {type: integer},size: {type: integer},totalItems: {type: integer,format: int64},totalPages: {type: integer,format: int64}}}
+    KnowledgeFactVersion: {type: object,required: [id,knowledgeFactId,versionNumber,canonicalStatement,reviewStatus,authorId,sourceIds,createdAt,updatedAt],properties: {id: {type: string,format: uuid},knowledgeFactId: {type: string,format: uuid},versionNumber: {type: integer},canonicalStatement: {type: string},reviewStatus: {$ref: '#/components/schemas/FactReviewStatus'},validFrom: {type: [string,'null'],format: date},validTo: {type: [string,'null'],format: date},authorId: {type: string},reviewerId: {type: [string,'null']},reviewNote: {type: [string,'null']},sourceIds: {type: array,items: {type: string,format: uuid}},createdAt: {type: string,format: date-time},updatedAt: {type: string,format: date-time}}}
+    FactActionRequest: {type: object,required: [version],properties: {version: {type: integer,format: int64,minimum: 0},reason: {type: [string,'null']}}}
+    QuestionType: {type: string,enum: [SINGLE_CHOICE,MULTIPLE_CHOICE,TRUE_FALSE]}
+    QuestionDifficulty: {type: string,enum: [EASY,MEDIUM,HARD]}
+    QuestionOptionRequest: {type: object,required: [displayOrder,text,correct],properties: {id: {type: string,format: uuid},displayOrder: {type: integer,minimum: 0},text: {type: string,minLength: 1},correct: {type: boolean},feedback: {type: [string,'null']}}}
+    QuestionOption: {allOf: [{$ref: '#/components/schemas/QuestionOptionRequest'},{type: object,required: [id],properties: {id: {type: string,format: uuid}}}]}
+    LinkedKnowledgeFact: {type: object,required: [id,versionId,canonicalStatement],properties: {id: {type: string,format: uuid},versionId: {type: string,format: uuid},canonicalStatement: {type: string}}}
+    QuestionRequest: {type: object,required: [learningObjectiveId,code,questionType,questionText,difficulty,factIds],properties: {learningObjectiveId: {type: string,format: uuid},code: {type: string,minLength: 1},questionType: {$ref: '#/components/schemas/QuestionType'},questionText: {type: string,minLength: 1},difficulty: {$ref: '#/components/schemas/QuestionDifficulty'},explanation: {type: [string,'null']},factIds: {type: array,minItems: 1,uniqueItems: true,items: {type: string,format: uuid}},tags: {type: array,uniqueItems: true,items: {type: string,minLength: 1}},options: {type: array,minItems: 2,maxItems: 6,items: {$ref: '#/components/schemas/QuestionOptionRequest'}},trueFalseCorrect: {type: [boolean,'null']},version: {type: integer,format: int64,minimum: 0}}}
+    QuestionSummary: {allOf: [{$ref: '#/components/schemas/AuditFields'},{type: object,required: [learningObjectiveId,currentVersionId,code,questionType,questionText,difficulty,reviewStatus,status,learningObjectiveTitle,topicId,topicName,subjectId,subjectName,knowledgeFactCount],properties: {learningObjectiveId: {type: string,format: uuid},currentVersionId: {type: string,format: uuid},code: {type: string},questionType: {$ref: '#/components/schemas/QuestionType'},questionText: {type: string},difficulty: {$ref: '#/components/schemas/QuestionDifficulty'},reviewStatus: {$ref: '#/components/schemas/FactReviewStatus'},status: {$ref: '#/components/schemas/FactStatus'},learningObjectiveTitle: {type: string},topicId: {type: string,format: uuid},topicName: {type: string},subjectId: {type: string,format: uuid},subjectName: {type: string},knowledgeFactCount: {type: integer,format: int64}}}]}
+    Question: {allOf: [{$ref: '#/components/schemas/QuestionSummary'},{type: object,required: [options,knowledgeFacts,factIds,tags,authorId],properties: {explanation: {type: [string,'null']},options: {type: array,items: {$ref: '#/components/schemas/QuestionOption'}},knowledgeFacts: {type: array,items: {$ref: '#/components/schemas/LinkedKnowledgeFact'}},factIds: {type: array,items: {type: string,format: uuid}},tags: {type: array,items: {type: string}},authorId: {type: string},reviewerId: {type: [string,'null']},reviewNote: {type: [string,'null']}}}]}
+    QuestionPage: {type: object,required: [items,page,size,totalItems,totalPages],properties: {items: {type: array,items: {$ref: '#/components/schemas/QuestionSummary'}},page: {type: integer},size: {type: integer},totalItems: {type: integer,format: int64},totalPages: {type: integer,format: int64}}}
+    QuestionVersion: {type: object,required: [id,questionId,versionNumber,learningObjectiveId,questionType,questionText,difficulty,reviewStatus,authorId,options,knowledgeFacts,tags,createdAt,updatedAt],properties: {id: {type: string,format: uuid},questionId: {type: string,format: uuid},versionNumber: {type: integer},learningObjectiveId: {type: string,format: uuid},questionType: {$ref: '#/components/schemas/QuestionType'},questionText: {type: string},difficulty: {$ref: '#/components/schemas/QuestionDifficulty'},explanation: {type: [string,'null']},reviewStatus: {$ref: '#/components/schemas/FactReviewStatus'},authorId: {type: string},reviewerId: {type: [string,'null']},reviewNote: {type: [string,'null']},options: {type: array,items: {$ref: '#/components/schemas/QuestionOption'}},knowledgeFacts: {type: array,items: {$ref: '#/components/schemas/LinkedKnowledgeFact'}},tags: {type: array,items: {type: string}},createdAt: {type: string,format: date-time},updatedAt: {type: string,format: date-time}}}
+    ContentServiceStatus:
+      type: object
+      additionalProperties: false
+      required: [service, status, timestamp]
+      properties:
+        service: { type: string, const: content-service }
+        status: { type: string, enum: [READY] }
+        timestamp: { type: string, format: date-time }
+    ApiError:
+      type: object
+      additionalProperties: false
+      required: [code, message, timestamp, errors]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        timestamp: { type: string, format: date-time }
+        errors:
+          type: array
+          items:
+            type: object
+            additionalProperties: true

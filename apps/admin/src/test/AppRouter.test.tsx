@@ -74,8 +74,8 @@ describe('admin routing', () => {
   it('navigates to an explicit feature placeholder', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(statusResponse()));
     renderRouter('/dashboard', { id: 'admin', displayName: 'Admin', roles: [AdminRole.Admin] });
-    await userEvent.click(screen.getByRole('link', { name: 'Questions' }));
-    expect(screen.getByRole('heading', { name: 'Questions' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('link', { name: 'Review Queue' }));
+    expect(screen.getByRole('heading', { name: 'Review Queue' })).toBeInTheDocument();
     expect(screen.getByText('Not implemented in Admin Phase 1.')).toBeInTheDocument();
   });
 

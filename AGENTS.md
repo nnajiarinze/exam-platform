@@ -1,3 +1,82 @@
+# UI / Design Workflow
+
+## Mandatory: Use Stitch for all UI and UX design work
+
+For any task involving user interfaces, user experience, visual design, layouts, wireframes, prototypes, or frontend screen planning, ALWAYS use Stitch as the primary design tool before writing implementation code.
+
+This includes (but is not limited to):
+
+- New pages
+- New screens
+- Dashboards
+- Admin interfaces
+- Forms
+- Tables
+- Navigation
+- Mobile layouts
+- Responsive layouts
+- Empty states
+- Loading states
+- Error states
+- Design system updates
+- Component composition
+- Information architecture
+- UX improvements
+- Visual redesigns
+
+### Required workflow
+
+1. Understand the product requirements.
+2. Create or update the design in Stitch.
+3. Review the generated design for usability and consistency.
+4. Use the approved Stitch design as the source of truth.
+5. Only then implement the UI in code.
+
+Never skip the Stitch step unless explicitly instructed by the user.
+
+### Existing designs
+
+If a Stitch design already exists:
+
+- Update the existing design instead of creating a new one whenever possible.
+- Keep layouts consistent across the application.
+- Reuse existing components and patterns.
+
+### Backend-only work
+
+Do NOT use Stitch for:
+
+- Backend services
+- APIs
+- Database work
+- Infrastructure
+- Business logic
+- Unit tests
+- Integration tests
+- DevOps
+- Documentation that has no UI implications
+
+### UI implementation
+
+When implementing a UI:
+
+- Follow the Stitch design closely.
+- Do not invent layouts that differ significantly from the approved design.
+- Maintain spacing, hierarchy, accessibility, responsiveness, and consistency with existing screens.
+
+### If requirements are ambiguous
+
+If a UI requirement is incomplete:
+
+- Produce the best UX in Stitch first.
+- Make reasonable assumptions.
+- Clearly document assumptions.
+- Do not block implementation waiting for perfect specifications unless critical information is missing.
+
+
+
+
+
 # Repository instructions
 
 ## Product scope
