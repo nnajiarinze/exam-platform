@@ -1,0 +1,31 @@
+export interface AdminEnvironment {
+  contentServiceBaseUrl?: string;
+  developmentAuthEnabled: boolean;
+  developmentAdminId?: string;
+  developmentAdminName?: string;
+  developmentAdminRoles: string[];
+}
+
+export function readEnvironment(source: Record<string, string | boolean | undefined>): AdminEnvironment {
+  const baseUrl = typeof source.VITE_CONTENT_SERVICE_BASE_URL === 'string' ? source.VITE_CONTENT_SERVICE_BASE_URL.trim().replace(/\/$/, '') : '';
+  if (baseUrl) {
+    try {
+      const parsed = new URL(baseUrl);
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') throw new Error('unsupported protocol');
+    } catch { throw new Error('VITE_CONTENT_SERVICE_BASE_URL must be an absolute URL using HTTP(S)'); }
+  }
+  const enabled = source.VITE_DEV_ADMIN_AUTH_ENABLED === true || source.VITE_DEV_ADMIN_AUTH_ENABLED === 'true';
+  const roles = typeof source.VITE_DEV_ADMIN_ROLES === 'string' ? source.VITE_DEV_ADMIN_ROLES.split(',').map((role) => role.trim()).filter(Boolean) : [];
+  if (enabled && (!source.VITE_DEV_ADMIN_ID || !source.VITE_DEV_ADMIN_NAME || roles.length === 0)) {
+    throw new Error('Development authentication requires an admin id, name, and at least one role');
+  }
+  return {
+    contentServiceBaseUrl: baseUrl || undefined,
+    developmentAuthEnabled: enabled,
+    developmentAdminId: typeof source.VITE_DEV_ADMIN_ID === 'string' ? source.VITE_DEV_ADMIN_ID : undefined,
+    developmentAdminName: typeof source.VITE_DEV_ADMIN_NAME === 'string' ? source.VITE_DEV_ADMIN_NAME : undefined,
+    developmentAdminRoles: roles,
+  };
+}
+
+export const environment = readEnvironment(import.meta.env);

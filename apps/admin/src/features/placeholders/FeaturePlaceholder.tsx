@@ -1,0 +1,1 @@
+export function FeaturePlaceholder({ name }: { name: string }) { return <><header className="page-header"><h1>{name}</h1></header><section className="card"><p>Not implemented in Admin Phase 1.</p></section></>; }
