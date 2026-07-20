@@ -198,6 +198,7 @@ export type KnowledgeFactVersion = {
 export type FactActionRequest = {
     version: number;
     reason?: string | null;
+    reasonCode?: string | null;
 };
 
 export type QuestionType = 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TRUE_FALSE';
@@ -292,6 +293,108 @@ export type QuestionVersion = {
     updatedAt: string;
 };
 
+export type ReviewContentType = 'KNOWLEDGE_FACT' | 'QUESTION';
+
+export type ReviewPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+
+export type ReviewQueueItem = {
+    id: string;
+    contentType: ReviewContentType;
+    contentId: string;
+    contentVersionId: string;
+    contentCode: string;
+    titleOrSummary: string;
+    reviewStatus: FactReviewStatus;
+    lifecycleStatus: FactStatus;
+    authorId: string;
+    authorName: string;
+    submittedAt: string;
+    updatedAt: string;
+    assignedReviewerId?: string | null;
+    assignedReviewerName?: string | null;
+    priority: ReviewPriority;
+    learningObjectiveId: string;
+    learningObjectiveTitle: string;
+    topicId: string;
+    topicName: string;
+    subjectId: string;
+    subjectName: string;
+    version: number;
+    stale: boolean;
+    impactWarningCount: number;
+};
+
+export type ReviewPage = {
+    items: Array<ReviewQueueItem>;
+    page: number;
+    size: number;
+    totalItems: number;
+    totalPages: number;
+};
+
+export type ReviewSummary = {
+    awaitingReview: number;
+    assignedToMe: number;
+    unassigned: number;
+    requiresUpdate: number;
+    highPriority: number;
+    oldestPendingAgeDays: number;
+};
+
+export type ReviewRecord = {
+    id: string;
+    contentVersionId: string;
+    action: string;
+    fromStatus?: string | null;
+    toStatus?: string | null;
+    actorId: string;
+    actorRoles?: string | null;
+    comment?: string | null;
+    reasonCode?: string | null;
+    metadata?: {
+        [key: string]: unknown;
+    };
+    createdAt: string;
+};
+
+export type ReviewComment = {
+    id: string;
+    contentVersionId: string;
+    authorId: string;
+    authorName: string;
+    body: string;
+    createdAt: string;
+};
+
+export type ReviewDetail = ReviewQueueItem & {
+    content: {
+        [key: string]: unknown;
+    };
+    history: Array<ReviewRecord>;
+    comments: Array<ReviewComment>;
+    sourceContext?: Array<{
+        [key: string]: unknown;
+    }>;
+    factSourceContext?: Array<{
+        [key: string]: unknown;
+    }>;
+};
+
+export type ReviewAssignRequest = {
+    version: number;
+    assignedReviewerId: string;
+};
+
+export type ReviewPriorityRequest = {
+    version: number;
+    priority: ReviewPriority;
+};
+
+export type ReviewCommentRequest = {
+    version: number;
+    body: string;
+};
+
 export type ContentServiceStatus = {
     service: 'content-service';
     status: 'READY';
@@ -322,6 +425,8 @@ export type LearningObjectiveId = string;
 export type KnowledgeFactId = string;
 
 export type QuestionId = string;
+
+export type ReviewItemId = string;
 
 export type Page = number;
 
@@ -1771,3 +1876,253 @@ export type RetireQuestionResponses = {
 };
 
 export type RetireQuestionResponse = RetireQuestionResponses[keyof RetireQuestionResponses];
+
+export type ListReviewsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        page?: number;
+        size?: number;
+        search?: string;
+        contentType?: ReviewContentType;
+        reviewStatus?: FactReviewStatus;
+        lifecycleStatus?: FactStatus;
+        subjectId?: string;
+        topicId?: string;
+        learningObjectiveId?: string;
+        authorId?: string;
+        assignedReviewerId?: string;
+        unassignedOnly?: boolean;
+        assignedToMe?: boolean;
+        submittedFrom?: string;
+        submittedTo?: string;
+        priority?: ReviewPriority;
+        sort?: 'priority' | 'submittedAt' | 'updatedAt';
+        direction?: 'asc' | 'desc';
+        hasImpactWarnings?: boolean;
+    };
+    url: '/api/v1/admin/reviews';
+};
+
+export type ListReviewsResponses = {
+    /**
+     * Review queue
+     */
+    200: ReviewPage;
+};
+
+export type ListReviewsResponse = ListReviewsResponses[keyof ListReviewsResponses];
+
+export type GetReviewSummaryData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/reviews/summary';
+};
+
+export type GetReviewSummaryResponses = {
+    /**
+     * Summary
+     */
+    200: ReviewSummary;
+};
+
+export type GetReviewSummaryResponse = GetReviewSummaryResponses[keyof GetReviewSummaryResponses];
+
+export type GetReviewData = {
+    body?: never;
+    path: {
+        reviewItemId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/reviews/{reviewItemId}';
+};
+
+export type GetReviewErrors = {
+    /**
+     * Resource not found
+     */
+    404: ApiError;
+};
+
+export type GetReviewError = GetReviewErrors[keyof GetReviewErrors];
+
+export type GetReviewResponses = {
+    /**
+     * Review detail
+     */
+    200: ReviewDetail;
+};
+
+export type GetReviewResponse = GetReviewResponses[keyof GetReviewResponses];
+
+export type ListReviewHistoryData = {
+    body?: never;
+    path: {
+        reviewItemId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/reviews/{reviewItemId}/history';
+};
+
+export type ListReviewHistoryResponses = {
+    /**
+     * History
+     */
+    200: Array<ReviewRecord>;
+};
+
+export type ListReviewHistoryResponse = ListReviewHistoryResponses[keyof ListReviewHistoryResponses];
+
+export type ListReviewCommentsData = {
+    body?: never;
+    path: {
+        reviewItemId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/reviews/{reviewItemId}/comments';
+};
+
+export type ListReviewCommentsResponses = {
+    /**
+     * Comments
+     */
+    200: Array<ReviewComment>;
+};
+
+export type ListReviewCommentsResponse = ListReviewCommentsResponses[keyof ListReviewCommentsResponses];
+
+export type AddReviewCommentData = {
+    body: ReviewCommentRequest;
+    path: {
+        reviewItemId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/reviews/{reviewItemId}/comments';
+};
+
+export type AddReviewCommentErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type AddReviewCommentError = AddReviewCommentErrors[keyof AddReviewCommentErrors];
+
+export type AddReviewCommentResponses = {
+    /**
+     * Updated review
+     */
+    200: ReviewDetail;
+};
+
+export type AddReviewCommentResponse = AddReviewCommentResponses[keyof AddReviewCommentResponses];
+
+export type ClaimReviewData = {
+    body: VersionOnly2;
+    path: {
+        reviewItemId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/reviews/{reviewItemId}/claim';
+};
+
+export type ClaimReviewErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type ClaimReviewError = ClaimReviewErrors[keyof ClaimReviewErrors];
+
+export type ClaimReviewResponses = {
+    /**
+     * Claimed
+     */
+    200: ReviewDetail;
+};
+
+export type ClaimReviewResponse = ClaimReviewResponses[keyof ClaimReviewResponses];
+
+export type UnclaimReviewData = {
+    body: VersionOnly2;
+    path: {
+        reviewItemId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/reviews/{reviewItemId}/unclaim';
+};
+
+export type UnclaimReviewErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type UnclaimReviewError = UnclaimReviewErrors[keyof UnclaimReviewErrors];
+
+export type UnclaimReviewResponses = {
+    /**
+     * Unclaimed
+     */
+    200: ReviewDetail;
+};
+
+export type UnclaimReviewResponse = UnclaimReviewResponses[keyof UnclaimReviewResponses];
+
+export type AssignReviewData = {
+    body: ReviewAssignRequest;
+    path: {
+        reviewItemId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/reviews/{reviewItemId}/assign';
+};
+
+export type AssignReviewErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type AssignReviewError = AssignReviewErrors[keyof AssignReviewErrors];
+
+export type AssignReviewResponses = {
+    /**
+     * Assigned
+     */
+    200: ReviewDetail;
+};
+
+export type AssignReviewResponse = AssignReviewResponses[keyof AssignReviewResponses];
+
+export type ChangeReviewPriorityData = {
+    body: ReviewPriorityRequest;
+    path: {
+        reviewItemId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/reviews/{reviewItemId}/priority';
+};
+
+export type ChangeReviewPriorityErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type ChangeReviewPriorityError = ChangeReviewPriorityErrors[keyof ChangeReviewPriorityErrors];
+
+export type ChangeReviewPriorityResponses = {
+    /**
+     * Updated priority
+     */
+    200: ReviewDetail;
+};
+
+export type ChangeReviewPriorityResponse = ChangeReviewPriorityResponses[keyof ChangeReviewPriorityResponses];

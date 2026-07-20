@@ -69,3 +69,16 @@ source and a reviewer other than the version author. Retirement retains history.
 Question creation and draft editing are transactional. Approved versions are never updated: editing an approved question creates a new draft version and atomically moves the aggregate's current-version pointer. Optimistic locking on the aggregate rejects concurrent administrative updates.
 
 Question review follows the same author/reviewer separation as knowledge facts. Only approved active knowledge facts from the question's learning objective may be linked. Publishing and release assembly are outside the Phase 4 API.
+
+## Admin Phase 5 review governance
+
+`review_item` projects the active governance state for one submitted fact or
+question version. `review_record` is an append-only chronological trail of
+submissions, assignments, comments, priority changes, and decisions.
+`review_comment` binds feedback to the exact content version under review.
+
+The shared review layer owns queue queries, concurrency-safe assignment,
+comments, priority, and history. Knowledge and question services continue to own
+content-specific transitions and approval validation, then atomically record the
+governance event in the same transaction. Review status, content lifecycle, and
+future release status remain separate concepts.

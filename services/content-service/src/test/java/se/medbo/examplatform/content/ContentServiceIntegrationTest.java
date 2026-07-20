@@ -106,7 +106,7 @@ class ContentServiceIntegrationTest {
     void flywayAppliesTheOwnedFoundationMigration() {
         var versions = jdbc.sql("SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank")
                 .query(String.class).list();
-        org.assertj.core.api.Assertions.assertThat(versions).containsExactly("1", "2", "3", "4");
+        org.assertj.core.api.Assertions.assertThat(versions).containsExactly("1", "2", "3", "4", "5");
     }
 
     @Test
@@ -180,6 +180,12 @@ class ContentServiceIntegrationTest {
         var id=new com.fasterxml.jackson.databind.ObjectMapper().readTree(json).get("id").asText();
         mvc.perform(get("/api/v1/admin/questions/search").queryParam("search","municipalities").headers(author())).andExpect(status().isOk()).andExpect(jsonPath("$.totalItems").value(1));
         mvc.perform(post("/api/v1/admin/questions/"+id+"/submit").headers(author()).contentType(MediaType.APPLICATION_JSON).content("{\"version\":0}")).andExpect(status().isOk()).andExpect(jsonPath("$.reviewStatus").value("UNDER_REVIEW"));
+        var queueJson=mvc.perform(get("/api/v1/admin/reviews").headers(reviewer()).queryParam("contentType","QUESTION")).andExpect(status().isOk()).andExpect(jsonPath("$.totalItems").value(1)).andReturn().getResponse().getContentAsString();
+        var reviewNode=new com.fasterxml.jackson.databind.ObjectMapper().readTree(queueJson).get("items").get(0);var reviewId=reviewNode.get("id").asText();
+        mvc.perform(post("/api/v1/admin/reviews/"+reviewId+"/claim").headers(reviewer()).contentType(MediaType.APPLICATION_JSON).content("{\"version\":0}")).andExpect(status().isOk()).andExpect(jsonPath("$.assignedReviewerId").value("reviewer"));
+        mvc.perform(post("/api/v1/admin/reviews/"+reviewId+"/claim").headers(reviewer()).contentType(MediaType.APPLICATION_JSON).content("{\"version\":0}")).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("REVIEW_ITEM_ALREADY_CLAIMED"));
+        mvc.perform(post("/api/v1/admin/reviews/"+reviewId+"/comments").headers(reviewer()).contentType(MediaType.APPLICATION_JSON).content("{\"version\":1,\"body\":\"The supporting context has been reviewed.\"}")).andExpect(status().isOk()).andExpect(jsonPath("$.comments.length()").value(1));
+        mvc.perform(get("/api/v1/admin/reviews/"+reviewId+"/history").headers(reviewer())).andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(3));
         mvc.perform(post("/api/v1/admin/questions/"+id+"/approve").headers(author()).contentType(MediaType.APPLICATION_JSON).content("{\"version\":1}")).andExpect(status().isForbidden());
         mvc.perform(post("/api/v1/admin/questions/"+id+"/approve").headers(reviewer()).contentType(MediaType.APPLICATION_JSON).content("{\"version\":1}")).andExpect(status().isOk()).andExpect(jsonPath("$.status").value("ACTIVE"));
         var update=body.substring(0,body.length()-1)+",\"version\":2}";

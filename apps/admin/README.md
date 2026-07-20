@@ -57,6 +57,13 @@ fact editor selects active sources, supports validity dates, review actions,
 retirement, and immutable version history. Backend permissions remain
 authoritative.
 
+Phase 4 adds `/questions` and immutable question-version authoring. Phase 5 adds
+the centralized `/reviews` queue and `/reviews/:reviewItemId` workspace. The
+workspace combines facts and questions, supports claiming, admin assignment,
+priority, structured return feedback, version-specific comments, impact context,
+and immutable review history. Mutations update the detail cache and invalidate
+only review, fact, and question query families so queue state changes immediately.
+
 From the repository root, build and start the Content Service before the portal:
 
 ```bash
@@ -79,5 +86,5 @@ cookies, the design must add `Secure`, `HttpOnly`, and `SameSite` controls plus 
 documented CSRF mechanism. Production CORS remains undecided. The backend enables
 only explicit Vite origins while development-header authentication is enabled.
 
-Phase 2 intentionally defers production identity, tamper-resistant audit
-storage, bulk operations, publishing, and question/fact workflows.
+Production identity, tamper-resistant external audit export, bulk operations,
+publishing, releases, and real-time push updates remain deferred.

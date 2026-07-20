@@ -15,6 +15,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.medbo.examplatform.content.shared.DomainException;
+import se.medbo.examplatform.content.review.ReviewWorkflowService;
 
 @Service
 public class KnowledgeBaseService {
@@ -23,12 +24,13 @@ public class KnowledgeBaseService {
     private static final String FACT_FIELDS = "f.id,f.learning_objective_id AS \"learningObjectiveId\",f.current_version_id AS \"currentVersionId\",f.canonical_statement AS \"canonicalStatement\",f.review_status AS \"reviewStatus\",f.status,f.valid_from AS \"validFrom\",f.valid_to AS \"validTo\",f.created_at AS \"createdAt\",f.updated_at AS \"updatedAt\",f.version,lo.title AS \"learningObjectiveTitle\",t.id AS \"topicId\",t.name AS \"topicName\",s.id AS \"subjectId\",s.name AS \"subjectName\",(SELECT count(*) FROM knowledge_fact_source kfs WHERE kfs.knowledge_fact_version_id=f.current_version_id) AS \"sourceCount\"";
     private static final String FACT_JOIN = " FROM knowledge_fact f JOIN learning_objective lo ON lo.id=f.learning_objective_id JOIN topic t ON t.id=lo.topic_id JOIN subject s ON s.id=t.subject_id ";
     private final JdbcClient jdbc;
+    private final ReviewWorkflowService reviews;
 
-    public KnowledgeBaseService(JdbcClient jdbc) { this.jdbc = jdbc; }
+    public KnowledgeBaseService(JdbcClient jdbc,ReviewWorkflowService reviews) { this.jdbc = jdbc; this.reviews=reviews; }
 
     public record ObjectiveInput(UUID topicId, String code, String title, String description, String status, Long version) {}
     public record FactInput(UUID learningObjectiveId, String canonicalStatement, LocalDate validFrom, LocalDate validTo, List<UUID> sourceIds, Long version) {}
-    public record ActionInput(Long version, String reason) {}
+    public record ActionInput(Long version, String reason, String reasonCode) {}
 
     public Map<String,Object> objectives(int page,int size,String search,UUID topicId,String status) {
         page=Math.max(page,0); size=Math.min(Math.max(size,1),100);
@@ -88,7 +90,7 @@ public class KnowledgeBaseService {
         validateFact(in); expect(in.version()); exists("learning_objective",in.learningObjectiveId(),"Learning objective"); validateSources(in.sourceIds()); var current=fact(id);
         if("UNDER_REVIEW".equals(current.get("reviewStatus"))) throw conflict("A fact under review cannot be edited");
         var now=now(); var actor=actor();
-        if("APPROVED".equals(current.get("reviewStatus"))) {
+        if(List.of("APPROVED","REJECTED","REQUIRES_UPDATE").contains(current.get("reviewStatus"))) {
             int number=jdbc.sql("SELECT coalesce(max(version_number),0)+1 FROM knowledge_fact_version WHERE knowledge_fact_id=:id").param("id",id).query(Integer.class).single(); var versionId=UUID.randomUUID();
             int changed=jdbc.sql("UPDATE knowledge_fact SET learning_objective_id=:objective,current_version_id=NULL,canonical_statement=:statement,review_status='UNREVIEWED',status='DRAFT',valid_from=:from,valid_to=:to,updated_at=:now,version=version+1 WHERE id=:id AND version=:version").param("objective",in.learningObjectiveId()).param("statement",in.canonicalStatement().trim()).param("from",in.validFrom()).param("to",in.validTo()).param("now",now).param("id",id).param("version",in.version()).update(); changed(changed,"knowledge_fact",id);
             insertVersion(versionId,id,number,in,"UNREVIEWED",actor,now); jdbc.sql("UPDATE knowledge_fact SET current_version_id=:version WHERE id=:id").param("version",versionId).param("id",id).update(); linkSources(versionId,in.sourceIds()); log("knowledge_fact.version_created",id);
@@ -99,10 +101,10 @@ public class KnowledgeBaseService {
         return fact(id);
     }
 
-    @Transactional public Map<String,Object> submit(UUID id,ActionInput in) { expect(in.version()); var fact=fact(id); if(!List.of("UNREVIEWED","REJECTED","REQUIRES_UPDATE").contains(fact.get("reviewStatus"))||"RETIRED".equals(fact.get("status"))) throw conflict("Only an editable draft can be submitted"); if(sourceIds((UUID)fact.get("currentVersionId")).isEmpty()) throw validation("At least one source is required before submission"); return transition(id,in.version(),"UNDER_REVIEW",null,null,"knowledge_fact.submitted"); }
-    @Transactional public Map<String,Object> approve(UUID id,ActionInput in) { expect(in.version()); var fact=fact(id); requireReview(fact,"UNDER_REVIEW"); var version=version((UUID)fact.get("currentVersionId")); if(actor().equals(version.get("authorId"))) throw new DomainException(HttpStatus.FORBIDDEN,"SEPARATION_OF_DUTIES_REQUIRED","An author cannot approve their own fact"); if(sourceIds((UUID)fact.get("currentVersionId")).isEmpty()) throw validation("At least one source is required before approval"); return transition(id,in.version(),"APPROVED","ACTIVE",in.reason(),"knowledge_fact.approved"); }
-    @Transactional public Map<String,Object> reject(UUID id,ActionInput in) { expect(in.version()); requireReason(in.reason()); requireReview(fact(id),"UNDER_REVIEW"); return transition(id,in.version(),"REJECTED","DRAFT",in.reason(),"knowledge_fact.rejected"); }
-    @Transactional public Map<String,Object> requireUpdate(UUID id,ActionInput in) { expect(in.version()); requireReason(in.reason()); requireReview(fact(id),"UNDER_REVIEW"); return transition(id,in.version(),"REQUIRES_UPDATE","DRAFT",in.reason(),"knowledge_fact.requires_update"); }
+    @Transactional public Map<String,Object> submit(UUID id,ActionInput in) { expect(in.version()); var fact=fact(id); if(!List.of("UNREVIEWED","REJECTED","REQUIRES_UPDATE").contains(fact.get("reviewStatus"))||"RETIRED".equals(fact.get("status"))) throw conflict("Only an editable draft can be submitted"); if(sourceIds((UUID)fact.get("currentVersionId")).isEmpty()) throw validation("At least one source is required before submission");boolean resubmit=List.of("REJECTED","REQUIRES_UPDATE").contains(fact.get("reviewStatus"));var result=transition(id,in.version(),"UNDER_REVIEW",null,null,"knowledge_fact.submitted");reviews.submitted("KNOWLEDGE_FACT",id,(UUID)fact.get("currentVersionId"),(String)version((UUID)fact.get("currentVersionId")).get("authorId"),(String)result.get("status"),resubmit);return result; }
+    @Transactional public Map<String,Object> approve(UUID id,ActionInput in) { expect(in.version()); var fact=fact(id); requireReview(fact,"UNDER_REVIEW"); var version=version((UUID)fact.get("currentVersionId")); if(actor().equals(version.get("authorId"))) throw new DomainException(HttpStatus.FORBIDDEN,"SEPARATION_OF_DUTIES_REQUIRED","An author cannot approve their own fact");validateSources(sourceIds((UUID)fact.get("currentVersionId")));var result=transition(id,in.version(),"APPROVED","ACTIVE",in.reason(),"knowledge_fact.approved");reviews.decision("KNOWLEDGE_FACT",(UUID)fact.get("currentVersionId"),"UNDER_REVIEW","APPROVED","ACTIVE",in.reason(),in.reasonCode());return result; }
+    @Transactional public Map<String,Object> reject(UUID id,ActionInput in) { expect(in.version()); reviews.validateFeedback("REJECTED",in.reasonCode(),in.reason());var fact=fact(id);requireReview(fact,"UNDER_REVIEW");var result=transition(id,in.version(),"REJECTED","DRAFT",in.reason(),"knowledge_fact.rejected");reviews.decision("KNOWLEDGE_FACT",(UUID)fact.get("currentVersionId"),"UNDER_REVIEW","REJECTED","DRAFT",in.reason(),in.reasonCode());return result; }
+    @Transactional public Map<String,Object> requireUpdate(UUID id,ActionInput in) { expect(in.version()); reviews.validateFeedback("REQUIRES_UPDATE",in.reasonCode(),in.reason());var fact=fact(id);requireReview(fact,"UNDER_REVIEW");var result=transition(id,in.version(),"REQUIRES_UPDATE","DRAFT",in.reason(),"knowledge_fact.requires_update");reviews.decision("KNOWLEDGE_FACT",(UUID)fact.get("currentVersionId"),"UNDER_REVIEW","REQUIRES_UPDATE","DRAFT",in.reason(),in.reasonCode());return result; }
     @Transactional public Map<String,Object> retire(UUID id,ActionInput in) { expect(in.version()); var fact=fact(id); if("RETIRED".equals(fact.get("status"))) throw conflict("The fact is already retired"); int c=jdbc.sql("UPDATE knowledge_fact SET status='RETIRED',updated_at=:now,version=version+1 WHERE id=:id AND version=:version").param("now",now()).param("id",id).param("version",in.version()).update(); changed(c,"knowledge_fact",id); log("knowledge_fact.retired",id); return fact(id); }
 
     private Map<String,Object> transition(UUID id,long expected,String review,String lifecycle,String note,String action) { var now=now(); var fact=fact(id); UUID versionId=(UUID)fact.get("currentVersionId"); String status=lifecycle==null?(String)fact.get("status"):lifecycle; int c=jdbc.sql("UPDATE knowledge_fact SET review_status=:review,status=:status,updated_at=:now,version=version+1 WHERE id=:id AND version=:version").param("review",review).param("status",status).param("now",now).param("id",id).param("version",expected).update(); changed(c,"knowledge_fact",id); jdbc.sql("UPDATE knowledge_fact_version SET review_status=:review,reviewer_id=:reviewer,review_note=:note,updated_at=:now WHERE id=:id").param("review",review).param("reviewer",review.equals("UNDER_REVIEW")?null:actor(),Types.VARCHAR).param("note",blank(note),Types.VARCHAR).param("now",now).param("id",versionId).update(); log(action,id); return fact(id); }

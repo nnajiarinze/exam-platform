@@ -37,6 +37,8 @@ class SecurityConfiguration {
                         .requestMatchers(HttpMethod.POST, "/api/v1/admin/sources/*/review", "/api/v1/admin/sources/*/require-update", "/api/v1/admin/sources/*/retire").hasAnyRole("CONTENT_REVIEWER", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/v1/admin/knowledge-facts/*/approve", "/api/v1/admin/knowledge-facts/*/reject", "/api/v1/admin/knowledge-facts/*/require-update", "/api/v1/admin/knowledge-facts/*/retire").hasAnyRole("CONTENT_REVIEWER", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/v1/admin/questions/*/approve", "/api/v1/admin/questions/*/reject", "/api/v1/admin/questions/*/require-update", "/api/v1/admin/questions/*/retire").hasAnyRole("CONTENT_REVIEWER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/admin/reviews/*/assign", "/api/v1/admin/reviews/*/priority").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/admin/reviews/*/claim", "/api/v1/admin/reviews/*/unclaim", "/api/v1/admin/reviews/*/comments").hasAnyRole("CONTENT_REVIEWER", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/v1/admin/**").hasAnyRole("CONTENT_AUTHOR", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/admin/**").hasAnyRole("CONTENT_AUTHOR", "ADMIN")
                         .anyRequest().denyAll())

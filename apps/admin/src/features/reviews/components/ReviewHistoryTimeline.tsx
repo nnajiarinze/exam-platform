@@ -1,0 +1,2 @@
+import type { ReviewRecord } from '../../../api/generated';
+export function ReviewHistoryTimeline({items}:{items:ReviewRecord[]}){return <ol aria-label="Review history">{items.map(item=><li key={item.id}><strong>{item.action.replaceAll('_',' ')}</strong> by {item.actorId} <time dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleString()}</time>{item.reasonCode&&<p>Reason: {item.reasonCode.replaceAll('_',' ')}</p>}{item.comment&&<p>{item.comment}</p>}<small>Content version {item.contentVersionId}</small></li>)}</ol>}

@@ -19,7 +19,7 @@ final class KnowledgeBaseController {
     KnowledgeBaseController(KnowledgeBaseService service){this.service=service;}
     record ObjectiveRequest(@NotNull UUID topicId,@NotBlank String code,@NotBlank String title,String description,@NotBlank String status,Long version){KnowledgeBaseService.ObjectiveInput input(){return new KnowledgeBaseService.ObjectiveInput(topicId,code,title,description,status,version);}}
     record FactRequest(@NotNull UUID learningObjectiveId,@NotBlank String canonicalStatement,LocalDate validFrom,LocalDate validTo,@NotEmpty List<UUID> sourceIds,Long version){KnowledgeBaseService.FactInput input(){return new KnowledgeBaseService.FactInput(learningObjectiveId,canonicalStatement,validFrom,validTo,sourceIds,version);}}
-    record ActionRequest(@NotNull @PositiveOrZero Long version,String reason){KnowledgeBaseService.ActionInput input(){return new KnowledgeBaseService.ActionInput(version,reason);}}
+    record ActionRequest(@NotNull @PositiveOrZero Long version,String reason,String reasonCode){KnowledgeBaseService.ActionInput input(){return new KnowledgeBaseService.ActionInput(version,reason,reasonCode);}}
 
     @GetMapping("/learning-objectives") Map<String,Object> objectives(@RequestParam(defaultValue="0")int page,@RequestParam(defaultValue="20")int size,@RequestParam(required=false)String search,@RequestParam(required=false)UUID topicId,@RequestParam(required=false)String status){return service.objectives(page,size,search,topicId,status);}
     @PostMapping("/learning-objectives") @ResponseStatus(HttpStatus.CREATED) Map<String,Object> createObjective(@Valid @RequestBody ObjectiveRequest r){return service.createObjective(r.input());}

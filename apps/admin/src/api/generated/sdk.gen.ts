@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ApproveKnowledgeFactData, ApproveKnowledgeFactErrors, ApproveKnowledgeFactResponses, ApproveQuestionData, ApproveQuestionErrors, ApproveQuestionResponses, ArchiveExamData, ArchiveExamErrors, ArchiveExamResponses, ArchiveExamVersionData, ArchiveExamVersionResponses, ArchiveLearningObjectiveData, ArchiveLearningObjectiveErrors, ArchiveLearningObjectiveResponses, ArchiveSubjectData, ArchiveSubjectResponses, ArchiveTopicData, ArchiveTopicResponses, CreateExamData, CreateExamErrors, CreateExamResponses, CreateExamVersionData, CreateExamVersionErrors, CreateExamVersionResponses, CreateKnowledgeFactData, CreateKnowledgeFactErrors, CreateKnowledgeFactResponses, CreateLearningObjectiveData, CreateLearningObjectiveErrors, CreateLearningObjectiveResponses, CreateQuestionData, CreateQuestionErrors, CreateQuestionResponses, CreateSourceData, CreateSourceErrors, CreateSourceResponses, CreateSubjectData, CreateSubjectResponses, CreateTopicData, CreateTopicResponses, GetContentServiceStatusData, GetContentServiceStatusErrors, GetContentServiceStatusResponses, GetExamData, GetExamErrors, GetExamResponses, GetExamVersionData, GetExamVersionErrors, GetExamVersionResponses, GetKnowledgeFactData, GetKnowledgeFactErrors, GetKnowledgeFactResponses, GetLearningObjectiveData, GetLearningObjectiveErrors, GetLearningObjectiveResponses, GetQuestionData, GetQuestionErrors, GetQuestionResponses, GetSourceData, GetSourceErrors, GetSourceResponses, GetSubjectData, GetSubjectResponses, GetTopicData, GetTopicResponses, ListExamsData, ListExamsErrors, ListExamsResponses, ListExamVersionsData, ListExamVersionsResponses, ListKnowledgeFactsData, ListKnowledgeFactsErrors, ListKnowledgeFactsResponses, ListKnowledgeFactVersionsData, ListKnowledgeFactVersionsErrors, ListKnowledgeFactVersionsResponses, ListLearningObjectivesData, ListLearningObjectivesErrors, ListLearningObjectivesResponses, ListQuestionsData, ListQuestionsResponses, ListQuestionVersionsData, ListQuestionVersionsResponses, ListSourcesData, ListSourcesResponses, ListSubjectsData, ListSubjectsResponses, ListTopicsData, ListTopicsResponses, RejectKnowledgeFactData, RejectKnowledgeFactErrors, RejectKnowledgeFactResponses, RejectQuestionData, RejectQuestionResponses, ReorderSubjectsData, ReorderSubjectsErrors, ReorderSubjectsResponses, ReorderTopicsData, ReorderTopicsErrors, ReorderTopicsResponses, RequireKnowledgeFactUpdateData, RequireKnowledgeFactUpdateErrors, RequireKnowledgeFactUpdateResponses, RequireQuestionUpdateData, RequireQuestionUpdateResponses, RequireSourceUpdateData, RequireSourceUpdateResponses, RetireKnowledgeFactData, RetireKnowledgeFactErrors, RetireKnowledgeFactResponses, RetireQuestionData, RetireQuestionResponses, RetireSourceData, RetireSourceErrors, RetireSourceResponses, ReviewSourceData, ReviewSourceResponses, SearchQuestionsData, SearchQuestionsResponses, SubmitKnowledgeFactData, SubmitKnowledgeFactErrors, SubmitKnowledgeFactResponses, SubmitQuestionData, SubmitQuestionResponses, UpdateExamData, UpdateExamErrors, UpdateExamResponses, UpdateExamVersionData, UpdateExamVersionErrors, UpdateExamVersionResponses, UpdateKnowledgeFactData, UpdateKnowledgeFactErrors, UpdateKnowledgeFactResponses, UpdateLearningObjectiveData, UpdateLearningObjectiveErrors, UpdateLearningObjectiveResponses, UpdateQuestionData, UpdateQuestionErrors, UpdateQuestionResponses, UpdateSourceData, UpdateSourceErrors, UpdateSourceResponses, UpdateSubjectData, UpdateSubjectErrors, UpdateSubjectResponses, UpdateTopicData, UpdateTopicErrors, UpdateTopicResponses } from './types.gen';
+import type { AddReviewCommentData, AddReviewCommentErrors, AddReviewCommentResponses, ApproveKnowledgeFactData, ApproveKnowledgeFactErrors, ApproveKnowledgeFactResponses, ApproveQuestionData, ApproveQuestionErrors, ApproveQuestionResponses, ArchiveExamData, ArchiveExamErrors, ArchiveExamResponses, ArchiveExamVersionData, ArchiveExamVersionResponses, ArchiveLearningObjectiveData, ArchiveLearningObjectiveErrors, ArchiveLearningObjectiveResponses, ArchiveSubjectData, ArchiveSubjectResponses, ArchiveTopicData, ArchiveTopicResponses, AssignReviewData, AssignReviewErrors, AssignReviewResponses, ChangeReviewPriorityData, ChangeReviewPriorityErrors, ChangeReviewPriorityResponses, ClaimReviewData, ClaimReviewErrors, ClaimReviewResponses, CreateExamData, CreateExamErrors, CreateExamResponses, CreateExamVersionData, CreateExamVersionErrors, CreateExamVersionResponses, CreateKnowledgeFactData, CreateKnowledgeFactErrors, CreateKnowledgeFactResponses, CreateLearningObjectiveData, CreateLearningObjectiveErrors, CreateLearningObjectiveResponses, CreateQuestionData, CreateQuestionErrors, CreateQuestionResponses, CreateSourceData, CreateSourceErrors, CreateSourceResponses, CreateSubjectData, CreateSubjectResponses, CreateTopicData, CreateTopicResponses, GetContentServiceStatusData, GetContentServiceStatusErrors, GetContentServiceStatusResponses, GetExamData, GetExamErrors, GetExamResponses, GetExamVersionData, GetExamVersionErrors, GetExamVersionResponses, GetKnowledgeFactData, GetKnowledgeFactErrors, GetKnowledgeFactResponses, GetLearningObjectiveData, GetLearningObjectiveErrors, GetLearningObjectiveResponses, GetQuestionData, GetQuestionErrors, GetQuestionResponses, GetReviewData, GetReviewErrors, GetReviewResponses, GetReviewSummaryData, GetReviewSummaryResponses, GetSourceData, GetSourceErrors, GetSourceResponses, GetSubjectData, GetSubjectResponses, GetTopicData, GetTopicResponses, ListExamsData, ListExamsErrors, ListExamsResponses, ListExamVersionsData, ListExamVersionsResponses, ListKnowledgeFactsData, ListKnowledgeFactsErrors, ListKnowledgeFactsResponses, ListKnowledgeFactVersionsData, ListKnowledgeFactVersionsErrors, ListKnowledgeFactVersionsResponses, ListLearningObjectivesData, ListLearningObjectivesErrors, ListLearningObjectivesResponses, ListQuestionsData, ListQuestionsResponses, ListQuestionVersionsData, ListQuestionVersionsResponses, ListReviewCommentsData, ListReviewCommentsResponses, ListReviewHistoryData, ListReviewHistoryResponses, ListReviewsData, ListReviewsResponses, ListSourcesData, ListSourcesResponses, ListSubjectsData, ListSubjectsResponses, ListTopicsData, ListTopicsResponses, RejectKnowledgeFactData, RejectKnowledgeFactErrors, RejectKnowledgeFactResponses, RejectQuestionData, RejectQuestionResponses, ReorderSubjectsData, ReorderSubjectsErrors, ReorderSubjectsResponses, ReorderTopicsData, ReorderTopicsErrors, ReorderTopicsResponses, RequireKnowledgeFactUpdateData, RequireKnowledgeFactUpdateErrors, RequireKnowledgeFactUpdateResponses, RequireQuestionUpdateData, RequireQuestionUpdateResponses, RequireSourceUpdateData, RequireSourceUpdateResponses, RetireKnowledgeFactData, RetireKnowledgeFactErrors, RetireKnowledgeFactResponses, RetireQuestionData, RetireQuestionResponses, RetireSourceData, RetireSourceErrors, RetireSourceResponses, ReviewSourceData, ReviewSourceResponses, SearchQuestionsData, SearchQuestionsResponses, SubmitKnowledgeFactData, SubmitKnowledgeFactErrors, SubmitKnowledgeFactResponses, SubmitQuestionData, SubmitQuestionResponses, UnclaimReviewData, UnclaimReviewErrors, UnclaimReviewResponses, UpdateExamData, UpdateExamErrors, UpdateExamResponses, UpdateExamVersionData, UpdateExamVersionErrors, UpdateExamVersionResponses, UpdateKnowledgeFactData, UpdateKnowledgeFactErrors, UpdateKnowledgeFactResponses, UpdateLearningObjectiveData, UpdateLearningObjectiveErrors, UpdateLearningObjectiveResponses, UpdateQuestionData, UpdateQuestionErrors, UpdateQuestionResponses, UpdateSourceData, UpdateSourceErrors, UpdateSourceResponses, UpdateSubjectData, UpdateSubjectErrors, UpdateSubjectResponses, UpdateTopicData, UpdateTopicErrors, UpdateTopicResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -661,6 +661,116 @@ export const requireQuestionUpdate = <ThrowOnError extends boolean = false>(opti
 export const retireQuestion = <ThrowOnError extends boolean = false>(options: Options<RetireQuestionData, ThrowOnError>) => (options.client ?? client).post<RetireQuestionResponses, unknown, ThrowOnError>({
     security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
     url: '/api/v1/admin/questions/{questionId}/retire',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Centralized fact and question review queue
+ */
+export const listReviews = <ThrowOnError extends boolean = false>(options?: Options<ListReviewsData, ThrowOnError>) => (options?.client ?? client).get<ListReviewsResponses, unknown, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/reviews',
+    ...options
+});
+
+/**
+ * Review queue counts
+ */
+export const getReviewSummary = <ThrowOnError extends boolean = false>(options?: Options<GetReviewSummaryData, ThrowOnError>) => (options?.client ?? client).get<GetReviewSummaryResponses, unknown, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/reviews/summary',
+    ...options
+});
+
+/**
+ * Review workspace details and supporting context
+ */
+export const getReview = <ThrowOnError extends boolean = false>(options: Options<GetReviewData, ThrowOnError>) => (options.client ?? client).get<GetReviewResponses, GetReviewErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/reviews/{reviewItemId}',
+    ...options
+});
+
+/**
+ * Immutable review timeline
+ */
+export const listReviewHistory = <ThrowOnError extends boolean = false>(options: Options<ListReviewHistoryData, ThrowOnError>) => (options.client ?? client).get<ListReviewHistoryResponses, unknown, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/reviews/{reviewItemId}/history',
+    ...options
+});
+
+/**
+ * Version-specific review comments
+ */
+export const listReviewComments = <ThrowOnError extends boolean = false>(options: Options<ListReviewCommentsData, ThrowOnError>) => (options.client ?? client).get<ListReviewCommentsResponses, unknown, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/reviews/{reviewItemId}/comments',
+    ...options
+});
+
+/**
+ * Add a review comment
+ */
+export const addReviewComment = <ThrowOnError extends boolean = false>(options: Options<AddReviewCommentData, ThrowOnError>) => (options.client ?? client).post<AddReviewCommentResponses, AddReviewCommentErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/reviews/{reviewItemId}/comments',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Claim an unassigned review
+ */
+export const claimReview = <ThrowOnError extends boolean = false>(options: Options<ClaimReviewData, ThrowOnError>) => (options.client ?? client).post<ClaimReviewResponses, ClaimReviewErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/reviews/{reviewItemId}/claim',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Unclaim own review
+ */
+export const unclaimReview = <ThrowOnError extends boolean = false>(options: Options<UnclaimReviewData, ThrowOnError>) => (options.client ?? client).post<UnclaimReviewResponses, UnclaimReviewErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/reviews/{reviewItemId}/unclaim',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Admin assignment or reassignment
+ */
+export const assignReview = <ThrowOnError extends boolean = false>(options: Options<AssignReviewData, ThrowOnError>) => (options.client ?? client).post<AssignReviewResponses, AssignReviewErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/reviews/{reviewItemId}/assign',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Admin priority change
+ */
+export const changeReviewPriority = <ThrowOnError extends boolean = false>(options: Options<ChangeReviewPriorityData, ThrowOnError>) => (options.client ?? client).post<ChangeReviewPriorityResponses, ChangeReviewPriorityErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/reviews/{reviewItemId}/priority',
     ...options,
     headers: {
         'Content-Type': 'application/json',
