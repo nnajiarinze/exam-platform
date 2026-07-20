@@ -48,6 +48,8 @@ describe('admin routing', () => {
     expect(screen.getByText('CREATE_DRAFT_CONTENT')).toBeInTheDocument();
     expect(await screen.findByText(/Connected/)).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'Admin sections' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Skip to content' })).toHaveAttribute('href', '#main-content');
+    expect(screen.getByRole('button', { name: 'Open navigation' })).toHaveAttribute('aria-expanded', 'false');
     const request = fetchMock.mock.calls[0][0] as Request;
     expect(request.url).toBe('http://content.test/api/v1/status');
     expect(request.headers.get('X-Admin-Identity')).toBe('author-1');

@@ -17,6 +17,7 @@ import { adminQueryKeys } from "../../../api/query-keys/adminQueryKeys";
 import { AsyncState } from "../../../components/AsyncState";
 import { ReviewStatusBadge } from "../components/ReviewStatusBadge";
 import { useAuth } from "../../../app/auth/AuthContext";
+import { EmptyState, MetricCard, PageHeader, StatusBadge, TableFrame } from "../../../components/AdminUi";
 
 export function ReviewQueuePage() {
   const { admin } = useAuth();
@@ -91,29 +92,12 @@ export function ReviewQueuePage() {
   });
   return (
     <>
-      <header className="page-header">
-        <div>
-          <h1>Reviews</h1>
-          <p>Central queue for submitted knowledge facts and questions.</p>
-        </div>
-      </header>
-      <section className="form-grid" aria-label="Review summary">
-        <div className="card">
-          <strong>{summary.data?.awaitingReview ?? "—"}</strong>
-          <span> Awaiting review</span>
-        </div>
-        <div className="card">
-          <strong>{summary.data?.assignedToMe ?? "—"}</strong>
-          <span> Assigned to me</span>
-        </div>
-        <div className="card">
-          <strong>{summary.data?.unassigned ?? "—"}</strong>
-          <span> Unassigned</span>
-        </div>
-        <div className="card">
-          <strong>{summary.data?.highPriority ?? "—"}</strong>
-          <span> High priority</span>
-        </div>
+      <PageHeader eyebrow="Review queue" title="Reviews" description="Review submitted knowledge facts and questions while preserving separation of duties." />
+      <section className="report-grid" aria-label="Review summary">
+        <MetricCard label="Awaiting review" value={summary.data?.awaitingReview ?? "—"} tone="blue" />
+        <MetricCard label="Assigned to me" value={summary.data?.assignedToMe ?? "—"} tone="green" />
+        <MetricCard label="Unassigned" value={summary.data?.unassigned ?? "—"} tone="neutral" />
+        <MetricCard label="High priority" value={summary.data?.highPriority ?? "—"} tone="yellow" />
       </section>
       <div className="filters">
         <label>
@@ -202,9 +186,9 @@ export function ReviewQueuePage() {
       </div>
       <AsyncState loading={queue.isPending} error={queue.error}>
         {queue.data?.items.length === 0 ? (
-          <p>No review items match these filters.</p>
+          <EmptyState title="No review items match these filters" description="Change the filters to see other review work." />
         ) : (
-          <table>
+          <TableFrame><table>
             <thead>
               <tr>
                 <th>Type</th>
@@ -235,7 +219,7 @@ export function ReviewQueuePage() {
                   </td>
                   <td>{item.authorName}</td>
                   <td>{new Date(item.submittedAt).toLocaleDateString()}</td>
-                  <td>{item.priority}</td>
+                  <td><StatusBadge value={item.priority} /></td>
                   <td>
                     <ReviewStatusBadge status={item.reviewStatus} />
                   </td>
@@ -277,7 +261,7 @@ export function ReviewQueuePage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></TableFrame>
         )}
         <div className="pager">
           <button disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
