@@ -1,5 +1,5 @@
 import { client } from './generated/client.gen';
-import { createMockExam, createPracticeSession, flagMockExamQuestion, getMockExam, getMockExamHistory,
+import { createMockExam, createPracticeSession, flagMockExamQuestion, getMockExam, getMockExamConfiguration, getMockExamHistory,
   getMockExamQuestion, getMockExamResults, getNextPracticeQuestion, getSubjects, getTopicProgress,
   submitMockExam, submitMockExamResponse, submitPracticeResponse } from './generated/sdk.gen';
 import type { CreatePracticeSessionRequest, SubmitAnswerRequest } from './generated/types.gen';
@@ -23,10 +23,11 @@ export const learningApi = {
   submitAnswer: async (identity: string, sessionId: string, body: SubmitAnswerRequest) => (await submitPracticeResponse({ path: { sessionId }, body, headers: headers(identity), throwOnError: true })).data,
   progress: async (identity: string) => (await getTopicProgress({ headers: headers(identity), throwOnError: true })).data,
   createMockExam: async (identity: string) => (await createMockExam({ body: { examId: appConfig.examId }, headers: headers(identity), throwOnError: true })).data,
+  mockExamConfiguration: async () => (await getMockExamConfiguration({ query: { examId: appConfig.examId }, throwOnError: true })).data,
   mockExam: async (identity: string, attemptId: string) => (await getMockExam({ path: { attemptId }, headers: headers(identity), throwOnError: true })).data,
   mockQuestion: async (identity: string, attemptId: string, sequenceNumber?: number) => (await getMockExamQuestion({ path: { attemptId }, query: { sequenceNumber }, headers: headers(identity), throwOnError: true })).data,
-  answerMockQuestion: async (identity: string, attemptId: string, attemptQuestionId: string, selectedAnswerOptionId: string) => (await submitMockExamResponse({ path: { attemptId }, body: { attemptQuestionId, selectedAnswerOptionId }, headers: headers(identity), throwOnError: true })).data,
-  flagMockQuestion: async (identity: string, attemptId: string, attemptQuestionId: string, flagged: boolean) => (await flagMockExamQuestion({ path: { attemptId, attemptQuestionId }, body: { flagged }, headers: headers(identity), throwOnError: true })).data,
+  answerMockQuestion: async (identity: string, attemptId: string, attemptQuestionId: string, selectedAnswerOptionId: string, version?: number) => (await submitMockExamResponse({ path: { attemptId }, body: { attemptQuestionId, selectedAnswerOptionId, version }, headers: headers(identity), throwOnError: true })).data,
+  flagMockQuestion: async (identity: string, attemptId: string, attemptQuestionId: string, flagged: boolean, version?: number) => (await flagMockExamQuestion({ path: { attemptId, attemptQuestionId }, body: { flagged, version }, headers: headers(identity), throwOnError: true })).data,
   submitMockExam: async (identity: string, attemptId: string) => (await submitMockExam({ path: { attemptId }, headers: headers(identity), throwOnError: true })).data,
   mockResults: async (identity: string, attemptId: string) => (await getMockExamResults({ path: { attemptId }, headers: headers(identity), throwOnError: true })).data,
   mockHistory: async (identity: string) => (await getMockExamHistory({ headers: headers(identity), throwOnError: true })).data,

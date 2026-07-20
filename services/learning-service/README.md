@@ -1,5 +1,9 @@
 # Learning Service
 
+The service owns learner practice and mock-exam runtime state. Mock exams are created from the active immutable content projection and remain pinned to that release. `POST /api/v1/mock-exams` is idempotent while a learner has an active attempt; the server persists expiry and randomized option order, performs scoring atomically, stores subject/topic breakdowns, and returns repeated submissions consistently. Correctness and explanations are exposed only by the finalized results endpoint.
+
+See `docs/implementation/learner-phase-7-mock-exam-validation.md` for local validation and limitations.
+
 Independent learner-runtime service for imported published content, practice sessions, answer evaluation, and basic topic progress.
 
 ## Build and test

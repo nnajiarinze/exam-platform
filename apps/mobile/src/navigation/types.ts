@@ -13,6 +13,7 @@ export type RootStackParamList = {
   MockExam: undefined;
   MockQuestion: { attemptId: string; sequenceNumber: number };
   MockResults: { attemptId: string };
+  MockAnswerReview: { attemptId: string };
   MockHistory: undefined;
 };
 

@@ -198,6 +198,21 @@ paths:
                 type: array
                 items: { $ref: "#/components/schemas/MockExamHistoryItem" }
         "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/v1/mock-exams/configuration:
+    get:
+      summary: Get the active mock-exam configuration for an exam
+      operationId: getMockExamConfiguration
+      tags: [Mock examinations]
+      parameters:
+        - name: examId
+          in: query
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 200 }
+      responses:
+        "200":
+          description: Learner-visible exam instructions and thresholds.
+          content: { application/json: { schema: { $ref: "#/components/schemas/MockExamConfiguration" } } }
+        "404": { $ref: "#/components/responses/NotFound" }
   /api/v1/mock-exams/{attemptId}:
     parameters:
       - $ref: "#/components/parameters/AttemptId"
@@ -403,7 +418,7 @@ components:
         sessionQuestionId: { type: string, format: uuid }
         questionId: { type: string }
         prompt: { type: string }
-        questionType: { type: string, enum: [SINGLE_CHOICE] }
+        questionType: { type: string, enum: [SINGLE_CHOICE, TRUE_FALSE] }
         answerOptions:
           type: array
           minItems: 2
@@ -468,6 +483,17 @@ components:
       required: [examId]
       properties:
         examId: { type: string, minLength: 1, maxLength: 200, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$', example: swedish-citizenship, description: Canonical lowercase kebab-case exam identifier; legacy representations are normalized on input. }
+    MockExamConfiguration:
+      type: object
+      additionalProperties: false
+      required: [examId, name, description, questionCount, durationMinutes, passPercentage]
+      properties:
+        examId: { type: string }
+        name: { type: string }
+        description: { type: string }
+        questionCount: { type: integer, minimum: 1 }
+        durationMinutes: { type: integer, minimum: 1 }
+        passPercentage: { type: number, minimum: 0, maximum: 100 }
     MockExamStatus:
       type: string
       enum: [ACTIVE, SUBMITTED, EXPIRED, ABANDONED]
@@ -483,15 +509,20 @@ components:
     MockExamAttempt:
       type: object
       additionalProperties: false
-      required: [attemptId, name, status, startedAt, totalQuestions, durationMinutes, remainingSeconds, answered, questions]
+      required: [attemptId, examId, releaseId, name, description, status, startedAt, expiresAt, totalQuestions, durationMinutes, passPercentage, remainingSeconds, answered, questions]
       properties:
         attemptId: { type: string, format: uuid }
+        examId: { type: string }
+        releaseId: { type: string, format: uuid }
         name: { type: string }
+        description: { type: string }
         status: { $ref: "#/components/schemas/MockExamStatus" }
         startedAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
         submittedAt: { type: [string, "null"], format: date-time }
         totalQuestions: { type: integer, minimum: 1 }
         durationMinutes: { type: integer, minimum: 1 }
+        passPercentage: { type: number, minimum: 0, maximum: 100 }
         remainingSeconds: { type: integer, minimum: 0 }
         answered: { type: integer, minimum: 0 }
         questions:
@@ -500,12 +531,12 @@ components:
     MockExamQuestion:
       type: object
       additionalProperties: false
-      required: [attemptQuestionId, questionId, prompt, questionType, answerOptions, sequenceNumber, totalQuestions, flagged, remainingSeconds]
+      required: [attemptQuestionId, questionId, prompt, questionType, answerOptions, sequenceNumber, totalQuestions, flagged, questionVersion, answerVersion, remainingSeconds]
       properties:
         attemptQuestionId: { type: string, format: uuid }
         questionId: { type: string }
         prompt: { type: string }
-        questionType: { type: string, enum: [SINGLE_CHOICE] }
+        questionType: { type: string, enum: [SINGLE_CHOICE, TRUE_FALSE] }
         answerOptions:
           type: array
           minItems: 2
@@ -514,6 +545,8 @@ components:
         totalQuestions: { type: integer, minimum: 1 }
         selectedAnswerOptionId: { type: [string, "null"] }
         flagged: { type: boolean }
+        questionVersion: { type: integer, format: int64, minimum: 0 }
+        answerVersion: { type: integer, format: int64, minimum: 0 }
         remainingSeconds: { type: integer, minimum: 0 }
     SubmitMockExamAnswerRequest:
       type: object
@@ -522,12 +555,14 @@ components:
       properties:
         attemptQuestionId: { type: string, format: uuid }
         selectedAnswerOptionId: { type: string, minLength: 1, maxLength: 200 }
+        version: { type: integer, format: int64, minimum: 0, description: Optional optimistic-lock version; omitted for backwards compatibility. }
     FlagMockExamQuestionRequest:
       type: object
       additionalProperties: false
       required: [flagged]
       properties:
         flagged: { type: boolean }
+        version: { type: integer, format: int64, minimum: 0, description: Optional optimistic-lock version; omitted for backwards compatibility. }
     MockExamProgress:
       type: object
       additionalProperties: false
@@ -548,6 +583,18 @@ components:
         answered: { type: integer, minimum: 0 }
         correct: { type: integer, minimum: 0 }
         percentage: { type: number, minimum: 0, maximum: 100 }
+    MockExamSubjectResult:
+      type: object
+      additionalProperties: false
+      required: [subjectId, subjectName, total, correct, incorrect, unanswered, percentage]
+      properties:
+        subjectId: { type: string }
+        subjectName: { type: string }
+        total: { type: integer, minimum: 1 }
+        correct: { type: integer, minimum: 0 }
+        incorrect: { type: integer, minimum: 0 }
+        unanswered: { type: integer, minimum: 0 }
+        percentage: { type: number, minimum: 0, maximum: 100 }
     MockExamIncorrectQuestion:
       type: object
       additionalProperties: false
@@ -563,7 +610,7 @@ components:
     MockExamResult:
       type: object
       additionalProperties: false
-      required: [attemptId, name, status, startedAt, completedAt, durationSeconds, correctAnswers, incorrectAnswers, percentage, passed, topics, incorrectQuestions]
+      required: [attemptId, name, status, startedAt, completedAt, durationSeconds, correctAnswers, incorrectAnswers, unansweredAnswers, percentage, passPercentage, passed, autoSubmitted, subjects, topics, incorrectQuestions]
       properties:
         attemptId: { type: string, format: uuid }
         name: { type: string }
@@ -573,8 +620,14 @@ components:
         durationSeconds: { type: integer, minimum: 0 }
         correctAnswers: { type: integer, minimum: 0 }
         incorrectAnswers: { type: integer, minimum: 0 }
+        unansweredAnswers: { type: integer, minimum: 0 }
         percentage: { type: number, minimum: 0, maximum: 100 }
+        passPercentage: { type: number, minimum: 0, maximum: 100 }
         passed: { type: boolean }
+        autoSubmitted: { type: boolean }
+        subjects:
+          type: array
+          items: { $ref: "#/components/schemas/MockExamSubjectResult" }
         topics:
           type: array
           items: { $ref: "#/components/schemas/MockExamTopicResult" }

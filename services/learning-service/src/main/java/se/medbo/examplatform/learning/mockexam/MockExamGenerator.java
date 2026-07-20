@@ -25,29 +25,21 @@ public class MockExamGenerator {
         }
         var selected = new ArrayList<QuestionCandidate>(totalQuestions);
         var selectedQuestionIds = new HashSet<UUID>();
-        var selectedFacts = new HashSet<String>();
         for (var allocation : allocations) {
             var candidates = new ArrayList<>(eligible.stream()
                     .filter(candidate -> candidate.topicId().equals(allocation.topicId()))
                     .filter(candidate -> !selectedQuestionIds.contains(candidate.id()))
-                    .filter(candidate -> !selectedFacts.contains(candidate.knowledgeFactId()))
                     .toList());
             randomizer.shuffle(candidates);
-            var uniqueCandidates = new ArrayList<QuestionCandidate>();
-            var allocationFacts = new HashSet<String>();
-            for (var candidate : candidates) {
-                if (allocationFacts.add(candidate.knowledgeFactId())) uniqueCandidates.add(candidate);
-            }
-            if (uniqueCandidates.size() < allocation.questionCount()) {
+            if (candidates.size() < allocation.questionCount()) {
                 throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "INSUFFICIENT_MOCK_QUESTIONS",
-                        "Topic %s requires %d unique knowledge facts but only %d are eligible"
+                        "Topic %s requires %d questions but only %d are eligible"
                                 .formatted(allocation.externalTopicId(), allocation.questionCount(),
-                                        uniqueCandidates.size()));
+                                        candidates.size()));
             }
-            for (var candidate : uniqueCandidates.subList(0, allocation.questionCount())) {
+            for (var candidate : candidates.subList(0, allocation.questionCount())) {
                 selected.add(candidate);
                 selectedQuestionIds.add(candidate.id());
-                selectedFacts.add(candidate.knowledgeFactId());
             }
         }
         randomizer.shuffle(selected);

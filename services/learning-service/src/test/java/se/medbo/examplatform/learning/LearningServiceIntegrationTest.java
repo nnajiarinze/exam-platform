@@ -417,15 +417,27 @@ class LearningServiceIntegrationTest {
 
         var attempt = mockExamService.create(learnerId, "swedish-citizenship");
         assertThat(attempt.status()).isEqualTo("ACTIVE");
+        assertThat(attempt.expiresAt()).isAfter(attempt.startedAt());
+        assertThat(attempt.releaseId()).isNotNull();
+        assertThat(mockExamService.create(learnerId, "swedish-citizenship").attemptId())
+                .isEqualTo(attempt.attemptId());
         assertThat(attempt.questions()).hasSize(3);
         assertThat(jdbc.sql("""
                 SELECT count(DISTINCT imported_question_id) FROM mock_exam_question WHERE attempt_id = :id
                 """).param("id", attempt.attemptId()).query(Integer.class).single()).isEqualTo(3);
 
         var first = mockExamService.question(learnerId, attempt.attemptId(), 1);
+        assertThat(mockExamService.question(learnerId, attempt.attemptId(), 1).answerOptions())
+                .containsExactlyElementsOf(first.answerOptions());
+        assertThat(jdbc.sql("SELECT option_order IS NOT NULL FROM mock_exam_question WHERE id = :id")
+                .param("id", first.attemptQuestionId()).query(Boolean.class).single()).isTrue();
         mockExamService.flag(learnerId, attempt.attemptId(), first.attemptQuestionId(), true);
         mockExamService.answer(learnerId, attempt.attemptId(), first.attemptQuestionId(),
-                correctMockOption(first.attemptQuestionId()));
+                correctMockOption(first.attemptQuestionId()), 0L);
+        assertThatThrownBy(() -> mockExamService.answer(learnerId, attempt.attemptId(),
+                first.attemptQuestionId(), wrongMockOption(first.attemptQuestionId()), 0L))
+                .isInstanceOfSatisfying(ApiException.class,
+                        exception -> assertThat(exception.code()).isEqualTo("STALE_ANSWER_VERSION"));
         var second = mockExamService.question(learnerId, attempt.attemptId(), 2);
         mockExamService.answer(learnerId, attempt.attemptId(), second.attemptQuestionId(),
                 wrongMockOption(second.attemptQuestionId()));
@@ -442,9 +454,7 @@ class LearningServiceIntegrationTest {
         assertThat(mockExamService.history(learnerId)).singleElement()
                 .satisfies(item -> assertThat(item.attemptId()).isEqualTo(attempt.attemptId()));
 
-        assertThatThrownBy(() -> mockExamService.submit(learnerId, attempt.attemptId()))
-                .isInstanceOfSatisfying(ApiException.class,
-                        exception -> assertThat(exception.code()).isEqualTo("MOCK_EXAM_ALREADY_FINALIZED"));
+        assertThat(mockExamService.submit(learnerId, attempt.attemptId())).isEqualTo(result);
         assertThatThrownBy(() -> mockExamService.answer(learnerId, attempt.attemptId(),
                 first.attemptQuestionId(), correctMockOption(first.attemptQuestionId())))
                 .isInstanceOfSatisfying(ApiException.class,

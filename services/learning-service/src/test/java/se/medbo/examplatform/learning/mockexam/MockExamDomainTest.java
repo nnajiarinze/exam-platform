@@ -28,10 +28,18 @@ class MockExamDomainTest {
     }
 
     @Test
-    void rejectsBlueprintWhenUniqueFactsAreInsufficient() {
+    void permitsDistinctQuestionsLinkedToTheSameKnowledgeFact() {
+        UUID topic = UUID.randomUUID();
+        assertThat(generator.generate(
+                List.of(candidate(topic, "same"), candidate(topic, "same")),
+                List.of(new MockExamGenerator.TopicAllocation(topic, "topic", 2)), 2)).hasSize(2);
+    }
+
+    @Test
+    void rejectsBlueprintWhenDistinctQuestionsAreInsufficient() {
         UUID topic = UUID.randomUUID();
         assertThatThrownBy(() -> generator.generate(
-                List.of(candidate(topic, "same"), candidate(topic, "same")),
+                List.of(candidate(topic, "fact")),
                 List.of(new MockExamGenerator.TopicAllocation(topic, "topic", 2)), 2))
                 .isInstanceOfSatisfying(ApiException.class,
                         exception -> assertThat(exception.code()).isEqualTo("INSUFFICIENT_MOCK_QUESTIONS"));

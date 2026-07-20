@@ -6,19 +6,25 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
+import java.security.SecureRandom;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import se.medbo.examplatform.learning.shared.ApiException;
 import se.medbo.examplatform.learning.shared.ExternalExamIdentifier;
 
 @Service
 public class MockExamService {
+    private static final Logger log = LoggerFactory.getLogger(MockExamService.class);
     private final JdbcClient jdbc;
     private final MockExamGenerator generator;
     private final Clock clock;
@@ -34,16 +40,48 @@ public class MockExamService {
         this.clock = clock;
     }
 
+    public ConfigurationView configuration(String examId) {
+        String canonicalExamId = ExternalExamIdentifier.normalize(examId);
+        return jdbc.sql("""
+                SELECT exam_id, name, description, total_questions, duration_minutes, passing_percentage
+                FROM mock_exam_blueprint WHERE exam_id = :examId AND active
+                """).param("examId", canonicalExamId).query((rs, row) -> new ConfigurationView(
+                        rs.getString("exam_id"), rs.getString("name"), rs.getString("description"),
+                        rs.getInt("total_questions"), rs.getInt("duration_minutes"),
+                        rs.getBigDecimal("passing_percentage"))).optional()
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "MOCK_BLUEPRINT_NOT_FOUND",
+                        "No active mock exam blueprint exists for the exam"));
+    }
+
     @Transactional
     public AttemptView create(UUID learnerId, String examId) {
         String canonicalExamId = ExternalExamIdentifier.normalize(examId);
+        jdbc.sql("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))")
+                .param("key", learnerId + ":" + canonicalExamId).query((rs, row) -> true).single();
+        var activeAttempt = jdbc.sql("""
+                SELECT id FROM mock_exam_attempt
+                WHERE learner_id = :learnerId AND exam_id = :examId AND status = 'ACTIVE'
+                FOR UPDATE
+                """).param("learnerId", learnerId).param("examId", canonicalExamId)
+                .query(UUID.class).optional();
+        if (activeAttempt.isPresent()) {
+            var existing = attempt(learnerId, activeAttempt.get(), false);
+            if (!expireIfRequired(existing)) {
+                log.info("mock_exam_resumed mockExamId={} learnerId={} examId={} releaseId={}",
+                        existing.id(), learnerId, canonicalExamId, existing.releaseId());
+                return attemptView(existing);
+            }
+        }
         var blueprint = jdbc.sql("""
-                SELECT id, name, total_questions, duration_minutes, passing_percentage
+                SELECT id, name, description, total_questions, duration_minutes, passing_percentage,
+                       randomize_questions, randomize_options
                 FROM mock_exam_blueprint WHERE exam_id = :examId AND active
                 FOR SHARE
                 """).param("examId", canonicalExamId).query((rs, row) -> new Blueprint(
-                        rs.getObject("id", UUID.class), rs.getString("name"), rs.getInt("total_questions"),
-                        rs.getInt("duration_minutes"), rs.getBigDecimal("passing_percentage")))
+                        rs.getObject("id", UUID.class), rs.getString("name"), rs.getString("description"),
+                        rs.getInt("total_questions"), rs.getInt("duration_minutes"),
+                        rs.getBigDecimal("passing_percentage"), rs.getBoolean("randomize_questions"),
+                        rs.getBoolean("randomize_options")))
                 .optional().orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "MOCK_BLUEPRINT_NOT_FOUND",
                         "No active mock exam blueprint exists for the exam"));
         var releaseId = jdbc.sql("""
@@ -76,6 +114,7 @@ public class MockExamService {
         var eligible = jdbc.sql("""
                 SELECT id, topic_id, knowledge_fact_id FROM imported_question
                 WHERE content_release_id = :releaseId AND active
+                  AND question_type IN ('SINGLE_CHOICE', 'TRUE_FALSE')
                 ORDER BY id
                 """).param("releaseId", releaseId)
                 .query((rs, row) -> new MockExamGenerator.QuestionCandidate(rs.getObject("id", UUID.class),
@@ -86,23 +125,41 @@ public class MockExamService {
         Instant startedAt = clock.instant();
         jdbc.sql("""
                 INSERT INTO mock_exam_attempt
-                  (id, learner_id, blueprint_id, content_release_id, status, started_at,
-                   blueprint_name, total_questions, duration_minutes, passing_percentage)
-                VALUES (:id, :learnerId, :blueprintId, :releaseId, 'ACTIVE', :startedAt,
-                        :name, :total, :duration, :passing)
-                """).params(Map.of("id", attemptId, "learnerId", learnerId, "blueprintId", blueprint.id(),
-                        "releaseId", releaseId, "startedAt", utc(startedAt), "name", blueprint.name(),
-                        "total", blueprint.totalQuestions(), "duration", blueprint.durationMinutes(),
-                        "passing", blueprint.passingPercentage())).update();
+                  (id, learner_id, blueprint_id, content_release_id, exam_id, status, started_at, expires_at,
+                   blueprint_name, total_questions, duration_minutes, passing_percentage, created_at, updated_at)
+                VALUES (:id, :learnerId, :blueprintId, :releaseId, :examId, 'ACTIVE', :startedAt, :expiresAt,
+                        :name, :total, :duration, :passing, :startedAt, :startedAt)
+                """).params(Map.ofEntries(Map.entry("id", attemptId), Map.entry("learnerId", learnerId),
+                        Map.entry("blueprintId", blueprint.id()), Map.entry("releaseId", releaseId),
+                        Map.entry("examId", canonicalExamId), Map.entry("startedAt", utc(startedAt)),
+                        Map.entry("expiresAt", utc(startedAt.plusSeconds(blueprint.durationMinutes() * 60L))),
+                        Map.entry("name", blueprint.name()), Map.entry("total", blueprint.totalQuestions()),
+                        Map.entry("duration", blueprint.durationMinutes()),
+                        Map.entry("passing", blueprint.passingPercentage()))).update();
         int sequence = 1;
         for (var question : selected) {
+            var optionOrder = jdbc.sql("""
+                    SELECT external_answer_option_id FROM imported_answer_option
+                    WHERE question_id = :questionId ORDER BY sort_order
+                    """).param("questionId", question.id()).query(String.class).list();
+            if (blueprint.randomizeOptions()) {
+                optionOrder = new ArrayList<>(optionOrder);
+                Collections.shuffle(optionOrder, new SecureRandom());
+            }
+            String optionOrderJson = optionOrder.stream().map(id -> "\"" + id.replace("\"", "\\\"") + "\"")
+                    .collect(java.util.stream.Collectors.joining(",", "[", "]"));
             jdbc.sql("""
                     INSERT INTO mock_exam_question
-                      (id, attempt_id, imported_question_id, content_release_id, sequence_number, flagged)
-                    VALUES (:id, :attemptId, :questionId, :releaseId, :sequence, FALSE)
+                      (id, attempt_id, imported_question_id, content_release_id, sequence_number, flagged,
+                       option_order, created_at, updated_at)
+                    VALUES (:id, :attemptId, :questionId, :releaseId, :sequence, FALSE,
+                            CAST(:optionOrder AS jsonb), :createdAt, :createdAt)
                     """).params(Map.of("id", UUID.randomUUID(), "attemptId", attemptId,
-                            "questionId", question.id(), "releaseId", releaseId, "sequence", sequence++)).update();
+                            "questionId", question.id(), "releaseId", releaseId, "sequence", sequence++,
+                            "optionOrder", optionOrderJson, "createdAt", utc(startedAt))).update();
         }
+        log.info("mock_exam_started mockExamId={} learnerId={} examId={} releaseId={} questionCount={}",
+                attemptId, learnerId, canonicalExamId, releaseId, selected.size());
         return get(learnerId, attemptId);
     }
 
@@ -122,6 +179,7 @@ public class MockExamService {
         var query = jdbc.sql("""
                 SELECT question.id, imported.external_question_version_id, imported.prompt,
                        imported.question_type, question.sequence_number, question.flagged,
+                       question.version AS question_version, response.version AS answer_version,
                        response_option.external_answer_option_id AS selected_option_id
                 FROM mock_exam_question question
                 JOIN imported_question imported ON imported.id = question.imported_question_id
@@ -134,6 +192,7 @@ public class MockExamService {
         var row = query.query((rs, index) -> new QuestionRow(rs.getObject("id", UUID.class),
                 rs.getString("external_question_version_id"), rs.getString("prompt"),
                 rs.getString("question_type"), rs.getInt("sequence_number"), rs.getBoolean("flagged"),
+                rs.getLong("question_version"), rs.getObject("answer_version", Long.class),
                 rs.getString("selected_option_id"))).optional()
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "MOCK_QUESTION_NOT_FOUND",
                         sequenceNumber == null ? "No unanswered question remains" : "Mock exam question not found"));
@@ -141,17 +200,25 @@ public class MockExamService {
                 SELECT option.external_answer_option_id, option.text
                 FROM mock_exam_question question
                 JOIN imported_answer_option option ON option.question_id = question.imported_question_id
-                WHERE question.id = :id ORDER BY option.sort_order
+                JOIN LATERAL jsonb_array_elements_text(question.option_order) WITH ORDINALITY ordering(option_id, position)
+                  ON ordering.option_id = option.external_answer_option_id
+                WHERE question.id = :id ORDER BY ordering.position
                 """).param("id", row.id()).query((rs, index) -> new AnswerOptionView(
                         rs.getString("external_answer_option_id"), rs.getString("text"))).list();
         var timer = MockExamTimer.state(attempt.startedAt(), attempt.durationMinutes(), clock.instant());
         return new QuestionView(row.id(), row.questionId(), row.prompt(), row.questionType(), options,
                 row.sequenceNumber(), attempt.totalQuestions(), row.selectedOptionId(), row.flagged(),
-                timer.remainingSeconds());
+                row.questionVersion(), row.answerVersion() == null ? 0 : row.answerVersion(), timer.remainingSeconds());
     }
 
     @Transactional
     public AttemptProgress answer(UUID learnerId, UUID attemptId, UUID attemptQuestionId, String optionId) {
+        return answer(learnerId, attemptId, attemptQuestionId, optionId, null);
+    }
+
+    @Transactional
+    public AttemptProgress answer(UUID learnerId, UUID attemptId, UUID attemptQuestionId, String optionId,
+                                  Long expectedVersion) {
         var attempt = attempt(learnerId, attemptId, true);
         if (expireIfRequired(attempt)) throw notActive("Mock examination time has expired");
         if (!"ACTIVE".equals(attempt.status())) throw notActive("Mock examination is not active");
@@ -168,34 +235,56 @@ public class MockExamService {
                         rs.getObject("id", UUID.class), rs.getBoolean("correct"))).optional()
                 .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "MOCK_ANSWER_OPTION_INVALID",
                         "Answer option does not belong to the mock exam question"));
+        long currentVersion = jdbc.sql("SELECT COALESCE((SELECT version FROM mock_exam_response WHERE attempt_question_id = :id), 0)")
+                .param("id", attemptQuestionId).query(Long.class).single();
+        if (expectedVersion != null && expectedVersion != currentVersion) {
+            throw new ApiException(HttpStatus.CONFLICT, "STALE_ANSWER_VERSION", "The answer was changed by another request");
+        }
         jdbc.sql("""
                 INSERT INTO mock_exam_response
                   (id, attempt_id, attempt_question_id, imported_question_id,
-                   selected_answer_option_id, correct, answered_at)
-                VALUES (:id, :attemptId, :questionId, :importedQuestionId, :optionId, :correct, :answeredAt)
+                   selected_answer_option_id, correct, answered_at, updated_at, version)
+                VALUES (:id, :attemptId, :questionId, :importedQuestionId, :optionId, :correct, :answeredAt, :updatedAt, 1)
                 ON CONFLICT (attempt_question_id) DO UPDATE SET
                   selected_answer_option_id = EXCLUDED.selected_answer_option_id,
                   correct = EXCLUDED.correct,
-                  answered_at = EXCLUDED.answered_at
+                  answered_at = EXCLUDED.answered_at,
+                  updated_at = EXCLUDED.updated_at,
+                  version = mock_exam_response.version + 1
                 """).params(Map.of("id", UUID.randomUUID(), "attemptId", attemptId,
                         "questionId", attemptQuestionId, "importedQuestionId", answer.importedQuestionId(),
                         "optionId", answer.optionId(), "correct", answer.correct(),
-                        "answeredAt", utc(clock.instant()))).update();
+                        "answeredAt", utc(clock.instant()), "updatedAt", utc(clock.instant()))).update();
+        log.info("mock_exam_answer_saved mockExamId={} learnerId={} questionId={}",
+                attemptId, learnerId, attemptQuestionId);
         return progress(attemptId, attempt);
     }
 
     @Transactional
     public AttemptProgress flag(UUID learnerId, UUID attemptId, UUID attemptQuestionId, boolean flagged) {
+        return flag(learnerId, attemptId, attemptQuestionId, flagged, null);
+    }
+
+    @Transactional
+    public AttemptProgress flag(UUID learnerId, UUID attemptId, UUID attemptQuestionId, boolean flagged,
+                                Long expectedVersion) {
         var attempt = attempt(learnerId, attemptId, true);
         if (expireIfRequired(attempt)) throw notActive("Mock examination time has expired");
         if (!"ACTIVE".equals(attempt.status())) throw notActive("Mock examination is not active");
-        int updated = jdbc.sql("""
-                UPDATE mock_exam_question SET flagged = :flagged
+        String versionPredicate = expectedVersion == null ? "" : "AND version = :version";
+        var flagQuery = jdbc.sql("""
+                UPDATE mock_exam_question SET flagged = :flagged, updated_at = :updatedAt, version = version + 1
                 WHERE id = :questionId AND attempt_id = :attemptId
-                """).param("flagged", flagged).param("questionId", attemptQuestionId)
-                .param("attemptId", attemptId).update();
-        if (updated == 0) throw new ApiException(HttpStatus.NOT_FOUND, "MOCK_QUESTION_NOT_FOUND",
-                "Mock exam question not found");
+                  %s
+                """.formatted(versionPredicate)).param("flagged", flagged).param("questionId", attemptQuestionId)
+                .param("attemptId", attemptId).param("updatedAt", utc(clock.instant()));
+        if (expectedVersion != null) flagQuery = flagQuery.param("version", expectedVersion);
+        int updated = flagQuery.update();
+        if (updated == 0) throw new ApiException(expectedVersion == null ? HttpStatus.NOT_FOUND : HttpStatus.CONFLICT,
+                expectedVersion == null ? "MOCK_QUESTION_NOT_FOUND" : "STALE_MOCK_EXAM_VERSION",
+                expectedVersion == null ? "Mock exam question not found" : "The question was changed by another request");
+        log.info("mock_exam_question_flagged mockExamId={} learnerId={} questionId={} flagged={}",
+                attemptId, learnerId, attemptQuestionId, flagged);
         return progress(attemptId, attempt);
     }
 
@@ -204,11 +293,13 @@ public class MockExamService {
         var attempt = attempt(learnerId, attemptId, true);
         if (expireIfRequired(attempt)) return resultsInternal(attemptId);
         if (!"ACTIVE".equals(attempt.status())) {
-            throw new ApiException(HttpStatus.CONFLICT, "MOCK_EXAM_ALREADY_FINALIZED",
-                    "Mock examination has already been finalized");
+            return resultsInternal(attemptId);
         }
         finalizeAttempt(attempt, "SUBMITTED", clock.instant());
-        return resultsInternal(attemptId);
+        var result = resultsInternal(attemptId);
+        log.info("mock_exam_submitted mockExamId={} learnerId={} examId={} releaseId={} percentage={} passed={} autoSubmitted=false",
+                attemptId, learnerId, attempt.examId(), attempt.releaseId(), result.percentage(), result.passed());
+        return result;
     }
 
     @Transactional
@@ -276,13 +367,58 @@ public class MockExamService {
         var score = MockExamScoring.calculate(correct, attempt.totalQuestions(), attempt.passingPercentage());
         int duration = MockExamTimer.state(attempt.startedAt(), attempt.durationMinutes(), completedAt).elapsedSeconds();
         jdbc.sql("""
-                UPDATE mock_exam_attempt SET status = :status, submitted_at = :submittedAt,
+                    UPDATE mock_exam_attempt SET status = :status, submitted_at = :submittedAt,
                     completed_at = :completedAt, duration_seconds = :duration, score = :score,
-                    percentage = :percentage, passed = :passed
+                    percentage = :percentage, passed = :passed, auto_submitted = :autoSubmitted,
+                    incorrect_count = total_questions - :score,
+                    unanswered_count = (SELECT count(*) FROM mock_exam_question q
+                        LEFT JOIN mock_exam_response r ON r.attempt_question_id = q.id
+                        WHERE q.attempt_id = :id AND r.id IS NULL),
+                    updated_at = :completedAt, version = version + 1
                 WHERE id = :id AND status = 'ACTIVE'
                 """).params(Map.of("status", status, "submittedAt", utc(completedAt),
                         "completedAt", utc(completedAt), "duration", duration, "score", score.correct(),
-                        "percentage", score.percentage(), "passed", score.passed(), "id", attempt.id())).update();
+                        "percentage", score.percentage(), "passed", score.passed(),
+                        "autoSubmitted", "EXPIRED".equals(status), "id", attempt.id())).update();
+        persistBreakdowns(attempt.id());
+    }
+
+    private void persistBreakdowns(UUID attemptId) {
+        jdbc.sql("""
+                INSERT INTO mock_exam_subject_result
+                  (attempt_id, subject_id, subject_name, question_count, correct_count,
+                   incorrect_count, unanswered_count, percentage)
+                SELECT :id, subject.external_subject_id, subject.name, count(*),
+                       count(*) FILTER (WHERE response.correct),
+                       count(*) FILTER (WHERE response.id IS NOT NULL AND NOT response.correct),
+                       count(*) FILTER (WHERE response.id IS NULL),
+                       round(100.0 * count(*) FILTER (WHERE response.correct) / count(*), 2)
+                FROM mock_exam_question question
+                JOIN imported_question imported ON imported.id = question.imported_question_id
+                JOIN imported_topic topic ON topic.id = imported.topic_id
+                JOIN imported_subject subject ON subject.id = topic.subject_id
+                LEFT JOIN mock_exam_response response ON response.attempt_question_id = question.id
+                WHERE question.attempt_id = :id
+                GROUP BY subject.external_subject_id, subject.name
+                ON CONFLICT (attempt_id, subject_id) DO NOTHING
+                """).param("id", attemptId).update();
+        jdbc.sql("""
+                INSERT INTO mock_exam_topic_result
+                  (attempt_id, topic_id, topic_name, question_count, correct_count,
+                   incorrect_count, unanswered_count, percentage)
+                SELECT :id, topic.external_topic_id, topic.name, count(*),
+                       count(*) FILTER (WHERE response.correct),
+                       count(*) FILTER (WHERE response.id IS NOT NULL AND NOT response.correct),
+                       count(*) FILTER (WHERE response.id IS NULL),
+                       round(100.0 * count(*) FILTER (WHERE response.correct) / count(*), 2)
+                FROM mock_exam_question question
+                JOIN imported_question imported ON imported.id = question.imported_question_id
+                JOIN imported_topic topic ON topic.id = imported.topic_id
+                LEFT JOIN mock_exam_response response ON response.attempt_question_id = question.id
+                WHERE question.attempt_id = :id
+                GROUP BY topic.external_topic_id, topic.name
+                ON CONFLICT (attempt_id, topic_id) DO NOTHING
+                """).param("id", attemptId).update();
     }
 
     private AttemptProgress progress(UUID attemptId, Attempt attempt) {
@@ -308,22 +444,35 @@ public class MockExamService {
         int remaining = "ACTIVE".equals(attempt.status())
                 ? MockExamTimer.state(attempt.startedAt(), attempt.durationMinutes(), clock.instant()).remainingSeconds()
                 : 0;
-        return new AttemptView(attempt.id(), attempt.blueprintName(), attempt.status(), attempt.startedAt(),
-                attempt.submittedAt(), attempt.totalQuestions(), attempt.durationMinutes(), remaining,
+        return new AttemptView(attempt.id(), attempt.examId(), attempt.releaseId(), attempt.blueprintName(),
+                attempt.description(), attempt.status(), attempt.startedAt(), attempt.expiresAt(),
+                attempt.submittedAt(), attempt.totalQuestions(), attempt.durationMinutes(),
+                attempt.passingPercentage(), remaining,
                 (int) navigation.stream().filter(NavigationItem::answered).count(), navigation);
     }
 
     private ResultView resultsInternal(UUID attemptId) {
         var attempt = jdbc.sql("""
                 SELECT id, blueprint_name, status, started_at, completed_at, duration_seconds,
-                       score, percentage, passed, total_questions
+                       score, percentage, passed, total_questions, passing_percentage,
+                       incorrect_count, unanswered_count, auto_submitted
                 FROM mock_exam_attempt WHERE id = :id
                 """).param("id", attemptId).query((rs, row) -> new ResultRow(rs.getObject("id", UUID.class),
                         rs.getString("blueprint_name"), rs.getString("status"),
                         rs.getObject("started_at", OffsetDateTime.class).toInstant(),
                         rs.getObject("completed_at", OffsetDateTime.class).toInstant(),
                         rs.getInt("duration_seconds"), rs.getInt("score"), rs.getBigDecimal("percentage"),
-                        rs.getBoolean("passed"), rs.getInt("total_questions"))).single();
+                        rs.getBoolean("passed"), rs.getInt("total_questions"),
+                        rs.getBigDecimal("passing_percentage"), rs.getInt("incorrect_count"),
+                        rs.getInt("unanswered_count"), rs.getBoolean("auto_submitted"))).single();
+        var subjects = jdbc.sql("""
+                SELECT subject_id, subject_name, question_count, correct_count, incorrect_count,
+                       unanswered_count, percentage FROM mock_exam_subject_result
+                WHERE attempt_id = :attemptId ORDER BY subject_id
+                """).param("attemptId", attemptId).query((rs, row) -> new SubjectResult(
+                        rs.getString("subject_id"), rs.getString("subject_name"), rs.getInt("question_count"),
+                        rs.getInt("correct_count"), rs.getInt("incorrect_count"), rs.getInt("unanswered_count"),
+                        rs.getBigDecimal("percentage"))).list();
         var topics = jdbc.sql("""
                 SELECT topic.external_topic_id, topic.name, count(*) AS total,
                        count(response.id) AS answered,
@@ -356,38 +505,49 @@ public class MockExamService {
                         rs.getString("selected_id"), rs.getString("selected_text"), rs.getString("correct_id"),
                         rs.getString("correct_text"), rs.getString("explanation"))).list();
         return new ResultView(attempt.id(), attempt.blueprintName(), attempt.status(), attempt.startedAt(),
-                attempt.completedAt(), attempt.durationSeconds(), attempt.score(),
-                attempt.totalQuestions() - attempt.score(), attempt.percentage(), attempt.passed(), topics, incorrect);
+                attempt.completedAt(), attempt.durationSeconds(), attempt.score(), attempt.incorrectCount(),
+                attempt.unansweredCount(), attempt.percentage(), attempt.passPercentage(), attempt.passed(),
+                attempt.autoSubmitted(), subjects, topics, incorrect);
     }
 
     private Attempt attempt(UUID learnerId, UUID attemptId, boolean lock) {
         return jdbc.sql("""
-                SELECT id, status, started_at, submitted_at, total_questions, duration_minutes,
-                       passing_percentage, blueprint_name
-                FROM mock_exam_attempt WHERE id = :id AND learner_id = :learnerId %s
+                SELECT attempt.id, attempt.status, attempt.started_at, attempt.expires_at, attempt.submitted_at,
+                       attempt.total_questions, attempt.duration_minutes, attempt.passing_percentage,
+                       attempt.blueprint_name, attempt.exam_id, attempt.content_release_id, blueprint.description
+                FROM mock_exam_attempt attempt JOIN mock_exam_blueprint blueprint ON blueprint.id = attempt.blueprint_id
+                WHERE attempt.id = :id AND attempt.learner_id = :learnerId %s
                 """.formatted(lock ? "FOR UPDATE" : ""))
                 .param("id", attemptId).param("learnerId", learnerId)
                 .query((rs, row) -> new Attempt(rs.getObject("id", UUID.class), rs.getString("status"),
                         rs.getObject("started_at", OffsetDateTime.class).toInstant(),
+                        rs.getObject("expires_at", OffsetDateTime.class).toInstant(),
                         rs.getObject("submitted_at", OffsetDateTime.class) == null ? null
                                 : rs.getObject("submitted_at", OffsetDateTime.class).toInstant(),
                         rs.getInt("total_questions"), rs.getInt("duration_minutes"),
-                        rs.getBigDecimal("passing_percentage"), rs.getString("blueprint_name")))
+                        rs.getBigDecimal("passing_percentage"), rs.getString("blueprint_name"),
+                        rs.getString("exam_id"), rs.getObject("content_release_id", UUID.class),
+                        rs.getString("description")))
                 .optional().orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "MOCK_EXAM_NOT_FOUND",
                         "Mock examination not found"));
     }
 
     private Attempt attempt(UUID attemptId) {
         return jdbc.sql("""
-                SELECT id, status, started_at, submitted_at, total_questions, duration_minutes,
-                       passing_percentage, blueprint_name
-                FROM mock_exam_attempt WHERE id = :id
+                SELECT attempt.id, attempt.status, attempt.started_at, attempt.expires_at, attempt.submitted_at,
+                       attempt.total_questions, attempt.duration_minutes, attempt.passing_percentage,
+                       attempt.blueprint_name, attempt.exam_id, attempt.content_release_id, blueprint.description
+                FROM mock_exam_attempt attempt JOIN mock_exam_blueprint blueprint ON blueprint.id = attempt.blueprint_id
+                WHERE attempt.id = :id
                 """).param("id", attemptId).query((rs, row) -> new Attempt(rs.getObject("id", UUID.class),
                         rs.getString("status"), rs.getObject("started_at", OffsetDateTime.class).toInstant(),
+                        rs.getObject("expires_at", OffsetDateTime.class).toInstant(),
                         rs.getObject("submitted_at", OffsetDateTime.class) == null ? null
                                 : rs.getObject("submitted_at", OffsetDateTime.class).toInstant(),
                         rs.getInt("total_questions"), rs.getInt("duration_minutes"),
-                        rs.getBigDecimal("passing_percentage"), rs.getString("blueprint_name"))).single();
+                        rs.getBigDecimal("passing_percentage"), rs.getString("blueprint_name"),
+                        rs.getString("exam_id"), rs.getObject("content_release_id", UUID.class),
+                        rs.getString("description"))).single();
     }
 
     private static ApiException notActive(String message) {
@@ -396,18 +556,27 @@ public class MockExamService {
 
     private static OffsetDateTime utc(Instant value) { return OffsetDateTime.ofInstant(value, ZoneOffset.UTC); }
 
-    public record AttemptView(UUID attemptId, String name, String status, Instant startedAt, Instant submittedAt,
-                              int totalQuestions, int durationMinutes, int remainingSeconds, int answered,
+    public record AttemptView(UUID attemptId, String examId, UUID releaseId, String name, String description,
+                              String status, Instant startedAt, Instant expiresAt, Instant submittedAt,
+                              int totalQuestions, int durationMinutes, BigDecimal passPercentage,
+                              int remainingSeconds, int answered,
                               List<NavigationItem> questions) {}
+    public record ConfigurationView(String examId, String name, String description, int questionCount,
+                                    int durationMinutes, BigDecimal passPercentage) {}
     public record NavigationItem(UUID attemptQuestionId, int sequenceNumber, boolean answered, boolean flagged) {}
     public record QuestionView(UUID attemptQuestionId, String questionId, String prompt, String questionType,
                                List<AnswerOptionView> answerOptions, int sequenceNumber, int totalQuestions,
-                               String selectedAnswerOptionId, boolean flagged, int remainingSeconds) {}
+                               String selectedAnswerOptionId, boolean flagged, long questionVersion,
+                               long answerVersion, int remainingSeconds) {}
     public record AnswerOptionView(String id, String text) {}
     public record AttemptProgress(int answered, int total, int flagged, int remainingSeconds) {}
     public record ResultView(UUID attemptId, String name, String status, Instant startedAt, Instant completedAt,
-                             int durationSeconds, int correctAnswers, int incorrectAnswers, BigDecimal percentage,
-                             boolean passed, List<TopicResult> topics, List<IncorrectQuestion> incorrectQuestions) {}
+                             int durationSeconds, int correctAnswers, int incorrectAnswers, int unansweredAnswers,
+                             BigDecimal percentage, BigDecimal passPercentage, boolean passed, boolean autoSubmitted,
+                             List<SubjectResult> subjects, List<TopicResult> topics,
+                             List<IncorrectQuestion> incorrectQuestions) {}
+    public record SubjectResult(String subjectId, String subjectName, int total, int correct, int incorrect,
+                                int unanswered, BigDecimal percentage) {}
     public record TopicResult(String topicId, String topicName, int total, int answered, int correct,
                               BigDecimal percentage) {}
     public record IncorrectQuestion(String questionId, String prompt, String selectedAnswerOptionId,
@@ -415,14 +584,16 @@ public class MockExamService {
                                     String correctAnswerText, String explanation) {}
     public record HistoryView(UUID attemptId, String name, String status, Instant startedAt, int durationSeconds,
                               int score, BigDecimal percentage, boolean passed, int totalQuestions) {}
-    private record Blueprint(UUID id, String name, int totalQuestions, int durationMinutes,
-                             BigDecimal passingPercentage) {}
-    private record Attempt(UUID id, String status, Instant startedAt, Instant submittedAt, int totalQuestions,
-                           int durationMinutes, BigDecimal passingPercentage, String blueprintName) {}
+    private record Blueprint(UUID id, String name, String description, int totalQuestions, int durationMinutes,
+                             BigDecimal passingPercentage, boolean randomizeQuestions, boolean randomizeOptions) {}
+    private record Attempt(UUID id, String status, Instant startedAt, Instant expiresAt, Instant submittedAt,
+                           int totalQuestions, int durationMinutes, BigDecimal passingPercentage,
+                           String blueprintName, String examId, UUID releaseId, String description) {}
     private record QuestionRow(UUID id, String questionId, String prompt, String questionType, int sequenceNumber,
-                               boolean flagged, String selectedOptionId) {}
+                               boolean flagged, long questionVersion, Long answerVersion, String selectedOptionId) {}
     private record AnswerContext(UUID importedQuestionId, UUID optionId, boolean correct) {}
     private record ResultRow(UUID id, String blueprintName, String status, Instant startedAt, Instant completedAt,
                              int durationSeconds, int score, BigDecimal percentage, boolean passed,
-                             int totalQuestions) {}
+                             int totalQuestions, BigDecimal passPercentage, int incorrectCount,
+                             int unansweredCount, boolean autoSubmitted) {}
 }

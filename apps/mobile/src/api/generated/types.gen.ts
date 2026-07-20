@@ -47,7 +47,7 @@ export type PracticeQuestion = {
     sessionQuestionId: string;
     questionId: string;
     prompt: string;
-    questionType: 'SINGLE_CHOICE';
+    questionType: 'SINGLE_CHOICE' | 'TRUE_FALSE';
     answerOptions: Array<AnswerOption>;
     sequenceNumber: number;
     totalQuestionCount: number;
@@ -102,6 +102,15 @@ export type CreateMockExamRequest = {
     examId: string;
 };
 
+export type MockExamConfiguration = {
+    examId: string;
+    name: string;
+    description: string;
+    questionCount: number;
+    durationMinutes: number;
+    passPercentage: number;
+};
+
 export type MockExamStatus = 'ACTIVE' | 'SUBMITTED' | 'EXPIRED' | 'ABANDONED';
 
 export type MockExamNavigationItem = {
@@ -113,12 +122,17 @@ export type MockExamNavigationItem = {
 
 export type MockExamAttempt = {
     attemptId: string;
+    examId: string;
+    releaseId: string;
     name: string;
+    description: string;
     status: MockExamStatus;
     startedAt: string;
+    expiresAt: string;
     submittedAt?: string | null;
     totalQuestions: number;
     durationMinutes: number;
+    passPercentage: number;
     remainingSeconds: number;
     answered: number;
     questions: Array<MockExamNavigationItem>;
@@ -128,22 +142,32 @@ export type MockExamQuestion = {
     attemptQuestionId: string;
     questionId: string;
     prompt: string;
-    questionType: 'SINGLE_CHOICE';
+    questionType: 'SINGLE_CHOICE' | 'TRUE_FALSE';
     answerOptions: Array<AnswerOption>;
     sequenceNumber: number;
     totalQuestions: number;
     selectedAnswerOptionId?: string | null;
     flagged: boolean;
+    questionVersion: number;
+    answerVersion: number;
     remainingSeconds: number;
 };
 
 export type SubmitMockExamAnswerRequest = {
     attemptQuestionId: string;
     selectedAnswerOptionId: string;
+    /**
+     * Optional optimistic-lock version; omitted for backwards compatibility.
+     */
+    version?: number;
 };
 
 export type FlagMockExamQuestionRequest = {
     flagged: boolean;
+    /**
+     * Optional optimistic-lock version; omitted for backwards compatibility.
+     */
+    version?: number;
 };
 
 export type MockExamProgress = {
@@ -159,6 +183,16 @@ export type MockExamTopicResult = {
     total: number;
     answered: number;
     correct: number;
+    percentage: number;
+};
+
+export type MockExamSubjectResult = {
+    subjectId: string;
+    subjectName: string;
+    total: number;
+    correct: number;
+    incorrect: number;
+    unanswered: number;
     percentage: number;
 };
 
@@ -181,8 +215,12 @@ export type MockExamResult = {
     durationSeconds: number;
     correctAnswers: number;
     incorrectAnswers: number;
+    unansweredAnswers: number;
     percentage: number;
+    passPercentage: number;
     passed: boolean;
+    autoSubmitted: boolean;
+    subjects: Array<MockExamSubjectResult>;
     topics: Array<MockExamTopicResult>;
     incorrectQuestions: Array<MockExamIncorrectQuestion>;
 };
@@ -582,6 +620,33 @@ export type GetMockExamHistoryResponses = {
 };
 
 export type GetMockExamHistoryResponse = GetMockExamHistoryResponses[keyof GetMockExamHistoryResponses];
+
+export type GetMockExamConfigurationData = {
+    body?: never;
+    path?: never;
+    query: {
+        examId: string;
+    };
+    url: '/api/v1/mock-exams/configuration';
+};
+
+export type GetMockExamConfigurationErrors = {
+    /**
+     * Learner-owned or requested resource was not found.
+     */
+    404: Error;
+};
+
+export type GetMockExamConfigurationError = GetMockExamConfigurationErrors[keyof GetMockExamConfigurationErrors];
+
+export type GetMockExamConfigurationResponses = {
+    /**
+     * Learner-visible exam instructions and thresholds.
+     */
+    200: MockExamConfiguration;
+};
+
+export type GetMockExamConfigurationResponse = GetMockExamConfigurationResponses[keyof GetMockExamConfigurationResponses];
 
 export type GetMockExamData = {
     body?: never;

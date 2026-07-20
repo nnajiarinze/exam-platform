@@ -35,6 +35,11 @@ public class MockExamController {
         return service.create(identityResolver.resolve(identity), request.examId());
     }
 
+    @GetMapping("/configuration")
+    public MockExamService.ConfigurationView configuration(@RequestParam String examId) {
+        return service.configuration(examId);
+    }
+
     @GetMapping("/{attemptId}")
     public MockExamService.AttemptView get(
             @RequestHeader(value = "X-Learner-Identity", required = false) String identity,
@@ -55,7 +60,7 @@ public class MockExamController {
             @RequestHeader(value = "X-Learner-Identity", required = false) String identity,
             @PathVariable UUID attemptId, @Valid @RequestBody SubmitMockAnswerRequest request) {
         return service.answer(identityResolver.resolve(identity), attemptId, request.attemptQuestionId(),
-                request.selectedAnswerOptionId());
+                request.selectedAnswerOptionId(), request.version());
     }
 
     @PostMapping("/{attemptId}/questions/{attemptQuestionId}/flag")
@@ -63,7 +68,8 @@ public class MockExamController {
             @RequestHeader(value = "X-Learner-Identity", required = false) String identity,
             @PathVariable UUID attemptId, @PathVariable UUID attemptQuestionId,
             @Valid @RequestBody FlagMockQuestionRequest request) {
-        return service.flag(identityResolver.resolve(identity), attemptId, attemptQuestionId, request.flagged());
+        return service.flag(identityResolver.resolve(identity), attemptId, attemptQuestionId, request.flagged(),
+                request.version());
     }
 
     @PostMapping("/{attemptId}/submit")
@@ -88,6 +94,7 @@ public class MockExamController {
 
     public record CreateMockExamRequest(@NotBlank @Size(max = 200) String examId) {}
     public record SubmitMockAnswerRequest(@NotNull UUID attemptQuestionId,
-                                          @NotBlank @Size(max = 200) String selectedAnswerOptionId) {}
-    public record FlagMockQuestionRequest(@NotNull Boolean flagged) {}
+                                          @NotBlank @Size(max = 200) String selectedAnswerOptionId,
+                                          @Min(0) Long version) {}
+    public record FlagMockQuestionRequest(@NotNull Boolean flagged, @Min(0) Long version) {}
 }

@@ -1,5 +1,9 @@
 # Learning Service
 
+## Mock-exam lifecycle
+
+The Learning Service resolves configuration and the active release only when an attempt starts. One active attempt is allowed per learner and canonical exam ID; repeated starts resume it. The attempt stores its release, configuration values, selected question records, sequence, option order, `startedAt`, and `expiresAt`. Answers remain editable without feedback while status is `ACTIVE`. Manual submission or authoritative server expiry atomically freezes the attempt, scores unanswered questions as incorrect, persists overall and subject/topic results, and enables answer review. Repeated submission returns the existing result. This differs from practice sessions, which provide immediate feedback and update learner progress per response.
+
 ## Canonical exam identifiers
 
 External exam identifiers are normalized once at service boundaries to

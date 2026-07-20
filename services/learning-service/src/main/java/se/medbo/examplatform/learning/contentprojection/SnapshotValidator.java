@@ -37,7 +37,9 @@ public class SnapshotValidator {
                 for (var question : topic.questions()) {
                     if (!questionIds.add(question.id())) invalid("Duplicate question identifier");
                     if (!questionVersions.add(question.versionId())) invalid("Duplicate question version identifier");
-                    if (!"SINGLE_CHOICE".equals(question.questionType())) invalid("Unsupported question type");
+                    if (!java.util.Set.of("SINGLE_CHOICE", "TRUE_FALSE").contains(question.questionType())) {
+                        invalid("Unsupported question type");
+                    }
                     long correct = question.answerOptions().stream().filter(ContentSnapshot.AnswerOption::correct).count();
                     if (question.answerOptions().size() < 2 || correct != 1) {
                         invalid("A single-choice question requires at least two options and exactly one correct option");

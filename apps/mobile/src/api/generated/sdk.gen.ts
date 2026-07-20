@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ActivateImportedContentReleaseData, ActivateImportedContentReleaseErrors, ActivateImportedContentReleaseResponses, CreateMockExamData, CreateMockExamErrors, CreateMockExamResponses, CreatePracticeSessionData, CreatePracticeSessionErrors, CreatePracticeSessionResponses, FlagMockExamQuestionData, FlagMockExamQuestionErrors, FlagMockExamQuestionResponses, GetMockExamData, GetMockExamErrors, GetMockExamHistoryData, GetMockExamHistoryErrors, GetMockExamHistoryResponses, GetMockExamQuestionData, GetMockExamQuestionErrors, GetMockExamQuestionResponses, GetMockExamResponses, GetMockExamResultsData, GetMockExamResultsErrors, GetMockExamResultsResponses, GetNextPracticeQuestionData, GetNextPracticeQuestionErrors, GetNextPracticeQuestionResponses, GetPracticeSessionData, GetPracticeSessionErrors, GetPracticeSessionResponses, GetSubjectsData, GetSubjectsErrors, GetSubjectsResponses, GetTopicProgressData, GetTopicProgressErrors, GetTopicProgressResponses, ImportContentReleaseData, ImportContentReleaseErrors, ImportContentReleaseResponses, SubmitMockExamData, SubmitMockExamErrors, SubmitMockExamResponseData, SubmitMockExamResponseErrors, SubmitMockExamResponseResponses, SubmitMockExamResponses, SubmitPracticeResponseData, SubmitPracticeResponseErrors, SubmitPracticeResponseResponses } from './types.gen';
+import type { ActivateImportedContentReleaseData, ActivateImportedContentReleaseErrors, ActivateImportedContentReleaseResponses, CreateMockExamData, CreateMockExamErrors, CreateMockExamResponses, CreatePracticeSessionData, CreatePracticeSessionErrors, CreatePracticeSessionResponses, FlagMockExamQuestionData, FlagMockExamQuestionErrors, FlagMockExamQuestionResponses, GetMockExamConfigurationData, GetMockExamConfigurationErrors, GetMockExamConfigurationResponses, GetMockExamData, GetMockExamErrors, GetMockExamHistoryData, GetMockExamHistoryErrors, GetMockExamHistoryResponses, GetMockExamQuestionData, GetMockExamQuestionErrors, GetMockExamQuestionResponses, GetMockExamResponses, GetMockExamResultsData, GetMockExamResultsErrors, GetMockExamResultsResponses, GetNextPracticeQuestionData, GetNextPracticeQuestionErrors, GetNextPracticeQuestionResponses, GetPracticeSessionData, GetPracticeSessionErrors, GetPracticeSessionResponses, GetSubjectsData, GetSubjectsErrors, GetSubjectsResponses, GetTopicProgressData, GetTopicProgressErrors, GetTopicProgressResponses, ImportContentReleaseData, ImportContentReleaseErrors, ImportContentReleaseResponses, SubmitMockExamData, SubmitMockExamErrors, SubmitMockExamResponseData, SubmitMockExamResponseErrors, SubmitMockExamResponseResponses, SubmitMockExamResponses, SubmitPracticeResponseData, SubmitPracticeResponseErrors, SubmitPracticeResponseResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -125,6 +125,11 @@ export const getMockExamHistory = <ThrowOnError extends boolean = false>(options
     url: '/api/v1/mock-exams/history',
     ...options
 });
+
+/**
+ * Get the active mock-exam configuration for an exam
+ */
+export const getMockExamConfiguration = <ThrowOnError extends boolean = false>(options: Options<GetMockExamConfigurationData, ThrowOnError>): RequestResult<GetMockExamConfigurationResponses, GetMockExamConfigurationErrors, ThrowOnError> => (options.client ?? client).get<GetMockExamConfigurationResponses, GetMockExamConfigurationErrors, ThrowOnError>({ url: '/api/v1/mock-exams/configuration', ...options });
 
 /**
  * Get mock examination metadata and navigation state

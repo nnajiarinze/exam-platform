@@ -19,19 +19,25 @@ export function MockQuestionScreen({ navigation, route }: NativeStackScreenProps
   const [selected, setSelected] = useState<string>();
   useEffect(() => setSelected(question.data?.selectedAnswerOptionId ?? undefined), [question.data?.attemptQuestionId, question.data?.selectedAnswerOptionId]);
   const remaining = useCountdown(question.data?.remainingSeconds ?? attempt.data?.remainingSeconds ?? -1);
-  const answer = useMutation({ mutationFn: (optionId: string) => learningApi.answerMockQuestion(identity, attemptId, question.data!.attemptQuestionId, optionId), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['mock-attempt', attemptId] }) });
-  const flag = useMutation({ mutationFn: (flagged: boolean) => learningApi.flagMockQuestion(identity, attemptId, question.data!.attemptQuestionId, flagged), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['mock-attempt', attemptId] }); queryClient.invalidateQueries({ queryKey: ['mock-question', attemptId, sequenceNumber] }); } });
+  const answer = useMutation({ mutationFn: (optionId: string) => learningApi.answerMockQuestion(identity, attemptId, question.data!.attemptQuestionId, optionId, question.data!.answerVersion), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['mock-attempt', attemptId] }); queryClient.invalidateQueries({ queryKey: ['mock-question', attemptId, sequenceNumber] }); }, onError: async () => { const refreshed = await question.refetch(); setSelected(refreshed.data?.selectedAnswerOptionId ?? undefined); } });
+  const flag = useMutation({ mutationFn: (flagged: boolean) => learningApi.flagMockQuestion(identity, attemptId, question.data!.attemptQuestionId, flagged, question.data!.questionVersion), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['mock-attempt', attemptId] }); queryClient.invalidateQueries({ queryKey: ['mock-question', attemptId, sequenceNumber] }); } });
   const submit = useMutation({ mutationFn: () => learningApi.submitMockExam(identity, attemptId), onSuccess: () => { setAttempt(undefined); navigation.replace('MockResults', { attemptId }); } });
+  useEffect(() => { if (attempt.data && attempt.data.status !== 'ACTIVE') { setAttempt(undefined); navigation.replace('MockResults', { attemptId }); } }, [attempt.data?.status, attemptId, navigation, setAttempt]);
   useEffect(() => { if (question.data && remaining === 0 && !submit.isPending) submit.mutate(); }, [remaining, question.data]);
   const go = (sequence: number) => navigation.replace('MockQuestion', { attemptId, sequenceNumber: sequence });
-  const confirmSubmit = () => Alert.alert('Submit mock examination?', 'You cannot change answers after submission.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Submit', style: 'destructive', onPress: () => submit.mutate() }]);
+  const confirmSubmit = () => {
+    const answered = attempt.data?.answered ?? 0;
+    const flagged = attempt.data?.questions.filter((item) => item.flagged).length ?? 0;
+    const total = attempt.data?.totalQuestions ?? 0;
+    Alert.alert('Submit mock examination?', `${answered} answered · ${total - answered} unanswered · ${flagged} flagged\n${formatCountdown(Math.max(0, remaining))} remaining\n\nYou cannot change answers after submission.`, [{ text: 'Return to exam', style: 'cancel' }, { text: 'Submit', style: 'destructive', onPress: () => submit.mutate() }]);
+  };
   if (attempt.isPending || question.isPending) return <Screen scroll={false}><Loading label="Loading mock examination…" /></Screen>;
   if (attempt.isError || question.isError) return <Screen><ErrorState message={friendlyError(attempt.error ?? question.error)} retry={() => { attempt.refetch(); question.refetch(); }} /></Screen>;
   const displayedRemaining = Math.max(0, remaining);
   return <Screen><View style={styles.header}><Text style={styles.progress}>Question {sequenceNumber} of {question.data.totalQuestions}</Text><Text accessibilityLabel={`${displayedRemaining} seconds remaining`} style={styles.timer}>{formatCountdown(displayedRemaining)}</Text></View>
     <QuestionNavigator questions={attempt.data.questions} current={sequenceNumber} onSelect={go} />
     <Text accessibilityRole="header" style={styles.prompt}>{question.data.prompt}</Text>
-    {question.data.answerOptions.map((option) => <Pressable accessibilityRole="radio" accessibilityState={{ checked: selected === option.id }} key={option.id} onPress={() => { setSelected(option.id); answer.mutate(option.id); }} style={[styles.option, selected === option.id && styles.selected]}><Text style={styles.optionText}>{option.text}</Text></Pressable>)}
+    {question.data.answerOptions.map((option) => <Pressable accessibilityRole="radio" accessibilityState={{ checked: selected === option.id, disabled: answer.isPending }} disabled={answer.isPending} key={option.id} onPress={() => { setSelected(option.id); answer.mutate(option.id); }} style={[styles.option, selected === option.id && styles.selected]}><Text style={styles.optionText}>{option.text}</Text></Pressable>)}
     {(answer.isError || flag.isError || submit.isError) && <ErrorState message={friendlyError(answer.error ?? flag.error ?? submit.error)} />}
     <Button label={question.data.flagged ? 'Remove review flag' : 'Flag for review'} disabled={flag.isPending} onPress={() => flag.mutate(!question.data.flagged)} />
     <View style={styles.actions}><Button label="Previous" disabled={sequenceNumber <= 1} onPress={() => go(sequenceNumber - 1)} /><Button label="Next" disabled={sequenceNumber >= question.data.totalQuestions} onPress={() => go(sequenceNumber + 1)} /></View>
