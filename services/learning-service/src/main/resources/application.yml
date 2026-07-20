@@ -21,4 +21,5 @@ learning:
     development-header-enabled: ${LEARNING_DEV_IDENTITY_ENABLED:false}
   practice:
     max-question-count: ${LEARNING_MAX_PRACTICE_QUESTIONS:50}
-
+  mock-exam:
+    expiry-scan-ms: ${LEARNING_MOCK_EXPIRY_SCAN_MS:30000}

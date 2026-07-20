@@ -34,6 +34,7 @@ import se.medbo.examplatform.learning.contentprojection.ContentSnapshot;
 import se.medbo.examplatform.learning.contentprojection.SnapshotValidator;
 import se.medbo.examplatform.learning.practice.PracticeMode;
 import se.medbo.examplatform.learning.practice.PracticeService;
+import se.medbo.examplatform.learning.mockexam.MockExamService;
 import se.medbo.examplatform.learning.progress.ProgressService;
 import se.medbo.examplatform.learning.shared.ApiException;
 
@@ -53,6 +54,7 @@ class LearningServiceIntegrationTest {
     @Autowired ContentImportService importService;
     @Autowired SnapshotValidator snapshotValidator;
     @Autowired PracticeService practiceService;
+    @Autowired MockExamService mockExamService;
     @Autowired ProgressService progressService;
     @Autowired MockMvc mockMvc;
     @Autowired ObjectMapper objectMapper;
@@ -62,7 +64,9 @@ class LearningServiceIntegrationTest {
     @BeforeEach
     void cleanDatabase() {
         jdbc.sql("""
-                TRUNCATE bookmark, topic_progress, practice_response, practice_session_question,
+                TRUNCATE mock_exam_response, mock_exam_question, mock_exam_attempt,
+                         mock_exam_topic_allocation, mock_exam_blueprint,
+                         bookmark, topic_progress, practice_response, practice_session_question,
                          practice_session, imported_answer_option, imported_question, imported_topic,
                          imported_subject, imported_content_release, learner_profile CASCADE
                 """).update();
@@ -374,6 +378,135 @@ class LearningServiceIntegrationTest {
                         .header("X-Learner-Identity", "other-learner"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("PRACTICE_SESSION_NOT_FOUND"));
+    }
+
+    @Test
+    void createsNavigatesSubmitsAndStoresMockExamResultsAndHistory() {
+        importService.importSnapshot(snapshot("mock-release", "1"));
+        insertMockBlueprint(3, 30, "67.00");
+
+        var attempt = mockExamService.create(learnerId, "swedish-citizenship");
+        assertThat(attempt.status()).isEqualTo("ACTIVE");
+        assertThat(attempt.questions()).hasSize(3);
+        assertThat(jdbc.sql("""
+                SELECT count(DISTINCT imported_question_id) FROM mock_exam_question WHERE attempt_id = :id
+                """).param("id", attempt.attemptId()).query(Integer.class).single()).isEqualTo(3);
+
+        var first = mockExamService.question(learnerId, attempt.attemptId(), 1);
+        mockExamService.flag(learnerId, attempt.attemptId(), first.attemptQuestionId(), true);
+        mockExamService.answer(learnerId, attempt.attemptId(), first.attemptQuestionId(),
+                correctMockOption(first.attemptQuestionId()));
+        var second = mockExamService.question(learnerId, attempt.attemptId(), 2);
+        mockExamService.answer(learnerId, attempt.attemptId(), second.attemptQuestionId(),
+                wrongMockOption(second.attemptQuestionId()));
+
+        var result = mockExamService.submit(learnerId, attempt.attemptId());
+        assertThat(result.status()).isEqualTo("SUBMITTED");
+        assertThat(result.correctAnswers()).isEqualTo(1);
+        assertThat(result.incorrectAnswers()).isEqualTo(2);
+        assertThat(result.percentage()).isEqualByComparingTo("33.33");
+        assertThat(result.passed()).isFalse();
+        assertThat(result.topics()).hasSize(2);
+        assertThat(result.incorrectQuestions()).hasSize(2);
+        assertThat(result.incorrectQuestions().getFirst().correctAnswerOptionId()).isNotBlank();
+        assertThat(mockExamService.history(learnerId)).singleElement()
+                .satisfies(item -> assertThat(item.attemptId()).isEqualTo(attempt.attemptId()));
+
+        assertThatThrownBy(() -> mockExamService.submit(learnerId, attempt.attemptId()))
+                .isInstanceOfSatisfying(ApiException.class,
+                        exception -> assertThat(exception.code()).isEqualTo("MOCK_EXAM_ALREADY_FINALIZED"));
+        assertThatThrownBy(() -> mockExamService.answer(learnerId, attempt.attemptId(),
+                first.attemptQuestionId(), correctMockOption(first.attemptQuestionId())))
+                .isInstanceOfSatisfying(ApiException.class,
+                        exception -> assertThat(exception.code()).isEqualTo("MOCK_EXAM_NOT_ACTIVE"));
+    }
+
+    @Test
+    void mockExamHttpEndpointsAreRegisteredAndHideCorrectnessBeforeSubmission() throws Exception {
+        importService.importSnapshot(snapshot("mock-http-release", "1"));
+        insertMockBlueprint(3, 30, "50.00");
+        String response = mockMvc.perform(post("/api/v1/mock-exams")
+                        .header("X-Learner-Identity", "developer-learner")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"examId\":\"swedish-citizenship\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.attemptId").exists())
+                .andExpect(jsonPath("$.questions.length()").value(3))
+                .andReturn().getResponse().getContentAsString();
+        UUID attemptId = UUID.fromString(objectMapper.readTree(response).get("attemptId").asText());
+
+        mockMvc.perform(get("/api/v1/mock-exams/{id}/next", attemptId)
+                        .header("X-Learner-Identity", "developer-learner"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.answerOptions[0].correct").doesNotExist())
+                .andExpect(jsonPath("$.explanation").doesNotExist());
+        mockMvc.perform(get("/api/v1/mock-exams/history")
+                        .header("X-Learner-Identity", "developer-learner"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void expiresMockExamUsingServerTimeAndRejectsFurtherAnswers() {
+        importService.importSnapshot(snapshot("expired-mock-release", "1"));
+        insertMockBlueprint(3, 1, "50.00");
+        var attempt = mockExamService.create(learnerId, "swedish-citizenship");
+        jdbc.sql("UPDATE mock_exam_attempt SET started_at = now() - interval '2 minutes' WHERE id = :id")
+                .param("id", attempt.attemptId()).update();
+
+        mockExamService.expireDueAttempts();
+        assertThat(mockExamService.get(learnerId, attempt.attemptId()).status()).isEqualTo("EXPIRED");
+        assertThat(mockExamService.results(learnerId, attempt.attemptId()).percentage())
+                .isEqualByComparingTo("0.00");
+        var questionId = attempt.questions().getFirst().attemptQuestionId();
+        assertThatThrownBy(() -> mockExamService.answer(learnerId, attempt.attemptId(), questionId, "anything"))
+                .isInstanceOfSatisfying(ApiException.class,
+                        exception -> assertThat(exception.code()).isEqualTo("MOCK_EXAM_NOT_ACTIVE"));
+    }
+
+    @Test
+    void learnerCannotAccessAnotherLearnersMockExam() {
+        importService.importSnapshot(snapshot("mock-owner-release", "1"));
+        insertMockBlueprint(3, 30, "50.00");
+        var attempt = mockExamService.create(learnerId, "swedish-citizenship");
+        UUID other = UUID.randomUUID();
+        jdbc.sql("""
+                INSERT INTO learner_profile
+                  (id, external_identity_id, interface_language, explanation_language, created_at, updated_at)
+                VALUES (:id, 'mock-other', 'sv', 'sv', now(), now())
+                """).param("id", other).update();
+        assertThatThrownBy(() -> mockExamService.get(other, attempt.attemptId()))
+                .isInstanceOfSatisfying(ApiException.class,
+                        exception -> assertThat(exception.code()).isEqualTo("MOCK_EXAM_NOT_FOUND"));
+    }
+
+    private void insertMockBlueprint(int total, int durationMinutes, String passingPercentage) {
+        UUID blueprintId = UUID.randomUUID();
+        jdbc.sql("""
+                INSERT INTO mock_exam_blueprint
+                  (id, exam_id, name, total_questions, duration_minutes, passing_percentage,
+                   active, created_at, updated_at)
+                VALUES (:id, 'swedish-citizenship', 'Demonstration mock', :total, :duration,
+                        :passing, TRUE, now(), now())
+                """).param("id", blueprintId).param("total", total).param("duration", durationMinutes)
+                .param("passing", new java.math.BigDecimal(passingPercentage)).update();
+        jdbc.sql("""
+                INSERT INTO mock_exam_topic_allocation (id, blueprint_id, external_topic_id, question_count)
+                VALUES (:id, :blueprintId, 'topic-a', 2)
+                """).param("id", UUID.randomUUID()).param("blueprintId", blueprintId).update();
+        jdbc.sql("""
+                INSERT INTO mock_exam_topic_allocation (id, blueprint_id, external_topic_id, question_count)
+                VALUES (:id, :blueprintId, 'topic-b', 1)
+                """).param("id", UUID.randomUUID()).param("blueprintId", blueprintId).update();
+    }
+
+    private String correctMockOption(UUID attemptQuestionId) { return mockOption(attemptQuestionId, true); }
+    private String wrongMockOption(UUID attemptQuestionId) { return mockOption(attemptQuestionId, false); }
+    private String mockOption(UUID attemptQuestionId, boolean correct) {
+        return jdbc.sql("""
+                SELECT option.external_answer_option_id FROM mock_exam_question question
+                JOIN imported_answer_option option ON option.question_id = question.imported_question_id
+                WHERE question.id = :id AND option.correct = :correct
+                """).param("id", attemptQuestionId).param("correct", correct).query(String.class).single();
     }
 
     private String correctOption(UUID sessionQuestionId) {

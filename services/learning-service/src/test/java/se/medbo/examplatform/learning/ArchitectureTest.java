@@ -20,6 +20,11 @@ class ArchitectureTest {
             .should().dependOnClassesThat().resideInAPackage("..practice..");
 
     @ArchTest
+    static final ArchRule mock_exam_does_not_depend_on_practice_implementation = noClasses()
+            .that().resideInAPackage("..mockexam..")
+            .should().dependOnClassesThat().resideInAPackage("..practice..");
+
+    @ArchTest
     static final ArchRule controllers_do_not_expose_jdbc_types = classes()
             .that().haveSimpleNameEndingWith("Controller")
             .should().onlyDependOnClassesThat().resideOutsideOfPackage("org.springframework.jdbc..");

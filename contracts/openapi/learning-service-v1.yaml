@@ -144,6 +144,148 @@ paths:
                 type: array
                 items: { $ref: "#/components/schemas/TopicProgress" }
         "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/v1/mock-exams:
+    post:
+      summary: Start a mock examination from the active configured blueprint
+      operationId: createMockExam
+      tags: [Mock examinations]
+      security: [{ learnerIdentity: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateMockExamRequest" }
+      responses:
+        "200":
+          description: Fixed mock examination attempt created.
+          content: { application/json: { schema: { $ref: "#/components/schemas/MockExamAttempt" } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+  /api/v1/mock-exams/history:
+    get:
+      summary: List finalized mock examination attempts
+      operationId: getMockExamHistory
+      tags: [Mock examinations]
+      security: [{ learnerIdentity: [] }]
+      responses:
+        "200":
+          description: Finalized attempts in reverse chronological order.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/MockExamHistoryItem" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/v1/mock-exams/{attemptId}:
+    parameters:
+      - $ref: "#/components/parameters/AttemptId"
+    get:
+      summary: Get mock examination metadata and navigation state
+      operationId: getMockExam
+      tags: [Mock examinations]
+      security: [{ learnerIdentity: [] }]
+      responses:
+        "200":
+          description: Learner-owned mock examination attempt.
+          content: { application/json: { schema: { $ref: "#/components/schemas/MockExamAttempt" } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /api/v1/mock-exams/{attemptId}/next:
+    parameters:
+      - $ref: "#/components/parameters/AttemptId"
+      - name: sequenceNumber
+        in: query
+        required: false
+        description: Optional sequence to support previous, next, and jump navigation. Omit for next unanswered.
+        schema: { type: integer, minimum: 1 }
+    get:
+      summary: Get a mock examination question
+      operationId: getMockExamQuestion
+      tags: [Mock examinations]
+      security: [{ learnerIdentity: [] }]
+      responses:
+        "200":
+          description: Question without correctness or explanation.
+          content: { application/json: { schema: { $ref: "#/components/schemas/MockExamQuestion" } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /api/v1/mock-exams/{attemptId}/responses:
+    parameters:
+      - $ref: "#/components/parameters/AttemptId"
+    post:
+      summary: Store or replace an answer before final submission
+      operationId: submitMockExamResponse
+      tags: [Mock examinations]
+      security: [{ learnerIdentity: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SubmitMockExamAnswerRequest" }
+      responses:
+        "200":
+          description: Updated attempt progress; correctness remains hidden.
+          content: { application/json: { schema: { $ref: "#/components/schemas/MockExamProgress" } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /api/v1/mock-exams/{attemptId}/questions/{attemptQuestionId}/flag:
+    parameters:
+      - $ref: "#/components/parameters/AttemptId"
+      - name: attemptQuestionId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      summary: Set or clear a review flag
+      operationId: flagMockExamQuestion
+      tags: [Mock examinations]
+      security: [{ learnerIdentity: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FlagMockExamQuestionRequest" }
+      responses:
+        "200":
+          description: Updated attempt progress.
+          content: { application/json: { schema: { $ref: "#/components/schemas/MockExamProgress" } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /api/v1/mock-exams/{attemptId}/submit:
+    parameters:
+      - $ref: "#/components/parameters/AttemptId"
+    post:
+      summary: Finalize and score a mock examination
+      operationId: submitMockExam
+      tags: [Mock examinations]
+      security: [{ learnerIdentity: [] }]
+      responses:
+        "200":
+          description: Permanently stored score and detailed results.
+          content: { application/json: { schema: { $ref: "#/components/schemas/MockExamResult" } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /api/v1/mock-exams/{attemptId}/results:
+    parameters:
+      - $ref: "#/components/parameters/AttemptId"
+    get:
+      summary: Get detailed results for a finalized mock examination
+      operationId: getMockExamResults
+      tags: [Mock examinations]
+      security: [{ learnerIdentity: [] }]
+      responses:
+        "200":
+          description: Stored score, topic breakdown, and incorrect-question review.
+          content: { application/json: { schema: { $ref: "#/components/schemas/MockExamResult" } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
 components:
   securitySchemes:
     internalApiKey:
@@ -159,6 +301,11 @@ components:
   parameters:
     SessionId:
       name: sessionId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    AttemptId:
+      name: attemptId
       in: path
       required: true
       schema: { type: string, format: uuid }
@@ -287,6 +434,139 @@ components:
         releaseId: { type: string, format: uuid }
         imported: { type: boolean }
         status: { type: string, enum: [ACTIVE, SUPERSEDED] }
+    CreateMockExamRequest:
+      type: object
+      additionalProperties: false
+      required: [examId]
+      properties:
+        examId: { type: string, minLength: 1, maxLength: 200 }
+    MockExamStatus:
+      type: string
+      enum: [ACTIVE, SUBMITTED, EXPIRED, ABANDONED]
+    MockExamNavigationItem:
+      type: object
+      additionalProperties: false
+      required: [attemptQuestionId, sequenceNumber, answered, flagged]
+      properties:
+        attemptQuestionId: { type: string, format: uuid }
+        sequenceNumber: { type: integer, minimum: 1 }
+        answered: { type: boolean }
+        flagged: { type: boolean }
+    MockExamAttempt:
+      type: object
+      additionalProperties: false
+      required: [attemptId, name, status, startedAt, totalQuestions, durationMinutes, remainingSeconds, answered, questions]
+      properties:
+        attemptId: { type: string, format: uuid }
+        name: { type: string }
+        status: { $ref: "#/components/schemas/MockExamStatus" }
+        startedAt: { type: string, format: date-time }
+        submittedAt: { type: [string, "null"], format: date-time }
+        totalQuestions: { type: integer, minimum: 1 }
+        durationMinutes: { type: integer, minimum: 1 }
+        remainingSeconds: { type: integer, minimum: 0 }
+        answered: { type: integer, minimum: 0 }
+        questions:
+          type: array
+          items: { $ref: "#/components/schemas/MockExamNavigationItem" }
+    MockExamQuestion:
+      type: object
+      additionalProperties: false
+      required: [attemptQuestionId, questionId, prompt, questionType, answerOptions, sequenceNumber, totalQuestions, flagged, remainingSeconds]
+      properties:
+        attemptQuestionId: { type: string, format: uuid }
+        questionId: { type: string }
+        prompt: { type: string }
+        questionType: { type: string, enum: [SINGLE_CHOICE] }
+        answerOptions:
+          type: array
+          minItems: 2
+          items: { $ref: "#/components/schemas/AnswerOption" }
+        sequenceNumber: { type: integer, minimum: 1 }
+        totalQuestions: { type: integer, minimum: 1 }
+        selectedAnswerOptionId: { type: [string, "null"] }
+        flagged: { type: boolean }
+        remainingSeconds: { type: integer, minimum: 0 }
+    SubmitMockExamAnswerRequest:
+      type: object
+      additionalProperties: false
+      required: [attemptQuestionId, selectedAnswerOptionId]
+      properties:
+        attemptQuestionId: { type: string, format: uuid }
+        selectedAnswerOptionId: { type: string, minLength: 1, maxLength: 200 }
+    FlagMockExamQuestionRequest:
+      type: object
+      additionalProperties: false
+      required: [flagged]
+      properties:
+        flagged: { type: boolean }
+    MockExamProgress:
+      type: object
+      additionalProperties: false
+      required: [answered, total, flagged, remainingSeconds]
+      properties:
+        answered: { type: integer, minimum: 0 }
+        total: { type: integer, minimum: 1 }
+        flagged: { type: integer, minimum: 0 }
+        remainingSeconds: { type: integer, minimum: 0 }
+    MockExamTopicResult:
+      type: object
+      additionalProperties: false
+      required: [topicId, topicName, total, answered, correct, percentage]
+      properties:
+        topicId: { type: string }
+        topicName: { type: string }
+        total: { type: integer, minimum: 1 }
+        answered: { type: integer, minimum: 0 }
+        correct: { type: integer, minimum: 0 }
+        percentage: { type: number, minimum: 0, maximum: 100 }
+    MockExamIncorrectQuestion:
+      type: object
+      additionalProperties: false
+      required: [questionId, prompt, correctAnswerOptionId, correctAnswerText, explanation]
+      properties:
+        questionId: { type: string }
+        prompt: { type: string }
+        selectedAnswerOptionId: { type: [string, "null"] }
+        selectedAnswerText: { type: [string, "null"] }
+        correctAnswerOptionId: { type: string }
+        correctAnswerText: { type: string }
+        explanation: { type: string }
+    MockExamResult:
+      type: object
+      additionalProperties: false
+      required: [attemptId, name, status, startedAt, completedAt, durationSeconds, correctAnswers, incorrectAnswers, percentage, passed, topics, incorrectQuestions]
+      properties:
+        attemptId: { type: string, format: uuid }
+        name: { type: string }
+        status: { $ref: "#/components/schemas/MockExamStatus" }
+        startedAt: { type: string, format: date-time }
+        completedAt: { type: string, format: date-time }
+        durationSeconds: { type: integer, minimum: 0 }
+        correctAnswers: { type: integer, minimum: 0 }
+        incorrectAnswers: { type: integer, minimum: 0 }
+        percentage: { type: number, minimum: 0, maximum: 100 }
+        passed: { type: boolean }
+        topics:
+          type: array
+          items: { $ref: "#/components/schemas/MockExamTopicResult" }
+        incorrectQuestions:
+          type: array
+          items: { $ref: "#/components/schemas/MockExamIncorrectQuestion" }
+    MockExamHistoryItem:
+      type: object
+      additionalProperties: false
+      required: [attemptId, name, status, startedAt, durationSeconds, score, percentage, passed, totalQuestions]
+      properties:
+        attemptId: { type: string, format: uuid }
+        name: { type: string }
+        status: { $ref: "#/components/schemas/MockExamStatus" }
+        startedAt: { type: string, format: date-time }
+        durationSeconds: { type: integer, minimum: 0 }
+        score: { type: integer, minimum: 0 }
+        percentage: { type: number, minimum: 0, maximum: 100 }
+        passed: { type: boolean }
+        totalQuestions: { type: integer, minimum: 1 }
     Error:
       type: object
       required: [code, message, timestamp, errors]

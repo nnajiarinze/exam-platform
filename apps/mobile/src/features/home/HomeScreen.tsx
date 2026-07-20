@@ -10,6 +10,7 @@ export function HomeScreen({ navigation }: NativeStackScreenProps<RootStackParam
     {sessionId && <Card><Body>You have a practice session in progress.</Body><Button label="Continue studying" onPress={() => navigation.navigate('Question', { sessionId })} /></Card>}
     <Button label="Start practice" onPress={() => navigation.navigate('Topics')} />
     <Button label="Mixed practice" onPress={() => navigation.navigate('PracticeSetup', { mode: 'MIXED' })} />
+    <Button label="Mock examination" onPress={() => navigation.navigate('MockExam')} />
     <Button label="Progress" onPress={() => navigation.navigate('Progress')} />
     <Button label="Settings" onPress={() => navigation.navigate('Settings')} />
   </Screen>;

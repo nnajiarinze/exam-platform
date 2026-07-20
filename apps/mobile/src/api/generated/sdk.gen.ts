@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreatePracticeSessionData, CreatePracticeSessionErrors, CreatePracticeSessionResponses, GetNextPracticeQuestionData, GetNextPracticeQuestionErrors, GetNextPracticeQuestionResponses, GetPracticeSessionData, GetPracticeSessionErrors, GetPracticeSessionResponses, GetSubjectsData, GetSubjectsErrors, GetSubjectsResponses, GetTopicProgressData, GetTopicProgressErrors, GetTopicProgressResponses, ImportContentReleaseData, ImportContentReleaseErrors, ImportContentReleaseResponses, SubmitPracticeResponseData, SubmitPracticeResponseErrors, SubmitPracticeResponseResponses } from './types.gen';
+import type { CreateMockExamData, CreateMockExamErrors, CreateMockExamResponses, CreatePracticeSessionData, CreatePracticeSessionErrors, CreatePracticeSessionResponses, FlagMockExamQuestionData, FlagMockExamQuestionErrors, FlagMockExamQuestionResponses, GetMockExamData, GetMockExamErrors, GetMockExamHistoryData, GetMockExamHistoryErrors, GetMockExamHistoryResponses, GetMockExamQuestionData, GetMockExamQuestionErrors, GetMockExamQuestionResponses, GetMockExamResponses, GetMockExamResultsData, GetMockExamResultsErrors, GetMockExamResultsResponses, GetNextPracticeQuestionData, GetNextPracticeQuestionErrors, GetNextPracticeQuestionResponses, GetPracticeSessionData, GetPracticeSessionErrors, GetPracticeSessionResponses, GetSubjectsData, GetSubjectsErrors, GetSubjectsResponses, GetTopicProgressData, GetTopicProgressErrors, GetTopicProgressResponses, ImportContentReleaseData, ImportContentReleaseErrors, ImportContentReleaseResponses, SubmitMockExamData, SubmitMockExamErrors, SubmitMockExamResponseData, SubmitMockExamResponseErrors, SubmitMockExamResponseResponses, SubmitMockExamResponses, SubmitPracticeResponseData, SubmitPracticeResponseErrors, SubmitPracticeResponseResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -92,5 +92,89 @@ export const submitPracticeResponse = <ThrowOnError extends boolean = false>(opt
 export const getTopicProgress = <ThrowOnError extends boolean = false>(options?: Options<GetTopicProgressData, ThrowOnError>): RequestResult<GetTopicProgressResponses, GetTopicProgressErrors, ThrowOnError> => (options?.client ?? client).get<GetTopicProgressResponses, GetTopicProgressErrors, ThrowOnError>({
     security: [{ name: 'X-Learner-Identity', type: 'apiKey' }],
     url: '/api/v1/progress/topics',
+    ...options
+});
+
+/**
+ * Start a mock examination from the active configured blueprint
+ */
+export const createMockExam = <ThrowOnError extends boolean = false>(options: Options<CreateMockExamData, ThrowOnError>): RequestResult<CreateMockExamResponses, CreateMockExamErrors, ThrowOnError> => (options.client ?? client).post<CreateMockExamResponses, CreateMockExamErrors, ThrowOnError>({
+    security: [{ name: 'X-Learner-Identity', type: 'apiKey' }],
+    url: '/api/v1/mock-exams',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List finalized mock examination attempts
+ */
+export const getMockExamHistory = <ThrowOnError extends boolean = false>(options?: Options<GetMockExamHistoryData, ThrowOnError>): RequestResult<GetMockExamHistoryResponses, GetMockExamHistoryErrors, ThrowOnError> => (options?.client ?? client).get<GetMockExamHistoryResponses, GetMockExamHistoryErrors, ThrowOnError>({
+    security: [{ name: 'X-Learner-Identity', type: 'apiKey' }],
+    url: '/api/v1/mock-exams/history',
+    ...options
+});
+
+/**
+ * Get mock examination metadata and navigation state
+ */
+export const getMockExam = <ThrowOnError extends boolean = false>(options: Options<GetMockExamData, ThrowOnError>): RequestResult<GetMockExamResponses, GetMockExamErrors, ThrowOnError> => (options.client ?? client).get<GetMockExamResponses, GetMockExamErrors, ThrowOnError>({
+    security: [{ name: 'X-Learner-Identity', type: 'apiKey' }],
+    url: '/api/v1/mock-exams/{attemptId}',
+    ...options
+});
+
+/**
+ * Get a mock examination question
+ */
+export const getMockExamQuestion = <ThrowOnError extends boolean = false>(options: Options<GetMockExamQuestionData, ThrowOnError>): RequestResult<GetMockExamQuestionResponses, GetMockExamQuestionErrors, ThrowOnError> => (options.client ?? client).get<GetMockExamQuestionResponses, GetMockExamQuestionErrors, ThrowOnError>({
+    security: [{ name: 'X-Learner-Identity', type: 'apiKey' }],
+    url: '/api/v1/mock-exams/{attemptId}/next',
+    ...options
+});
+
+/**
+ * Store or replace an answer before final submission
+ */
+export const submitMockExamResponse = <ThrowOnError extends boolean = false>(options: Options<SubmitMockExamResponseData, ThrowOnError>): RequestResult<SubmitMockExamResponseResponses, SubmitMockExamResponseErrors, ThrowOnError> => (options.client ?? client).post<SubmitMockExamResponseResponses, SubmitMockExamResponseErrors, ThrowOnError>({
+    security: [{ name: 'X-Learner-Identity', type: 'apiKey' }],
+    url: '/api/v1/mock-exams/{attemptId}/responses',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Set or clear a review flag
+ */
+export const flagMockExamQuestion = <ThrowOnError extends boolean = false>(options: Options<FlagMockExamQuestionData, ThrowOnError>): RequestResult<FlagMockExamQuestionResponses, FlagMockExamQuestionErrors, ThrowOnError> => (options.client ?? client).post<FlagMockExamQuestionResponses, FlagMockExamQuestionErrors, ThrowOnError>({
+    security: [{ name: 'X-Learner-Identity', type: 'apiKey' }],
+    url: '/api/v1/mock-exams/{attemptId}/questions/{attemptQuestionId}/flag',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Finalize and score a mock examination
+ */
+export const submitMockExam = <ThrowOnError extends boolean = false>(options: Options<SubmitMockExamData, ThrowOnError>): RequestResult<SubmitMockExamResponses, SubmitMockExamErrors, ThrowOnError> => (options.client ?? client).post<SubmitMockExamResponses, SubmitMockExamErrors, ThrowOnError>({
+    security: [{ name: 'X-Learner-Identity', type: 'apiKey' }],
+    url: '/api/v1/mock-exams/{attemptId}/submit',
+    ...options
+});
+
+/**
+ * Get detailed results for a finalized mock examination
+ */
+export const getMockExamResults = <ThrowOnError extends boolean = false>(options: Options<GetMockExamResultsData, ThrowOnError>): RequestResult<GetMockExamResultsResponses, GetMockExamResultsErrors, ThrowOnError> => (options.client ?? client).get<GetMockExamResultsResponses, GetMockExamResultsErrors, ThrowOnError>({
+    security: [{ name: 'X-Learner-Identity', type: 'apiKey' }],
+    url: '/api/v1/mock-exams/{attemptId}/results',
     ...options
 });

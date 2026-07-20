@@ -45,3 +45,9 @@ The initial implementation uses Java 21, Spring Boot, JDBC, PostgreSQL, and Flyw
 Practice supports `TOPIC` and `MIXED`. Selection is injectable for deterministic tests, prefers distinct knowledge facts, and persists the complete question set before returning. Composite database constraints ensure sessions, selected questions, responses, learners, answer options, and content releases cannot be cross-wired. Answer submission locks the learner session and session question, relies on a unique response constraint, updates topic progress atomically, and completes the session with the last accepted answer.
 
 `X-Learner-Identity` is a temporary development/test adapter and is disabled by default. It is not production authentication. The internal import endpoint requires a configured temporary service key. Both must be replaced by the identity/workload-identity decisions described in [security and privacy](security-and-privacy.md) before production.
+
+## Stage 7 mock examination notes
+
+Mock examination blueprints are database configuration, with topic allocations, duration, total questions, and pass threshold kept out of application constants. Starting an attempt pins the active content release, selected question order, and a snapshot of the scoring/timing configuration. Selection requires distinct questions and knowledge facts. Answers remain editable and correctness remains hidden until final submission.
+
+Server timestamps determine remaining time. Request-time checks and a transactional scheduled expiry scan finalize expired attempts. Submission calculates and permanently stores the deterministic score, configured pass/fail result, topic breakdown inputs, and version-pinned incorrect-question review.

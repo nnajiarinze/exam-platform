@@ -86,6 +86,107 @@ export type ContentImportResponse = {
     status: 'ACTIVE' | 'SUPERSEDED';
 };
 
+export type CreateMockExamRequest = {
+    examId: string;
+};
+
+export type MockExamStatus = 'ACTIVE' | 'SUBMITTED' | 'EXPIRED' | 'ABANDONED';
+
+export type MockExamNavigationItem = {
+    attemptQuestionId: string;
+    sequenceNumber: number;
+    answered: boolean;
+    flagged: boolean;
+};
+
+export type MockExamAttempt = {
+    attemptId: string;
+    name: string;
+    status: MockExamStatus;
+    startedAt: string;
+    submittedAt?: string | null;
+    totalQuestions: number;
+    durationMinutes: number;
+    remainingSeconds: number;
+    answered: number;
+    questions: Array<MockExamNavigationItem>;
+};
+
+export type MockExamQuestion = {
+    attemptQuestionId: string;
+    questionId: string;
+    prompt: string;
+    questionType: 'SINGLE_CHOICE';
+    answerOptions: Array<AnswerOption>;
+    sequenceNumber: number;
+    totalQuestions: number;
+    selectedAnswerOptionId?: string | null;
+    flagged: boolean;
+    remainingSeconds: number;
+};
+
+export type SubmitMockExamAnswerRequest = {
+    attemptQuestionId: string;
+    selectedAnswerOptionId: string;
+};
+
+export type FlagMockExamQuestionRequest = {
+    flagged: boolean;
+};
+
+export type MockExamProgress = {
+    answered: number;
+    total: number;
+    flagged: number;
+    remainingSeconds: number;
+};
+
+export type MockExamTopicResult = {
+    topicId: string;
+    topicName: string;
+    total: number;
+    answered: number;
+    correct: number;
+    percentage: number;
+};
+
+export type MockExamIncorrectQuestion = {
+    questionId: string;
+    prompt: string;
+    selectedAnswerOptionId?: string | null;
+    selectedAnswerText?: string | null;
+    correctAnswerOptionId: string;
+    correctAnswerText: string;
+    explanation: string;
+};
+
+export type MockExamResult = {
+    attemptId: string;
+    name: string;
+    status: MockExamStatus;
+    startedAt: string;
+    completedAt: string;
+    durationSeconds: number;
+    correctAnswers: number;
+    incorrectAnswers: number;
+    percentage: number;
+    passed: boolean;
+    topics: Array<MockExamTopicResult>;
+    incorrectQuestions: Array<MockExamIncorrectQuestion>;
+};
+
+export type MockExamHistoryItem = {
+    attemptId: string;
+    name: string;
+    status: MockExamStatus;
+    startedAt: string;
+    durationSeconds: number;
+    score: number;
+    percentage: number;
+    passed: boolean;
+    totalQuestions: number;
+};
+
 export type Error = {
     code: string;
     message: string;
@@ -141,6 +242,8 @@ export type ContentSnapshotV1Schema = {
 };
 
 export type SessionId = string;
+
+export type AttemptId = string;
 
 export type GetSubjectsData = {
     body?: never;
@@ -368,3 +471,277 @@ export type GetTopicProgressResponses = {
 };
 
 export type GetTopicProgressResponse = GetTopicProgressResponses[keyof GetTopicProgressResponses];
+
+export type CreateMockExamData = {
+    body: CreateMockExamRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/mock-exams';
+};
+
+export type CreateMockExamErrors = {
+    /**
+     * Authentication is absent or invalid.
+     */
+    401: Error;
+    /**
+     * Learner-owned or requested resource was not found.
+     */
+    404: Error;
+    /**
+     * Structurally valid request violates content or selection rules.
+     */
+    422: Error;
+};
+
+export type CreateMockExamError = CreateMockExamErrors[keyof CreateMockExamErrors];
+
+export type CreateMockExamResponses = {
+    /**
+     * Fixed mock examination attempt created.
+     */
+    200: MockExamAttempt;
+};
+
+export type CreateMockExamResponse = CreateMockExamResponses[keyof CreateMockExamResponses];
+
+export type GetMockExamHistoryData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/mock-exams/history';
+};
+
+export type GetMockExamHistoryErrors = {
+    /**
+     * Authentication is absent or invalid.
+     */
+    401: Error;
+};
+
+export type GetMockExamHistoryError = GetMockExamHistoryErrors[keyof GetMockExamHistoryErrors];
+
+export type GetMockExamHistoryResponses = {
+    /**
+     * Finalized attempts in reverse chronological order.
+     */
+    200: Array<MockExamHistoryItem>;
+};
+
+export type GetMockExamHistoryResponse = GetMockExamHistoryResponses[keyof GetMockExamHistoryResponses];
+
+export type GetMockExamData = {
+    body?: never;
+    path: {
+        attemptId: string;
+    };
+    query?: never;
+    url: '/api/v1/mock-exams/{attemptId}';
+};
+
+export type GetMockExamErrors = {
+    /**
+     * Authentication is absent or invalid.
+     */
+    401: Error;
+    /**
+     * Learner-owned or requested resource was not found.
+     */
+    404: Error;
+};
+
+export type GetMockExamError = GetMockExamErrors[keyof GetMockExamErrors];
+
+export type GetMockExamResponses = {
+    /**
+     * Learner-owned mock examination attempt.
+     */
+    200: MockExamAttempt;
+};
+
+export type GetMockExamResponse = GetMockExamResponses[keyof GetMockExamResponses];
+
+export type GetMockExamQuestionData = {
+    body?: never;
+    path: {
+        attemptId: string;
+    };
+    query?: {
+        /**
+         * Optional sequence to support previous, next, and jump navigation. Omit for next unanswered.
+         */
+        sequenceNumber?: number;
+    };
+    url: '/api/v1/mock-exams/{attemptId}/next';
+};
+
+export type GetMockExamQuestionErrors = {
+    /**
+     * Authentication is absent or invalid.
+     */
+    401: Error;
+    /**
+     * Learner-owned or requested resource was not found.
+     */
+    404: Error;
+    /**
+     * Request conflicts with current or previously accepted state.
+     */
+    409: Error;
+};
+
+export type GetMockExamQuestionError = GetMockExamQuestionErrors[keyof GetMockExamQuestionErrors];
+
+export type GetMockExamQuestionResponses = {
+    /**
+     * Question without correctness or explanation.
+     */
+    200: MockExamQuestion;
+};
+
+export type GetMockExamQuestionResponse = GetMockExamQuestionResponses[keyof GetMockExamQuestionResponses];
+
+export type SubmitMockExamResponseData = {
+    body: SubmitMockExamAnswerRequest;
+    path: {
+        attemptId: string;
+    };
+    query?: never;
+    url: '/api/v1/mock-exams/{attemptId}/responses';
+};
+
+export type SubmitMockExamResponseErrors = {
+    /**
+     * Invalid request.
+     */
+    400: Error;
+    /**
+     * Authentication is absent or invalid.
+     */
+    401: Error;
+    /**
+     * Learner-owned or requested resource was not found.
+     */
+    404: Error;
+    /**
+     * Request conflicts with current or previously accepted state.
+     */
+    409: Error;
+};
+
+export type SubmitMockExamResponseError = SubmitMockExamResponseErrors[keyof SubmitMockExamResponseErrors];
+
+export type SubmitMockExamResponseResponses = {
+    /**
+     * Updated attempt progress; correctness remains hidden.
+     */
+    200: MockExamProgress;
+};
+
+export type SubmitMockExamResponseResponse = SubmitMockExamResponseResponses[keyof SubmitMockExamResponseResponses];
+
+export type FlagMockExamQuestionData = {
+    body: FlagMockExamQuestionRequest;
+    path: {
+        attemptId: string;
+        attemptQuestionId: string;
+    };
+    query?: never;
+    url: '/api/v1/mock-exams/{attemptId}/questions/{attemptQuestionId}/flag';
+};
+
+export type FlagMockExamQuestionErrors = {
+    /**
+     * Authentication is absent or invalid.
+     */
+    401: Error;
+    /**
+     * Learner-owned or requested resource was not found.
+     */
+    404: Error;
+    /**
+     * Request conflicts with current or previously accepted state.
+     */
+    409: Error;
+};
+
+export type FlagMockExamQuestionError = FlagMockExamQuestionErrors[keyof FlagMockExamQuestionErrors];
+
+export type FlagMockExamQuestionResponses = {
+    /**
+     * Updated attempt progress.
+     */
+    200: MockExamProgress;
+};
+
+export type FlagMockExamQuestionResponse = FlagMockExamQuestionResponses[keyof FlagMockExamQuestionResponses];
+
+export type SubmitMockExamData = {
+    body?: never;
+    path: {
+        attemptId: string;
+    };
+    query?: never;
+    url: '/api/v1/mock-exams/{attemptId}/submit';
+};
+
+export type SubmitMockExamErrors = {
+    /**
+     * Authentication is absent or invalid.
+     */
+    401: Error;
+    /**
+     * Learner-owned or requested resource was not found.
+     */
+    404: Error;
+    /**
+     * Request conflicts with current or previously accepted state.
+     */
+    409: Error;
+};
+
+export type SubmitMockExamError = SubmitMockExamErrors[keyof SubmitMockExamErrors];
+
+export type SubmitMockExamResponses = {
+    /**
+     * Permanently stored score and detailed results.
+     */
+    200: MockExamResult;
+};
+
+export type SubmitMockExamResponse = SubmitMockExamResponses[keyof SubmitMockExamResponses];
+
+export type GetMockExamResultsData = {
+    body?: never;
+    path: {
+        attemptId: string;
+    };
+    query?: never;
+    url: '/api/v1/mock-exams/{attemptId}/results';
+};
+
+export type GetMockExamResultsErrors = {
+    /**
+     * Authentication is absent or invalid.
+     */
+    401: Error;
+    /**
+     * Learner-owned or requested resource was not found.
+     */
+    404: Error;
+    /**
+     * Request conflicts with current or previously accepted state.
+     */
+    409: Error;
+};
+
+export type GetMockExamResultsError = GetMockExamResultsErrors[keyof GetMockExamResultsErrors];
+
+export type GetMockExamResultsResponses = {
+    /**
+     * Stored score, topic breakdown, and incorrect-question review.
+     */
+    200: MockExamResult;
+};
+
+export type GetMockExamResultsResponse = GetMockExamResultsResponses[keyof GetMockExamResultsResponses];

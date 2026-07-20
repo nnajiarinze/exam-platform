@@ -8,6 +8,10 @@ import { SessionCompleteScreen } from '../features/practice/SessionCompleteScree
 import { ProgressScreen } from '../features/progress/ProgressScreen';
 import { SplashScreen } from '../features/splash/SplashScreen';
 import { TopicsScreen } from '../features/topics/TopicsScreen';
+import { MockExamScreen } from '../features/mockexam/MockExamScreen';
+import { MockQuestionScreen } from '../features/mockexam/MockQuestionScreen';
+import { MockResultsScreen } from '../features/mockexam/MockResultsScreen';
+import { MockHistoryScreen } from '../features/mockexam/MockHistoryScreen';
 import type { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -23,5 +27,9 @@ export function RootNavigator() {
     <Stack.Screen name="SessionComplete" component={SessionCompleteScreen} options={{ title: 'Session complete', headerBackVisible: false }} />
     <Stack.Screen name="Progress" component={ProgressScreen} />
     <Stack.Screen name="Settings" component={SettingsScreen} />
+    <Stack.Screen name="MockExam" component={MockExamScreen} options={{ title: 'Mock examination' }} />
+    <Stack.Screen name="MockQuestion" component={MockQuestionScreen} options={{ title: 'Mock examination', headerBackVisible: false }} />
+    <Stack.Screen name="MockResults" component={MockResultsScreen} options={{ title: 'Mock results', headerBackVisible: false }} />
+    <Stack.Screen name="MockHistory" component={MockHistoryScreen} options={{ title: 'Mock history' }} />
   </Stack.Navigator>;
 }

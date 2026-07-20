@@ -10,6 +10,10 @@ export type RootStackParamList = {
   SessionComplete: { total: number };
   Progress: undefined;
   Settings: undefined;
+  MockExam: undefined;
+  MockQuestion: { attemptId: string; sequenceNumber: number };
+  MockResults: { attemptId: string };
+  MockHistory: undefined;
 };
 
 export type InitialRouteInput = { hydrated: boolean; onboardingComplete: boolean };
