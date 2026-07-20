@@ -2,7 +2,7 @@ import { readEnvironment } from './environment';
 
 describe('environment configuration', () => {
   it('normalizes the service URL and development roles', () => {
-    expect(readEnvironment({ VITE_CONTENT_SERVICE_BASE_URL: 'https://content.example/', VITE_DEV_ADMIN_AUTH_ENABLED: 'true', VITE_DEV_ADMIN_ID: 'a', VITE_DEV_ADMIN_NAME: 'Admin', VITE_DEV_ADMIN_ROLES: 'CONTENT_AUTHOR, CONTENT_REVIEWER' })).toMatchObject({ contentServiceBaseUrl: 'https://content.example', developmentAdminRoles: ['CONTENT_AUTHOR', 'CONTENT_REVIEWER'] });
+    expect(readEnvironment({ VITE_CONTENT_SERVICE_BASE_URL: 'https://content.example/', VITE_DEV_ADMIN_AUTH_ENABLED: 'true', VITE_DEV_ADMIN_ID: 'a', VITE_DEV_ADMIN_NAME: 'Admin', VITE_DEV_ADMIN_ROLES: 'CONTENT_AUTHOR', VITE_DEV_REVIEWER_ID: 'r', VITE_DEV_REVIEWER_NAME: 'Reviewer', VITE_DEV_REVIEWER_ROLES: 'CONTENT_REVIEWER' })).toMatchObject({ contentServiceBaseUrl: 'https://content.example', developmentAdminRoles: ['CONTENT_AUTHOR'], developmentReviewerRoles: ['CONTENT_REVIEWER'] });
   });
 
   it('rejects invalid URLs', () => {
@@ -11,5 +11,9 @@ describe('environment configuration', () => {
 
   it('requires complete development identity configuration', () => {
     expect(() => readEnvironment({ VITE_DEV_ADMIN_AUTH_ENABLED: 'true' })).toThrow(/requires an admin id/);
+  });
+
+  it('requires a complete reviewer identity when development auth is enabled', () => {
+    expect(() => readEnvironment({ VITE_DEV_ADMIN_AUTH_ENABLED: 'true', VITE_DEV_ADMIN_ID: 'a', VITE_DEV_ADMIN_NAME: 'Admin', VITE_DEV_ADMIN_ROLES: 'ADMIN' })).toThrow(/requires a reviewer id/);
   });
 });

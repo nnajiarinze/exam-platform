@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ArchiveExamData, ArchiveExamErrors, ArchiveExamResponses, ArchiveExamVersionData, ArchiveExamVersionResponses, ArchiveSubjectData, ArchiveSubjectResponses, ArchiveTopicData, ArchiveTopicResponses, CreateExamData, CreateExamErrors, CreateExamResponses, CreateExamVersionData, CreateExamVersionErrors, CreateExamVersionResponses, CreateSourceData, CreateSourceErrors, CreateSourceResponses, CreateSubjectData, CreateSubjectResponses, CreateTopicData, CreateTopicResponses, GetContentServiceStatusData, GetContentServiceStatusErrors, GetContentServiceStatusResponses, GetExamData, GetExamErrors, GetExamResponses, GetExamVersionData, GetExamVersionErrors, GetExamVersionResponses, GetSourceData, GetSourceErrors, GetSourceResponses, GetSubjectData, GetSubjectResponses, GetTopicData, GetTopicResponses, ListExamsData, ListExamsErrors, ListExamsResponses, ListExamVersionsData, ListExamVersionsResponses, ListSourcesData, ListSourcesResponses, ListSubjectsData, ListSubjectsResponses, ListTopicsData, ListTopicsResponses, ReorderSubjectsData, ReorderSubjectsErrors, ReorderSubjectsResponses, ReorderTopicsData, ReorderTopicsErrors, ReorderTopicsResponses, RequireSourceUpdateData, RequireSourceUpdateResponses, RetireSourceData, RetireSourceErrors, RetireSourceResponses, ReviewSourceData, ReviewSourceResponses, UpdateExamData, UpdateExamErrors, UpdateExamResponses, UpdateExamVersionData, UpdateExamVersionErrors, UpdateExamVersionResponses, UpdateSourceData, UpdateSourceErrors, UpdateSourceResponses, UpdateSubjectData, UpdateSubjectErrors, UpdateSubjectResponses, UpdateTopicData, UpdateTopicErrors, UpdateTopicResponses } from './types.gen';
+import type { ApproveKnowledgeFactData, ApproveKnowledgeFactErrors, ApproveKnowledgeFactResponses, ArchiveExamData, ArchiveExamErrors, ArchiveExamResponses, ArchiveExamVersionData, ArchiveExamVersionResponses, ArchiveLearningObjectiveData, ArchiveLearningObjectiveErrors, ArchiveLearningObjectiveResponses, ArchiveSubjectData, ArchiveSubjectResponses, ArchiveTopicData, ArchiveTopicResponses, CreateExamData, CreateExamErrors, CreateExamResponses, CreateExamVersionData, CreateExamVersionErrors, CreateExamVersionResponses, CreateKnowledgeFactData, CreateKnowledgeFactErrors, CreateKnowledgeFactResponses, CreateLearningObjectiveData, CreateLearningObjectiveErrors, CreateLearningObjectiveResponses, CreateSourceData, CreateSourceErrors, CreateSourceResponses, CreateSubjectData, CreateSubjectResponses, CreateTopicData, CreateTopicResponses, GetContentServiceStatusData, GetContentServiceStatusErrors, GetContentServiceStatusResponses, GetExamData, GetExamErrors, GetExamResponses, GetExamVersionData, GetExamVersionErrors, GetExamVersionResponses, GetKnowledgeFactData, GetKnowledgeFactErrors, GetKnowledgeFactResponses, GetLearningObjectiveData, GetLearningObjectiveErrors, GetLearningObjectiveResponses, GetSourceData, GetSourceErrors, GetSourceResponses, GetSubjectData, GetSubjectResponses, GetTopicData, GetTopicResponses, ListExamsData, ListExamsErrors, ListExamsResponses, ListExamVersionsData, ListExamVersionsResponses, ListKnowledgeFactsData, ListKnowledgeFactsErrors, ListKnowledgeFactsResponses, ListKnowledgeFactVersionsData, ListKnowledgeFactVersionsErrors, ListKnowledgeFactVersionsResponses, ListLearningObjectivesData, ListLearningObjectivesErrors, ListLearningObjectivesResponses, ListSourcesData, ListSourcesResponses, ListSubjectsData, ListSubjectsResponses, ListTopicsData, ListTopicsResponses, RejectKnowledgeFactData, RejectKnowledgeFactErrors, RejectKnowledgeFactResponses, ReorderSubjectsData, ReorderSubjectsErrors, ReorderSubjectsResponses, ReorderTopicsData, ReorderTopicsErrors, ReorderTopicsResponses, RequireKnowledgeFactUpdateData, RequireKnowledgeFactUpdateErrors, RequireKnowledgeFactUpdateResponses, RequireSourceUpdateData, RequireSourceUpdateResponses, RetireKnowledgeFactData, RetireKnowledgeFactErrors, RetireKnowledgeFactResponses, RetireSourceData, RetireSourceErrors, RetireSourceResponses, ReviewSourceData, ReviewSourceResponses, SubmitKnowledgeFactData, SubmitKnowledgeFactErrors, SubmitKnowledgeFactResponses, UpdateExamData, UpdateExamErrors, UpdateExamResponses, UpdateExamVersionData, UpdateExamVersionErrors, UpdateExamVersionResponses, UpdateKnowledgeFactData, UpdateKnowledgeFactErrors, UpdateKnowledgeFactResponses, UpdateLearningObjectiveData, UpdateLearningObjectiveErrors, UpdateLearningObjectiveResponses, UpdateSourceData, UpdateSourceErrors, UpdateSourceResponses, UpdateSubjectData, UpdateSubjectErrors, UpdateSubjectResponses, UpdateTopicData, UpdateTopicErrors, UpdateTopicResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -359,6 +359,181 @@ export const requireSourceUpdate = <ThrowOnError extends boolean = false>(option
 export const retireSource = <ThrowOnError extends boolean = false>(options: Options<RetireSourceData, ThrowOnError>) => (options.client ?? client).post<RetireSourceResponses, RetireSourceErrors, ThrowOnError>({
     security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
     url: '/api/v1/admin/sources/{sourceId}/retire',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List learning objectives
+ */
+export const listLearningObjectives = <ThrowOnError extends boolean = false>(options?: Options<ListLearningObjectivesData, ThrowOnError>) => (options?.client ?? client).get<ListLearningObjectivesResponses, ListLearningObjectivesErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/learning-objectives',
+    ...options
+});
+
+/**
+ * Create learning objective
+ */
+export const createLearningObjective = <ThrowOnError extends boolean = false>(options: Options<CreateLearningObjectiveData, ThrowOnError>) => (options.client ?? client).post<CreateLearningObjectiveResponses, CreateLearningObjectiveErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/learning-objectives',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get learning objective
+ */
+export const getLearningObjective = <ThrowOnError extends boolean = false>(options: Options<GetLearningObjectiveData, ThrowOnError>) => (options.client ?? client).get<GetLearningObjectiveResponses, GetLearningObjectiveErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/learning-objectives/{learningObjectiveId}',
+    ...options
+});
+
+/**
+ * Update learning objective
+ */
+export const updateLearningObjective = <ThrowOnError extends boolean = false>(options: Options<UpdateLearningObjectiveData, ThrowOnError>) => (options.client ?? client).put<UpdateLearningObjectiveResponses, UpdateLearningObjectiveErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/learning-objectives/{learningObjectiveId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Archive learning objective
+ */
+export const archiveLearningObjective = <ThrowOnError extends boolean = false>(options: Options<ArchiveLearningObjectiveData, ThrowOnError>) => (options.client ?? client).post<ArchiveLearningObjectiveResponses, ArchiveLearningObjectiveErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/learning-objectives/{learningObjectiveId}/archive',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Search knowledge facts
+ */
+export const listKnowledgeFacts = <ThrowOnError extends boolean = false>(options?: Options<ListKnowledgeFactsData, ThrowOnError>) => (options?.client ?? client).get<ListKnowledgeFactsResponses, ListKnowledgeFactsErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/knowledge-facts',
+    ...options
+});
+
+/**
+ * Create knowledge fact
+ */
+export const createKnowledgeFact = <ThrowOnError extends boolean = false>(options: Options<CreateKnowledgeFactData, ThrowOnError>) => (options.client ?? client).post<CreateKnowledgeFactResponses, CreateKnowledgeFactErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/knowledge-facts',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get knowledge fact
+ */
+export const getKnowledgeFact = <ThrowOnError extends boolean = false>(options: Options<GetKnowledgeFactData, ThrowOnError>) => (options.client ?? client).get<GetKnowledgeFactResponses, GetKnowledgeFactErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/knowledge-facts/{knowledgeFactId}',
+    ...options
+});
+
+/**
+ * Update knowledge fact or create a draft version from an approved fact
+ */
+export const updateKnowledgeFact = <ThrowOnError extends boolean = false>(options: Options<UpdateKnowledgeFactData, ThrowOnError>) => (options.client ?? client).put<UpdateKnowledgeFactResponses, UpdateKnowledgeFactErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/knowledge-facts/{knowledgeFactId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List immutable fact version history
+ */
+export const listKnowledgeFactVersions = <ThrowOnError extends boolean = false>(options: Options<ListKnowledgeFactVersionsData, ThrowOnError>) => (options.client ?? client).get<ListKnowledgeFactVersionsResponses, ListKnowledgeFactVersionsErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/knowledge-facts/{knowledgeFactId}/versions',
+    ...options
+});
+
+/**
+ * Submit fact for review
+ */
+export const submitKnowledgeFact = <ThrowOnError extends boolean = false>(options: Options<SubmitKnowledgeFactData, ThrowOnError>) => (options.client ?? client).post<SubmitKnowledgeFactResponses, SubmitKnowledgeFactErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/knowledge-facts/{knowledgeFactId}/submit',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Approve fact
+ */
+export const approveKnowledgeFact = <ThrowOnError extends boolean = false>(options: Options<ApproveKnowledgeFactData, ThrowOnError>) => (options.client ?? client).post<ApproveKnowledgeFactResponses, ApproveKnowledgeFactErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/knowledge-facts/{knowledgeFactId}/approve',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Reject fact
+ */
+export const rejectKnowledgeFact = <ThrowOnError extends boolean = false>(options: Options<RejectKnowledgeFactData, ThrowOnError>) => (options.client ?? client).post<RejectKnowledgeFactResponses, RejectKnowledgeFactErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/knowledge-facts/{knowledgeFactId}/reject',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Require fact update
+ */
+export const requireKnowledgeFactUpdate = <ThrowOnError extends boolean = false>(options: Options<RequireKnowledgeFactUpdateData, ThrowOnError>) => (options.client ?? client).post<RequireKnowledgeFactUpdateResponses, RequireKnowledgeFactUpdateErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/knowledge-facts/{knowledgeFactId}/require-update',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Retire fact
+ */
+export const retireKnowledgeFact = <ThrowOnError extends boolean = false>(options: Options<RetireKnowledgeFactData, ThrowOnError>) => (options.client ?? client).post<RetireKnowledgeFactResponses, RetireKnowledgeFactErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/knowledge-facts/{knowledgeFactId}/retire',
     ...options,
     headers: {
         'Content-Type': 'application/json',

@@ -3,16 +3,19 @@ import { environment } from '../config/environment';
 import { isAdminRole, type AdminIdentity } from '../permissions/permissions';
 import { clearDevelopmentAdmin, readDevelopmentAdmin, storeDevelopmentAdmin } from './authSession';
 
-interface AuthState { admin: AdminIdentity | null; signIn: () => void; signOut: () => void }
+export type DevelopmentProfile = 'administrator' | 'reviewer';
+interface AuthState { admin: AdminIdentity | null; signIn: (profile: DevelopmentProfile) => void; signOut: () => void }
 const AuthContext = createContext<AuthState | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [admin, setAdmin] = useState<AdminIdentity | null>(readDevelopmentAdmin);
   const value = useMemo<AuthState>(() => ({
     admin,
-    signIn: () => {
+    signIn: (profile) => {
       if (!environment.developmentAuthEnabled) return;
-      const identity: AdminIdentity = { id: environment.developmentAdminId!, displayName: environment.developmentAdminName!, roles: environment.developmentAdminRoles.filter(isAdminRole) };
+      const identity: AdminIdentity = profile === 'reviewer'
+        ? { id: environment.developmentReviewerId!, displayName: environment.developmentReviewerName!, roles: environment.developmentReviewerRoles.filter(isAdminRole) }
+        : { id: environment.developmentAdminId!, displayName: environment.developmentAdminName!, roles: environment.developmentAdminRoles.filter(isAdminRole) };
       storeDevelopmentAdmin(identity); setAdmin(identity);
     },
     signOut: () => { clearDevelopmentAdmin(); setAdmin(null); },

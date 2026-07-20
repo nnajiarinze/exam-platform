@@ -24,6 +24,9 @@ Copy `.env.example` to `.env.local` to override it. Supported values are:
 - `VITE_DEV_ADMIN_ID`: local administrator identifier.
 - `VITE_DEV_ADMIN_NAME`: local display name.
 - `VITE_DEV_ADMIN_ROLES`: comma-separated roles.
+- `VITE_DEV_REVIEWER_ID`, `VITE_DEV_REVIEWER_NAME`, and
+  `VITE_DEV_REVIEWER_ROLES`: the separate local reviewer identity used to
+  validate separation of duties.
 
 The local identity is stored in `sessionStorage` so it survives normal routing
 but not browser restarts. The generated client sends its identifier and roles as
@@ -48,6 +51,11 @@ application or authentication decisions.
 Phase 2 routes are `/exam-structure` and `/sources`. Server state remains in
 TanStack Query and editor state uses React Hook Form. Add API changes to the
 OpenAPI contract and regenerate; never edit `src/api/generated` manually.
+
+Phase 3 adds `/knowledge`, `/knowledge/objectives`, and their editor routes. The
+fact editor selects active sources, supports validity dates, review actions,
+retirement, and immutable version history. Backend permissions remain
+authoritative.
 
 From the repository root, build and start the Content Service before the portal:
 

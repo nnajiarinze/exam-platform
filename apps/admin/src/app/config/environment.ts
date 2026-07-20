@@ -4,6 +4,9 @@ export interface AdminEnvironment {
   developmentAdminId?: string;
   developmentAdminName?: string;
   developmentAdminRoles: string[];
+  developmentReviewerId?: string;
+  developmentReviewerName?: string;
+  developmentReviewerRoles: string[];
 }
 
 export function readEnvironment(source: Record<string, string | boolean | undefined>): AdminEnvironment {
@@ -16,8 +19,12 @@ export function readEnvironment(source: Record<string, string | boolean | undefi
   }
   const enabled = source.VITE_DEV_ADMIN_AUTH_ENABLED === true || source.VITE_DEV_ADMIN_AUTH_ENABLED === 'true';
   const roles = typeof source.VITE_DEV_ADMIN_ROLES === 'string' ? source.VITE_DEV_ADMIN_ROLES.split(',').map((role) => role.trim()).filter(Boolean) : [];
+  const reviewerRoles = typeof source.VITE_DEV_REVIEWER_ROLES === 'string' ? source.VITE_DEV_REVIEWER_ROLES.split(',').map((role) => role.trim()).filter(Boolean) : [];
   if (enabled && (!source.VITE_DEV_ADMIN_ID || !source.VITE_DEV_ADMIN_NAME || roles.length === 0)) {
     throw new Error('Development authentication requires an admin id, name, and at least one role');
+  }
+  if (enabled && (!source.VITE_DEV_REVIEWER_ID || !source.VITE_DEV_REVIEWER_NAME || reviewerRoles.length === 0)) {
+    throw new Error('Development authentication requires a reviewer id, name, and at least one role');
   }
   return {
     contentServiceBaseUrl: baseUrl || undefined,
@@ -25,6 +32,9 @@ export function readEnvironment(source: Record<string, string | boolean | undefi
     developmentAdminId: typeof source.VITE_DEV_ADMIN_ID === 'string' ? source.VITE_DEV_ADMIN_ID : undefined,
     developmentAdminName: typeof source.VITE_DEV_ADMIN_NAME === 'string' ? source.VITE_DEV_ADMIN_NAME : undefined,
     developmentAdminRoles: roles,
+    developmentReviewerId: typeof source.VITE_DEV_REVIEWER_ID === 'string' ? source.VITE_DEV_REVIEWER_ID : undefined,
+    developmentReviewerName: typeof source.VITE_DEV_REVIEWER_NAME === 'string' ? source.VITE_DEV_REVIEWER_NAME : undefined,
+    developmentReviewerRoles: reviewerRoles,
   };
 }
 

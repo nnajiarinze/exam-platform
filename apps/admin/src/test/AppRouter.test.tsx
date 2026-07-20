@@ -23,6 +23,15 @@ describe('admin routing', () => {
     expect(screen.getByRole('heading', { name: 'Admin sign in' })).toBeInTheDocument();
   });
 
+  it('signs in with the separate development reviewer identity', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(statusResponse()));
+    renderRouter('/login');
+    await userEvent.click(screen.getByRole('button', { name: 'Continue as content reviewer' }));
+    expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
+    expect(screen.getAllByText('test-reviewer').length).toBeGreaterThan(0);
+    expect(screen.getByText(AdminRole.ContentReviewer)).toBeInTheDocument();
+  });
+
   it('shows unauthorized for an authenticated identity without admin permissions', () => {
     renderRouter('/dashboard', { id: 'restricted', displayName: 'Restricted User', roles: [] });
     expect(screen.getByRole('heading', { name: 'Access denied' })).toBeInTheDocument();

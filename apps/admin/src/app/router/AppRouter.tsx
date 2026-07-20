@@ -11,9 +11,13 @@ import { ExamEditorPage } from '../../features/exam-structure/pages/ExamEditorPa
 import { ExamVersionPage } from '../../features/exam-structure/pages/ExamVersionPage';
 import { SourceListPage } from '../../features/sources/pages/SourceListPage';
 import { SourceEditorPage } from '../../features/sources/pages/SourceEditorPage';
+import { KnowledgeFactListPage } from '../../features/knowledge/pages/KnowledgeFactListPage';
+import { KnowledgeFactEditorPage } from '../../features/knowledge/pages/KnowledgeFactEditorPage';
+import { LearningObjectiveListPage } from '../../features/knowledge/pages/LearningObjectiveListPage';
+import { LearningObjectiveEditorPage } from '../../features/knowledge/pages/LearningObjectiveEditorPage';
 
 const placeholders = [
-  ['knowledge', 'Knowledge Base'], ['questions', 'Questions'],
+  ['questions', 'Questions'],
   ['reviews', 'Review Queue'], ['releases', 'Releases'], ['reports', 'Reports'], ['audit', 'Audit Log'],
 ] as const;
 
@@ -32,6 +36,12 @@ export function AppRouter() {
         <Route path="sources" element={<SourceListPage />} />
         <Route path="sources/new" element={<SourceEditorPage />} />
         <Route path="sources/:id" element={<SourceEditorPage />} />
+        <Route path="knowledge" element={<KnowledgeFactListPage />} />
+        <Route path="knowledge/facts/new" element={<KnowledgeFactEditorPage />} />
+        <Route path="knowledge/facts/:id" element={<KnowledgeFactEditorPage />} />
+        <Route path="knowledge/objectives" element={<LearningObjectiveListPage />} />
+        <Route path="knowledge/objectives/new" element={<LearningObjectiveEditorPage />} />
+        <Route path="knowledge/objectives/:id" element={<LearningObjectiveEditorPage />} />
         {placeholders.map(([path, name]) => <Route key={path} path={path} element={<FeaturePlaceholder name={name} />} />)}
       </Route>
     </Route>

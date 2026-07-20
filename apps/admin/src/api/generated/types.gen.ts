@@ -118,6 +118,88 @@ export type RetireSourceRequest = {
     version: number;
 };
 
+export type FactReviewStatus = 'UNREVIEWED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'REQUIRES_UPDATE';
+
+export type FactStatus = 'DRAFT' | 'ACTIVE' | 'RETIRED';
+
+export type LearningObjectiveRequest = {
+    topicId: string;
+    code: string;
+    title: string;
+    description?: string | null;
+    status: StructureStatus;
+    version?: number;
+};
+
+export type LearningObjective = AuditFields & LearningObjectiveRequest & {
+    topicName: string;
+    subjectId: string;
+    subjectName: string;
+};
+
+export type LearningObjectivePage = {
+    items: Array<LearningObjective>;
+    page: number;
+    size: number;
+    totalItems: number;
+    totalPages: number;
+};
+
+export type KnowledgeFactRequest = {
+    learningObjectiveId: string;
+    canonicalStatement: string;
+    validFrom?: string | null;
+    validTo?: string | null;
+    sourceIds: Array<string>;
+    version?: number;
+};
+
+export type KnowledgeFact = AuditFields & {
+    learningObjectiveId: string;
+    currentVersionId: string;
+    canonicalStatement: string;
+    reviewStatus: FactReviewStatus;
+    status: FactStatus;
+    validFrom?: string | null;
+    validTo?: string | null;
+    learningObjectiveTitle: string;
+    topicId: string;
+    topicName: string;
+    subjectId: string;
+    subjectName: string;
+    sourceCount: number;
+    sourceIds: Array<string>;
+};
+
+export type KnowledgeFactPage = {
+    items: Array<KnowledgeFact>;
+    page: number;
+    size: number;
+    totalItems: number;
+    totalPages: number;
+};
+
+export type KnowledgeFactVersion = {
+    id: string;
+    knowledgeFactId: string;
+    versionNumber: number;
+    canonicalStatement: string;
+    reviewStatus: FactReviewStatus;
+    validFrom?: string | null;
+    validTo?: string | null;
+    authorId: string;
+    reviewerId?: string | null;
+    reviewNote?: string | null;
+    sourceIds: Array<string>;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type FactActionRequest = {
+    version: number;
+    reason?: string | null;
+};
+
 export type ContentServiceStatus = {
     service: 'content-service';
     status: 'READY';
@@ -143,9 +225,15 @@ export type TopicId = string;
 
 export type SourceId = string;
 
+export type LearningObjectiveId = string;
+
+export type KnowledgeFactId = string;
+
 export type VersionOnly2 = VersionOnly;
 
 export type Order = OrderRequest;
+
+export type FactAction = FactActionRequest;
 
 export type GetContentServiceStatusData = {
     body?: never;
@@ -887,3 +975,445 @@ export type RetireSourceResponses = {
 };
 
 export type RetireSourceResponse = RetireSourceResponses[keyof RetireSourceResponses];
+
+export type ListLearningObjectivesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        page?: number;
+        size?: number;
+        search?: string;
+        topicId?: string;
+        status?: StructureStatus;
+    };
+    url: '/api/v1/admin/learning-objectives';
+};
+
+export type ListLearningObjectivesErrors = {
+    /**
+     * Valid admin authentication is required
+     */
+    401: ApiError;
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+};
+
+export type ListLearningObjectivesError = ListLearningObjectivesErrors[keyof ListLearningObjectivesErrors];
+
+export type ListLearningObjectivesResponses = {
+    /**
+     * Learning objective page
+     */
+    200: LearningObjectivePage;
+};
+
+export type ListLearningObjectivesResponse = ListLearningObjectivesResponses[keyof ListLearningObjectivesResponses];
+
+export type CreateLearningObjectiveData = {
+    body: LearningObjectiveRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/learning-objectives';
+};
+
+export type CreateLearningObjectiveErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+    /**
+     * Request validation failed
+     */
+    422: ApiError;
+};
+
+export type CreateLearningObjectiveError = CreateLearningObjectiveErrors[keyof CreateLearningObjectiveErrors];
+
+export type CreateLearningObjectiveResponses = {
+    /**
+     * Created
+     */
+    201: LearningObjective;
+};
+
+export type CreateLearningObjectiveResponse = CreateLearningObjectiveResponses[keyof CreateLearningObjectiveResponses];
+
+export type GetLearningObjectiveData = {
+    body?: never;
+    path: {
+        learningObjectiveId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/learning-objectives/{learningObjectiveId}';
+};
+
+export type GetLearningObjectiveErrors = {
+    /**
+     * Resource not found
+     */
+    404: ApiError;
+};
+
+export type GetLearningObjectiveError = GetLearningObjectiveErrors[keyof GetLearningObjectiveErrors];
+
+export type GetLearningObjectiveResponses = {
+    /**
+     * Learning objective
+     */
+    200: LearningObjective;
+};
+
+export type GetLearningObjectiveResponse = GetLearningObjectiveResponses[keyof GetLearningObjectiveResponses];
+
+export type UpdateLearningObjectiveData = {
+    body: LearningObjectiveRequest;
+    path: {
+        learningObjectiveId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/learning-objectives/{learningObjectiveId}';
+};
+
+export type UpdateLearningObjectiveErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+    /**
+     * Request validation failed
+     */
+    422: ApiError;
+};
+
+export type UpdateLearningObjectiveError = UpdateLearningObjectiveErrors[keyof UpdateLearningObjectiveErrors];
+
+export type UpdateLearningObjectiveResponses = {
+    /**
+     * Updated
+     */
+    200: LearningObjective;
+};
+
+export type UpdateLearningObjectiveResponse = UpdateLearningObjectiveResponses[keyof UpdateLearningObjectiveResponses];
+
+export type ArchiveLearningObjectiveData = {
+    body: VersionOnly2;
+    path: {
+        learningObjectiveId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/learning-objectives/{learningObjectiveId}/archive';
+};
+
+export type ArchiveLearningObjectiveErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type ArchiveLearningObjectiveError = ArchiveLearningObjectiveErrors[keyof ArchiveLearningObjectiveErrors];
+
+export type ArchiveLearningObjectiveResponses = {
+    /**
+     * Archived
+     */
+    200: LearningObjective;
+};
+
+export type ArchiveLearningObjectiveResponse = ArchiveLearningObjectiveResponses[keyof ArchiveLearningObjectiveResponses];
+
+export type ListKnowledgeFactsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        page?: number;
+        size?: number;
+        search?: string;
+        learningObjectiveId?: string;
+        topicId?: string;
+        subjectId?: string;
+        sourcePublisher?: string;
+        reviewStatus?: FactReviewStatus;
+        status?: FactStatus;
+        validAt?: string;
+    };
+    url: '/api/v1/admin/knowledge-facts';
+};
+
+export type ListKnowledgeFactsErrors = {
+    /**
+     * Valid admin authentication is required
+     */
+    401: ApiError;
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+};
+
+export type ListKnowledgeFactsError = ListKnowledgeFactsErrors[keyof ListKnowledgeFactsErrors];
+
+export type ListKnowledgeFactsResponses = {
+    /**
+     * Knowledge fact page
+     */
+    200: KnowledgeFactPage;
+};
+
+export type ListKnowledgeFactsResponse = ListKnowledgeFactsResponses[keyof ListKnowledgeFactsResponses];
+
+export type CreateKnowledgeFactData = {
+    body: KnowledgeFactRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/knowledge-facts';
+};
+
+export type CreateKnowledgeFactErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+    /**
+     * Request validation failed
+     */
+    422: ApiError;
+};
+
+export type CreateKnowledgeFactError = CreateKnowledgeFactErrors[keyof CreateKnowledgeFactErrors];
+
+export type CreateKnowledgeFactResponses = {
+    /**
+     * Created
+     */
+    201: KnowledgeFact;
+};
+
+export type CreateKnowledgeFactResponse = CreateKnowledgeFactResponses[keyof CreateKnowledgeFactResponses];
+
+export type GetKnowledgeFactData = {
+    body?: never;
+    path: {
+        knowledgeFactId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/knowledge-facts/{knowledgeFactId}';
+};
+
+export type GetKnowledgeFactErrors = {
+    /**
+     * Resource not found
+     */
+    404: ApiError;
+};
+
+export type GetKnowledgeFactError = GetKnowledgeFactErrors[keyof GetKnowledgeFactErrors];
+
+export type GetKnowledgeFactResponses = {
+    /**
+     * Knowledge fact
+     */
+    200: KnowledgeFact;
+};
+
+export type GetKnowledgeFactResponse = GetKnowledgeFactResponses[keyof GetKnowledgeFactResponses];
+
+export type UpdateKnowledgeFactData = {
+    body: KnowledgeFactRequest;
+    path: {
+        knowledgeFactId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/knowledge-facts/{knowledgeFactId}';
+};
+
+export type UpdateKnowledgeFactErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+    /**
+     * Request validation failed
+     */
+    422: ApiError;
+};
+
+export type UpdateKnowledgeFactError = UpdateKnowledgeFactErrors[keyof UpdateKnowledgeFactErrors];
+
+export type UpdateKnowledgeFactResponses = {
+    /**
+     * Updated fact
+     */
+    200: KnowledgeFact;
+};
+
+export type UpdateKnowledgeFactResponse = UpdateKnowledgeFactResponses[keyof UpdateKnowledgeFactResponses];
+
+export type ListKnowledgeFactVersionsData = {
+    body?: never;
+    path: {
+        knowledgeFactId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/knowledge-facts/{knowledgeFactId}/versions';
+};
+
+export type ListKnowledgeFactVersionsErrors = {
+    /**
+     * Resource not found
+     */
+    404: ApiError;
+};
+
+export type ListKnowledgeFactVersionsError = ListKnowledgeFactVersionsErrors[keyof ListKnowledgeFactVersionsErrors];
+
+export type ListKnowledgeFactVersionsResponses = {
+    /**
+     * Version history
+     */
+    200: Array<KnowledgeFactVersion>;
+};
+
+export type ListKnowledgeFactVersionsResponse = ListKnowledgeFactVersionsResponses[keyof ListKnowledgeFactVersionsResponses];
+
+export type SubmitKnowledgeFactData = {
+    body: FactAction;
+    path: {
+        knowledgeFactId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/knowledge-facts/{knowledgeFactId}/submit';
+};
+
+export type SubmitKnowledgeFactErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type SubmitKnowledgeFactError = SubmitKnowledgeFactErrors[keyof SubmitKnowledgeFactErrors];
+
+export type SubmitKnowledgeFactResponses = {
+    /**
+     * Submitted
+     */
+    200: KnowledgeFact;
+};
+
+export type SubmitKnowledgeFactResponse = SubmitKnowledgeFactResponses[keyof SubmitKnowledgeFactResponses];
+
+export type ApproveKnowledgeFactData = {
+    body: FactAction;
+    path: {
+        knowledgeFactId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/knowledge-facts/{knowledgeFactId}/approve';
+};
+
+export type ApproveKnowledgeFactErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type ApproveKnowledgeFactError = ApproveKnowledgeFactErrors[keyof ApproveKnowledgeFactErrors];
+
+export type ApproveKnowledgeFactResponses = {
+    /**
+     * Approved
+     */
+    200: KnowledgeFact;
+};
+
+export type ApproveKnowledgeFactResponse = ApproveKnowledgeFactResponses[keyof ApproveKnowledgeFactResponses];
+
+export type RejectKnowledgeFactData = {
+    body: FactAction;
+    path: {
+        knowledgeFactId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/knowledge-facts/{knowledgeFactId}/reject';
+};
+
+export type RejectKnowledgeFactErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type RejectKnowledgeFactError = RejectKnowledgeFactErrors[keyof RejectKnowledgeFactErrors];
+
+export type RejectKnowledgeFactResponses = {
+    /**
+     * Rejected
+     */
+    200: KnowledgeFact;
+};
+
+export type RejectKnowledgeFactResponse = RejectKnowledgeFactResponses[keyof RejectKnowledgeFactResponses];
+
+export type RequireKnowledgeFactUpdateData = {
+    body: FactAction;
+    path: {
+        knowledgeFactId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/knowledge-facts/{knowledgeFactId}/require-update';
+};
+
+export type RequireKnowledgeFactUpdateErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type RequireKnowledgeFactUpdateError = RequireKnowledgeFactUpdateErrors[keyof RequireKnowledgeFactUpdateErrors];
+
+export type RequireKnowledgeFactUpdateResponses = {
+    /**
+     * Update required
+     */
+    200: KnowledgeFact;
+};
+
+export type RequireKnowledgeFactUpdateResponse = RequireKnowledgeFactUpdateResponses[keyof RequireKnowledgeFactUpdateResponses];
+
+export type RetireKnowledgeFactData = {
+    body: FactAction;
+    path: {
+        knowledgeFactId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/knowledge-facts/{knowledgeFactId}/retire';
+};
+
+export type RetireKnowledgeFactErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type RetireKnowledgeFactError = RetireKnowledgeFactErrors[keyof RetireKnowledgeFactErrors];
+
+export type RetireKnowledgeFactResponses = {
+    /**
+     * Retired
+     */
+    200: KnowledgeFact;
+};
+
+export type RetireKnowledgeFactResponse = RetireKnowledgeFactResponses[keyof RetireKnowledgeFactResponses];
