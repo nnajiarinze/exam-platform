@@ -37,6 +37,28 @@ paths:
       responses:
         "204": {description: Account anonymised and disabled}
         "401": {$ref: "#/components/responses/Unauthorized"}
+  /api/v1/me/settings:
+    get:
+      operationId: getMyLearnerSettings
+      summary: Retrieve goals, notification preferences, and current goal progress
+      tags: [Learner settings]
+      security: [{ learnerBearer: [] }]
+      responses:
+        "200": {description: Current learner settings,content: {application/json: {schema: {$ref: "#/components/schemas/LearnerSettings"}}}}
+        "401": {$ref: "#/components/responses/Unauthorized"}
+        "403": {$ref: "#/components/responses/Forbidden"}
+    put:
+      operationId: updateMyLearnerSettings
+      summary: Update the authenticated learner's settings using optimistic locking
+      tags: [Learner settings]
+      security: [{ learnerBearer: [] }]
+      requestBody: {required: true,content: {application/json: {schema: {$ref: "#/components/schemas/UpdateLearnerSettings"}}}}
+      responses:
+        "200": {description: Updated learner settings,content: {application/json: {schema: {$ref: "#/components/schemas/LearnerSettings"}}}}
+        "401": {$ref: "#/components/responses/Unauthorized"}
+        "403": {$ref: "#/components/responses/Forbidden"}
+        "409": {$ref: "#/components/responses/Conflict"}
+        "422": {$ref: "#/components/responses/Unprocessable"}
   /internal/v1/reports/learner-health:
     get:
       operationId: getInternalLearnerHealth
@@ -241,6 +263,7 @@ paths:
       summary: Get the active mock-exam configuration for an exam
       operationId: getMockExamConfiguration
       tags: [Mock examinations]
+      security: [{ learnerBearer: [] }]
       parameters:
         - name: examId
           in: query
@@ -372,11 +395,6 @@ components:
       in: header
       name: X-Internal-Api-Key
       description: Temporary service credential pending the production workload-identity adapter.
-    learnerIdentity:
-      type: apiKey
-      in: header
-      name: X-Learner-Identity
-      description: Development/test identity only; disabled by default and not production authentication.
   parameters:
     SessionId:
       name: sessionId
@@ -431,6 +449,34 @@ components:
         interfaceLanguage: {type: string,minLength: 1,maxLength: 35}
         explanationLanguage: {type: string,minLength: 1,maxLength: 35}
         onboardingCompleted: {type: boolean}
+    LearnerSettings:
+      type: object
+      required: [dailyQuestionGoal,weeklyStudyDaysGoal,studyReminderEnabled,preferredReminderTime,timezone,progressSummaryEnabled,achievementNotificationsEnabled,version,questionsAnsweredToday,studyDaysThisWeek,createdAt,updatedAt]
+      properties:
+        dailyQuestionGoal: {type: integer,minimum: 5,maximum: 100}
+        weeklyStudyDaysGoal: {type: integer,minimum: 1,maximum: 7}
+        studyReminderEnabled: {type: boolean}
+        preferredReminderTime: {type: string,pattern: '^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$',example: "19:00:00"}
+        timezone: {type: string,minLength: 1,maxLength: 64,example: Europe/Stockholm}
+        progressSummaryEnabled: {type: boolean}
+        achievementNotificationsEnabled: {type: boolean}
+        version: {type: integer,format: int64,minimum: 0}
+        questionsAnsweredToday: {type: integer,minimum: 0}
+        studyDaysThisWeek: {type: integer,minimum: 0,maximum: 7}
+        createdAt: {type: string,format: date-time}
+        updatedAt: {type: string,format: date-time}
+    UpdateLearnerSettings:
+      type: object
+      required: [dailyQuestionGoal,weeklyStudyDaysGoal,studyReminderEnabled,preferredReminderTime,timezone,progressSummaryEnabled,achievementNotificationsEnabled,version]
+      properties:
+        dailyQuestionGoal: {type: integer,minimum: 5,maximum: 100}
+        weeklyStudyDaysGoal: {type: integer,minimum: 1,maximum: 7}
+        studyReminderEnabled: {type: boolean}
+        preferredReminderTime: {type: string,pattern: '^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$',example: "19:00:00"}
+        timezone: {type: string,minLength: 1,maxLength: 64,example: Europe/Stockholm}
+        progressSummaryEnabled: {type: boolean}
+        achievementNotificationsEnabled: {type: boolean}
+        version: {type: integer,format: int64,minimum: 0}
     Subject:
       type: object
       additionalProperties: false

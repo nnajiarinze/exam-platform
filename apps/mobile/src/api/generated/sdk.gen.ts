@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ActivateImportedContentReleaseData, ActivateImportedContentReleaseErrors, ActivateImportedContentReleaseResponses, CreateMockExamData, CreateMockExamErrors, CreateMockExamResponses, CreatePracticeSessionData, CreatePracticeSessionErrors, CreatePracticeSessionResponses, DeleteMyLearnerAccountData, DeleteMyLearnerAccountErrors, DeleteMyLearnerAccountResponses, FlagMockExamQuestionData, FlagMockExamQuestionErrors, FlagMockExamQuestionResponses, GetInternalLearnerHealthData, GetInternalLearnerHealthErrors, GetInternalLearnerHealthResponses, GetMockExamConfigurationData, GetMockExamConfigurationErrors, GetMockExamConfigurationResponses, GetMockExamData, GetMockExamErrors, GetMockExamHistoryData, GetMockExamHistoryErrors, GetMockExamHistoryResponses, GetMockExamQuestionData, GetMockExamQuestionErrors, GetMockExamQuestionResponses, GetMockExamResponses, GetMockExamResultsData, GetMockExamResultsErrors, GetMockExamResultsResponses, GetMyLearnerProfileData, GetMyLearnerProfileErrors, GetMyLearnerProfileResponses, GetNextPracticeQuestionData, GetNextPracticeQuestionErrors, GetNextPracticeQuestionResponses, GetPracticeSessionData, GetPracticeSessionErrors, GetPracticeSessionResponses, GetSubjectsData, GetSubjectsErrors, GetSubjectsResponses, GetTopicProgressData, GetTopicProgressErrors, GetTopicProgressResponses, ImportContentReleaseData, ImportContentReleaseErrors, ImportContentReleaseResponses, SubmitMockExamData, SubmitMockExamErrors, SubmitMockExamResponseData, SubmitMockExamResponseErrors, SubmitMockExamResponseResponses, SubmitMockExamResponses, SubmitPracticeResponseData, SubmitPracticeResponseErrors, SubmitPracticeResponseResponses, UpdateMyLearnerProfileData, UpdateMyLearnerProfileErrors, UpdateMyLearnerProfileResponses } from './types.gen';
+import type { ActivateImportedContentReleaseData, ActivateImportedContentReleaseErrors, ActivateImportedContentReleaseResponses, CreateMockExamData, CreateMockExamErrors, CreateMockExamResponses, CreatePracticeSessionData, CreatePracticeSessionErrors, CreatePracticeSessionResponses, DeleteMyLearnerAccountData, DeleteMyLearnerAccountErrors, DeleteMyLearnerAccountResponses, FlagMockExamQuestionData, FlagMockExamQuestionErrors, FlagMockExamQuestionResponses, GetInternalLearnerHealthData, GetInternalLearnerHealthErrors, GetInternalLearnerHealthResponses, GetMockExamConfigurationData, GetMockExamConfigurationErrors, GetMockExamConfigurationResponses, GetMockExamData, GetMockExamErrors, GetMockExamHistoryData, GetMockExamHistoryErrors, GetMockExamHistoryResponses, GetMockExamQuestionData, GetMockExamQuestionErrors, GetMockExamQuestionResponses, GetMockExamResponses, GetMockExamResultsData, GetMockExamResultsErrors, GetMockExamResultsResponses, GetMyLearnerProfileData, GetMyLearnerProfileErrors, GetMyLearnerProfileResponses, GetMyLearnerSettingsData, GetMyLearnerSettingsErrors, GetMyLearnerSettingsResponses, GetNextPracticeQuestionData, GetNextPracticeQuestionErrors, GetNextPracticeQuestionResponses, GetPracticeSessionData, GetPracticeSessionErrors, GetPracticeSessionResponses, GetSubjectsData, GetSubjectsErrors, GetSubjectsResponses, GetTopicProgressData, GetTopicProgressErrors, GetTopicProgressResponses, ImportContentReleaseData, ImportContentReleaseErrors, ImportContentReleaseResponses, SubmitMockExamData, SubmitMockExamErrors, SubmitMockExamResponseData, SubmitMockExamResponseErrors, SubmitMockExamResponseResponses, SubmitMockExamResponses, SubmitPracticeResponseData, SubmitPracticeResponseErrors, SubmitPracticeResponseResponses, UpdateMyLearnerProfileData, UpdateMyLearnerProfileErrors, UpdateMyLearnerProfileResponses, UpdateMyLearnerSettingsData, UpdateMyLearnerSettingsErrors, UpdateMyLearnerSettingsResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -42,6 +42,28 @@ export const getMyLearnerProfile = <ThrowOnError extends boolean = false>(option
 export const updateMyLearnerProfile = <ThrowOnError extends boolean = false>(options: Options<UpdateMyLearnerProfileData, ThrowOnError>): RequestResult<UpdateMyLearnerProfileResponses, UpdateMyLearnerProfileErrors, ThrowOnError> => (options.client ?? client).put<UpdateMyLearnerProfileResponses, UpdateMyLearnerProfileErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/me',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Retrieve goals, notification preferences, and current goal progress
+ */
+export const getMyLearnerSettings = <ThrowOnError extends boolean = false>(options?: Options<GetMyLearnerSettingsData, ThrowOnError>): RequestResult<GetMyLearnerSettingsResponses, GetMyLearnerSettingsErrors, ThrowOnError> => (options?.client ?? client).get<GetMyLearnerSettingsResponses, GetMyLearnerSettingsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/me/settings',
+    ...options
+});
+
+/**
+ * Update the authenticated learner's settings using optimistic locking
+ */
+export const updateMyLearnerSettings = <ThrowOnError extends boolean = false>(options: Options<UpdateMyLearnerSettingsData, ThrowOnError>): RequestResult<UpdateMyLearnerSettingsResponses, UpdateMyLearnerSettingsErrors, ThrowOnError> => (options.client ?? client).put<UpdateMyLearnerSettingsResponses, UpdateMyLearnerSettingsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/me/settings',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -169,7 +191,11 @@ export const getMockExamHistory = <ThrowOnError extends boolean = false>(options
 /**
  * Get the active mock-exam configuration for an exam
  */
-export const getMockExamConfiguration = <ThrowOnError extends boolean = false>(options: Options<GetMockExamConfigurationData, ThrowOnError>): RequestResult<GetMockExamConfigurationResponses, GetMockExamConfigurationErrors, ThrowOnError> => (options.client ?? client).get<GetMockExamConfigurationResponses, GetMockExamConfigurationErrors, ThrowOnError>({ url: '/api/v1/mock-exams/configuration', ...options });
+export const getMockExamConfiguration = <ThrowOnError extends boolean = false>(options: Options<GetMockExamConfigurationData, ThrowOnError>): RequestResult<GetMockExamConfigurationResponses, GetMockExamConfigurationErrors, ThrowOnError> => (options.client ?? client).get<GetMockExamConfigurationResponses, GetMockExamConfigurationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/mock-exams/configuration',
+    ...options
+});
 
 /**
  * Get mock examination metadata and navigation state

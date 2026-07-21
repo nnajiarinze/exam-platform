@@ -6,12 +6,13 @@ import { useQueryClient } from '@tanstack/react-query';
 import { appConfig } from '../../api/config';
 import { useAppStore } from '../../app/store';
 import { clearAccessToken, configureAuthTokens, updateAccessToken } from './authTokenStore';
+import { cancelStudyReminder } from '../settings/reminders';
 
 WebBrowser.maybeCompleteAuthSession();
 const REFRESH_KEY = 'svea-study.oidc.refresh-token';
 type AuthStatus = 'restoring' | 'unauthenticated' | 'authenticated' | 'verification-required' | 'expired';
 type Claims = { sub: string; email?: string; email_verified?: boolean; name?: string; exp?: number };
-type Context = { status: AuthStatus; claims?: Claims; login: () => Promise<void>; register: () => Promise<void>; forgotPassword: () => Promise<void>; logout: () => Promise<void> };
+type Context = { status: AuthStatus; claims?: Claims; login: () => Promise<void>; register: () => Promise<void>; forgotPassword: () => Promise<void>; changePassword: () => Promise<void>; logout: () => Promise<void> };
 const AuthContext = createContext<Context | null>(null);
 
 function claims(token: string): Claims { const value=token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'); return JSON.parse(globalThis.atob(value)) as Claims; }
@@ -26,8 +27,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(()=>{configureAuthTokens({refresh,expired:()=>setStatus('expired')});void refresh().then(token=>{if(!token)setStatus('unauthenticated')});},[refresh]);
   useEffect(()=>{if(response?.type==='success'&&discovery&&request?.codeVerifier){void AuthSession.exchangeCodeAsync({clientId:appConfig.oidcClientId,code:response.params.code,redirectUri,extraParams:{code_verifier:request.codeVerifier}},discovery).then(setSession);}else if(response?.type==='error')setStatus('unauthenticated');},[response,discovery,request,redirectUri,setSession]);
   const start=useCallback(async(action?:string)=>{if(!request)return;setStatus('restoring');let actionUrl:string|undefined;if(action==='REGISTER'&&request.url)actionUrl=request.url.replace('/protocol/openid-connect/auth?','/protocol/openid-connect/registrations?');else if(action&&request.url)actionUrl=`${request.url}&kc_action=${encodeURIComponent(action)}`;await promptAsync(actionUrl?{url:actionUrl}:{});},[request,promptAsync]);
-  const logout=useCallback(async()=>{const refreshToken=await SecureStore.getItemAsync(REFRESH_KEY);if(refreshToken&&discovery)try{await AuthSession.revokeAsync({token:refreshToken,clientId:appConfig.oidcClientId},discovery);}catch{/* Local credentials are still cleared. */}await SecureStore.deleteItemAsync(REFRESH_KEY);clearAccessToken();setClaims(undefined);useAppStore.getState().clearUserData();queryClient.clear();setStatus('unauthenticated');},[discovery,queryClient]);
-  const value=useMemo<Context>(()=>({status,claims:currentClaims,login:()=>start(),register:()=>start('REGISTER'),forgotPassword:()=>start('UPDATE_PASSWORD'),logout}),[status,currentClaims,start,logout]);
+  const logout=useCallback(async()=>{const refreshToken=await SecureStore.getItemAsync(REFRESH_KEY);if(currentClaims?.sub)await cancelStudyReminder(currentClaims.sub);if(refreshToken&&discovery)try{await AuthSession.revokeAsync({token:refreshToken,clientId:appConfig.oidcClientId},discovery);}catch{/* Local credentials are still cleared. */}await SecureStore.deleteItemAsync(REFRESH_KEY);clearAccessToken();setClaims(undefined);useAppStore.getState().clearUserData();queryClient.clear();setStatus('unauthenticated');},[currentClaims?.sub,discovery,queryClient]);
+  const value=useMemo<Context>(()=>({status,claims:currentClaims,login:()=>start(),register:()=>start('REGISTER'),forgotPassword:()=>start('UPDATE_PASSWORD'),changePassword:()=>start('UPDATE_PASSWORD'),logout}),[status,currentClaims,start,logout]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 export function useAuth(){const value=useContext(AuthContext);if(!value)throw new Error('useAuth must be used within AuthProvider');return value;}

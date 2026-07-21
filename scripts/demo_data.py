@@ -246,7 +246,7 @@ def learning_reset_sql() -> str:
 DELETE FROM mock_exam_subject_result; DELETE FROM mock_exam_topic_result; DELETE FROM mock_exam_response_selection;
 DELETE FROM mock_exam_response; DELETE FROM mock_exam_question; DELETE FROM mock_exam_attempt; DELETE FROM mock_exam_topic_allocation; DELETE FROM mock_exam_blueprint;
 DELETE FROM practice_response_selection; DELETE FROM practice_response; DELETE FROM practice_session_question; DELETE FROM practice_session;
-DELETE FROM bookmark; DELETE FROM topic_progress; DELETE FROM learner_profile; DELETE FROM imported_release_activation_history;
+DELETE FROM bookmark; DELETE FROM topic_progress; DELETE FROM learner_settings; DELETE FROM learner_profile; DELETE FROM imported_release_activation_history;
 DELETE FROM imported_answer_option; DELETE FROM imported_question; DELETE FROM imported_topic; DELETE FROM imported_subject; DELETE FROM imported_content_release;
 COMMIT;"""
 
@@ -340,7 +340,8 @@ def seed_blueprint(dataset: dict[str, object]) -> str:
         topic = subject["topics"][0]
         allocations.append(f"({sql(stable_id('allocation', topic['code']))},{sql(BLUEPRINT_ID)},{sql(topic['id'])},4)")
     learner = "INSERT INTO learner_profile(id,external_identity_id,email,email_verified,display_name,interface_language,explanation_language,account_status,onboarding_completed,created_at,updated_at) VALUES(" + ",".join(map(sql, (DEMO_LEARNER_ID, DEMO_LEARNER_ID, "learner@example.test", True, "Demo learner", "sv", "sv", "ACTIVE", True, FIXED_AT, FIXED_AT))) + ");"
-    return "BEGIN; " + learner + " INSERT INTO mock_exam_blueprint(id,exam_id,name,total_questions,duration_minutes,passing_percentage,active,created_at,updated_at,description,randomize_questions,randomize_options,max_attempts_per_day,version) VALUES(" + ",".join(map(sql, (BLUEPRINT_ID, "swedish-citizenship", "Demonstrationsprov – inga officiella provregler", 20, 30, 70, True, FIXED_AT, FIXED_AT, "Lokalt demonstrationsprov för att testa hela flödet.", True, True, 10, 1))) + "); INSERT INTO mock_exam_topic_allocation(id,blueprint_id,external_topic_id,question_count) VALUES " + ",".join(allocations) + "; COMMIT;"
+    settings = "INSERT INTO learner_settings(learner_id,daily_question_goal,weekly_study_days_goal,study_reminder_enabled,preferred_reminder_time,timezone,progress_summary_enabled,achievement_notifications_enabled,version,created_at,updated_at) VALUES(" + ",".join(map(sql, (DEMO_LEARNER_ID, 20, 5, False, "19:00", "Europe/Stockholm", False, False, 0, FIXED_AT, FIXED_AT))) + ");"
+    return "BEGIN; " + learner + settings + " INSERT INTO mock_exam_blueprint(id,exam_id,name,total_questions,duration_minutes,passing_percentage,active,created_at,updated_at,description,randomize_questions,randomize_options,max_attempts_per_day,version) VALUES(" + ",".join(map(sql, (BLUEPRINT_ID, "swedish-citizenship", "Demonstrationsprov – inga officiella provregler", 20, 30, 70, True, FIXED_AT, FIXED_AT, "Lokalt demonstrationsprov för att testa hela flödet.", True, True, 10, 1))) + "); INSERT INTO mock_exam_topic_allocation(id,blueprint_id,external_topic_id,question_count) VALUES " + ",".join(allocations) + "; COMMIT;"
 
 
 def summary() -> None:

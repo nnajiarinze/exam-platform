@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -89,6 +90,57 @@ class LearningServiceIntegrationTest {
         assertThat(migrations).isPositive();
         assertThat(jdbc.sql("SELECT to_regclass('public.practice_session') IS NOT NULL")
                 .query(Boolean.class).single()).isTrue();
+    }
+
+    @Test
+    void authenticatedLearnerGetsDeterministicSettingsDefaults() throws Exception {
+        mockMvc.perform(get("/api/v1/me/settings").header("X-Learner-Identity", "developer-learner"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.dailyQuestionGoal").value(20))
+                .andExpect(jsonPath("$.weeklyStudyDaysGoal").value(5))
+                .andExpect(jsonPath("$.studyReminderEnabled").value(false))
+                .andExpect(jsonPath("$.timezone").value("Europe/Stockholm"))
+                .andExpect(jsonPath("$.questionsAnsweredToday").value(0))
+                .andExpect(jsonPath("$.version").value(0));
+        assertThat(jdbc.sql("SELECT count(*) FROM learner_settings WHERE learner_id=:id")
+                .param("id", learnerId).query(Integer.class).single()).isOne();
+    }
+
+    @Test
+    void authenticatedLearnerUpdatesOwnSettingsWithOptimisticLocking() throws Exception {
+        mockMvc.perform(put("/api/v1/me/settings").header("X-Learner-Identity", "developer-learner")
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                          {"dailyQuestionGoal":30,"weeklyStudyDaysGoal":4,"studyReminderEnabled":true,
+                           "preferredReminderTime":"18:30:00","timezone":"Europe/Stockholm",
+                           "progressSummaryEnabled":true,"achievementNotificationsEnabled":false,"version":0}
+                          """))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.dailyQuestionGoal").value(30))
+                .andExpect(jsonPath("$.version").value(1));
+        mockMvc.perform(put("/api/v1/me/settings").header("X-Learner-Identity", "developer-learner")
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                          {"dailyQuestionGoal":40,"weeklyStudyDaysGoal":4,"studyReminderEnabled":false,
+                           "preferredReminderTime":"18:30:00","timezone":"Europe/Stockholm",
+                           "progressSummaryEnabled":false,"achievementNotificationsEnabled":false,"version":0}
+                          """))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("LEARNER_SETTINGS_CONFLICT"));
+    }
+
+    @Test
+    void settingsRejectInvalidGoalAndTimezone() throws Exception {
+        mockMvc.perform(put("/api/v1/me/settings").header("X-Learner-Identity", "developer-learner")
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                          {"dailyQuestionGoal":2,"weeklyStudyDaysGoal":8,"studyReminderEnabled":false,
+                           "preferredReminderTime":"18:30:00","timezone":"Not/AZone",
+                           "progressSummaryEnabled":false,"achievementNotificationsEnabled":false,"version":0}
+                          """))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+        mockMvc.perform(put("/api/v1/me/settings").header("X-Learner-Identity", "developer-learner")
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                          {"dailyQuestionGoal":20,"weeklyStudyDaysGoal":5,"studyReminderEnabled":false,
+                           "preferredReminderTime":"18:30:00","timezone":"Not/AZone",
+                           "progressSummaryEnabled":false,"achievementNotificationsEnabled":false,"version":0}
+                          """))
+                .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("INVALID_TIMEZONE"));
     }
 
     @Test

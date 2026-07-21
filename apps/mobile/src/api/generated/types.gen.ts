@@ -25,6 +25,32 @@ export type UpdateLearnerProfile = {
     onboardingCompleted: boolean;
 };
 
+export type LearnerSettings = {
+    dailyQuestionGoal: number;
+    weeklyStudyDaysGoal: number;
+    studyReminderEnabled: boolean;
+    preferredReminderTime: string;
+    timezone: string;
+    progressSummaryEnabled: boolean;
+    achievementNotificationsEnabled: boolean;
+    version: number;
+    questionsAnsweredToday: number;
+    studyDaysThisWeek: number;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type UpdateLearnerSettings = {
+    dailyQuestionGoal: number;
+    weeklyStudyDaysGoal: number;
+    studyReminderEnabled: boolean;
+    preferredReminderTime: string;
+    timezone: string;
+    progressSummaryEnabled: boolean;
+    achievementNotificationsEnabled: boolean;
+    version: number;
+};
+
 export type Subject = {
     id: string;
     name: string;
@@ -417,6 +443,72 @@ export type UpdateMyLearnerProfileResponses = {
 };
 
 export type UpdateMyLearnerProfileResponse = UpdateMyLearnerProfileResponses[keyof UpdateMyLearnerProfileResponses];
+
+export type GetMyLearnerSettingsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/me/settings';
+};
+
+export type GetMyLearnerSettingsErrors = {
+    /**
+     * Authentication is absent or invalid.
+     */
+    401: Error;
+    /**
+     * The authenticated account is not allowed to perform this operation.
+     */
+    403: Error;
+};
+
+export type GetMyLearnerSettingsError = GetMyLearnerSettingsErrors[keyof GetMyLearnerSettingsErrors];
+
+export type GetMyLearnerSettingsResponses = {
+    /**
+     * Current learner settings
+     */
+    200: LearnerSettings;
+};
+
+export type GetMyLearnerSettingsResponse = GetMyLearnerSettingsResponses[keyof GetMyLearnerSettingsResponses];
+
+export type UpdateMyLearnerSettingsData = {
+    body: UpdateLearnerSettings;
+    path?: never;
+    query?: never;
+    url: '/api/v1/me/settings';
+};
+
+export type UpdateMyLearnerSettingsErrors = {
+    /**
+     * Authentication is absent or invalid.
+     */
+    401: Error;
+    /**
+     * The authenticated account is not allowed to perform this operation.
+     */
+    403: Error;
+    /**
+     * Request conflicts with current or previously accepted state.
+     */
+    409: Error;
+    /**
+     * Structurally valid request violates content or selection rules.
+     */
+    422: Error;
+};
+
+export type UpdateMyLearnerSettingsError = UpdateMyLearnerSettingsErrors[keyof UpdateMyLearnerSettingsErrors];
+
+export type UpdateMyLearnerSettingsResponses = {
+    /**
+     * Updated learner settings
+     */
+    200: LearnerSettings;
+};
+
+export type UpdateMyLearnerSettingsResponse = UpdateMyLearnerSettingsResponses[keyof UpdateMyLearnerSettingsResponses];
 
 export type GetInternalLearnerHealthData = {
     body?: never;

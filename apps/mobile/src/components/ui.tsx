@@ -3,15 +3,15 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { theme } from '../theme';
 
 export function Icon({ name, size = 24, color = theme.colors.primary }: { name: string; size?: number; color?: string }) {
-  const glyphs: Record<string, string> = { back: '‹', search: '⌕', profile: '◎', play: '▶', shuffle: '⇄', progress: '▆', settings: '⚙', home: '⌂', topics: '▤', exam: '◷', arrow: '›', trophy: '★', help: '?', check: '✓', close: '×', info: 'i' };
+  const glyphs: Record<string, string> = { back: '‹', search: '⌕', profile: '◎', person: '♙', lock: '▣', notification: '♧', flag: '⚑', privacy: '§', logout: '↪', delete: '×', email: '@', play: '▶', shuffle: '⇄', progress: '▆', settings: '⚙', home: '⌂', topics: '▤', exam: '◷', arrow: '›', trophy: '★', help: '?', check: '✓', close: '×', info: 'i' };
   return <Text aria-hidden style={{ color, fontSize: size, lineHeight: size + 2, fontWeight: '700' }}>{glyphs[name] ?? name}</Text>;
 }
 
 export function Title({ children }: PropsWithChildren) { return <Text accessibilityRole="header" style={styles.title}>{children}</Text>; }
 export function Body({ children }: PropsWithChildren) { return <Text style={styles.body}>{children}</Text>; }
 export function Card({ children }: PropsWithChildren) { return <View style={styles.card}>{children}</View>; }
-export function Button({ label, onPress, disabled = false, testID, variant = 'primary', icon }: { label: string; onPress: () => void; disabled?: boolean; testID?: string; variant?: 'primary' | 'secondary'; icon?: ReactNode }) {
-  return <Pressable accessibilityRole="button" accessibilityState={{ disabled }} disabled={disabled} onPress={onPress} testID={testID} style={({ pressed }) => [styles.button, variant === 'secondary' && styles.secondaryButton, disabled && styles.disabled, pressed && styles.pressed]}>{icon}<Text style={[styles.buttonText, variant === 'secondary' && styles.secondaryButtonText]}>{label}</Text></Pressable>;
+export function Button({ label, onPress, disabled = false, testID, variant = 'primary', icon }: { label: string; onPress: () => void; disabled?: boolean; testID?: string; variant?: 'primary' | 'secondary' | 'destructive'; icon?: ReactNode }) {
+  return <Pressable accessibilityRole="button" accessibilityState={{ disabled }} disabled={disabled} onPress={onPress} testID={testID} style={({ pressed }) => [styles.button, variant === 'secondary' && styles.secondaryButton,variant==='destructive'&&styles.destructiveButton, disabled && styles.disabled, pressed && styles.pressed]}>{icon}<Text style={[styles.buttonText, variant === 'secondary' && styles.secondaryButtonText,variant==='destructive'&&styles.destructiveButtonText]}>{label}</Text></Pressable>;
 }
 export function ProgressBar({ value, accessibilityLabel }: { value: number; accessibilityLabel?: string }) {
   const normalized = Math.max(0, Math.min(100, value));
@@ -30,8 +30,10 @@ const styles = StyleSheet.create({
   card: { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, borderRadius: theme.radii.xl, borderWidth: 1, gap: theme.spacing.sm, padding: theme.spacing.sm, ...theme.shadows.card },
   button: { alignItems: 'center', backgroundColor: theme.colors.primary, borderColor: theme.colors.primary, borderRadius: theme.radii.lg, borderWidth: 2, flexDirection: 'row', gap: theme.spacing.xs, minHeight: 56, justifyContent: 'center', paddingHorizontal: theme.spacing.sm, paddingVertical: 12 },
   secondaryButton: { backgroundColor: 'transparent' },
+  destructiveButton:{backgroundColor:'transparent',borderColor:theme.colors.error},
   buttonText: { color: theme.colors.onPrimary, fontSize: 17, lineHeight: 24, fontWeight: '700' },
   secondaryButtonText: { color: theme.colors.primary },
+  destructiveButtonText:{color:theme.colors.error},
   disabled: { backgroundColor: theme.colors.disabled, borderColor: theme.colors.disabled, opacity: 1 }, pressed: { opacity: 0.82 },
   center: { alignItems: 'center', flex: 1, gap: theme.spacing.sm, justifyContent: 'center', minHeight: 120 },
   stateText: { color: theme.colors.muted, ...theme.typography.body, textAlign: 'center' },

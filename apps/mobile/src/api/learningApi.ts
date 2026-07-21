@@ -1,8 +1,8 @@
 import { client } from './generated/client.gen';
 import { createMockExam, createPracticeSession, deleteMyLearnerAccount, flagMockExamQuestion, getMockExam, getMockExamConfiguration, getMockExamHistory,
   getMockExamQuestion, getMockExamResults, getNextPracticeQuestion, getSubjects, getTopicProgress,
-  getMyLearnerProfile, submitMockExam, submitMockExamResponse, submitPracticeResponse } from './generated/sdk.gen';
-import type { CreatePracticeSessionRequest, SubmitAnswerRequest } from './generated/types.gen';
+  getMyLearnerProfile, getMyLearnerSettings, submitMockExam, submitMockExamResponse, submitPracticeResponse, updateMyLearnerProfile, updateMyLearnerSettings } from './generated/sdk.gen';
+import type { CreatePracticeSessionRequest, SubmitAnswerRequest, UpdateLearnerProfile, UpdateLearnerSettings } from './generated/types.gen';
 import { appConfig } from './config';
 import { authenticationExpired, validAccessToken } from '../features/auth/authTokenStore';
 
@@ -25,6 +25,9 @@ const headers = (identity: string) => appConfig.defaultLearnerIdentity && identi
 
 export const learningApi = {
   profile: async (identity: string) => (await getMyLearnerProfile({ headers: headers(identity), throwOnError: true })).data,
+  updateProfile: async (identity: string, body: UpdateLearnerProfile) => (await updateMyLearnerProfile({ body, headers: headers(identity), throwOnError: true })).data,
+  settings: async (identity: string) => (await getMyLearnerSettings({ headers: headers(identity), throwOnError: true })).data,
+  updateSettings: async (identity: string, body: UpdateLearnerSettings) => (await updateMyLearnerSettings({ body, headers: headers(identity), throwOnError: true })).data,
   deleteAccount: async (identity: string) => (await deleteMyLearnerAccount({ headers: headers(identity), throwOnError: true })).data,
   subjects: async (identity: string) => (await getSubjects({ query: { examId: appConfig.examId }, headers: headers(identity), throwOnError: true })).data,
   createSession: async (identity: string, body: CreatePracticeSessionRequest) => (await createPracticeSession({ body, headers: headers(identity), throwOnError: true })).data,

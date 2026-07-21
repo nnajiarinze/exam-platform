@@ -17,6 +17,12 @@ export type RootStackParamList = {
   Progress: undefined;
   Settings: undefined;
   Profile: undefined;
+  EditProfile: undefined;
+  ChangePassword: undefined;
+  StudyGoals: undefined;
+  NotificationPreferences: undefined;
+  PrivacyLegal: undefined;
+  DeleteAccount: undefined;
   MockExam: undefined;
   MockQuestion: { attemptId: string; sequenceNumber: number };
   MockResults: { attemptId: string };

@@ -17,7 +17,7 @@ export function HomeScreen({ navigation }: NativeStackScreenProps<RootStackParam
   const answered = progress.data?.reduce((sum, item) => sum + item.questionsAnswered, 0) ?? 0;
   const correct = progress.data?.reduce((sum, item) => sum + item.correctAnswers, 0) ?? 0;
   const accuracy = answered > 0 ? Math.round((correct / answered) * 100) : 0;
-  const navigateTab = (tab: 'home' | 'topics' | 'exam' | 'progress') => { if (tab === 'topics') navigation.navigate('Topics'); else if (tab === 'exam') navigation.navigate('MockExam'); else if (tab === 'progress') navigation.navigate('Progress'); };
+  const navigateTab = (tab: 'home' | 'topics' | 'exam' | 'progress' | 'settings') => { if (tab === 'topics') navigation.navigate('Topics'); else if (tab === 'exam') navigation.navigate('MockExam'); else if (tab === 'progress') navigation.navigate('Progress'); else if(tab==='settings')navigation.navigate('Settings'); };
 
   return <View style={styles.page}><Screen bottomInset>
     <AppHeader action="profile" onAction={() => navigation.navigate('Profile')} />
