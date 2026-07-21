@@ -19,7 +19,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          jwk-set-uri: http://${OIDC_INTERNAL_HOSTPORT}/auth/realms/exam-platform/protocol/openid-connect/certs
+          jwk-set-uri: ${OIDC_JWK_SET_URI:http://${OIDC_INTERNAL_HOSTPORT}/auth/realms/exam-platform/protocol/openid-connect/certs}
 server:
   shutdown: graceful
   forward-headers-strategy: native

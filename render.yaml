@@ -14,12 +14,9 @@ services:
         value: 8080
       - key: NGINX_ENVSUBST_FILTER
         value: ^(PORT|CONTENT_UPSTREAM|LEARNING_UPSTREAM|IDENTITY_UPSTREAM)$
-      - key: CONTENT_UPSTREAM
-        fromService: { name: citizenship-content-service, type: web, property: hostport }
-      - key: LEARNING_UPSTREAM
-        fromService: { name: citizenship-learning-service, type: web, property: hostport }
-      - key: IDENTITY_UPSTREAM
-        fromService: { name: citizenship-identity, type: web, property: hostport }
+      - { key: CONTENT_UPSTREAM, value: https://citizenship-content-service.onrender.com }
+      - { key: LEARNING_UPSTREAM, value: https://citizenship-learning-service.onrender.com }
+      - { key: IDENTITY_UPSTREAM, value: https://citizenship-identity.onrender.com }
 
   - type: web
     name: citizenship-content-service
@@ -37,8 +34,7 @@ services:
       - { key: CONTENT_DATABASE_PASSWORD, sync: false }
       - { key: CORS_ALLOWED_ORIGINS, sync: false }
       - { key: OIDC_ISSUER_URI, sync: false }
-      - key: OIDC_INTERNAL_HOSTPORT
-        fromService: { name: citizenship-identity, type: web, property: hostport }
+      - { key: OIDC_JWK_SET_URI, value: https://citizenship-identity.onrender.com/auth/realms/exam-platform/protocol/openid-connect/certs }
       - { key: LEARNING_INTERNAL_API_KEY, sync: false }
       - { key: EMAIL_PROVIDER, value: resend }
       - { key: RESEND_API_KEY, sync: false }
@@ -46,10 +42,8 @@ services:
       - { key: RESEND_FROM_NAME, value: Svea Study }
       - { key: RESEND_REPLY_TO_EMAIL, sync: false }
       - { key: AI_INTERNAL_API_KEY, sync: false }
-      - key: LEARNING_SERVICE_HOSTPORT
-        fromService: { name: citizenship-learning-service, type: web, property: hostport }
-      - key: AI_SERVICE_HOSTPORT
-        fromService: { name: citizenship-ai-service, type: web, property: hostport }
+      - { key: LEARNING_SERVICE_BASE_URL, value: https://citizenship-learning-service.onrender.com }
+      - { key: AI_SERVICE_BASE_URL, value: https://citizenship-ai-service.onrender.com }
 
   - type: web
     name: citizenship-learning-service
@@ -67,8 +61,7 @@ services:
       - { key: LEARNING_DATABASE_PASSWORD, sync: false }
       - { key: CORS_ALLOWED_ORIGINS, sync: false }
       - { key: OIDC_ISSUER_URI, sync: false }
-      - key: OIDC_INTERNAL_HOSTPORT
-        fromService: { name: citizenship-identity, type: web, property: hostport }
+      - { key: OIDC_JWK_SET_URI, value: https://citizenship-identity.onrender.com/auth/realms/exam-platform/protocol/openid-connect/certs }
       - { key: LEARNING_INTERNAL_API_KEY, sync: false }
 
   - type: web
@@ -92,12 +85,11 @@ services:
 
   - type: web
     name: citizenship-identity
-    runtime: image
+    runtime: docker
     region: frankfurt
     plan: free
-    image:
-      url: quay.io/keycloak/keycloak:26.3
-    dockerCommand: start --http-enabled=true --http-relative-path=/auth --proxy-headers=xforwarded
+    dockerfilePath: ./infrastructure/keycloak/Dockerfile
+    dockerContext: .
     envVars:
       - { key: KC_DB, value: postgres }
       - { key: KC_DB_URL, sync: false }
