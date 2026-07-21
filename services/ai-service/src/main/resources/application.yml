@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: ai-service
+  datasource:
+    url: ${AI_DATABASE_URL:jdbc:postgresql://localhost:5435/ai}
+    username: ${AI_DATABASE_USERNAME:ai}
+    password: ${AI_DATABASE_PASSWORD:ai}
+  flyway:
+    enabled: true
+  jackson:
+    default-property-inclusion: non_null
+management.endpoints.web.exposure.include: health,info
+ai:
+  editorial:
+    enabled: ${AI_EDITORIAL_ASSISTANT_ENABLED:false}
+    provider: ${AI_PROVIDER:FAKE}
+    model: ${AI_MODEL:deterministic-v1}
+    internal-api-key: ${AI_INTERNAL_API_KEY:}
+    max-source-characters: ${AI_MAX_SOURCE_CHARACTERS:50000}
+    max-proposals: ${AI_MAX_PROPOSALS:20}
+    max-fact-characters: ${AI_MAX_FACT_CHARACTERS:500}
+    max-retries: ${AI_MAX_RETRIES:2}
+    concurrency: ${AI_CONCURRENCY:2}
+    request-limit-per-hour: ${AI_REQUEST_LIMIT_PER_HOUR:30}

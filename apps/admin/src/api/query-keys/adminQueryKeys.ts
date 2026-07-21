@@ -7,4 +7,5 @@ export const adminQueryKeys={
  questions:{all:['questions'] as const,list:(filters:unknown)=>['questions','list',filters] as const,detail:(id:string)=>['questions','detail',id] as const,versions:(id:string)=>['questions',id,'versions'] as const},
  reviews:{all:['reviews'] as const,summary:['reviews','summary'] as const,list:(filters:unknown)=>['reviews','list',filters] as const,detail:(id:string)=>['reviews','detail',id] as const},
  releases:{all:['releases'] as const,list:(filters:unknown)=>['releases','list',filters] as const,detail:(id:string)=>['releases','detail',id] as const,eligible:(id:string)=>['releases','eligible',id] as const}
+ ,ai:{job:(id:string)=>['ai','jobs',id] as const,proposals:(id:string)=>['ai','jobs',id,'proposals'] as const}
 };

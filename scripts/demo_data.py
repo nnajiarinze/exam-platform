@@ -159,7 +159,8 @@ def build_dataset() -> dict[str, object]:
             topic_id = stable_id("topic", topic.code)
             source_id = stable_id("source", topic.code)
             publisher, source_title, source_url = topic.source
-            sources.append({"id": source_id, "publisher": publisher, "title": source_title, "url": source_url})
+            source_text = " ".join(topic.facts)
+            sources.append({"id": source_id, "publisher": publisher, "title": source_title, "url": source_url, "contentText": source_text, "contentChecksum": hashlib.sha256(source_text.encode()).hexdigest()})
             topic_record = {"id": topic_id, "code": topic.code, "name": topic.name, "description": topic.description, "sortOrder": topic_index, "questions": []}
             for objective_index in range(2):
                 objective_code = f"{topic.code}_{objective_index + 1}"
@@ -234,7 +235,7 @@ DELETE FROM release_validation_run; DELETE FROM content_release_item; DELETE FRO
 DELETE FROM review_comment; DELETE FROM review_record; DELETE FROM review_item;
 UPDATE question SET current_version_id=NULL; DELETE FROM question_tag; DELETE FROM question_knowledge_fact;
 DELETE FROM question_option; DELETE FROM question_version; DELETE FROM question;
-UPDATE knowledge_fact SET current_version_id=NULL; DELETE FROM knowledge_fact_source; DELETE FROM knowledge_fact_version; DELETE FROM knowledge_fact;
+DELETE FROM knowledge_fact_ai_provenance; UPDATE knowledge_fact SET current_version_id=NULL; DELETE FROM knowledge_fact_source; DELETE FROM knowledge_fact_version; DELETE FROM knowledge_fact;
 DELETE FROM learning_objective; UPDATE source_reference SET replacement_source_id=NULL; DELETE FROM source_reference;
 DELETE FROM topic; DELETE FROM subject; DELETE FROM exam_version; DELETE FROM exam;
 TRUNCATE TABLE audit_event;
@@ -257,7 +258,7 @@ def content_seed_sql(dataset: dict[str, object], snap: dict[str, object], checks
     lines.append(f"INSERT INTO exam_version VALUES ({sql(HISTORICAL_VERSION_ID)},{sql(EXAM_ID)},'2026.1-demo','2026.1 Demo – historiskt övningsmaterial','ARCHIVED','2026-01-15','2026-05-31',{sql(FIXED_AT)},{sql(FIXED_AT)},1);")
     lines.append(f"INSERT INTO exam_version VALUES ({sql(CURRENT_VERSION_ID)},{sql(EXAM_ID)},'2026.2-demo','2026.2 Demo – aktuellt övningsmaterial','ACTIVE','2026-06-01',NULL,{sql(FIXED_AT)},{sql(FIXED_AT)},1);")
     for source in dataset["sources"]:
-        lines.append("INSERT INTO source_reference(id,publisher,title,url,source_type,accessed_at,copyright_notes,internal_notes,review_status,status,created_at,updated_at,version) VALUES(" + ",".join(map(sql, (source["id"], source["publisher"], source["title"], source["url"], "GOVERNMENT_WEBPAGE", FIXED_DATE, "Public institutional landing page; verify before production editorial use.", "Demonstration metadata, fixed review date.", "REVIEWED", "ACTIVE", FIXED_AT, FIXED_AT, 1))) + ");")
+        lines.append("INSERT INTO source_reference(id,publisher,title,url,source_type,accessed_at,copyright_notes,internal_notes,content_text,content_checksum,review_status,status,created_at,updated_at,version) VALUES(" + ",".join(map(sql, (source["id"], source["publisher"], source["title"], source["url"], "GOVERNMENT_WEBPAGE", FIXED_DATE, "Public institutional landing page; verify before production editorial use.", "Demonstration metadata, fixed review date.", source["contentText"], source["contentChecksum"], "REVIEWED", "ACTIVE", FIXED_AT, FIXED_AT, 1))) + ");")
     for subject in dataset["subjects"]:
         lines.append("INSERT INTO subject VALUES(" + ",".join(map(sql, (subject["id"], CURRENT_VERSION_ID, subject["code"], subject["name"], subject["description"], subject["sortOrder"], "ACTIVE", FIXED_AT, FIXED_AT, 1))) + ");")
         for topic in subject["topics"]:

@@ -88,6 +88,34 @@ class ContentServiceIntegrationTest {
     }
 
     @Test
+    void editorialEndpointIsRegisteredAndFailsClosedWithoutAdminIdentity() throws Exception {
+        mvc.perform(post("/api/v1/admin/ai/editorial-jobs")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("AUTHENTICATION_REQUIRED"));
+    }
+
+    @Test
+    void reviewerCanReachAnalysisJobEndpointButCannotAcceptSplitProposals() throws Exception {
+        mvc.perform(post("/api/v1/admin/ai/editorial-jobs")
+                        .header("X-Admin-Identity", "reviewer-1")
+                        .header("X-Admin-Roles", "CONTENT_REVIEWER")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+
+        mvc.perform(post("/api/v1/admin/ai/editorial-proposals/accept-split")
+                        .header("X-Admin-Identity", "reviewer-1")
+                        .header("X-Admin-Roles", "CONTENT_REVIEWER")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+    }
+
+    @Test
     void identityWithoutRecognizedRoleIsForbidden() throws Exception {
         mvc.perform(get("/api/v1/status")
                         .header("X-Admin-Identity", "restricted-1")
@@ -107,7 +135,7 @@ class ContentServiceIntegrationTest {
     void flywayAppliesTheOwnedFoundationMigration() {
         var versions = jdbc.sql("SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank")
                 .query(String.class).list();
-        org.assertj.core.api.Assertions.assertThat(versions).containsExactly("1", "2", "3", "4", "5", "6", "7", "8");
+        org.assertj.core.api.Assertions.assertThat(versions).containsExactly("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11");
     }
 
     @Test

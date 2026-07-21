@@ -50,6 +50,8 @@ services:
       OIDC_ISSUER_URI: ${OIDC_PUBLIC_BASE_URL:-http://localhost:8090}/realms/exam-platform
       OIDC_JWK_SET_URI: http://identity-provider:8080/realms/exam-platform/protocol/openid-connect/certs
       CONTENT_OIDC_AUDIENCE: content-api
+      AI_SERVICE_BASE_URL: http://ai-service:8080
+      AI_INTERNAL_API_KEY: ${AI_INTERNAL_API_KEY:-local-ai-development-only}
     ports:
       - "8082:8080"
     depends_on:
@@ -59,6 +61,41 @@ services:
         condition: service_started
       identity-provider:
         condition: service_started
+      ai-service:
+        condition: service_started
+
+  ai-database:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ai
+      POSTGRES_USER: ai
+      POSTGRES_PASSWORD: ai
+    ports:
+      - "5435:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ai -d ai"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+    volumes:
+      - ai-database-data:/var/lib/postgresql/data
+
+  ai-service:
+    build:
+      context: services/ai-service
+    environment:
+      AI_DATABASE_URL: jdbc:postgresql://ai-database:5432/ai
+      AI_DATABASE_USERNAME: ai
+      AI_DATABASE_PASSWORD: ai
+      AI_EDITORIAL_ASSISTANT_ENABLED: "true"
+      AI_PROVIDER: FAKE
+      AI_MODEL: deterministic-v1
+      AI_INTERNAL_API_KEY: ${AI_INTERNAL_API_KEY:-local-ai-development-only}
+    ports:
+      - "8083:8080"
+    depends_on:
+      ai-database:
+        condition: service_healthy
 
   learning-database:
     image: postgres:16-alpine
@@ -99,3 +136,4 @@ services:
 volumes:
   content-database-data:
   learning-database-data:
+  ai-database-data:

@@ -1,0 +1,54 @@
+openapi: 3.1.0
+info:
+  title: AI Service Internal Editorial API
+  version: 1.0.0
+  description: Service-to-service contract. This API is never called from a browser.
+servers: [{url: /}]
+security: [{internalApiKey: []}]
+paths:
+  /internal/v1/editorial/jobs:
+    post:
+      operationId: createInternalEditorialJob
+      requestBody: {required: true,content: {application/json: {schema: {$ref: '#/components/schemas/InternalEditorialJobRequest'}}}}
+      responses: {'202': {description: Queued,content: {application/json: {schema: {$ref: '#/components/schemas/InternalEditorialJob'}}}},'401': {$ref: '#/components/responses/AuthenticationRequired'},'422': {$ref: '#/components/responses/Error'},'429': {$ref: '#/components/responses/Error'}}
+  /internal/v1/editorial/jobs/{jobId}:
+    get: {operationId: getInternalEditorialJob,parameters: [{$ref: '#/components/parameters/JobId'}],responses: {'200': {description: Job,content: {application/json: {schema: {$ref: '#/components/schemas/InternalEditorialJob'}}}},'404': {$ref: '#/components/responses/Error'}}}
+  /internal/v1/editorial/jobs/{jobId}/cancel:
+    post: {operationId: cancelInternalEditorialJob,parameters: [{$ref: '#/components/parameters/JobId'}],responses: {'200': {description: Cancellation state,content: {application/json: {schema: {$ref: '#/components/schemas/InternalEditorialJob'}}}},'409': {$ref: '#/components/responses/Error'}}}
+  /internal/v1/editorial/jobs/{jobId}/proposals:
+    get: {operationId: listInternalEditorialProposals,parameters: [{$ref: '#/components/parameters/JobId'}],responses: {'200': {description: Proposals,content: {application/json: {schema: {type: array,items: {$ref: '#/components/schemas/InternalEditorialProposal'}}}}}}}
+  /internal/v1/editorial/jobs/{jobId}/findings:
+    get: {operationId: listInternalEditorialFindings,parameters: [{$ref: '#/components/parameters/JobId'}],responses: {'200': {description: Findings,content: {application/json: {schema: {type: array,items: {$ref: '#/components/schemas/InternalEditorialFinding'}}}}}}}
+  /internal/v1/editorial/proposals/{proposalId}:
+    get: {operationId: getInternalEditorialProposal,parameters: [{$ref: '#/components/parameters/ProposalId'}],responses: {'200': {description: Proposal,content: {application/json: {schema: {type: object,additionalProperties: true}}}}}
+    patch: {operationId: editInternalEditorialProposal,parameters: [{$ref: '#/components/parameters/ProposalId'}],requestBody: {required: true,content: {application/json: {schema: {$ref: '#/components/schemas/EditRequest'}}}},responses: {'200': {description: Proposal,content: {application/json: {schema: {$ref: '#/components/schemas/InternalEditorialProposal'}}}},'409': {$ref: '#/components/responses/Error'}}}
+  /internal/v1/editorial/proposals/{proposalId}/reject:
+    post: {operationId: rejectInternalEditorialProposal,parameters: [{$ref: '#/components/parameters/ProposalId'}],requestBody: {required: true,content: {application/json: {schema: {$ref: '#/components/schemas/DecisionRequest'}}}},responses: {'200': {description: Proposal,content: {application/json: {schema: {$ref: '#/components/schemas/InternalEditorialProposal'}}}}}
+  /internal/v1/editorial/proposals/{proposalId}/accepted:
+    post: {operationId: markInternalEditorialProposalAccepted,parameters: [{$ref: '#/components/parameters/ProposalId'}],requestBody: {required: true,content: {application/json: {schema: {type: object,required: [factId,factVersionId,actor,version],properties: {factId: {type: string,format: uuid},factVersionId: {type: string,format: uuid},actor: {type: string},version: {type: integer,format: int64}}}}}},responses: {'204': {description: Accepted marker recorded}}}
+  /internal/v1/editorial/findings/{findingId}:
+    get: {operationId: getInternalEditorialFinding,parameters: [{$ref: '#/components/parameters/FindingId'}],responses: {'200': {description: Finding,content: {application/json: {schema: {$ref: '#/components/schemas/InternalEditorialFinding'}}}}}
+  /internal/v1/editorial/findings/{findingId}/dismiss:
+    post: {operationId: dismissInternalEditorialFinding,parameters: [{$ref: '#/components/parameters/FindingId'}],requestBody: {required: true,content: {application/json: {schema: {type: object,required: [actor,version],properties: {actor: {type: string},reason: {type: [string,'null'],maxLength: 500},version: {type: integer,format: int64}}}}}},responses: {'200': {description: Dismissed finding,content: {application/json: {schema: {$ref: '#/components/schemas/InternalEditorialFinding'}}}},'409': {$ref: '#/components/responses/Error'}}}
+components:
+  securitySchemes:
+    internalApiKey: {type: apiKey,in: header,name: X-Internal-Api-Key}
+  parameters:
+    JobId: {name: jobId,in: path,required: true,schema: {type: string,format: uuid}}
+    ProposalId: {name: proposalId,in: path,required: true,schema: {type: string,format: uuid}}
+    FindingId: {name: findingId,in: path,required: true,schema: {type: string,format: uuid}}
+  responses:
+    AuthenticationRequired: {description: Valid service authentication is required,content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}}
+    Error: {description: Controlled error,content: {application/json: {schema: {$ref: '#/components/schemas/Error'}}}}
+  schemas:
+    Operation: {type: string,enum: [REWRITE_FOR_CLARITY,SIMPLIFY_LANGUAGE,MAKE_ATOMIC,SPLIT_FACT,CHECK_SOURCE_SUPPORT,DETECT_AMBIGUITY,EDITORIAL_REVIEW_NOTES]}
+    Evidence: {type: object,required: [sourceId,quote],properties: {sourceId: {type: string,format: uuid},quote: {type: string},location: {type: [string,'null']}}}
+    Target: {type: object,required: [factId,factVersionId,version,text,checksum],properties: {factId: {type: string,format: uuid},factVersionId: {type: string,format: uuid},version: {type: integer,format: int64},text: {type: string,maxLength: 500},checksum: {type: string,pattern: '^[a-f0-9]{64}$'}}}
+    Source: {type: object,required: [sourceId,text,checksum],properties: {sourceId: {type: string,format: uuid},text: {type: string},checksum: {type: string,pattern: '^[a-f0-9]{64}$'}}}
+    InternalEditorialJobRequest: {type: object,required: [operation,targets,sources,learningObjectiveId,objectiveTitle,language,count,requestedBy,idempotencyKey],properties: {operation: {$ref: '#/components/schemas/Operation'},targets: {type: array,minItems: 1,maxItems: 1,items: {$ref: '#/components/schemas/Target'}},sources: {type: array,items: {$ref: '#/components/schemas/Source'}},learningObjectiveId: {type: string,format: uuid},objectiveTitle: {type: string},language: {type: string},readingPreference: {type: [string,'null']},instruction: {type: [string,'null'],maxLength: 1000},count: {type: integer,minimum: 1,maximum: 5},requestedBy: {type: string},idempotencyKey: {type: string,maxLength: 200}}}
+    InternalEditorialJob: {type: object,required: [id,operationType,requestedBy,status,resultCount,findingCount,version],properties: {id: {type: string,format: uuid},operationType: {$ref: '#/components/schemas/Operation'},requestedBy: {type: string},status: {type: string,enum: [QUEUED,RUNNING,COMPLETED,PARTIALLY_COMPLETED,FAILED,CANCELLED]},resultCount: {type: integer},findingCount: {type: integer},version: {type: integer,format: int64}},additionalProperties: true}
+    InternalEditorialProposal: {type: object,required: [id,generationJobId,operationType,targetFactId,proposedText,editedText,sourceEvidence,status,version],properties: {id: {type: string,format: uuid},generationJobId: {type: string,format: uuid},operationType: {$ref: '#/components/schemas/Operation'},targetFactId: {type: string,format: uuid},proposedText: {type: string},editedText: {type: string},sourceEvidence: {type: array,items: {$ref: '#/components/schemas/Evidence'}},coverage: {type: object,additionalProperties: true},warnings: {type: array,items: {type: string}},proposalOrder: {type: [integer,'null']},status: {type: string},version: {type: integer,format: int64}}}
+    InternalEditorialFinding: {type: object,required: [id,generationJobId,operationType,targetFactId,findingType,severity,title,message,sourceEvidence,metadata,status,version],properties: {id: {type: string,format: uuid},generationJobId: {type: string,format: uuid},operationType: {$ref: '#/components/schemas/Operation'},targetFactId: {type: string,format: uuid},findingType: {type: string},severity: {type: string,enum: [INFO,WARNING,HIGH,BLOCKING]},title: {type: string},message: {type: string},affectedText: {type: [string,'null']},sourceEvidence: {type: array,items: {$ref: '#/components/schemas/Evidence'}},metadata: {type: object,additionalProperties: true},status: {type: string,enum: [OPEN,DISMISSED]},version: {type: integer,format: int64}}}
+    EditRequest: {type: object,required: [text,version],properties: {text: {type: string,minLength: 1,maxLength: 500},version: {type: integer,format: int64}}}
+    DecisionRequest: {type: object,required: [version],properties: {reason: {type: [string,'null'],maxLength: 500},version: {type: integer,format: int64}}}
+    Error: {type: object,required: [code,message,timestamp,errors],properties: {code: {type: string},message: {type: string},timestamp: {type: string,format: date-time},errors: {type: array,items: {type: object}}}}

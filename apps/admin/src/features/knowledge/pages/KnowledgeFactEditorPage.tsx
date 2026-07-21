@@ -7,6 +7,7 @@ import {
   createKnowledgeFact,
   deleteKnowledgeFact,
   getKnowledgeFact,
+  getKnowledgeFactAiProvenance,
   listKnowledgeFactVersions,
   listLearningObjectives,
   listSources,
@@ -25,6 +26,7 @@ import { useUnsavedWarning } from "../../../hooks/useUnsavedWarning";
 import { useAuth } from "../../../app/auth/AuthContext";
 import { can, Permission } from "../../../app/permissions/permissions";
 import { SafeDeleteDialog } from "../../../components/SafeDeleteDialog";
+import { AiEditorialWorkspace } from "../../ai/components/AiEditorialWorkspace";
 
 export function KnowledgeFactEditorPage() {
   const { id } = useParams();
@@ -73,6 +75,12 @@ export function KnowledgeFactEditorPage() {
         }),
       ),
     enabled: edit,
+  });
+  const provenance = useQuery({
+    queryKey: ["knowledge-facts", id, "ai-provenance"],
+    queryFn: () => unwrap(getKnowledgeFactAiProvenance({ client: contentServiceClient, path: { knowledgeFactId: id! } })),
+    enabled: edit,
+    retry: false,
   });
   const form = useForm<KnowledgeFactRequest>({
     defaultValues: {
@@ -257,6 +265,16 @@ export function KnowledgeFactEditorPage() {
           <button disabled={save.isPending || !author}>Save draft</button>
         </form>
         {edit && fact.data && (
+          <AiEditorialWorkspace
+            fact={fact.data}
+            enabled={author || reviewer}
+            canMutate={author}
+            sourcesReady={fact.data.sourceIds.every((sourceId) =>
+              Boolean(sources.data?.items.find((source) => source.id === sourceId)?.contentChecksum),
+            )}
+          />
+        )}
+        {edit && fact.data && (
           <div className="actions">
             {author &&
               ["UNREVIEWED", "REJECTED", "REQUIRES_UPDATE"].includes(
@@ -315,6 +333,16 @@ export function KnowledgeFactEditorPage() {
               </p>
             )}
           </div>
+        )}
+        {edit && (
+          provenance.data && <section className="card">
+            <h2>AI-assisted draft provenance</h2>
+            <p><strong>Source:</strong> {provenance.data.sourceTitle}</p>
+            <p><strong>Original proposal:</strong> {provenance.data.originalProposedText}</p>
+            <p><strong>Accepted text:</strong> {provenance.data.finalAcceptedText}</p>
+            <p><strong>Generation:</strong> {provenance.data.provider} / {provenance.data.model} · {provenance.data.promptVersion}</p>
+            <p><strong>Accepted by:</strong> {provenance.data.acceptingUserId} · {new Date(provenance.data.acceptedAt).toLocaleString()}</p>
+          </section>
         )}
         {edit && (
           <section className="card">

@@ -132,11 +132,16 @@ export type SourceRequest = {
     accessedAt: string;
     copyrightNotes?: string | null;
     internalNotes?: string | null;
+    /**
+     * Editorially supplied source material; never fetched automatically
+     */
+    contentText?: string | null;
     replacementSourceId?: string | null;
     version?: number;
 };
 
 export type Source = AuditFields & SourceRequest & {
+    contentChecksum?: string | null;
     reviewStatus: ReviewStatus;
     status: SourceStatus;
 };
@@ -229,6 +234,234 @@ export type KnowledgeFactVersion = {
     sourceIds: Array<string>;
     createdAt: string;
     updatedAt: string;
+};
+
+export type AiGenerationRequest = {
+    sourceId: string;
+    learningObjectiveId: string;
+    requestedCount: number;
+    language: string;
+    editorialInstruction?: string | null;
+    idempotencyKey: string;
+};
+
+export type AiJobStatus = 'QUEUED' | 'RUNNING' | 'COMPLETED' | 'PARTIALLY_COMPLETED' | 'FAILED' | 'CANCELLED';
+
+export type AiGenerationJob = {
+    id: string;
+    sourceId: string;
+    sourceTitle: string;
+    sourceContentChecksum: string;
+    learningObjectiveId: string;
+    learningObjectiveTitle: string;
+    requestedBy: string;
+    requestedCount: number;
+    generatedCount: number;
+    status: AiJobStatus;
+    provider: string;
+    model: string;
+    promptVersion: string;
+    createdAt: string;
+    startedAt?: string | null;
+    completedAt?: string | null;
+    failedAt?: string | null;
+    cancelledAt?: string | null;
+    retryCount: number;
+    inputTokens?: number | null;
+    outputTokens?: number | null;
+    totalTokens?: number | null;
+    reportedCost?: number | null;
+    providerRequestId?: string | null;
+    errorCode?: string | null;
+    errorMessage?: string | null;
+    version: number;
+};
+
+export type AiSourceEvidence = {
+    quote: string;
+    location?: string | null;
+};
+
+export type AiProposalStatus = 'PROPOSED' | 'EDITED' | 'ACCEPTED' | 'REJECTED' | 'DISCARDED';
+
+export type AiKnowledgeFactProposal = {
+    id: string;
+    generationJobId: string;
+    sourceId: string;
+    learningObjectiveId: string;
+    proposedText: string;
+    editedText: string;
+    sourceEvidence: Array<AiSourceEvidence>;
+    confidence?: 'HIGH' | 'MEDIUM' | 'LOW' | null;
+    modelNote?: string | null;
+    status: AiProposalStatus;
+    rejectionReason?: string | null;
+    resultingKnowledgeFactId?: string | null;
+    acceptedBy?: string | null;
+    acceptedAt?: string | null;
+    createdAt: string;
+    updatedAt: string;
+    version: number;
+};
+
+export type AiProposalEditRequest = {
+    text: string;
+    version: number;
+};
+
+export type AiProposalDecisionRequest = {
+    reason?: string | null;
+    version: number;
+};
+
+export type AiProposalAcceptRequest = {
+    version: number;
+};
+
+export type KnowledgeFactAiProvenance = {
+    knowledgeFactVersionId: string;
+    generationJobId: string;
+    proposalId: string;
+    provider: string;
+    model: string;
+    promptVersion: string;
+    generatedAt: string;
+    sourceId: string;
+    sourceTitle: string;
+    sourceContentChecksum: string;
+    learningObjectiveId: string;
+    requestingUserId: string;
+    originalProposedText: string;
+    finalAcceptedText: string;
+    acceptingUserId: string;
+    acceptedAt: string;
+    confidence?: string | null;
+    sourceEvidence: Array<AiSourceEvidence>;
+    providerRequestId?: string | null;
+    inputTokens?: number | null;
+    outputTokens?: number | null;
+};
+
+export type AiEditorialOperation = 'REWRITE_FOR_CLARITY' | 'SIMPLIFY_LANGUAGE' | 'MAKE_ATOMIC' | 'SPLIT_FACT' | 'CHECK_SOURCE_SUPPORT' | 'DETECT_AMBIGUITY' | 'EDITORIAL_REVIEW_NOTES';
+
+export type AiEditorialRequest = {
+    operation: AiEditorialOperation;
+    targetKnowledgeFactId: string;
+    language: string;
+    readingPreference?: string | null;
+    instruction?: string | null;
+    requestedCount: number;
+    idempotencyKey: string;
+};
+
+export type AiEditorialJob = {
+    id: string;
+    operationType: AiEditorialOperation;
+    learningObjectiveId: string;
+    learningObjectiveTitle: string;
+    requestedBy: string;
+    requestedCount: number;
+    resultCount: number;
+    findingCount: number;
+    status: AiJobStatus;
+    provider: string;
+    model: string;
+    promptVersion: string;
+    createdAt: string;
+    startedAt?: string | null;
+    completedAt?: string | null;
+    failedAt?: string | null;
+    cancelledAt?: string | null;
+    retryCount: number;
+    inputTokens?: number | null;
+    outputTokens?: number | null;
+    totalTokens?: number | null;
+    providerRequestId?: string | null;
+    errorCode?: string | null;
+    errorMessage?: string | null;
+    version: number;
+};
+
+export type AiEditorialEvidence = {
+    sourceId: string;
+    quote: string;
+    location?: string | null;
+};
+
+export type AiEditorialProposal = {
+    id: string;
+    generationJobId: string;
+    operationType: AiEditorialOperation;
+    targetFactId: string;
+    originalText: string;
+    proposedText: string;
+    editedText: string;
+    rationale: string;
+    sourceEvidence: Array<AiEditorialEvidence>;
+    warnings: Array<string>;
+    coverage: {
+        [key: string]: unknown;
+    };
+    proposalMetadata: {
+        [key: string]: unknown;
+    };
+    proposalOrder?: number | null;
+    confidence?: 'HIGH' | 'MEDIUM' | 'LOW' | null;
+    status: AiProposalStatus;
+    resultingFactId?: string | null;
+    resultingFactVersionId?: string | null;
+    editCount: number;
+    createdAt: string;
+    updatedAt: string;
+    version: number;
+};
+
+export type AiFindingSeverity = 'INFO' | 'WARNING' | 'HIGH' | 'BLOCKING';
+
+export type AiFindingStatus = 'OPEN' | 'DISMISSED';
+
+export type AiEditorialFinding = {
+    id: string;
+    generationJobId: string;
+    operationType: AiEditorialOperation;
+    targetFactId: string;
+    targetFactVersionId: string;
+    findingType: string;
+    severity: AiFindingSeverity;
+    title: string;
+    message: string;
+    affectedText?: string | null;
+    sourceEvidence: Array<AiEditorialEvidence>;
+    confidence?: 'HIGH' | 'MEDIUM' | 'LOW' | null;
+    suggestedAction?: string | null;
+    metadata: {
+        [key: string]: unknown;
+    };
+    status: AiFindingStatus;
+    dismissedAt?: string | null;
+    dismissedBy?: string | null;
+    dismissalReason?: string | null;
+    createdAt: string;
+    version: number;
+};
+
+export type AiSplitAcceptanceMode = 'CREATE_SELECTED_DRAFTS_KEEP_ORIGINAL';
+
+export type AiSplitAcceptanceRequest = {
+    jobId: string;
+    targetKnowledgeFactId: string;
+    targetFactVersionId: string;
+    targetContentChecksum: string;
+    selectedProposalIds: Array<string>;
+    acceptanceMode: AiSplitAcceptanceMode;
+    idempotencyKey: string;
+};
+
+export type AiSplitAcceptanceResult = {
+    originalFactId: string;
+    originalUnchanged: true;
+    acceptanceMode: AiSplitAcceptanceMode;
+    resultingFactIds: Array<string>;
 };
 
 export type FactActionRequest = {
@@ -1543,6 +1776,520 @@ export type RetireSourceResponses = {
 };
 
 export type RetireSourceResponse = RetireSourceResponses[keyof RetireSourceResponses];
+
+export type CreateAiKnowledgeFactJobData = {
+    body: AiGenerationRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/ai/knowledge-fact-jobs';
+};
+
+export type CreateAiKnowledgeFactJobErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Request validation failed
+     */
+    422: ApiError;
+    /**
+     * AI rate limit exceeded
+     */
+    429: ApiError;
+    /**
+     * AI feature or provider unavailable
+     */
+    503: ApiError;
+};
+
+export type CreateAiKnowledgeFactJobError = CreateAiKnowledgeFactJobErrors[keyof CreateAiKnowledgeFactJobErrors];
+
+export type CreateAiKnowledgeFactJobResponses = {
+    /**
+     * Queued job
+     */
+    202: AiGenerationJob;
+};
+
+export type CreateAiKnowledgeFactJobResponse = CreateAiKnowledgeFactJobResponses[keyof CreateAiKnowledgeFactJobResponses];
+
+export type GetAiKnowledgeFactJobData = {
+    body?: never;
+    path: {
+        jobId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/ai/knowledge-fact-jobs/{jobId}';
+};
+
+export type GetAiKnowledgeFactJobErrors = {
+    /**
+     * Resource not found
+     */
+    404: ApiError;
+};
+
+export type GetAiKnowledgeFactJobError = GetAiKnowledgeFactJobErrors[keyof GetAiKnowledgeFactJobErrors];
+
+export type GetAiKnowledgeFactJobResponses = {
+    /**
+     * Job
+     */
+    200: AiGenerationJob;
+};
+
+export type GetAiKnowledgeFactJobResponse = GetAiKnowledgeFactJobResponses[keyof GetAiKnowledgeFactJobResponses];
+
+export type CancelAiKnowledgeFactJobData = {
+    body?: never;
+    path: {
+        jobId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/ai/knowledge-fact-jobs/{jobId}/cancel';
+};
+
+export type CancelAiKnowledgeFactJobErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type CancelAiKnowledgeFactJobError = CancelAiKnowledgeFactJobErrors[keyof CancelAiKnowledgeFactJobErrors];
+
+export type CancelAiKnowledgeFactJobResponses = {
+    /**
+     * Cancelled or cancellation requested
+     */
+    200: AiGenerationJob;
+};
+
+export type CancelAiKnowledgeFactJobResponse = CancelAiKnowledgeFactJobResponses[keyof CancelAiKnowledgeFactJobResponses];
+
+export type ListAiKnowledgeFactProposalsData = {
+    body?: never;
+    path: {
+        jobId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/ai/knowledge-fact-jobs/{jobId}/proposals';
+};
+
+export type ListAiKnowledgeFactProposalsResponses = {
+    /**
+     * Proposals
+     */
+    200: Array<AiKnowledgeFactProposal>;
+};
+
+export type ListAiKnowledgeFactProposalsResponse = ListAiKnowledgeFactProposalsResponses[keyof ListAiKnowledgeFactProposalsResponses];
+
+export type EditAiKnowledgeFactProposalData = {
+    body: AiProposalEditRequest;
+    path: {
+        proposalId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/ai/knowledge-fact-proposals/{proposalId}';
+};
+
+export type EditAiKnowledgeFactProposalErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type EditAiKnowledgeFactProposalError = EditAiKnowledgeFactProposalErrors[keyof EditAiKnowledgeFactProposalErrors];
+
+export type EditAiKnowledgeFactProposalResponses = {
+    /**
+     * Edited
+     */
+    200: AiKnowledgeFactProposal;
+};
+
+export type EditAiKnowledgeFactProposalResponse = EditAiKnowledgeFactProposalResponses[keyof EditAiKnowledgeFactProposalResponses];
+
+export type RejectAiKnowledgeFactProposalData = {
+    body: AiProposalDecisionRequest;
+    path: {
+        proposalId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/ai/knowledge-fact-proposals/{proposalId}/reject';
+};
+
+export type RejectAiKnowledgeFactProposalErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type RejectAiKnowledgeFactProposalError = RejectAiKnowledgeFactProposalErrors[keyof RejectAiKnowledgeFactProposalErrors];
+
+export type RejectAiKnowledgeFactProposalResponses = {
+    /**
+     * Rejected
+     */
+    200: AiKnowledgeFactProposal;
+};
+
+export type RejectAiKnowledgeFactProposalResponse = RejectAiKnowledgeFactProposalResponses[keyof RejectAiKnowledgeFactProposalResponses];
+
+export type AcceptAiKnowledgeFactProposalData = {
+    body: AiProposalAcceptRequest;
+    path: {
+        proposalId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/ai/knowledge-fact-proposals/{proposalId}/accept';
+};
+
+export type AcceptAiKnowledgeFactProposalErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type AcceptAiKnowledgeFactProposalError = AcceptAiKnowledgeFactProposalErrors[keyof AcceptAiKnowledgeFactProposalErrors];
+
+export type AcceptAiKnowledgeFactProposalResponses = {
+    /**
+     * Draft fact
+     */
+    200: KnowledgeFact;
+};
+
+export type AcceptAiKnowledgeFactProposalResponse = AcceptAiKnowledgeFactProposalResponses[keyof AcceptAiKnowledgeFactProposalResponses];
+
+export type GetKnowledgeFactAiProvenanceData = {
+    body?: never;
+    path: {
+        knowledgeFactId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/ai/knowledge-facts/{knowledgeFactId}/provenance';
+};
+
+export type GetKnowledgeFactAiProvenanceErrors = {
+    /**
+     * Resource not found
+     */
+    404: ApiError;
+};
+
+export type GetKnowledgeFactAiProvenanceError = GetKnowledgeFactAiProvenanceErrors[keyof GetKnowledgeFactAiProvenanceErrors];
+
+export type GetKnowledgeFactAiProvenanceResponses = {
+    /**
+     * Provenance
+     */
+    200: KnowledgeFactAiProvenance;
+};
+
+export type GetKnowledgeFactAiProvenanceResponse = GetKnowledgeFactAiProvenanceResponses[keyof GetKnowledgeFactAiProvenanceResponses];
+
+export type CreateAiEditorialJobData = {
+    body: AiEditorialRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/ai/editorial-jobs';
+};
+
+export type CreateAiEditorialJobErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+    /**
+     * Request validation failed
+     */
+    422: ApiError;
+    /**
+     * AI rate limit exceeded
+     */
+    429: ApiError;
+    /**
+     * AI feature or provider unavailable
+     */
+    503: ApiError;
+};
+
+export type CreateAiEditorialJobError = CreateAiEditorialJobErrors[keyof CreateAiEditorialJobErrors];
+
+export type CreateAiEditorialJobResponses = {
+    /**
+     * Queued editorial job
+     */
+    202: AiEditorialJob;
+};
+
+export type CreateAiEditorialJobResponse = CreateAiEditorialJobResponses[keyof CreateAiEditorialJobResponses];
+
+export type GetAiEditorialJobData = {
+    body?: never;
+    path: {
+        jobId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/ai/editorial-jobs/{jobId}';
+};
+
+export type GetAiEditorialJobErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Resource not found
+     */
+    404: ApiError;
+};
+
+export type GetAiEditorialJobError = GetAiEditorialJobErrors[keyof GetAiEditorialJobErrors];
+
+export type GetAiEditorialJobResponses = {
+    /**
+     * Editorial job
+     */
+    200: AiEditorialJob;
+};
+
+export type GetAiEditorialJobResponse = GetAiEditorialJobResponses[keyof GetAiEditorialJobResponses];
+
+export type CancelAiEditorialJobData = {
+    body?: never;
+    path: {
+        jobId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/ai/editorial-jobs/{jobId}/cancel';
+};
+
+export type CancelAiEditorialJobErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type CancelAiEditorialJobError = CancelAiEditorialJobErrors[keyof CancelAiEditorialJobErrors];
+
+export type CancelAiEditorialJobResponses = {
+    /**
+     * Cancelled or cancellation requested
+     */
+    200: AiEditorialJob;
+};
+
+export type CancelAiEditorialJobResponse = CancelAiEditorialJobResponses[keyof CancelAiEditorialJobResponses];
+
+export type ListAiEditorialProposalsData = {
+    body?: never;
+    path: {
+        jobId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/ai/editorial-jobs/{jobId}/proposals';
+};
+
+export type ListAiEditorialProposalsResponses = {
+    /**
+     * Editorial proposals
+     */
+    200: Array<AiEditorialProposal>;
+};
+
+export type ListAiEditorialProposalsResponse = ListAiEditorialProposalsResponses[keyof ListAiEditorialProposalsResponses];
+
+export type ListAiEditorialFindingsData = {
+    body?: never;
+    path: {
+        jobId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/ai/editorial-jobs/{jobId}/findings';
+};
+
+export type ListAiEditorialFindingsErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+};
+
+export type ListAiEditorialFindingsError = ListAiEditorialFindingsErrors[keyof ListAiEditorialFindingsErrors];
+
+export type ListAiEditorialFindingsResponses = {
+    /**
+     * Editorial findings
+     */
+    200: Array<AiEditorialFinding>;
+};
+
+export type ListAiEditorialFindingsResponse = ListAiEditorialFindingsResponses[keyof ListAiEditorialFindingsResponses];
+
+export type EditAiEditorialProposalData = {
+    body: AiProposalEditRequest;
+    path: {
+        proposalId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/ai/editorial-proposals/{proposalId}';
+};
+
+export type EditAiEditorialProposalErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type EditAiEditorialProposalError = EditAiEditorialProposalErrors[keyof EditAiEditorialProposalErrors];
+
+export type EditAiEditorialProposalResponses = {
+    /**
+     * Edited proposal
+     */
+    200: AiEditorialProposal;
+};
+
+export type EditAiEditorialProposalResponse = EditAiEditorialProposalResponses[keyof EditAiEditorialProposalResponses];
+
+export type RejectAiEditorialProposalData = {
+    body: AiProposalDecisionRequest;
+    path: {
+        proposalId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/ai/editorial-proposals/{proposalId}/reject';
+};
+
+export type RejectAiEditorialProposalErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type RejectAiEditorialProposalError = RejectAiEditorialProposalErrors[keyof RejectAiEditorialProposalErrors];
+
+export type RejectAiEditorialProposalResponses = {
+    /**
+     * Rejected proposal
+     */
+    200: AiEditorialProposal;
+};
+
+export type RejectAiEditorialProposalResponse = RejectAiEditorialProposalResponses[keyof RejectAiEditorialProposalResponses];
+
+export type AcceptAiEditorialProposalData = {
+    body: AiProposalAcceptRequest;
+    path: {
+        proposalId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/ai/editorial-proposals/{proposalId}/accept';
+};
+
+export type AcceptAiEditorialProposalErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+    /**
+     * Request validation failed
+     */
+    422: ApiError;
+};
+
+export type AcceptAiEditorialProposalError = AcceptAiEditorialProposalErrors[keyof AcceptAiEditorialProposalErrors];
+
+export type AcceptAiEditorialProposalResponses = {
+    /**
+     * Updated draft fact
+     */
+    200: KnowledgeFact;
+};
+
+export type AcceptAiEditorialProposalResponse = AcceptAiEditorialProposalResponses[keyof AcceptAiEditorialProposalResponses];
+
+export type AcceptAiEditorialSplitData = {
+    body: AiSplitAcceptanceRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/ai/editorial-proposals/accept-split';
+};
+
+export type AcceptAiEditorialSplitErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Stale Source
+     */
+    409: ApiError;
+    /**
+     * Request validation failed
+     */
+    422: ApiError;
+};
+
+export type AcceptAiEditorialSplitError = AcceptAiEditorialSplitErrors[keyof AcceptAiEditorialSplitErrors];
+
+export type AcceptAiEditorialSplitResponses = {
+    /**
+     * Atomic split acceptance result
+     */
+    200: AiSplitAcceptanceResult;
+};
+
+export type AcceptAiEditorialSplitResponse = AcceptAiEditorialSplitResponses[keyof AcceptAiEditorialSplitResponses];
+
+export type DismissAiEditorialFindingData = {
+    body: AiProposalDecisionRequest;
+    path: {
+        findingId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/ai/editorial-findings/{findingId}/dismiss';
+};
+
+export type DismissAiEditorialFindingErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Resource not found
+     */
+    404: ApiError;
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type DismissAiEditorialFindingError = DismissAiEditorialFindingErrors[keyof DismissAiEditorialFindingErrors];
+
+export type DismissAiEditorialFindingResponses = {
+    /**
+     * Dismissed finding
+     */
+    200: AiEditorialFinding;
+};
+
+export type DismissAiEditorialFindingResponse = DismissAiEditorialFindingResponses[keyof DismissAiEditorialFindingResponses];
 
 export type ListLearningObjectivesData = {
     body?: never;

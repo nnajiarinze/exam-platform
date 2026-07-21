@@ -25,6 +25,7 @@ import { ReleaseWorkspacePage } from '../../features/releases/pages/ReleaseWorks
 import { ReportsPage } from '../../features/reports/ReportsPage';
 import { AuditPage } from '../../features/audit/AuditPage';
 import { ContentSystemGuidePage } from '../../features/help/content-system/ContentSystemGuidePage';
+import { AiKnowledgeFactGenerationPage } from '../../features/ai/pages/AiKnowledgeFactGenerationPage';
 
 export function AppRouter() {
   return <Routes>
@@ -42,6 +43,8 @@ export function AppRouter() {
         <Route path="sources" element={<SourceListPage />} />
         <Route path="sources/new" element={<SourceEditorPage />} />
         <Route path="sources/:id" element={<SourceEditorPage />} />
+        <Route path="sources/:sourceId/ai-generation" element={<AiKnowledgeFactGenerationPage />} />
+        <Route path="sources/:sourceId/ai-generation/:jobId" element={<AiKnowledgeFactGenerationPage />} />
         <Route path="knowledge" element={<KnowledgeFactListPage />} />
         <Route path="knowledge/facts/new" element={<KnowledgeFactEditorPage />} />
         <Route path="knowledge/facts/:id" element={<KnowledgeFactEditorPage />} />

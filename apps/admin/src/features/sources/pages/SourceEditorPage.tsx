@@ -20,6 +20,7 @@ import { useUnsavedWarning } from "../../../hooks/useUnsavedWarning";
 import { SafeDeleteDialog } from "../../../components/SafeDeleteDialog";
 import { useAuth } from "../../../app/auth/AuthContext";
 import { AdminRole } from "../../../app/permissions/permissions";
+import { Link } from "react-router-dom";
 export function SourceEditorPage() {
   const { id } = useParams();
   const edit = !!id;
@@ -145,6 +146,11 @@ export function SourceEditorPage() {
             Internal notes
             <textarea {...f.register("internalNotes")} />
           </label>
+          <label>
+            Source content for editorial generation
+            <textarea rows={12} {...f.register("contentText")} />
+            <small>Only paste material the editorial team may process. URLs are never fetched automatically.</small>
+          </label>
           {save.error && (
             <p role="alert" className="error">
               {save.error.message}
@@ -154,6 +160,9 @@ export function SourceEditorPage() {
         </form>
         {edit && q.data && (
           <div className="actions">
+            {q.data.contentText && q.data.status === "ACTIVE" && (
+              <Link className="button" to={`/sources/${id}/ai-generation`}>Generate Knowledge Facts</Link>
+            )}
             <button onClick={() => action("review")}>Mark reviewed</button>
             <button onClick={() => action("update")}>Require update</button>
             <button

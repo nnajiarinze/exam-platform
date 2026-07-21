@@ -34,3 +34,6 @@ content:
   learning-service:
     base-url: ${LEARNING_SERVICE_BASE_URL:http://localhost:8080}
     internal-api-key: ${LEARNING_INTERNAL_API_KEY:}
+  ai-service:
+    base-url: ${AI_SERVICE_BASE_URL:http://localhost:8083}
+    internal-api-key: ${AI_INTERNAL_API_KEY:}

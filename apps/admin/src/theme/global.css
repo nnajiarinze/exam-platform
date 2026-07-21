@@ -338,6 +338,18 @@ h3 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1.25rem;
 }
+.proposal-grid { display:grid; gap:1rem; margin-top:1rem; }
+.proposal-grid blockquote { background:var(--surface-low); border-left:4px solid var(--primary); margin:0.75rem 0; padding:0.9rem 1rem; }
+.proposal-grid blockquote footer { color:var(--muted); margin-top:0.4rem; }
+.ai-editorial { margin-top:1.5rem; }
+.ai-editorial-proposal { border:1px solid var(--border); }
+.ai-comparison { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+.ai-comparison > div { background:var(--surface-low); border-radius:var(--radius-md); padding:1rem; }
+.ai-comparison textarea { width:100%; }
+@media (max-width:720px) { .ai-comparison { grid-template-columns:1fr; } }
+.finding-list { display:grid; gap:1rem; margin-top:1rem; }
+.editorial-finding { border-left:4px solid var(--primary); }
+.split-confirmation { margin-top:1rem; border:2px solid var(--primary); }
 .span-two {
   grid-column: span 2;
 }

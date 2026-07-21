@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ActivateReleaseData, ActivateReleaseErrors, ActivateReleaseResponses, AddReviewCommentData, AddReviewCommentErrors, AddReviewCommentResponses, ApproveKnowledgeFactData, ApproveKnowledgeFactErrors, ApproveKnowledgeFactResponses, ApproveQuestionData, ApproveQuestionErrors, ApproveQuestionResponses, ArchiveExamData, ArchiveExamErrors, ArchiveExamResponses, ArchiveExamVersionData, ArchiveExamVersionResponses, ArchiveLearningObjectiveData, ArchiveLearningObjectiveErrors, ArchiveLearningObjectiveResponses, ArchiveSubjectData, ArchiveSubjectResponses, ArchiveTopicData, ArchiveTopicResponses, AssignReviewData, AssignReviewErrors, AssignReviewResponses, ChangeReviewPriorityData, ChangeReviewPriorityErrors, ChangeReviewPriorityResponses, ClaimReviewData, ClaimReviewErrors, ClaimReviewResponses, CreateExamData, CreateExamErrors, CreateExamResponses, CreateExamVersionData, CreateExamVersionErrors, CreateExamVersionResponses, CreateKnowledgeFactData, CreateKnowledgeFactErrors, CreateKnowledgeFactResponses, CreateLearningObjectiveData, CreateLearningObjectiveErrors, CreateLearningObjectiveResponses, CreateQuestionData, CreateQuestionErrors, CreateQuestionResponses, CreateReleaseData, CreateReleaseErrors, CreateReleaseResponses, CreateSourceData, CreateSourceErrors, CreateSourceResponses, CreateSubjectData, CreateSubjectResponses, CreateTopicData, CreateTopicResponses, DeleteExamData, DeleteExamErrors, DeleteExamResponses, DeleteExamVersionData, DeleteExamVersionErrors, DeleteExamVersionResponses, DeleteKnowledgeFactData, DeleteKnowledgeFactErrors, DeleteKnowledgeFactResponses, DeleteLearningObjectiveData, DeleteLearningObjectiveErrors, DeleteLearningObjectiveResponses, DeleteQuestionData, DeleteQuestionErrors, DeleteQuestionResponses, DeleteReleaseData, DeleteReleaseErrors, DeleteReleaseResponses, DeleteSourceData, DeleteSourceErrors, DeleteSourceResponses, DeleteSubjectData, DeleteSubjectErrors, DeleteSubjectResponses, DeleteTopicData, DeleteTopicErrors, DeleteTopicResponses, DeliverReleaseData, DeliverReleaseErrors, DeliverReleaseResponses, GetContentHealthReportData, GetContentHealthReportErrors, GetContentHealthReportResponses, GetContentServiceStatusData, GetContentServiceStatusErrors, GetContentServiceStatusResponses, GetExamData, GetExamErrors, GetExamResponses, GetExamVersionData, GetExamVersionErrors, GetExamVersionResponses, GetKnowledgeFactData, GetKnowledgeFactErrors, GetKnowledgeFactResponses, GetLearnerHealthReportData, GetLearnerHealthReportErrors, GetLearnerHealthReportResponses, GetLearningObjectiveData, GetLearningObjectiveErrors, GetLearningObjectiveResponses, GetPublishedReleaseSnapshotData, GetPublishedReleaseSnapshotResponses, GetQuestionData, GetQuestionErrors, GetQuestionResponses, GetReleaseData, GetReleaseDiffData, GetReleaseDiffResponses, GetReleaseHealthReportData, GetReleaseHealthReportErrors, GetReleaseHealthReportResponses, GetReleaseResponses, GetReviewData, GetReviewErrors, GetReviewHealthReportData, GetReviewHealthReportErrors, GetReviewHealthReportResponses, GetReviewResponses, GetReviewSummaryData, GetReviewSummaryResponses, GetSourceData, GetSourceErrors, GetSourceHealthReportData, GetSourceHealthReportErrors, GetSourceHealthReportResponses, GetSourceResponses, GetSubjectData, GetSubjectResponses, GetTopicData, GetTopicResponses, ListEligibleReleaseFactsData, ListEligibleReleaseFactsResponses, ListEligibleReleaseQuestionsData, ListEligibleReleaseQuestionsResponses, ListExamsData, ListExamsErrors, ListExamsResponses, ListExamVersionsData, ListExamVersionsResponses, ListKnowledgeFactsData, ListKnowledgeFactsErrors, ListKnowledgeFactsResponses, ListKnowledgeFactVersionsData, ListKnowledgeFactVersionsErrors, ListKnowledgeFactVersionsResponses, ListLearningObjectivesData, ListLearningObjectivesErrors, ListLearningObjectivesResponses, ListQuestionsData, ListQuestionsResponses, ListQuestionVersionsData, ListQuestionVersionsResponses, ListReleaseDeliveryAttemptsData, ListReleaseDeliveryAttemptsResponses, ListReleasesData, ListReleasesResponses, ListReviewCommentsData, ListReviewCommentsResponses, ListReviewHistoryData, ListReviewHistoryResponses, ListReviewsData, ListReviewsResponses, ListSourcesData, ListSourcesResponses, ListSubjectsData, ListSubjectsResponses, ListTopicsData, ListTopicsResponses, PreviewReleaseData, PreviewReleaseResponses, PublishReleaseData, PublishReleaseErrors, PublishReleaseResponses, RejectKnowledgeFactData, RejectKnowledgeFactErrors, RejectKnowledgeFactResponses, RejectQuestionData, RejectQuestionResponses, ReorderSubjectsData, ReorderSubjectsErrors, ReorderSubjectsResponses, ReorderTopicsData, ReorderTopicsErrors, ReorderTopicsResponses, ReplaceReleaseSelectionData, ReplaceReleaseSelectionErrors, ReplaceReleaseSelectionResponses, RequireKnowledgeFactUpdateData, RequireKnowledgeFactUpdateErrors, RequireKnowledgeFactUpdateResponses, RequireQuestionUpdateData, RequireQuestionUpdateResponses, RequireSourceUpdateData, RequireSourceUpdateResponses, RetireKnowledgeFactData, RetireKnowledgeFactErrors, RetireKnowledgeFactResponses, RetireQuestionData, RetireQuestionResponses, RetireReleaseData, RetireReleaseResponses, RetireSourceData, RetireSourceErrors, RetireSourceResponses, RetryReleaseDeliveryData, RetryReleaseDeliveryResponses, ReviewSourceData, ReviewSourceResponses, SearchAuditEventsData, SearchAuditEventsErrors, SearchAuditEventsResponses, SearchQuestionsData, SearchQuestionsResponses, SubmitKnowledgeFactData, SubmitKnowledgeFactErrors, SubmitKnowledgeFactResponses, SubmitQuestionData, SubmitQuestionResponses, UnclaimReviewData, UnclaimReviewErrors, UnclaimReviewResponses, UpdateExamData, UpdateExamErrors, UpdateExamResponses, UpdateExamVersionData, UpdateExamVersionErrors, UpdateExamVersionResponses, UpdateKnowledgeFactData, UpdateKnowledgeFactErrors, UpdateKnowledgeFactResponses, UpdateLearningObjectiveData, UpdateLearningObjectiveErrors, UpdateLearningObjectiveResponses, UpdateQuestionData, UpdateQuestionErrors, UpdateQuestionResponses, UpdateReleaseData, UpdateReleaseErrors, UpdateReleaseResponses, UpdateSourceData, UpdateSourceErrors, UpdateSourceResponses, UpdateSubjectData, UpdateSubjectErrors, UpdateSubjectResponses, UpdateTopicData, UpdateTopicErrors, UpdateTopicResponses, ValidateReleaseData, ValidateReleaseResponses } from './types.gen';
+import type { AcceptAiEditorialProposalData, AcceptAiEditorialProposalErrors, AcceptAiEditorialProposalResponses, AcceptAiEditorialSplitData, AcceptAiEditorialSplitErrors, AcceptAiEditorialSplitResponses, AcceptAiKnowledgeFactProposalData, AcceptAiKnowledgeFactProposalErrors, AcceptAiKnowledgeFactProposalResponses, ActivateReleaseData, ActivateReleaseErrors, ActivateReleaseResponses, AddReviewCommentData, AddReviewCommentErrors, AddReviewCommentResponses, ApproveKnowledgeFactData, ApproveKnowledgeFactErrors, ApproveKnowledgeFactResponses, ApproveQuestionData, ApproveQuestionErrors, ApproveQuestionResponses, ArchiveExamData, ArchiveExamErrors, ArchiveExamResponses, ArchiveExamVersionData, ArchiveExamVersionResponses, ArchiveLearningObjectiveData, ArchiveLearningObjectiveErrors, ArchiveLearningObjectiveResponses, ArchiveSubjectData, ArchiveSubjectResponses, ArchiveTopicData, ArchiveTopicResponses, AssignReviewData, AssignReviewErrors, AssignReviewResponses, CancelAiEditorialJobData, CancelAiEditorialJobErrors, CancelAiEditorialJobResponses, CancelAiKnowledgeFactJobData, CancelAiKnowledgeFactJobErrors, CancelAiKnowledgeFactJobResponses, ChangeReviewPriorityData, ChangeReviewPriorityErrors, ChangeReviewPriorityResponses, ClaimReviewData, ClaimReviewErrors, ClaimReviewResponses, CreateAiEditorialJobData, CreateAiEditorialJobErrors, CreateAiEditorialJobResponses, CreateAiKnowledgeFactJobData, CreateAiKnowledgeFactJobErrors, CreateAiKnowledgeFactJobResponses, CreateExamData, CreateExamErrors, CreateExamResponses, CreateExamVersionData, CreateExamVersionErrors, CreateExamVersionResponses, CreateKnowledgeFactData, CreateKnowledgeFactErrors, CreateKnowledgeFactResponses, CreateLearningObjectiveData, CreateLearningObjectiveErrors, CreateLearningObjectiveResponses, CreateQuestionData, CreateQuestionErrors, CreateQuestionResponses, CreateReleaseData, CreateReleaseErrors, CreateReleaseResponses, CreateSourceData, CreateSourceErrors, CreateSourceResponses, CreateSubjectData, CreateSubjectResponses, CreateTopicData, CreateTopicResponses, DeleteExamData, DeleteExamErrors, DeleteExamResponses, DeleteExamVersionData, DeleteExamVersionErrors, DeleteExamVersionResponses, DeleteKnowledgeFactData, DeleteKnowledgeFactErrors, DeleteKnowledgeFactResponses, DeleteLearningObjectiveData, DeleteLearningObjectiveErrors, DeleteLearningObjectiveResponses, DeleteQuestionData, DeleteQuestionErrors, DeleteQuestionResponses, DeleteReleaseData, DeleteReleaseErrors, DeleteReleaseResponses, DeleteSourceData, DeleteSourceErrors, DeleteSourceResponses, DeleteSubjectData, DeleteSubjectErrors, DeleteSubjectResponses, DeleteTopicData, DeleteTopicErrors, DeleteTopicResponses, DeliverReleaseData, DeliverReleaseErrors, DeliverReleaseResponses, DismissAiEditorialFindingData, DismissAiEditorialFindingErrors, DismissAiEditorialFindingResponses, EditAiEditorialProposalData, EditAiEditorialProposalErrors, EditAiEditorialProposalResponses, EditAiKnowledgeFactProposalData, EditAiKnowledgeFactProposalErrors, EditAiKnowledgeFactProposalResponses, GetAiEditorialJobData, GetAiEditorialJobErrors, GetAiEditorialJobResponses, GetAiKnowledgeFactJobData, GetAiKnowledgeFactJobErrors, GetAiKnowledgeFactJobResponses, GetContentHealthReportData, GetContentHealthReportErrors, GetContentHealthReportResponses, GetContentServiceStatusData, GetContentServiceStatusErrors, GetContentServiceStatusResponses, GetExamData, GetExamErrors, GetExamResponses, GetExamVersionData, GetExamVersionErrors, GetExamVersionResponses, GetKnowledgeFactAiProvenanceData, GetKnowledgeFactAiProvenanceErrors, GetKnowledgeFactAiProvenanceResponses, GetKnowledgeFactData, GetKnowledgeFactErrors, GetKnowledgeFactResponses, GetLearnerHealthReportData, GetLearnerHealthReportErrors, GetLearnerHealthReportResponses, GetLearningObjectiveData, GetLearningObjectiveErrors, GetLearningObjectiveResponses, GetPublishedReleaseSnapshotData, GetPublishedReleaseSnapshotResponses, GetQuestionData, GetQuestionErrors, GetQuestionResponses, GetReleaseData, GetReleaseDiffData, GetReleaseDiffResponses, GetReleaseHealthReportData, GetReleaseHealthReportErrors, GetReleaseHealthReportResponses, GetReleaseResponses, GetReviewData, GetReviewErrors, GetReviewHealthReportData, GetReviewHealthReportErrors, GetReviewHealthReportResponses, GetReviewResponses, GetReviewSummaryData, GetReviewSummaryResponses, GetSourceData, GetSourceErrors, GetSourceHealthReportData, GetSourceHealthReportErrors, GetSourceHealthReportResponses, GetSourceResponses, GetSubjectData, GetSubjectResponses, GetTopicData, GetTopicResponses, ListAiEditorialFindingsData, ListAiEditorialFindingsErrors, ListAiEditorialFindingsResponses, ListAiEditorialProposalsData, ListAiEditorialProposalsResponses, ListAiKnowledgeFactProposalsData, ListAiKnowledgeFactProposalsResponses, ListEligibleReleaseFactsData, ListEligibleReleaseFactsResponses, ListEligibleReleaseQuestionsData, ListEligibleReleaseQuestionsResponses, ListExamsData, ListExamsErrors, ListExamsResponses, ListExamVersionsData, ListExamVersionsResponses, ListKnowledgeFactsData, ListKnowledgeFactsErrors, ListKnowledgeFactsResponses, ListKnowledgeFactVersionsData, ListKnowledgeFactVersionsErrors, ListKnowledgeFactVersionsResponses, ListLearningObjectivesData, ListLearningObjectivesErrors, ListLearningObjectivesResponses, ListQuestionsData, ListQuestionsResponses, ListQuestionVersionsData, ListQuestionVersionsResponses, ListReleaseDeliveryAttemptsData, ListReleaseDeliveryAttemptsResponses, ListReleasesData, ListReleasesResponses, ListReviewCommentsData, ListReviewCommentsResponses, ListReviewHistoryData, ListReviewHistoryResponses, ListReviewsData, ListReviewsResponses, ListSourcesData, ListSourcesResponses, ListSubjectsData, ListSubjectsResponses, ListTopicsData, ListTopicsResponses, PreviewReleaseData, PreviewReleaseResponses, PublishReleaseData, PublishReleaseErrors, PublishReleaseResponses, RejectAiEditorialProposalData, RejectAiEditorialProposalErrors, RejectAiEditorialProposalResponses, RejectAiKnowledgeFactProposalData, RejectAiKnowledgeFactProposalErrors, RejectAiKnowledgeFactProposalResponses, RejectKnowledgeFactData, RejectKnowledgeFactErrors, RejectKnowledgeFactResponses, RejectQuestionData, RejectQuestionResponses, ReorderSubjectsData, ReorderSubjectsErrors, ReorderSubjectsResponses, ReorderTopicsData, ReorderTopicsErrors, ReorderTopicsResponses, ReplaceReleaseSelectionData, ReplaceReleaseSelectionErrors, ReplaceReleaseSelectionResponses, RequireKnowledgeFactUpdateData, RequireKnowledgeFactUpdateErrors, RequireKnowledgeFactUpdateResponses, RequireQuestionUpdateData, RequireQuestionUpdateResponses, RequireSourceUpdateData, RequireSourceUpdateResponses, RetireKnowledgeFactData, RetireKnowledgeFactErrors, RetireKnowledgeFactResponses, RetireQuestionData, RetireQuestionResponses, RetireReleaseData, RetireReleaseResponses, RetireSourceData, RetireSourceErrors, RetireSourceResponses, RetryReleaseDeliveryData, RetryReleaseDeliveryResponses, ReviewSourceData, ReviewSourceResponses, SearchAuditEventsData, SearchAuditEventsErrors, SearchAuditEventsResponses, SearchQuestionsData, SearchQuestionsResponses, SubmitKnowledgeFactData, SubmitKnowledgeFactErrors, SubmitKnowledgeFactResponses, SubmitQuestionData, SubmitQuestionResponses, UnclaimReviewData, UnclaimReviewErrors, UnclaimReviewResponses, UpdateExamData, UpdateExamErrors, UpdateExamResponses, UpdateExamVersionData, UpdateExamVersionErrors, UpdateExamVersionResponses, UpdateKnowledgeFactData, UpdateKnowledgeFactErrors, UpdateKnowledgeFactResponses, UpdateLearningObjectiveData, UpdateLearningObjectiveErrors, UpdateLearningObjectiveResponses, UpdateQuestionData, UpdateQuestionErrors, UpdateQuestionResponses, UpdateReleaseData, UpdateReleaseErrors, UpdateReleaseResponses, UpdateSourceData, UpdateSourceErrors, UpdateSourceResponses, UpdateSubjectData, UpdateSubjectErrors, UpdateSubjectResponses, UpdateTopicData, UpdateTopicErrors, UpdateTopicResponses, ValidateReleaseData, ValidateReleaseResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -404,6 +404,208 @@ export const requireSourceUpdate = <ThrowOnError extends boolean = false>(option
 export const retireSource = <ThrowOnError extends boolean = false>(options: Options<RetireSourceData, ThrowOnError>) => (options.client ?? client).post<RetireSourceResponses, RetireSourceErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/sources/{sourceId}/retire',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Queue grounded Knowledge Fact proposal generation
+ */
+export const createAiKnowledgeFactJob = <ThrowOnError extends boolean = false>(options: Options<CreateAiKnowledgeFactJobData, ThrowOnError>) => (options.client ?? client).post<CreateAiKnowledgeFactJobResponses, CreateAiKnowledgeFactJobErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/knowledge-fact-jobs',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get generation job
+ */
+export const getAiKnowledgeFactJob = <ThrowOnError extends boolean = false>(options: Options<GetAiKnowledgeFactJobData, ThrowOnError>) => (options.client ?? client).get<GetAiKnowledgeFactJobResponses, GetAiKnowledgeFactJobErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/knowledge-fact-jobs/{jobId}',
+    ...options
+});
+
+/**
+ * Cancel a queued or running generation job
+ */
+export const cancelAiKnowledgeFactJob = <ThrowOnError extends boolean = false>(options: Options<CancelAiKnowledgeFactJobData, ThrowOnError>) => (options.client ?? client).post<CancelAiKnowledgeFactJobResponses, CancelAiKnowledgeFactJobErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/knowledge-fact-jobs/{jobId}/cancel',
+    ...options
+});
+
+/**
+ * List grounded proposals
+ */
+export const listAiKnowledgeFactProposals = <ThrowOnError extends boolean = false>(options: Options<ListAiKnowledgeFactProposalsData, ThrowOnError>) => (options.client ?? client).get<ListAiKnowledgeFactProposalsResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/knowledge-fact-jobs/{jobId}/proposals',
+    ...options
+});
+
+/**
+ * Edit a proposal before acceptance
+ */
+export const editAiKnowledgeFactProposal = <ThrowOnError extends boolean = false>(options: Options<EditAiKnowledgeFactProposalData, ThrowOnError>) => (options.client ?? client).patch<EditAiKnowledgeFactProposalResponses, EditAiKnowledgeFactProposalErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/knowledge-fact-proposals/{proposalId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Reject a proposal
+ */
+export const rejectAiKnowledgeFactProposal = <ThrowOnError extends boolean = false>(options: Options<RejectAiKnowledgeFactProposalData, ThrowOnError>) => (options.client ?? client).post<RejectAiKnowledgeFactProposalResponses, RejectAiKnowledgeFactProposalErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/knowledge-fact-proposals/{proposalId}/reject',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Create a normal DRAFT Knowledge Fact from a proposal
+ */
+export const acceptAiKnowledgeFactProposal = <ThrowOnError extends boolean = false>(options: Options<AcceptAiKnowledgeFactProposalData, ThrowOnError>) => (options.client ?? client).post<AcceptAiKnowledgeFactProposalResponses, AcceptAiKnowledgeFactProposalErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/knowledge-fact-proposals/{proposalId}/accept',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Inspect AI provenance for an authorized administrator
+ */
+export const getKnowledgeFactAiProvenance = <ThrowOnError extends boolean = false>(options: Options<GetKnowledgeFactAiProvenanceData, ThrowOnError>) => (options.client ?? client).get<GetKnowledgeFactAiProvenanceResponses, GetKnowledgeFactAiProvenanceErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/knowledge-facts/{knowledgeFactId}/provenance',
+    ...options
+});
+
+/**
+ * Queue grounded revisions for one editable draft Knowledge Fact
+ */
+export const createAiEditorialJob = <ThrowOnError extends boolean = false>(options: Options<CreateAiEditorialJobData, ThrowOnError>) => (options.client ?? client).post<CreateAiEditorialJobResponses, CreateAiEditorialJobErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/editorial-jobs',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get an editorial job owned by the current author
+ */
+export const getAiEditorialJob = <ThrowOnError extends boolean = false>(options: Options<GetAiEditorialJobData, ThrowOnError>) => (options.client ?? client).get<GetAiEditorialJobResponses, GetAiEditorialJobErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/editorial-jobs/{jobId}',
+    ...options
+});
+
+/**
+ * Cancel a queued or running editorial job
+ */
+export const cancelAiEditorialJob = <ThrowOnError extends boolean = false>(options: Options<CancelAiEditorialJobData, ThrowOnError>) => (options.client ?? client).post<CancelAiEditorialJobResponses, CancelAiEditorialJobErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/editorial-jobs/{jobId}/cancel',
+    ...options
+});
+
+/**
+ * List grounded editorial proposals
+ */
+export const listAiEditorialProposals = <ThrowOnError extends boolean = false>(options: Options<ListAiEditorialProposalsData, ThrowOnError>) => (options.client ?? client).get<ListAiEditorialProposalsResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/editorial-jobs/{jobId}/proposals',
+    ...options
+});
+
+/**
+ * List advisory findings for an editorial job
+ */
+export const listAiEditorialFindings = <ThrowOnError extends boolean = false>(options: Options<ListAiEditorialFindingsData, ThrowOnError>) => (options.client ?? client).get<ListAiEditorialFindingsResponses, ListAiEditorialFindingsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/editorial-jobs/{jobId}/findings',
+    ...options
+});
+
+/**
+ * Edit a revision before acceptance
+ */
+export const editAiEditorialProposal = <ThrowOnError extends boolean = false>(options: Options<EditAiEditorialProposalData, ThrowOnError>) => (options.client ?? client).patch<EditAiEditorialProposalResponses, EditAiEditorialProposalErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/editorial-proposals/{proposalId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Reject an editorial proposal
+ */
+export const rejectAiEditorialProposal = <ThrowOnError extends boolean = false>(options: Options<RejectAiEditorialProposalData, ThrowOnError>) => (options.client ?? client).post<RejectAiEditorialProposalResponses, RejectAiEditorialProposalErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/editorial-proposals/{proposalId}/reject',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Replace the current text of the unchanged draft fact
+ */
+export const acceptAiEditorialProposal = <ThrowOnError extends boolean = false>(options: Options<AcceptAiEditorialProposalData, ThrowOnError>) => (options.client ?? client).post<AcceptAiEditorialProposalResponses, AcceptAiEditorialProposalErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/editorial-proposals/{proposalId}/accept',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Create selected unreviewed drafts while keeping the original fact unchanged
+ */
+export const acceptAiEditorialSplit = <ThrowOnError extends boolean = false>(options: Options<AcceptAiEditorialSplitData, ThrowOnError>) => (options.client ?? client).post<AcceptAiEditorialSplitResponses, AcceptAiEditorialSplitErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/editorial-proposals/accept-split',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Dismiss an advisory finding without changing canonical content
+ */
+export const dismissAiEditorialFinding = <ThrowOnError extends boolean = false>(options: Options<DismissAiEditorialFindingData, ThrowOnError>) => (options.client ?? client).post<DismissAiEditorialFindingResponses, DismissAiEditorialFindingErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/editorial-findings/{findingId}/dismiss',
     ...options,
     headers: {
         'Content-Type': 'application/json',
