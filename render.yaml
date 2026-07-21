@@ -100,6 +100,7 @@ services:
       - { key: KC_DB_URL, sync: false }
       - { key: KC_DB_USERNAME, sync: false }
       - { key: KC_DB_PASSWORD, sync: false }
+      - { key: KC_HTTP_HOST, value: 0.0.0.0 }
       - { key: KC_HOSTNAME, sync: false }
       - { key: KC_BOOTSTRAP_ADMIN_USERNAME, sync: false }
       - { key: KC_BOOTSTRAP_ADMIN_PASSWORD, sync: false }
