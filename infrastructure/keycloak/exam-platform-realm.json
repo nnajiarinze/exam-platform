@@ -37,11 +37,11 @@
     {
       "clientId": "admin-portal", "name": "Content Admin Portal", "publicClient": true,
       "standardFlowEnabled": true, "directAccessGrantsEnabled": false,
-      "redirectUris": ["http://localhost:5173/auth/callback", "http://127.0.0.1:5173/auth/callback"],
-      "webOrigins": ["http://localhost:5173", "http://127.0.0.1:5173"],
+      "redirectUris": ["http://localhost:5173/auth/callback", "http://127.0.0.1:5173/auth/callback", "https://citizenship-admin-abk5.onrender.com/auth/callback"],
+      "webOrigins": ["http://localhost:5173", "http://127.0.0.1:5173", "https://citizenship-admin-abk5.onrender.com"],
       "attributes": {
         "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "http://localhost:5173/*##http://127.0.0.1:5173/*"
+        "post.logout.redirect.uris": "http://localhost:5173/*##http://127.0.0.1:5173/*##https://citizenship-admin-abk5.onrender.com/*"
       },
       "protocolMappers": [{ "name": "content audience", "protocol": "openid-connect", "protocolMapper": "oidc-audience-mapper", "config": { "included.custom.audience": "content-api", "access.token.claim": "true" } }]
     }
