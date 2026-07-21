@@ -20,3 +20,9 @@ must own its runtime, dependencies, configuration, data boundaries, build, tests
 and deployment lifecycle. A public web application is intentionally out of scope
 for the first learner flow.
 
+## Local demonstration data
+
+The guarded, deterministic development reset and seed workflow is documented in
+[docs/development/demo-data.md](docs/development/demo-data.md). It creates
+clearly labelled preparation content and never represents itself as an official
+Swedish citizenship examination.
