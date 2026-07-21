@@ -95,6 +95,7 @@ services:
     plan: free
     dockerfilePath: ./infrastructure/keycloak/Dockerfile
     dockerContext: .
+    healthCheckPath: /auth/
     envVars:
       - { key: KC_DB, value: postgres }
       - { key: KC_DB_URL, sync: false }
