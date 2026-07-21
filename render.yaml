@@ -41,6 +41,11 @@ services:
       - { key: RESEND_FROM_EMAIL, sync: false }
       - { key: RESEND_FROM_NAME, value: Svea Study }
       - { key: RESEND_REPLY_TO_EMAIL, sync: false }
+      - { key: EMAIL_PROVIDER, value: resend }
+      - { key: RESEND_API_KEY, sync: false }
+      - { key: RESEND_FROM_EMAIL, sync: false }
+      - { key: RESEND_FROM_NAME, value: Svea Study }
+      - { key: RESEND_REPLY_TO_EMAIL, sync: false }
       - { key: AI_INTERNAL_API_KEY, sync: false }
       - { key: LEARNING_SERVICE_BASE_URL, value: https://citizenship-learning-service.onrender.com }
       - { key: AI_SERVICE_BASE_URL, value: https://citizenship-ai-service.onrender.com }
