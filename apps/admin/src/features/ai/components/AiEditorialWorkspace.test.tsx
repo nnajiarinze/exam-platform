@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AiEditorialWorkspace } from "./AiEditorialWorkspace";
 import type { KnowledgeFact } from "../../../api/generated";
+import { adminQueryKeys } from "../../../api/query-keys/adminQueryKeys";
 
 const fact: KnowledgeFact = {
   id: "11111111-1111-1111-1111-111111111111", learningObjectiveId: "22222222-2222-2222-2222-222222222222",
@@ -93,5 +94,62 @@ describe("AI editorial workspace", () => {
     expect(screen.getByText(/PARTIALLY SUPPORTED/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Dismiss finding" })).toBeInTheDocument();
     expect(screen.getByText(/not a validation or reviewer decision/)).toBeInTheDocument();
+  });
+
+  it("does not label or allow acceptance of an identical legacy proposal and shows the Source title", async () => {
+    const noOp = { ...proposal("abababab-abab-abab-abab-abababababab", fact.canonicalStatement, 0),
+      operationType: "REWRITE_FOR_CLARITY", rationale: "The wording is already direct.",
+      sourceEvidence: [{ sourceId: fact.sourceIds[0], sourceTitle: "Riksdagens uppgifter", quote: fact.canonicalStatement }] };
+    vi.stubGlobal("fetch", vi.fn().mockImplementation((request: Request) => {
+      if (request.url.endsWith("/editorial-jobs") && request.method === "POST") return Promise.resolve(json({ ...job, operationType: "REWRITE_FOR_CLARITY", resultCount: 1 }, 202));
+      if (request.url.includes("/proposals")) return Promise.resolve(json([noOp]));
+      if (request.url.includes("/findings")) return Promise.resolve(json([]));
+      return Promise.resolve(json({ ...job, operationType: "REWRITE_FOR_CLARITY", resultCount: 1 }));
+    }));
+    renderWorkspace();
+    await userEvent.click(screen.getByRole("button", { name: "Run editorial analysis" }));
+    expect(await screen.findByRole("heading", { name: "No meaningful change" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Accept change" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Proposed · Changed/)).not.toBeInTheDocument();
+    expect(screen.getByText(/Riksdagens uppgifter/)).toBeInTheDocument();
+    expect(screen.getByText(fact.sourceIds[0])).toBeInTheDocument();
+  });
+
+  it("uses isolated query identities for each fact, operation, and job", () => {
+    expect(adminQueryKeys.ai.editorialProposals("fact-a", "REWRITE_FOR_CLARITY", "job-a"))
+      .not.toEqual(adminQueryKeys.ai.editorialProposals("fact-b", "REWRITE_FOR_CLARITY", "job-a"));
+    expect(adminQueryKeys.ai.editorialProposals("fact-a", "REWRITE_FOR_CLARITY", "job-a"))
+      .not.toEqual(adminQueryKeys.ai.editorialProposals("fact-a", "SIMPLIFY_LANGUAGE", "job-a"));
+    expect(adminQueryKeys.ai.editorialProposals("fact-a", "REWRITE_FOR_CLARITY", "job-a"))
+      .not.toEqual(adminQueryKeys.ai.editorialProposals("fact-a", "REWRITE_FOR_CLARITY", "job-b"));
+  });
+
+  it("returns to a fresh run form after a completed analysis", async () => {
+    const createRequest = vi.fn();
+    vi.stubGlobal("fetch", vi.fn().mockImplementation((request: Request) => {
+      if (request.url.endsWith("/editorial-jobs") && request.method === "POST") {
+        createRequest();
+        return Promise.resolve(json({ ...job, operationType: "REWRITE_FOR_CLARITY", resultCount: 0 }, 202));
+      }
+      if (request.url.includes("/proposals") || request.url.includes("/findings")) return Promise.resolve(json([]));
+      return Promise.resolve(json({ ...job, operationType: "REWRITE_FOR_CLARITY", resultCount: 0 }));
+    }));
+    renderWorkspace();
+    await userEvent.click(screen.getByRole("button", { name: "Run editorial analysis" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Run another operation" }));
+    expect(screen.getByRole("button", { name: "Run editorial analysis" })).toBeEnabled();
+    await userEvent.click(screen.getByRole("button", { name: "Run editorial analysis" }));
+    expect(createRequest).toHaveBeenCalledTimes(2);
+  });
+
+  it("blocks the observed meaningless draft before an AI request is sent", () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    renderWorkspace({ override: { canonicalStatement: "random shit to test asdfsdfas sffasdfsdfwwas safdsaf ds" } });
+    expect(screen.getByRole("alert")).toHaveTextContent("Cannot analyze this draft");
+    expect(screen.getByRole("button", { name: "Run editorial analysis" })).toBeDisabled();
+    expect(screen.queryByText("No material ambiguity found")).not.toBeInTheDocument();
+    expect(screen.queryByText("KEEP AS IS")).not.toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

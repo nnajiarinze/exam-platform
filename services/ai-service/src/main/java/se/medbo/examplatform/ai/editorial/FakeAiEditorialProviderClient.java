@@ -17,15 +17,47 @@ final class FakeAiEditorialProviderClient implements AiEditorialProviderClient {
   public Result execute(Request request) {
     String sourceText = request.sources().stream().map(Source::text).reduce("", (a, b) -> a + " " + b);
     simulateFailures(sourceText);
+    if (request.targets() == null || request.targets().isEmpty()
+        || EditorialInputSafety.classify(request.targets().getFirst().text()) == EditorialInputSafety.Quality.INVALID)
+      throw new AiProviderException("AI_EDITORIAL_INPUT_INVALID", false,
+          "The target does not contain meaningful factual content");
     return switch (request.operation()) {
-      case REWRITE_FOR_CLARITY -> revisions(request, List.of(clean(target(request))), "Clarity rewrite");
-      case SIMPLIFY_LANGUAGE -> revisions(request, List.of(simplify(target(request))), "Language simplification");
+      case REWRITE_FOR_CLARITY -> rewrite(request);
+      case SIMPLIFY_LANGUAGE -> simplifyResult(request);
       case MAKE_ATOMIC -> atomicity(request, sourceText);
       case SPLIT_FACT -> split(request, sourceText);
       case CHECK_SOURCE_SUPPORT -> sourceSupport(request, sourceText);
       case DETECT_AMBIGUITY -> ambiguity(request, sourceText);
       case EDITORIAL_REVIEW_NOTES -> editorialNotes(request);
     };
+  }
+
+  private Result rewrite(Request request) {
+    String original = clean(target(request));
+    String rewritten = original
+        .replace("är ansvariga för", "ansvarar för")
+        .replace("har ansvaret för", "ansvarar för")
+        .replace("erforderliga", "nödvändiga")
+        .replace("erforderlig", "nödvändig")
+        .replace("föreligger", "finns")
+        .replace("Ledamöterna beslutar", "Riksdagens ledamöter beslutar");
+    return EditorialGrounding.noMeaningfulChange(original, rewritten)
+        ? alreadyClear(request, "The current wording is already direct and no grounded improvement was found.")
+        : revisions(request, List.of(rewritten), "Clarified the responsible actor and made the wording more direct.");
+  }
+
+  private Result simplifyResult(Request request) {
+    String original = clean(target(request));
+    String simplified = simplify(original);
+    return EditorialGrounding.noMeaningfulChange(original, simplified)
+        ? alreadyClear(request, "The current wording is already concise and no meaningful simplification was found.")
+        : revisions(request, List.of(simplified), "Replaced unnecessarily complex wording while preserving the civic meaning.");
+  }
+
+  private Result alreadyClear(Request request, String rationale) {
+    return findings(request, List.of(new Finding("ALREADY_CLEAR", "INFO", request.targets().getFirst().factId(),
+        "Already clear", rationale, null, evidence(request, target(request)), "HIGH", "KEEP_AS_IS",
+        Map.of("resultType", "ALREADY_CLEAR"))));
   }
 
   private Result atomicity(Request request, String sources) {
@@ -65,6 +97,10 @@ final class FakeAiEditorialProviderClient implements AiEditorialProviderClient {
 
   private Result ambiguity(Request request, String sources) {
     String text = target(request).toLowerCase(Locale.ROOT);
+    if (EditorialInputSafety.classify(target(request)) == EditorialInputSafety.Quality.SUSPICIOUS)
+      return findings(request, List.of(finding(request, "BROAD_GENERALISATION", "WARNING",
+          "The factual claim is too broad", "The statement is meaningful but does not identify a sufficiently specific responsibility or scope.",
+          target(request), "REWRITE", Map.of("ambiguityFound", true, "inputQuality", "SUSPICIOUS"))));
     if (sources.contains("[[NO_AMBIGUITY]]") || (!text.matches(".*\\b(den|det|de|alla|alltid|aldrig)\\b.*") && !compound(text))) {
       return findings(request, List.of(finding(request, "NO_AMBIGUITY_FOUND", "INFO",
           "No material ambiguity found", "No wording with multiple reasonable interpretations was detected.",
@@ -78,6 +114,12 @@ final class FakeAiEditorialProviderClient implements AiEditorialProviderClient {
   }
 
   private Result editorialNotes(Request request) {
+    if (EditorialInputSafety.classify(target(request)) == EditorialInputSafety.Quality.SUSPICIOUS)
+      return findings(request, List.of(finding(request, "EDITORIAL_ASSESSMENT", "WARNING",
+          "The draft needs a more specific factual claim",
+          "The statement is meaningful but too broad for a clean editorial assessment.", target(request),
+          "REWRITE", Map.of("summary", "Input quality needs attention", "strengths", List.of("A subject is identifiable"),
+              "concerns", List.of("The predicate or scope is too vague"), "recommendedAction", "REWRITE", "inputQuality", "SUSPICIOUS"))));
     return findings(request, List.of(finding(request, "EDITORIAL_ASSESSMENT", "INFO",
         "AI-assisted editorial review notes",
         "The fact is concise and should still receive normal independent human review.", null,
@@ -94,7 +136,7 @@ final class FakeAiEditorialProviderClient implements AiEditorialProviderClient {
     for (String text : texts) {
       if (text.isBlank()) continue;
       revisions.add(new Revision(request.targets().getFirst().factId(), clean(text), rationale,
-          evidence(request), List.of(), Map.of("summary", "Supported portion of the original fact", "order", order++), "MEDIUM"));
+          evidence(request, text), List.of(), Map.of("summary", "Evidence mapped to this proposal", "order", order++), "MEDIUM"));
     }
     return new Result(revisions, List.of(), List.of(), usage(request));
   }
@@ -105,8 +147,14 @@ final class FakeAiEditorialProviderClient implements AiEditorialProviderClient {
 
   private Finding finding(Request request, String type, String severity, String title, String message,
                           String affected, String action, Map<String, Object> details) {
+    var mappedEvidence = evidence(request, target(request));
+    if (mappedEvidence.isEmpty() && request.operation() == EditorialOperationType.CHECK_SOURCE_SUPPORT && !request.sources().isEmpty()) {
+      var source = request.sources().getFirst();
+      String quote = source.text().replaceAll("\\[\\[[A-Z_]+]]", "").trim().split("(?<=[.!?])\\s+")[0].trim();
+      if (!quote.isBlank()) mappedEvidence = List.of(new Evidence(source.sourceId(), source.title(), quote, "Stored Source text"));
+    }
     return new Finding(type, severity, request.targets().getFirst().factId(), title, message, affected,
-        evidence(request), "MEDIUM", action, details);
+        mappedEvidence, "MEDIUM", action, details);
   }
 
   private List<String> splitText(String original, String sources) {
@@ -121,13 +169,33 @@ final class FakeAiEditorialProviderClient implements AiEditorialProviderClient {
     return result.stream().distinct().limit(5).toList();
   }
 
-  private List<Evidence> evidence(Request request) {
+  private List<Evidence> evidence(Request request, String claim) {
     if (request.sources().isEmpty()) return List.of();
-    Source source = request.sources().getFirst();
-    String quote = source.text().replaceAll("\\[\\[[A-Z_]+]]", "").trim();
-    if (quote.isBlank()) return List.of();
-    String first = quote.split("(?<=[.!?])\\s+")[0].trim();
-    return List.of(new Evidence(source.sourceId(), first, "Stored Source text"));
+    if (request.sources().stream().anyMatch(source -> source.text().contains("[[SIMULATE_OTHER_JOB_EVIDENCE]]"))) {
+      var source=request.sources().getFirst();
+      return List.of(new Evidence(UUID.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff"), "Another job Source", firstSentence(source.text()), "Invalid test scenario"));
+    }
+    if (request.sources().size()>1 && request.sources().stream().anyMatch(source -> source.text().contains("[[SIMULATE_WRONG_SOURCE]]"))) {
+      var declared=request.sources().getFirst(); var quoted=request.sources().get(1);
+      return List.of(new Evidence(declared.sourceId(), declared.title(), firstSentence(quoted.text()), "Invalid test scenario"));
+    }
+    if (request.sources().stream().anyMatch(source -> source.text().contains("[[SIMULATE_UNRELATED_EVIDENCE]]"))) {
+      var source=request.sources().getFirst();
+      return List.of(new Evidence(source.sourceId(), source.title(), firstSentence(source.text()), "Invalid test scenario"));
+    }
+    Source bestSource = null; String bestQuote = null; int best = 0;
+    for (Source source : request.sources()) {
+      for (String sentence : source.text().replaceAll("\\[\\[[A-Z_]+]]", "").split("(?<=[.!?])\\s+")) {
+        int score = EditorialGrounding.overlapCount(claim, sentence);
+        if (score > best) { best = score; bestSource = source; bestQuote = sentence.trim(); }
+      }
+    }
+    if (bestSource == null || bestQuote == null || !EditorialGrounding.plausiblySupports(claim, bestQuote)) return List.of();
+    return List.of(new Evidence(bestSource.sourceId(), bestSource.title(), bestQuote, "Stored Source text"));
+  }
+
+  private String firstSentence(String value) {
+    return value.replaceAll("\\[\\[[A-Z_]+]]", "").trim().split("(?<=[.!?])\\s+")[0].trim();
   }
 
   private void simulateFailures(String text) {

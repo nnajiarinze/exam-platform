@@ -43,7 +43,9 @@ class EditorialSplitAcceptanceIntegrationTest {
   static final UUID JOB = UUID.fromString("10000000-0000-0000-0000-000000000001");
   static final UUID PROPOSAL_ONE = UUID.fromString("10000000-0000-0000-0000-000000000002");
   static final UUID PROPOSAL_TWO = UUID.fromString("10000000-0000-0000-0000-000000000003");
+  static final UUID PROPOSAL_THREE = UUID.fromString("10000000-0000-0000-0000-000000000004");
   static volatile Fixture fixture;
+  static volatile String jobOperation = "SPLIT_FACT";
 
   @Autowired EditorialWorkspaceService service;
   @Autowired JdbcClient jdbc;
@@ -64,6 +66,35 @@ class EditorialSplitAcceptanceIntegrationTest {
     SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
         "split-author", "n/a", List.of(new SimpleGrantedAuthority("ROLE_CONTENT_AUTHOR"))));
     fixture = seed();
+    jobOperation = "SPLIT_FACT";
+  }
+
+  @Test void unsupportedLinkedSourceBlocksRewriteBeforeProviderCall() {
+    String unrelated = "Kommunerna ansvarar för bibliotek och äldreomsorg.";
+    jdbc.sql("UPDATE source_reference SET content_text=:text,content_checksum=:checksum WHERE id=:id")
+        .param("text", unrelated).param("checksum", checksum(unrelated)).param("id", fixture.sourceId).update();
+    assertThatThrownBy(() -> service.create(new EditorialWorkspaceService.Create(
+        EditorialWorkspaceService.Operation.REWRITE_FOR_CLARITY, fixture.factId, "sv", null, null, 1, "unsupported-" + fixture.factId)))
+        .isInstanceOf(DomainException.class)
+        .extracting(error -> ((DomainException) error).code()).isEqualTo("AI_EDITORIAL_INSUFFICIENT_EVIDENCE");
+    assertThat(jdbc.sql("SELECT count(*) FROM audit_event WHERE entity_id=:fact AND reason='AI_EDITORIAL_INSUFFICIENT_EVIDENCE'")
+        .param("fact",fixture.factId).query(Long.class).single()).isEqualTo(1);
+  }
+
+  @Test void validLinkedSourceAllowsRewriteGenerationRequest() {
+    var result = service.create(new EditorialWorkspaceService.Create(
+        EditorialWorkspaceService.Operation.REWRITE_FOR_CLARITY, fixture.factId, "sv", null, null, 1, "grounded-" + fixture.factId));
+    assertThat(result).containsEntry("accepted", true);
+  }
+
+  @Test void unsupportedHumanEditCannotBeAccepted() {
+    jobOperation = "REWRITE_FOR_CLARITY";
+    fixture = fixture.withFirstText("Kommunerna ansvarar för äldreomsorg och bibliotek.");
+    assertThatThrownBy(() -> service.accept(PROPOSAL_THREE, 0))
+        .isInstanceOf(DomainException.class)
+        .extracting(error -> ((DomainException) error).code()).isEqualTo("AI_EDITORIAL_FINAL_TEXT_NOT_GROUNDED");
+    assertThat(jdbc.sql("SELECT count(*) FROM audit_event WHERE entity_id=:fact AND reason='AI_EDITORIAL_FINAL_TEXT_NOT_GROUNDED'")
+        .param("fact",fixture.factId).query(Long.class).single()).isEqualTo(1);
   }
 
   @Test void selectedProposalsAtomicallyCreateUnreviewedDraftsAndKeepOriginal() {
@@ -121,15 +152,17 @@ class EditorialSplitAcceptanceIntegrationTest {
   private static void respond(HttpExchange exchange) {
     try {
       String path = exchange.getRequestURI().getPath(); Object body;
-      if (path.equals("/internal/v1/editorial/jobs/" + JOB)) body = Map.of("id",JOB,"operationType","SPLIT_FACT","requestedBy","split-author","status","COMPLETED");
+      if (path.equals("/internal/v1/editorial/jobs") && "POST".equals(exchange.getRequestMethod())) body = Map.of("accepted",true);
+      else if (path.equals("/internal/v1/editorial/jobs/" + JOB)) body = Map.of("id",JOB,"operationType",jobOperation,"requestedBy","split-author","status","COMPLETED");
       else if (path.endsWith("/accepted")) { exchange.sendResponseHeaders(204,-1); exchange.close(); return; }
       else if (path.endsWith(PROPOSAL_ONE.toString())) body = proposal(PROPOSAL_ONE,fixture.firstText,0);
       else if (path.endsWith(PROPOSAL_TWO.toString())) body = proposal(PROPOSAL_TWO,fixture.secondText,1);
+      else if (path.endsWith(PROPOSAL_THREE.toString())) body = proposal(PROPOSAL_THREE,fixture.firstText,0);
       else body = Map.of("code","AI_JOB_NOT_FOUND","message","Not found","timestamp",OffsetDateTime.now().toString(),"errors",List.of());
       byte[] bytes=JSON.writeValueAsBytes(body);exchange.getResponseHeaders().add("Content-Type","application/json");exchange.sendResponseHeaders(200,bytes.length);exchange.getResponseBody().write(bytes);exchange.close();
     } catch(Exception exception){throw new RuntimeException(exception);}
   }
-  private static Map<String,Object> proposal(UUID id,String text,int order){String context;try{context=JSON.writeValueAsString(Map.of("sources",List.of(Map.of("sourceId",fixture.sourceId,"text",fixture.original,"checksum",fixture.snapshotChecksum))));}catch(Exception e){throw new RuntimeException(e);}String evidence;try{evidence=JSON.writeValueAsString(List.of(Map.of("sourceId",fixture.sourceId,"quote",fixture.original,"location","Stored Source text")));}catch(Exception e){throw new RuntimeException(e);}return Map.ofEntries(Map.entry("id",id),Map.entry("generation_job_id",JOB),Map.entry("operation_type","SPLIT_FACT"),Map.entry("target_fact_id",fixture.factId),Map.entry("target_fact_version_id",fixture.factVersionId),Map.entry("target_version",0),Map.entry("original_checksum",checksum(fixture.original)),Map.entry("target_context",context),Map.entry("original_text",fixture.original),Map.entry("proposed_text",text),Map.entry("edited_text",text),Map.entry("source_evidence",evidence),Map.entry("warnings","[]"),Map.entry("status","PROPOSED"),Map.entry("version",0),Map.entry("edit_count",0),Map.entry("provider","FAKE"),Map.entry("model","deterministic-v1"),Map.entry("prompt_version","knowledge-fact-split-v1"),Map.entry("generated_at",OffsetDateTime.now().toString()),Map.entry("requested_by","split-author"),Map.entry("proposal_order",order));}
+  private static Map<String,Object> proposal(UUID id,String text,int order){String context;try{context=JSON.writeValueAsString(Map.of("sources",List.of(Map.of("sourceId",fixture.sourceId,"text",fixture.original,"checksum",fixture.snapshotChecksum))));}catch(Exception e){throw new RuntimeException(e);}String evidence;try{evidence=JSON.writeValueAsString(List.of(Map.of("sourceId",fixture.sourceId,"quote",fixture.original,"location","Stored Source text")));}catch(Exception e){throw new RuntimeException(e);}return Map.ofEntries(Map.entry("id",id),Map.entry("generation_job_id",JOB),Map.entry("operation_type",jobOperation),Map.entry("target_fact_id",fixture.factId),Map.entry("target_fact_version_id",fixture.factVersionId),Map.entry("target_version",0),Map.entry("original_checksum",checksum(fixture.original)),Map.entry("target_context",context),Map.entry("original_text",fixture.original),Map.entry("proposed_text",text),Map.entry("edited_text",text),Map.entry("source_evidence",evidence),Map.entry("warnings","[]"),Map.entry("status","PROPOSED"),Map.entry("version",0),Map.entry("edit_count",0),Map.entry("provider","FAKE"),Map.entry("model","deterministic-v1"),Map.entry("prompt_version","knowledge-fact-split-v1"),Map.entry("generated_at",OffsetDateTime.now().toString()),Map.entry("requested_by","split-author"),Map.entry("proposal_order",order));}
   private static String checksum(String value){try{return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8)));}catch(Exception e){throw new RuntimeException(e);}}
-  record Fixture(UUID factId,UUID factVersionId,UUID sourceId,UUID objectiveId,String original,String firstText,String secondText,String snapshotChecksum){Fixture withSecondText(String value){return new Fixture(factId,factVersionId,sourceId,objectiveId,original,firstText,value,snapshotChecksum);}Fixture withSnapshotChecksum(String value){return new Fixture(factId,factVersionId,sourceId,objectiveId,original,firstText,secondText,value);}}
+  record Fixture(UUID factId,UUID factVersionId,UUID sourceId,UUID objectiveId,String original,String firstText,String secondText,String snapshotChecksum){Fixture withFirstText(String value){return new Fixture(factId,factVersionId,sourceId,objectiveId,original,value,secondText,snapshotChecksum);}Fixture withSecondText(String value){return new Fixture(factId,factVersionId,sourceId,objectiveId,original,firstText,value,snapshotChecksum);}Fixture withSnapshotChecksum(String value){return new Fixture(factId,factVersionId,sourceId,objectiveId,original,firstText,secondText,value);}}
 }

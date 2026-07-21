@@ -1,15 +1,39 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import { getContentHealthReport, getLearnerHealthReport, getReleaseHealthReport, getReviewHealthReport, getSourceHealthReport } from '../../api/generated';
+import { acknowledgeAiProviderAlert, disableAiProvider, getAiProviderStatus, getContentHealthReport, getLearnerHealthReport, getReleaseHealthReport, getReviewHealthReport, getSourceHealthReport, listAiProviderAlerts, recheckAiProvider, type AiProviderStatus } from '../../api/generated';
 import { contentServiceClient } from '../../api/client/contentServiceClient';
 import { unwrap } from '../../api/client/adminApi';
 import { AsyncState } from '../../components/AsyncState';
+import { adminQueryKeys } from '../../api/query-keys/adminQueryKeys';
 
 type Report = Record<string, unknown>;
 const value = (report: Report | undefined, key: string) => report?.[key] == null ? '—' : String(report[key]);
 const nested = (report: Report | undefined, group: string, key: string) => { const section=report?.[group];return typeof section==='object'&&section!==null&&key in section?String((section as Report)[key]):'—'; };
 function Metric({label,children}:{label:string;children:ReactNode}){return <div className="card metric"><span>{label}</span><strong>{children}</strong></div>}
 function ReportState({query,children}:{query:{isPending:boolean;error:unknown};children:ReactNode}){return <AsyncState loading={query.isPending} error={query.error}>{children}</AsyncState>}
+const numberValue=(value:unknown)=>typeof value==='number'?value:0;
+function QuotaMetric({label,current,limit}:{label:string;current:unknown;limit:unknown}){const used=numberValue(current),maximum=numberValue(limit);const percent=maximum>0?Math.min(100,Math.round(used/maximum*100)):0;return <div className="card metric"><span>{label}</span><strong>{used.toLocaleString()} / {maximum>0?maximum.toLocaleString():'not configured'}</strong>{maximum>0&&<small>{percent}% of the configured internal limit</small>}</div>}
+
+function ProviderStatusSection(){
+  const client=useQueryClient();
+  const status=useQuery({queryKey:adminQueryKeys.ai.providerStatus,queryFn:()=>unwrap(getAiProviderStatus({client:contentServiceClient}))});
+  const alerts=useQuery({queryKey:adminQueryKeys.ai.providerAlerts,queryFn:()=>unwrap(listAiProviderAlerts({client:contentServiceClient}))});
+  const refresh=()=>{void client.invalidateQueries({queryKey:adminQueryKeys.ai.providerStatus});void client.invalidateQueries({queryKey:adminQueryKeys.ai.providerAlerts});};
+  const disable=useMutation({mutationFn:()=>unwrap(disableAiProvider({client:contentServiceClient})),onSuccess:refresh});
+  const recheck=useMutation({mutationFn:()=>unwrap(recheckAiProvider({client:contentServiceClient})),onSuccess:refresh});
+  const acknowledge=useMutation({mutationFn:(id:string)=>unwrap(acknowledgeAiProviderAlert({client:contentServiceClient,path:{alertId:id}})),onSuccess:refresh});
+  const raw=status.data as Partial<AiProviderStatus>|undefined;const provider=raw&&typeof raw.provider==='string'&&typeof raw.model==='string'&&typeof raw.state==='string'&&typeof raw.usageMode==='string'?raw as AiProviderStatus:undefined;const usage=provider?.usage??{},limits=provider?.limits??{};
+  const details=(provider??{}) as unknown as Record<string,unknown>;const paused=provider&&['RATE_LIMITED','QUOTA_PAUSED','BILLING_SAFETY_PAUSED','MANUALLY_DISABLED','CONFIGURATION_INVALID'].includes(provider.state);
+  return <section aria-labelledby="ai-provider-health"><div className="section-heading"><div><h2 id="ai-provider-health">AI provider</h2><p>Operational status and conservative quota controls for editorial AI.</p></div>{provider&&<span className={`status-badge status-${provider.state.toLowerCase().replaceAll('_','-')}`}>{provider.provider==='FAKE'?'FAKE simulation':provider.state.replaceAll('_',' ')}</span>}</div>
+    <ReportState query={status}>{provider&&<><div className="card"><div className="report-grid"><Metric label="Provider">{provider.provider}</Metric><Metric label="Model">{provider.model}</Metric><Metric label="Usage mode">{provider.usageMode}</Metric><Metric label="Expected tier">{provider.expectedBillingTier||'Not configured'}</Metric><Metric label="Feature enabled">{provider.featureEnabled?'Yes':'No'}</Metric><Metric label="Circuit state">{provider.state.replaceAll('_',' ')}</Metric><Metric label="Last successful request">{details.lastSuccessfulRequest?new Date(String(details.lastSuccessfulRequest)).toLocaleString():'—'}</Metric><Metric label="Next recheck">{provider.pausedUntil?new Date(provider.pausedUntil).toLocaleString():'—'}</Metric></div>
+      <p><strong>Application-tracked usage.</strong> These counters are conservative application-side controls, not Google billing data. Confirm authoritative project quota and tier in Google AI Studio.</p>
+      <p className="warning">Source and draft content may be sent to the configured AI provider. Do not submit confidential or restricted material.</p>
+      {paused&&<div className="warning" role="alert"><strong>Gemini AI editorial tools are paused.</strong><p>{provider.reason||provider.configurationError||'The application safety circuit is open.'} Normal authoring, review, and release workflows remain available.</p>{provider.pausedUntil&&<p>The time shown is an estimated next recheck, not a guaranteed provider reset.</p>}</div>}
+      <div className="button-row"><button type="button" className="secondary" disabled={disable.isPending||provider.provider==='FAKE'} onClick={()=>disable.mutate()}>Disable provider</button><button type="button" disabled={recheck.isPending||provider.provider==='FAKE'} onClick={()=>recheck.mutate()}>Recheck safely</button></div></div>
+      <h3>{provider.usageLabel}</h3><div className="report-grid"><QuotaMetric label="Requests this minute" current={usage.minuteRequests} limit={limits.rpm}/><QuotaMetric label="Input tokens this minute" current={usage.minuteInputTokens} limit={limits.tpm}/><QuotaMetric label="Requests today" current={usage.dayRequests} limit={limits.rpd}/><QuotaMetric label="Input tokens today" current={usage.dayInputTokens} limit={limits.inputTokensPerDay}/><QuotaMetric label="Output tokens today" current={usage.dayOutputTokens} limit={limits.outputTokensPerDay}/></div></>}</ReportState>
+    <ReportState query={alerts}>{Array.isArray(alerts.data)&&alerts.data.length?<div className="card"><h3>Provider alerts</h3>{alerts.data.map(alert=><div className="status-row" key={alert.id}><span><strong>{alert.code.replaceAll('_',' ')}</strong><br/><small>{alert.message}</small></span>{alert.acknowledgedAt?<span className="status-badge">Acknowledged</span>:<button type="button" className="secondary" aria-label={`Acknowledge ${alert.code}`} disabled={acknowledge.isPending} onClick={()=>acknowledge.mutate(alert.id)}>Acknowledge</button>}</div>)}</div>:<p>No provider alerts.</p>}</ReportState>
+  </section>;
+}
 
 export function ReportsPage(){
   const content=useQuery({queryKey:['reports','content'],queryFn:()=>unwrap(getContentHealthReport({client:contentServiceClient}))});
@@ -19,6 +43,7 @@ export function ReportsPage(){
   const learner=useQuery({queryKey:['reports','learner'],queryFn:()=>unwrap(getLearnerHealthReport({client:contentServiceClient}))});
   const c=content.data as Report|undefined,r=review.data as Report|undefined,s=source.data as Report|undefined,l=learner.data as Report|undefined;
   return <><header className="page-header"><div><span className="eyebrow">Operations</span><h1>Platform health</h1><p>Aggregate operational signals. Learner statistics contain no learner identity or question content.</p></div></header>
+    <ProviderStatusSection />
     <section aria-labelledby="content-health"><h2 id="content-health">Content health</h2><ReportState query={content}><div className="report-grid"><Metric label="Questions">{nested(c,'questions','total')}</Metric><Metric label="Approved questions">{nested(c,'questions','approved')}</Metric><Metric label="Knowledge facts">{nested(c,'knowledgeFacts','total')}</Metric><Metric label="Approved facts">{nested(c,'knowledgeFacts','approved')}</Metric><Metric label="Sources">{nested(c,'sources','total')}</Metric><Metric label="Questions missing facts">{value(c,'questionsMissingFacts')}</Metric><Metric label="Facts without questions">{value(c,'factsWithoutQuestions')}</Metric><Metric label="Objectives without questions">{value(c,'objectivesWithoutQuestions')}</Metric><Metric label="Topics without questions">{value(c,'topicsWithoutQuestions')}</Metric><Metric label="Subjects without questions">{value(c,'subjectsWithoutQuestions')}</Metric></div></ReportState></section>
     <section aria-labelledby="review-health"><h2 id="review-health">Review health</h2><ReportState query={review}><div className="report-grid"><Metric label="Pending">{value(r,'pending')}</Metric><Metric label="Assigned to me">{value(r,'assignedToMe')}</Metric><Metric label="Average age (hours)">{value(r,'averageAgeHours')}</Metric><Metric label="Rejected today">{value(r,'rejectedToday')}</Metric><Metric label="Requires update today">{value(r,'requiresUpdateToday')}</Metric></div></ReportState></section>
     <section aria-labelledby="source-health"><h2 id="source-health">Source health</h2><ReportState query={source}><div className="report-grid"><Metric label="Retired">{value(s,'retired')}</Metric><Metric label="Requires update">{value(s,'requiresUpdate')}</Metric><Metric label="Unused">{value(s,'unused')}</Metric><Metric label="Facts using retired sources">{value(s,'factsReferencingRetired')}</Metric><Metric label="Facts using outdated sources">{value(s,'factsReferencingOutdated')}</Metric></div></ReportState></section>

@@ -41,6 +41,7 @@ class SecurityConfiguration {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers("/api/v1/status").hasAnyRole(ADMIN_ROLES)
+                        .requestMatchers("/api/v1/admin/ai/provider/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/admin/**").hasAnyRole(ADMIN_ROLES)
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/admin/releases/*").hasAnyRole("CONTENT_PUBLISHER", "ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/admin/knowledge-facts/*", "/api/v1/admin/questions/*").hasAnyRole("CONTENT_AUTHOR", "ADMIN")

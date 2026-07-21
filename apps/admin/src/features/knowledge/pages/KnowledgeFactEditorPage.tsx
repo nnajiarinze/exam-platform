@@ -27,6 +27,7 @@ import { useAuth } from "../../../app/auth/AuthContext";
 import { can, Permission } from "../../../app/permissions/permissions";
 import { SafeDeleteDialog } from "../../../components/SafeDeleteDialog";
 import { AiEditorialWorkspace } from "../../ai/components/AiEditorialWorkspace";
+import { validateEditorialInput } from "../../ai/editorialInputValidation";
 
 export function KnowledgeFactEditorPage() {
   const { id } = useParams();
@@ -129,6 +130,8 @@ export function KnowledgeFactEditorPage() {
           ),
     onSuccess: (item) => {
       qc.invalidateQueries({ queryKey: adminQueryKeys.facts.all });
+      qc.setQueryData(adminQueryKeys.facts.detail(item.id), item);
+      qc.invalidateQueries({ queryKey: adminQueryKeys.facts.versions(item.id) });
       navigate(`/knowledge/facts/${item.id}`);
     },
   });
@@ -169,6 +172,7 @@ export function KnowledgeFactEditorPage() {
     control: form.control,
     name: "canonicalStatement",
   });
+  const statementValidation = validateEditorialInput(statement ?? "");
   const reviewer = can(admin, Permission.ReviewContent);
   const author = can(admin, Permission.EditDraftContent);
   return (
@@ -211,9 +215,15 @@ export function KnowledgeFactEditorPage() {
             Canonical statement
             <textarea
               rows={5}
+              aria-invalid={statementValidation.quality === "INVALID"}
+              aria-describedby="canonical-statement-quality"
               {...form.register("canonicalStatement", { required: true })}
             />
           </label>
+          {statementValidation.quality !== "VALID" && <div id="canonical-statement-quality" className={statementValidation.quality === "INVALID" ? "error" : "warning"} role={statementValidation.quality === "INVALID" ? "alert" : "status"}>
+            <strong>{statementValidation.quality === "INVALID" ? "Enter a meaningful factual statement" : "This statement may need clarification"}</strong>
+            <ul>{statementValidation.issues.map((issue) => <li key={issue}>{issue}</li>)}</ul>
+          </div>}
           <div className="form-grid">
             <label>
               Valid from
@@ -266,6 +276,7 @@ export function KnowledgeFactEditorPage() {
         </form>
         {edit && fact.data && (
           <AiEditorialWorkspace
+            key={`${fact.data.id}:${fact.data.currentVersionId}:${fact.data.version}`}
             fact={fact.data}
             enabled={author || reviewer}
             canMutate={author}

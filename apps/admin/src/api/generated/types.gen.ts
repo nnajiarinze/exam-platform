@@ -354,9 +354,49 @@ export type AiEditorialRequest = {
     idempotencyKey: string;
 };
 
+export type AiEditorialResultType = 'PROPOSALS_AVAILABLE' | 'ALREADY_CLEAR' | 'NO_MEANINGFUL_CHANGE' | 'INSUFFICIENT_GROUNDED_EVIDENCE' | 'FINDINGS_AVAILABLE';
+
+export type AiUsageMode = 'FREE_ONLY' | 'PAID_ALLOWED' | 'DISABLED';
+
+export type AiProviderCircuitState = 'CLOSED' | 'WARNING' | 'CRITICAL' | 'RATE_LIMITED' | 'QUOTA_PAUSED' | 'BILLING_SAFETY_PAUSED' | 'MANUALLY_DISABLED' | 'CONFIGURATION_INVALID';
+
+export type AiProviderStatus = {
+    provider: string;
+    model: string;
+    usageMode: AiUsageMode;
+    featureEnabled: boolean;
+    projectLabel?: string;
+    expectedBillingTier?: string;
+    usageLabel: 'Application-tracked usage';
+    authoritativeQuota: false;
+    configurationValid: boolean;
+    configurationError?: string | null;
+    state: AiProviderCircuitState;
+    reason?: string | null;
+    pausedUntil?: string | null;
+    manuallyDisabled?: boolean;
+    usage: {
+        [key: string]: unknown;
+    };
+    limits: {
+        [key: string]: unknown;
+    };
+};
+
+export type AiProviderAlert = {
+    id: string;
+    severity: 'WARNING' | 'CRITICAL';
+    code: string;
+    message: string;
+    createdAt: string;
+    acknowledgedAt?: string | null;
+    acknowledgedBy?: string | null;
+};
+
 export type AiEditorialJob = {
     id: string;
     operationType: AiEditorialOperation;
+    resultType?: AiEditorialResultType | null;
     learningObjectiveId: string;
     learningObjectiveTitle: string;
     requestedBy: string;
@@ -384,6 +424,7 @@ export type AiEditorialJob = {
 
 export type AiEditorialEvidence = {
     sourceId: string;
+    sourceTitle?: string | null;
     quote: string;
     location?: string | null;
 };
@@ -788,6 +829,18 @@ export type ContentServiceStatus = {
     service: 'content-service';
     status: 'READY';
     timestamp: string;
+};
+
+export type EditorialInputQuality = 'VALID' | 'SUSPICIOUS' | 'INVALID';
+
+export type EditorialInputIssue = {
+    /**
+     * User-safe deterministic issue code such as GIBBERISH_DETECTED or QUESTION_INSTEAD_OF_FACT
+     */
+    code: string;
+    message: string;
+    quality: EditorialInputQuality;
+    recommendedAction: 'EDIT_FACT';
 };
 
 export type ApiError = {
@@ -2256,6 +2309,141 @@ export type AcceptAiEditorialSplitResponses = {
 
 export type AcceptAiEditorialSplitResponse = AcceptAiEditorialSplitResponses[keyof AcceptAiEditorialSplitResponses];
 
+export type GetAiProviderStatusData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/ai/provider/status';
+};
+
+export type GetAiProviderStatusErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Provider unavailable
+     */
+    503: ApiError;
+};
+
+export type GetAiProviderStatusError = GetAiProviderStatusErrors[keyof GetAiProviderStatusErrors];
+
+export type GetAiProviderStatusResponses = {
+    /**
+     * Provider status
+     */
+    200: AiProviderStatus;
+};
+
+export type GetAiProviderStatusResponse = GetAiProviderStatusResponses[keyof GetAiProviderStatusResponses];
+
+export type ListAiProviderAlertsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/ai/provider/alerts';
+};
+
+export type ListAiProviderAlertsErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+};
+
+export type ListAiProviderAlertsError = ListAiProviderAlertsErrors[keyof ListAiProviderAlertsErrors];
+
+export type ListAiProviderAlertsResponses = {
+    /**
+     * Provider alerts
+     */
+    200: Array<AiProviderAlert>;
+};
+
+export type ListAiProviderAlertsResponse = ListAiProviderAlertsResponses[keyof ListAiProviderAlertsResponses];
+
+export type DisableAiProviderData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/ai/provider/disable';
+};
+
+export type DisableAiProviderErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+};
+
+export type DisableAiProviderError = DisableAiProviderErrors[keyof DisableAiProviderErrors];
+
+export type DisableAiProviderResponses = {
+    /**
+     * Disabled provider status
+     */
+    200: AiProviderStatus;
+};
+
+export type DisableAiProviderResponse = DisableAiProviderResponses[keyof DisableAiProviderResponses];
+
+export type RecheckAiProviderData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/ai/provider/recheck';
+};
+
+export type RecheckAiProviderErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Provider unavailable
+     */
+    503: ApiError;
+};
+
+export type RecheckAiProviderError = RecheckAiProviderErrors[keyof RecheckAiProviderErrors];
+
+export type RecheckAiProviderResponses = {
+    /**
+     * Rechecked provider status
+     */
+    200: AiProviderStatus;
+};
+
+export type RecheckAiProviderResponse = RecheckAiProviderResponses[keyof RecheckAiProviderResponses];
+
+export type AcknowledgeAiProviderAlertData = {
+    body?: never;
+    path: {
+        alertId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/ai/provider/alerts/{alertId}/acknowledge';
+};
+
+export type AcknowledgeAiProviderAlertErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+};
+
+export type AcknowledgeAiProviderAlertError = AcknowledgeAiProviderAlertErrors[keyof AcknowledgeAiProviderAlertErrors];
+
+export type AcknowledgeAiProviderAlertResponses = {
+    /**
+     * Acknowledged
+     */
+    204: void;
+};
+
+export type AcknowledgeAiProviderAlertResponse = AcknowledgeAiProviderAlertResponses[keyof AcknowledgeAiProviderAlertResponses];
+
 export type DismissAiEditorialFindingData = {
     body: AiProposalDecisionRequest;
     path: {
@@ -2688,6 +2876,10 @@ export type SubmitKnowledgeFactErrors = {
      * Conflict or stale version
      */
     409: ApiError;
+    /**
+     * Request validation failed
+     */
+    422: ApiError;
 };
 
 export type SubmitKnowledgeFactError = SubmitKnowledgeFactErrors[keyof SubmitKnowledgeFactErrors];

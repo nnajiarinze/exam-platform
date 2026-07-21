@@ -13,8 +13,8 @@ management.endpoints.web.exposure.include: health,info
 ai:
   editorial:
     enabled: ${AI_EDITORIAL_ASSISTANT_ENABLED:false}
-    provider: ${AI_PROVIDER:FAKE}
-    model: ${AI_MODEL:deterministic-v1}
+    provider: ${AI_PROVIDER:GEMINI}
+    model: ${AI_GEMINI_MODEL:${AI_MODEL:gemini-3.1-flash-lite}}
     internal-api-key: ${AI_INTERNAL_API_KEY:}
     max-source-characters: ${AI_MAX_SOURCE_CHARACTERS:50000}
     max-proposals: ${AI_MAX_PROPOSALS:20}
@@ -22,3 +22,29 @@ ai:
     max-retries: ${AI_MAX_RETRIES:2}
     concurrency: ${AI_CONCURRENCY:2}
     request-limit-per-hour: ${AI_REQUEST_LIMIT_PER_HOUR:30}
+    allow-fake-in-production: ${AI_ALLOW_FAKE_IN_PRODUCTION:false}
+  usage-mode: ${AI_USAGE_MODE:FREE_ONLY}
+  paid-usage-enabled: ${AI_PAID_USAGE_ENABLED:false}
+  monthly-spend-limit-usd: ${AI_MONTHLY_SPEND_LIMIT_USD:0}
+  gemini:
+    api-key: ${AI_GEMINI_API_KEY:}
+    base-url: ${AI_GEMINI_BASE_URL:https://generativelanguage.googleapis.com}
+    api-version: ${AI_GEMINI_API_VERSION:v1beta}
+    expected-billing-tier: ${AI_GEMINI_EXPECTED_BILLING_TIER:}
+    project-label: ${AI_GEMINI_PROJECT_LABEL:}
+    timeout-seconds: ${AI_GEMINI_TIMEOUT_SECONDS:60}
+    max-concurrent-requests: ${AI_GEMINI_MAX_CONCURRENT_REQUESTS:1}
+    max-retries: ${AI_GEMINI_MAX_RETRIES:3}
+    max-output-tokens-per-request: ${AI_GEMINI_MAX_OUTPUT_TOKENS_PER_REQUEST:4096}
+    price-profile-version: ${AI_GEMINI_PRICE_PROFILE_VERSION:}
+    input-price-per-million-usd: ${AI_GEMINI_INPUT_PRICE_PER_MILLION_USD:0}
+    output-price-per-million-usd: ${AI_GEMINI_OUTPUT_PRICE_PER_MILLION_USD:0}
+    internal-rpm-limit: ${AI_GEMINI_INTERNAL_RPM_LIMIT:0}
+    internal-tpm-limit: ${AI_GEMINI_INTERNAL_TPM_LIMIT:0}
+    internal-rpd-limit: ${AI_GEMINI_INTERNAL_RPD_LIMIT:0}
+    internal-input-tokens-day-limit: ${AI_GEMINI_INTERNAL_INPUT_TOKENS_PER_DAY_LIMIT:0}
+    internal-output-tokens-day-limit: ${AI_GEMINI_INTERNAL_OUTPUT_TOKENS_PER_DAY_LIMIT:0}
+    warning-threshold-percent: ${AI_GEMINI_WARNING_THRESHOLD_PERCENT:70}
+    critical-threshold-percent: ${AI_GEMINI_CRITICAL_THRESHOLD_PERCENT:85}
+    stop-threshold-percent: ${AI_GEMINI_STOP_THRESHOLD_PERCENT:95}
+    quota-timezone: ${AI_QUOTA_TIMEZONE:America/Los_Angeles}

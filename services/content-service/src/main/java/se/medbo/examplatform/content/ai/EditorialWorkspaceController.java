@@ -95,4 +95,20 @@ final class EditorialWorkspaceController {
   Map<String, Object> dismissFinding(@PathVariable UUID id, @Valid @RequestBody Decision request) {
     return service.dismissFinding(id, request.reason(), request.version());
   }
+
+  @GetMapping("/provider/status")
+  Map<String,Object> providerStatus(){ return service.providerStatus(); }
+
+  @GetMapping("/provider/alerts")
+  List<Map<String,Object>> providerAlerts(){ return service.providerAlerts(); }
+
+  @PostMapping("/provider/disable")
+  Map<String,Object> disableProvider(){ return service.disableProvider(); }
+
+  @PostMapping("/provider/recheck")
+  Map<String,Object> recheckProvider(){ return service.recheckProvider(); }
+
+  @PostMapping("/provider/alerts/{id}/acknowledge")
+  @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.NO_CONTENT)
+  void acknowledgeProviderAlert(@PathVariable UUID id){ service.acknowledgeProviderAlert(id); }
 }

@@ -37,10 +37,10 @@ class Phase15bFakeProviderTest {
 
   @Test void splitSupportsDeterministicThreeWayAndFiveProposalMaximum() {
     var three = provider.execute(request(EditorialOperationType.SPLIT_FACT,
-        "A gäller; B gäller; C gäller.", "[[THREE_WAY_SPLIT]] A gäller; B gäller; C gäller."));
+        "Lag A gäller; lag B gäller; lag C gäller.", "[[THREE_WAY_SPLIT]] Lag A gäller; lag B gäller; lag C gäller."));
     assertThat(three.revisions()).hasSize(3);
     var five = provider.execute(request(EditorialOperationType.SPLIT_FACT,
-        "A; B; C; D; E; F.", "A; B; C; D; E; F."));
+        "Lag A gäller; lag B gäller; lag C gäller; lag D gäller; lag E gäller; lag F gäller.", "Lag A gäller; lag B gäller; lag C gäller; lag D gäller; lag E gäller; lag F gäller."));
     assertThat(five.revisions()).hasSize(5);
   }
 
@@ -55,6 +55,13 @@ class Phase15bFakeProviderTest {
     assertThat(ambiguity("Den ansvarar för skolan.", "Den ansvarar för skolan.")).isEqualTo("VAGUE_PRONOUN");
     assertThat(ambiguity("Alla får alltid stöd.", "Alla får alltid stöd.")).isEqualTo("OVERLY_ABSOLUTE_WORDING");
     assertThat(ambiguity("Riksdagen beslutar och regeringen verkställer.", "Riksdagen beslutar och regeringen verkställer.")).isEqualTo("COMPOUND_CLAIM");
+  }
+
+  @Test void suspiciousBroadClaimProducesAWarningInsteadOfKeepAsIs() {
+    var finding = provider.execute(request(EditorialOperationType.DETECT_AMBIGUITY,
+        "Municipalities do many things.", "Municipalities provide local services.")).findings().getFirst();
+    assertThat(finding.type()).isEqualTo("BROAD_GENERALISATION");
+    assertThat(finding.suggestedAction()).isEqualTo("REWRITE");
   }
 
   @Test void editorialNotesRemainAdvisoryAndNeverRecommendApprovalOrPublication() {
@@ -92,7 +99,7 @@ class Phase15bFakeProviderTest {
   private AiEditorialProviderClient.Request request(EditorialOperationType operation, String fact, String source) {
     return new AiEditorialProviderClient.Request(operation,
         List.of(new AiEditorialProviderClient.Target(factId, UUID.randomUUID(), 0, fact, "a".repeat(64))),
-        List.of(new AiEditorialProviderClient.Source(sourceId, source, "b".repeat(64))),
+        List.of(new AiEditorialProviderClient.Source(sourceId, "Test Source", source, "b".repeat(64))),
         UUID.randomUUID(), "Objective", "sv", null, null, 5, "test");
   }
 }

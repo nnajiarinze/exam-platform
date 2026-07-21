@@ -10,6 +10,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.sql.Types;
+import java.text.Normalizer;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -19,6 +20,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -26,9 +28,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.medbo.examplatform.content.shared.DomainException;
+import se.medbo.examplatform.content.knowledge.KnowledgeFactTextQualityValidator;
 
 @Service
 public class EditorialWorkspaceService {
+  private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(EditorialWorkspaceService.class);
   public enum Operation {
     REWRITE_FOR_CLARITY, SIMPLIFY_LANGUAGE, MAKE_ATOMIC, SPLIT_FACT,
     CHECK_SOURCE_SUPPORT, DETECT_AMBIGUITY, EDITORIAL_REVIEW_NOTES
@@ -44,23 +48,54 @@ public class EditorialWorkspaceService {
       .connectTimeout(java.time.Duration.ofSeconds(5)).build();
   private final String baseUrl;
   private final String apiKey;
+  private final EditorialGroundingAuditService groundingAudit;
+  private final MeterRegistry metrics;
+  private final KnowledgeFactTextQualityValidator textQuality;
 
   public EditorialWorkspaceService(
-      JdbcClient jdbc, ObjectMapper mapper,
+      JdbcClient jdbc, ObjectMapper mapper, EditorialGroundingAuditService groundingAudit, MeterRegistry metrics,
+      KnowledgeFactTextQualityValidator textQuality,
       @Value("${content.ai-service.base-url:http://localhost:8083}") String baseUrl,
       @Value("${content.ai-service.internal-api-key:}") String apiKey) {
     this.jdbc = jdbc;
     this.mapper = mapper;
     this.baseUrl = baseUrl;
     this.apiKey = apiKey;
+    this.groundingAudit = groundingAudit;
+    this.metrics = metrics;
+    this.textQuality = textQuality;
   }
 
   public Map<String, Object> create(Create input) {
     configured();
     boolean mutationPreparation = List.of(Operation.REWRITE_FOR_CLARITY, Operation.SIMPLIFY_LANGUAGE, Operation.SPLIT_FACT).contains(input.operation());
     var target = mutationPreparation ? editableTarget(input.targetKnowledgeFactId()) : analysisTarget(input.targetKnowledgeFactId());
+    var validation = textQuality.validate(String.valueOf(target.get("canonicalStatement")));
+    if (validation.quality() == KnowledgeFactTextQualityValidator.Quality.INVALID) {
+      groundingAudit.rejected(input.targetKnowledgeFactId(), "AI_EDITORIAL_INPUT_INVALID", null);
+      metrics.counter("ai.editorial.input.blocked", "quality", "invalid", "operation", input.operation().name()).increment();
+      LOG.warn("ai_editorial_input_blocked factId={} actor={} operation={} quality={} issues={}", input.targetKnowledgeFactId(), actor(), input.operation(), validation.quality(), validation.issues().stream().map(KnowledgeFactTextQualityValidator.Issue::code).toList());
+      throw new DomainException(HttpStatus.UNPROCESSABLE_ENTITY, "AI_EDITORIAL_INPUT_INVALID",
+          "The Knowledge Fact does not appear to contain meaningful factual content. Edit and save the fact before running AI editorial tools",
+          validation.issues().stream().map(issue -> (Object) Map.of("code", issue.code(), "message", issue.message(),
+              "quality", validation.quality().name(), "recommendedAction", "EDIT_FACT")).toList());
+    }
+    if (validation.quality() == KnowledgeFactTextQualityValidator.Quality.SUSPICIOUS) {
+      metrics.counter("ai.editorial.input.detected", "quality", "suspicious", "operation", input.operation().name()).increment();
+      if (!List.of(Operation.DETECT_AMBIGUITY, Operation.EDITORIAL_REVIEW_NOTES, Operation.CHECK_SOURCE_SUPPORT).contains(input.operation()))
+        throw new DomainException(HttpStatus.UNPROCESSABLE_ENTITY, "AI_EDITORIAL_INPUT_SUSPICIOUS",
+            "The Knowledge Fact is meaningful but too vague for a transformation. Run an analysis operation or improve the draft first");
+    }
     boolean sourcesRequired = input.operation() != Operation.DETECT_AMBIGUITY;
     var sources = sourceContent(uuid(target.get("currentVersionId")), sourcesRequired);
+    if (List.of(Operation.REWRITE_FOR_CLARITY, Operation.SIMPLIFY_LANGUAGE).contains(input.operation())
+        && sources.stream().noneMatch(source -> plausiblySupports(String.valueOf(target.get("canonicalStatement")), String.valueOf(source.get("contentText")))))
+      {
+        groundingAudit.rejected(input.targetKnowledgeFactId(), "AI_EDITORIAL_INSUFFICIENT_EVIDENCE", null);
+        metrics.counter("ai.editorial.grounding.rejected", "reason", "pre_generation_insufficient_evidence").increment();
+        throw new DomainException(HttpStatus.UNPROCESSABLE_ENTITY, "AI_EDITORIAL_INSUFFICIENT_EVIDENCE",
+            "The linked Sources do not plausibly support this fact. Review linked Sources or run Check Source Support first");
+      }
     var payload = new LinkedHashMap<String, Object>();
     payload.put("operation", input.operation().name());
     payload.put("targets", List.of(Map.of(
@@ -70,7 +105,7 @@ public class EditorialWorkspaceService {
         "text", target.get("canonicalStatement"),
         "checksum", checksum((String) target.get("canonicalStatement")))));
     payload.put("sources", sources.stream().map(source -> Map.of(
-        "sourceId", source.get("id"), "text", source.get("contentText"),
+        "sourceId", source.get("id"), "title", source.get("title"), "text", source.get("contentText"),
         "checksum", source.get("contentChecksum"))).toList());
     payload.put("learningObjectiveId", target.get("learningObjectiveId"));
     payload.put("objectiveTitle", target.get("learningObjectiveTitle"));
@@ -88,6 +123,12 @@ public class EditorialWorkspaceService {
     authorize(result);
     return result;
   }
+
+  public Map<String,Object> providerStatus(){ return get("/internal/v1/provider/status"); }
+  public List<Map<String,Object>> providerAlerts(){ return getList("/internal/v1/provider/alerts"); }
+  public Map<String,Object> disableProvider(){ return post("/internal/v1/provider/disable",Map.of("actor",actor())); }
+  public Map<String,Object> recheckProvider(){ return post("/internal/v1/provider/recheck",Map.of("actor",actor())); }
+  public void acknowledgeProviderAlert(UUID id){ postWithoutResponse("/internal/v1/provider/alerts/"+id+"/acknowledge",Map.of("actor",actor())); }
 
   public List<Map<String, Object>> proposals(UUID id) {
     job(id);
@@ -144,6 +185,9 @@ public class EditorialWorkspaceService {
     validateSnapshot(target, proposal);
     String finalText = String.valueOf(proposal.get("edited_text")).trim();
     validateText(finalText);
+    if (noMeaningfulChange(String.valueOf(target.get("canonical_statement")), finalText))
+      throw conflict("AI_EDITORIAL_NO_MEANINGFUL_CHANGE", "The final text does not meaningfully differ from the current fact");
+    validateFinalGrounding(proposalId, proposal, finalText, uuid(target.get("current_version_id")));
     long duplicate = jdbc.sql("SELECT count(*) FROM knowledge_fact WHERE learning_objective_id=:objective AND id<>:id AND status<>'RETIRED' AND lower(regexp_replace(trim(canonical_statement),'\\s+',' ','g'))=:text")
         .param("objective", target.get("learning_objective_id")).param("id", factId)
         .param("text", normalize(finalText)).query(Long.class).single();
@@ -161,7 +205,7 @@ public class EditorialWorkspaceService {
     var sourceRows = sourceContent(factVersionId, true);
     jdbc.sql("INSERT INTO knowledge_fact_ai_editorial_provenance(id,knowledge_fact_version_id,operation_type,generation_job_id,proposal_id,acceptance_action,provider,model,prompt_version,generated_at,target_fact_ids,target_fact_version_ids,target_content_checksums,source_ids,source_checksums,original_content_checksum,original_content,proposed_content,final_accepted_content,edited_before_acceptance,edit_count,edit_distance,final_text_checksum,requesting_user_id,accepting_user_id,accepted_at,source_evidence,warnings,provider_request_id,input_tokens,output_tokens) VALUES(:id,:version,:operation,:job,:proposal,'UPDATE_EXISTING_DRAFT',:provider,:model,:prompt,:generated,CAST(:targetIds AS jsonb),CAST(:targetVersions AS jsonb),CAST(:targetChecksums AS jsonb),CAST(:sourceIds AS jsonb),CAST(:sourceChecksums AS jsonb),:originalChecksum,:original,:proposed,:final,:edited,:editCount,NULL,:finalChecksum,:requester,:actor,:now,CAST(:evidence AS jsonb),CAST(:warnings AS jsonb),:providerRequest,:inputTokens,:outputTokens)")
         .param("id", UUID.randomUUID()).param("version", factVersionId)
-        .param("operation", proposal.get("operation_type")).param("job", proposal.get("generation_job_id"))
+        .param("operation", proposal.get("operation_type")).param("job", uuid(proposal.get("generation_job_id")))
         .param("proposal", proposalId).param("provider", proposal.get("provider"))
         .param("model", proposal.get("model")).param("prompt", proposal.get("prompt_version"))
         .param("generated", OffsetDateTime.parse(String.valueOf(proposal.get("generated_at"))))
@@ -174,8 +218,8 @@ public class EditorialWorkspaceService {
         .param("final", finalText).param("edited", !finalText.equals(proposal.get("proposed_text")))
         .param("editCount", proposal.get("edit_count")).param("finalChecksum", checksum(finalText))
         .param("requester", proposal.get("requested_by")).param("actor", actor()).param("now", now)
-        .param("evidence", String.valueOf(proposal.get("source_evidence")))
-        .param("warnings", String.valueOf(proposal.get("warnings")))
+        .param("evidence", proposalJson(proposal,"evidence_json","source_evidence"))
+        .param("warnings", proposalJson(proposal,"warnings_json","warnings"))
         .param("providerRequest", proposal.get("provider_request_id"), Types.VARCHAR)
         .param("inputTokens", proposal.get("input_tokens"), Types.INTEGER)
         .param("outputTokens", proposal.get("output_tokens"), Types.INTEGER).update();
@@ -240,7 +284,7 @@ public class EditorialWorkspaceService {
           .param("id", versionId).param("fact", factId).param("text", text).param("actor", actor()).param("now", now).update();
       jdbc.sql("UPDATE knowledge_fact SET current_version_id=:version WHERE id=:fact")
           .param("version", versionId).param("fact", factId).update();
-      var evidence = this.<List<Map<String, Object>>>readJson(String.valueOf(proposal.get("source_evidence")));
+      var evidence = this.<List<Map<String, Object>>>readJson(proposalJson(proposal,"evidence_json","source_evidence"));
       var evidenceSourceIds = evidence.stream().map(item -> uuid(item.get("sourceId"))).distinct().toList();
       var currentSources = sourceContent(targetFactVersionId, true);
       if (!currentSources.stream().map(row -> uuid(row.get("id"))).toList().containsAll(evidenceSourceIds)) throw staleSource();
@@ -280,8 +324,8 @@ public class EditorialWorkspaceService {
         .param("proposed", proposal.get("proposed_text")).param("final", finalText)
         .param("edited", !finalText.equals(proposal.get("proposed_text"))).param("editCount", proposal.get("edit_count"))
         .param("finalChecksum", checksum(finalText)).param("requester", proposal.get("requested_by"))
-        .param("actor", actor()).param("now", now).param("evidence", String.valueOf(proposal.get("source_evidence")))
-        .param("warnings", String.valueOf(proposal.get("warnings"))).param("providerRequest", proposal.get("provider_request_id"), Types.VARCHAR)
+        .param("actor", actor()).param("now", now).param("evidence", proposalJson(proposal,"evidence_json","source_evidence"))
+        .param("warnings", proposalJson(proposal,"warnings_json","warnings")).param("providerRequest", proposal.get("provider_request_id"), Types.VARCHAR)
         .param("inputTokens", proposal.get("input_tokens"), Types.INTEGER).param("outputTokens", proposal.get("output_tokens"), Types.INTEGER)
         .param("siblings", json(siblingIds)).update();
   }
@@ -319,27 +363,37 @@ public class EditorialWorkspaceService {
   }
 
   private void validateSnapshot(Map<String, Object> target, Map<String, Object> proposal) {
-    boolean stale = !uuid(target.get("current_version_id")).equals(uuid(proposal.get("target_fact_version_id")))
-        || ((Number) target.get("version")).longValue() != ((Number) proposal.get("target_version")).longValue()
-        || !checksum((String) target.get("canonical_statement")).equals(proposal.get("original_checksum"))
-        || !"DRAFT".equals(target.get("status"))
-        || !List.of("UNREVIEWED", "REQUIRES_UPDATE").contains(target.get("review_status"));
-    if (stale) throw stale();
+    boolean versionIdMatches = uuid(target.get("current_version_id")).equals(uuid(proposal.get("target_fact_version_id")));
+    boolean aggregateVersionMatches = ((Number) target.get("version")).longValue() == ((Number) proposal.get("target_version")).longValue();
+    boolean checksumMatches = checksum((String) target.get("canonical_statement")).equals(String.valueOf(proposal.get("original_checksum")));
+    boolean lifecycleEditable = "DRAFT".equals(String.valueOf(target.get("status")));
+    boolean reviewEditable = List.of("UNREVIEWED", "REQUIRES_UPDATE").contains(String.valueOf(target.get("review_status")));
+    if (!(versionIdMatches && aggregateVersionMatches && checksumMatches && lifecycleEditable && reviewEditable)) {
+      LOG.warn("ai_editorial_stale_rejected proposalId={} targetFactId={} versionIdMatches={} aggregateVersionMatches={} checksumMatches={} lifecycleEditable={} reviewEditable={}",
+          proposal.get("id"), proposal.get("target_fact_id"), versionIdMatches, aggregateVersionMatches, checksumMatches, lifecycleEditable, reviewEditable);
+      throw stale();
+    }
     var currentSources = sourceContent(uuid(target.get("current_version_id")), true);
     Map<String, Object> context = readJson(String.valueOf(proposal.get("target_context")));
     @SuppressWarnings("unchecked")
     List<Map<String, Object>> snapshotSources = (List<Map<String, Object>>) context.get("sources");
-    if (snapshotSources == null || snapshotSources.size() != currentSources.size()) throw staleSource();
+    if (snapshotSources == null || snapshotSources.size() != currentSources.size()) {
+      LOG.warn("ai_editorial_source_snapshot_rejected proposalId={} snapshotCount={} currentCount={}", proposal.get("id"), snapshotSources==null?null:snapshotSources.size(), currentSources.size());
+      throw staleSource();
+    }
     var currentById = new java.util.HashMap<UUID, Object>();
     currentSources.forEach(source -> currentById.put(uuid(source.get("id")), source.get("contentChecksum")));
     for (var source : snapshotSources) {
       UUID sourceId = uuid(source.get("sourceId"));
-      if (!java.util.Objects.equals(currentById.get(sourceId), source.get("checksum"))) throw staleSource();
+      if (!java.util.Objects.equals(String.valueOf(currentById.get(sourceId)), String.valueOf(source.get("checksum")))) {
+        LOG.warn("ai_editorial_source_snapshot_rejected proposalId={} sourceId={} sourcePresent={} checksumMatches=false", proposal.get("id"), sourceId, currentById.containsKey(sourceId));
+        throw staleSource();
+      }
     }
   }
 
   private List<Map<String, Object>> sourceContent(UUID versionId, boolean required) {
-    var rows = jdbc.sql("SELECT s.id,s.content_text AS \"contentText\",s.content_checksum AS \"contentChecksum\",s.status FROM knowledge_fact_source k JOIN source_reference s ON s.id=k.source_reference_id WHERE k.knowledge_fact_version_id=:id ORDER BY s.id")
+    var rows = jdbc.sql("SELECT s.id,s.title,s.content_text AS \"contentText\",s.content_checksum AS \"contentChecksum\",s.status FROM knowledge_fact_source k JOIN source_reference s ON s.id=k.source_reference_id WHERE k.knowledge_fact_version_id=:id ORDER BY s.id")
         .param("id", versionId).query().listOfRows();
     boolean unavailable = rows.isEmpty() || rows.stream().anyMatch(r -> r.get("contentText") == null || r.get("contentChecksum") == null || "RETIRED".equals(r.get("status")));
     if (required && unavailable)
@@ -378,6 +432,62 @@ public class EditorialWorkspaceService {
   private void validateText(String text) {
     if (text.isBlank() || text.length() > 500 || text.contains("<"))
       throw new DomainException(HttpStatus.UNPROCESSABLE_ENTITY, "AI_EDITORIAL_OUTPUT_INVALID", "Proposal text is invalid");
+  }
+
+  private void validateFinalGrounding(UUID proposalId, Map<String, Object> proposal, String finalText, UUID factVersionId) {
+    var sources = sourceContent(factVersionId, true);
+    var byId = new java.util.HashMap<UUID, Map<String, Object>>();
+    sources.forEach(source -> byId.put(uuid(source.get("id")), source));
+    List<Map<String, Object>> evidence = readJson(proposalJson(proposal,"evidence_json","source_evidence"));
+    boolean grounded = false;
+    for (var item : evidence) {
+      UUID sourceId = uuid(item.get("sourceId"));
+      var source = byId.get(sourceId);
+      String quote = String.valueOf(item.get("quote"));
+      if (source == null) groundingFailure(proposal, proposalId, "AI_EDITORIAL_EVIDENCE_SOURCE_MISMATCH", "Proposal evidence is not linked to the target fact");
+      if (!String.valueOf(source.get("contentText")).contains(quote)) groundingFailure(proposal, proposalId, "AI_EDITORIAL_EVIDENCE_NOT_IN_SOURCE", "Proposal evidence no longer exists in the linked Source");
+      grounded |= plausiblySupports(finalText, quote);
+    }
+    if (!grounded) groundingFailure(proposal, proposalId, "AI_EDITORIAL_FINAL_TEXT_NOT_GROUNDED", "The final edited text is not plausibly supported by its evidence");
+  }
+
+  private void groundingFailure(Map<String,Object> proposal, UUID proposalId, String code, String message) {
+    groundingAudit.rejected(uuid(proposal.get("target_fact_id")), code, proposalId);
+    metrics.counter("ai.editorial.grounding.rejected", "reason", code.toLowerCase(Locale.ROOT)).increment();
+    throw new DomainException(HttpStatus.UNPROCESSABLE_ENTITY, code, message);
+  }
+
+  private boolean noMeaningfulChange(String original, String proposed) {
+    return normalizeMeaning(original).equals(normalizeMeaning(proposed));
+  }
+
+  private boolean plausiblySupports(String claim, String evidence) {
+    var claimTerms = terms(claim); var evidenceTerms = terms(evidence);
+    if (claimTerms.isEmpty() || evidenceTerms.isEmpty()) return false;
+    var overlap = new java.util.HashSet<>(claimTerms); overlap.retainAll(evidenceTerms);
+    int required = claimTerms.size() <= 3 ? 1 : Math.max(2, (int)Math.ceil(claimTerms.size() * 0.30));
+    return overlap.size() >= required;
+  }
+
+  private java.util.Set<String> terms(String value) {
+    var stop = java.util.Set.of("och","eller","att","av","i","på","för","med","som","en","ett","den","det","de","är","har","kan","om","till","från","samt");
+    var result = new java.util.HashSet<String>();
+    for (String token : normalizeMeaning(value).replaceAll("[^\\p{L}\\p{N}]+", " ").split(" "))
+      if (token.length() >= 3 && !stop.contains(token)) result.add(token);
+    return result;
+  }
+
+  private String normalizeMeaning(String value) {
+    return Normalizer.normalize(value == null ? "" : value, Normalizer.Form.NFC).toLowerCase(Locale.ROOT)
+        .replaceAll("[\\p{Z}\\s]+", " ").trim().replaceAll("[.!?;,.:]+$", "").trim();
+  }
+
+  private String proposalJson(Map<String,Object> proposal,String textKey,String fallbackKey) {
+    Object text=proposal.get(textKey);
+    if(text instanceof String value)return value;
+    Object fallback=proposal.get(fallbackKey);
+    if(fallback instanceof String value)return value;
+    return json(fallback);
   }
 
   private String checksum(String value) {
