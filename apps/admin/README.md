@@ -19,7 +19,8 @@ npm run dev
 Vite loads `.env.development`, which enables a non-production local identity.
 Copy `.env.example` to `.env.local` to override it. Supported values are:
 
-- `VITE_CONTENT_SERVICE_BASE_URL`: externally reachable Content Service URL.
+- `VITE_API_BASE_URL`: public HTTPS gateway origin; the app derives `/content`.
+- `VITE_CONTENT_SERVICE_BASE_URL`: legacy local-only direct service override.
 - `VITE_DEV_ADMIN_AUTH_ENABLED`: enables the local identity entry screen.
 - `VITE_DEV_ADMIN_ID`: local administrator identifier.
 - `VITE_DEV_ADMIN_NAME`: local display name.

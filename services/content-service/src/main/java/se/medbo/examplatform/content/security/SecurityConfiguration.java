@@ -79,6 +79,8 @@ class SecurityConfiguration {
             config.setAllowedOriginPatterns(origins);
             config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
             config.setAllowedHeaders(List.of("Accept", "Authorization", "Content-Type", DevelopmentAdminAuthenticationFilter.IDENTITY_HEADER, DevelopmentAdminAuthenticationFilter.ROLES_HEADER));
+            config.setAllowCredentials(false);
+            config.setMaxAge(3600L);
             source.registerCorsConfiguration("/api/**", config);
         return source;
     }

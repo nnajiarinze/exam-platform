@@ -1,0 +1,23 @@
+spring:
+  config:
+    activate:
+      on-profile: hosted | production
+  datasource:
+    url: ${AI_DATABASE_URL}
+    username: ${AI_DATABASE_USERNAME}
+    password: ${AI_DATABASE_PASSWORD}
+    hikari:
+      maximum-pool-size: ${AI_DB_MAX_POOL_SIZE:4}
+      minimum-idle: ${AI_DB_MIN_IDLE:1}
+      connection-timeout: ${AI_DB_CONNECTION_TIMEOUT_MS:10000}
+      validation-timeout: ${AI_DB_VALIDATION_TIMEOUT_MS:5000}
+      idle-timeout: ${AI_DB_IDLE_TIMEOUT_MS:300000}
+      max-lifetime: ${AI_DB_MAX_LIFETIME_MS:1200000}
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+server:
+  shutdown: graceful
+  forward-headers-strategy: native
+ai:
+  editorial:
+    allow-fake-in-production: false

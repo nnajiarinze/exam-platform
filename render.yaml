@@ -1,0 +1,120 @@
+# Render Blueprint for the hosted development environment. Secret values are set
+# in the Render dashboard; Supabase databases are intentionally external.
+services:
+  - type: web
+    name: citizenship-api-gateway
+    runtime: docker
+    region: frankfurt
+    plan: free
+    dockerfilePath: ./infrastructure/gateway/Dockerfile
+    dockerContext: .
+    healthCheckPath: /healthz
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: NGINX_ENVSUBST_FILTER
+        value: ^(PORT|CONTENT_UPSTREAM|LEARNING_UPSTREAM|IDENTITY_UPSTREAM)$
+      - key: CONTENT_UPSTREAM
+        fromService: { name: citizenship-content-service, type: web, property: hostport }
+      - key: LEARNING_UPSTREAM
+        fromService: { name: citizenship-learning-service, type: web, property: hostport }
+      - key: IDENTITY_UPSTREAM
+        fromService: { name: citizenship-identity, type: web, property: hostport }
+
+  - type: web
+    name: citizenship-content-service
+    runtime: docker
+    region: frankfurt
+    plan: free
+    dockerfilePath: ./services/content-service/Dockerfile
+    dockerContext: .
+    healthCheckPath: /actuator/health/readiness
+    envVars:
+      - { key: SPRING_PROFILES_ACTIVE, value: hosted }
+      - { key: PORT, value: 8080 }
+      - { key: CONTENT_DATABASE_URL, sync: false }
+      - { key: CONTENT_DATABASE_USERNAME, sync: false }
+      - { key: CONTENT_DATABASE_PASSWORD, sync: false }
+      - { key: CORS_ALLOWED_ORIGINS, sync: false }
+      - { key: OIDC_ISSUER_URI, sync: false }
+      - key: OIDC_INTERNAL_HOSTPORT
+        fromService: { name: citizenship-identity, type: web, property: hostport }
+      - { key: LEARNING_INTERNAL_API_KEY, sync: false }
+      - { key: EMAIL_PROVIDER, value: resend }
+      - { key: RESEND_API_KEY, sync: false }
+      - { key: RESEND_FROM_EMAIL, sync: false }
+      - { key: RESEND_FROM_NAME, value: Svea Study }
+      - { key: RESEND_REPLY_TO_EMAIL, sync: false }
+      - { key: AI_INTERNAL_API_KEY, sync: false }
+      - key: LEARNING_SERVICE_HOSTPORT
+        fromService: { name: citizenship-learning-service, type: web, property: hostport }
+      - key: AI_SERVICE_HOSTPORT
+        fromService: { name: citizenship-ai-service, type: web, property: hostport }
+
+  - type: web
+    name: citizenship-learning-service
+    runtime: docker
+    region: frankfurt
+    plan: free
+    dockerfilePath: ./services/learning-service/Dockerfile
+    dockerContext: .
+    healthCheckPath: /actuator/health/readiness
+    envVars:
+      - { key: SPRING_PROFILES_ACTIVE, value: hosted }
+      - { key: PORT, value: 8080 }
+      - { key: LEARNING_DATABASE_URL, sync: false }
+      - { key: LEARNING_DATABASE_USERNAME, sync: false }
+      - { key: LEARNING_DATABASE_PASSWORD, sync: false }
+      - { key: CORS_ALLOWED_ORIGINS, sync: false }
+      - { key: OIDC_ISSUER_URI, sync: false }
+      - key: OIDC_INTERNAL_HOSTPORT
+        fromService: { name: citizenship-identity, type: web, property: hostport }
+      - { key: LEARNING_INTERNAL_API_KEY, sync: false }
+
+  - type: web
+    name: citizenship-ai-service
+    runtime: docker
+    region: frankfurt
+    plan: free
+    dockerfilePath: ./services/ai-service/Dockerfile
+    dockerContext: .
+    healthCheckPath: /actuator/health/readiness
+    envVars:
+      - { key: SPRING_PROFILES_ACTIVE, value: hosted }
+      - { key: PORT, value: 8080 }
+      - { key: AI_DATABASE_URL, sync: false }
+      - { key: AI_DATABASE_USERNAME, sync: false }
+      - { key: AI_DATABASE_PASSWORD, sync: false }
+      - { key: AI_INTERNAL_API_KEY, sync: false }
+      - { key: AI_PROVIDER, value: GEMINI }
+      - { key: AI_GEMINI_API_KEY, sync: false }
+      - { key: AI_GEMINI_MODEL, sync: false }
+
+  - type: web
+    name: citizenship-identity
+    runtime: image
+    region: frankfurt
+    plan: free
+    image:
+      url: quay.io/keycloak/keycloak:26.3
+    dockerCommand: start --http-enabled=true --http-relative-path=/auth --proxy-headers=xforwarded
+    envVars:
+      - { key: KC_DB, value: postgres }
+      - { key: KC_DB_URL, sync: false }
+      - { key: KC_DB_USERNAME, sync: false }
+      - { key: KC_DB_PASSWORD, sync: false }
+      - { key: KC_HOSTNAME, sync: false }
+      - { key: KC_BOOTSTRAP_ADMIN_USERNAME, sync: false }
+      - { key: KC_BOOTSTRAP_ADMIN_PASSWORD, sync: false }
+
+  - type: web
+    name: citizenship-admin
+    runtime: static
+    rootDir: apps/admin
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - { key: VITE_API_BASE_URL, sync: false }
+      - { key: VITE_OIDC_AUTHORITY, sync: false }
+      - { key: VITE_OIDC_CLIENT_ID, value: admin-portal }
+      - { key: VITE_DEV_ADMIN_AUTH_ENABLED, value: false }

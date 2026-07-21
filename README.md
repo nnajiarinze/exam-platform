@@ -20,6 +20,10 @@ must own its runtime, dependencies, configuration, data boundaries, build, tests
 and deployment lifecycle. A public web application is intentionally out of scope
 for the first learner flow.
 
+## Hosted deployment
+
+The production-capable path uses Render with one public gateway and separately owned Neon PostgreSQL databases for Content, Learning, AI, and Keycloak. See [hosted deployment](docs/operations/hosted-deployment.md) and the secret-free [environment template](.env.example). Local Docker Compose remains the development workflow.
+
 ## Local demonstration data
 
 The guarded, deterministic development reset and seed workflow is documented in

@@ -342,6 +342,110 @@ export type KnowledgeFactAiProvenance = {
     outputTokens?: number | null;
 };
 
+export type AiQuestionGenerationOperation = 'GENERATE_QUESTIONS_FROM_FACT';
+
+export type AiQuestionGenerationResultType = 'QUESTIONS_PROPOSED' | 'INSUFFICIENT_GROUNDED_INFORMATION' | 'FACT_NOT_SUITABLE_FOR_QUESTION';
+
+export type AiQuestionGenerationRequest = {
+    proposalCount: number;
+    questionType?: QuestionType | null;
+    idempotencyKey: string;
+};
+
+export type AiQuestionGenerationJob = {
+    id: string;
+    operationType: AiQuestionGenerationOperation;
+    resultType?: AiQuestionGenerationResultType | null;
+    requestedBy: string;
+    requestedCount: number;
+    requestedQuestionType?: QuestionType | null;
+    targetKnowledgeFactId: string;
+    targetKnowledgeFactVersionId: string;
+    targetVersion: number;
+    targetChecksum: string;
+    proposalCount: number;
+    status: AiJobStatus;
+    provider: string;
+    model: string;
+    promptVersion: string;
+    createdAt: string;
+    startedAt?: string | null;
+    completedAt?: string | null;
+    failedAt?: string | null;
+    cancelledAt?: string | null;
+    retryCount: number;
+    inputTokens?: number | null;
+    outputTokens?: number | null;
+    totalTokens?: number | null;
+    providerRequestId?: string | null;
+    errorCode?: string | null;
+    errorMessage?: string | null;
+    version: number;
+};
+
+export type AiQuestionProposalStatus = 'PROPOSED' | 'REJECTED';
+
+export type AiQuestionProposalOption = {
+    id: string;
+    optionKey: string;
+    displayOrder: number;
+    text: string;
+    correct: boolean;
+    rationale?: string | null;
+};
+
+export type AiQuestionProposalEvidence = {
+    id: string;
+    evidenceType: 'KNOWLEDGE_FACT' | 'SOURCE';
+    sourceId?: string | null;
+    sourceTitle?: string | null;
+    sourceChecksum?: string | null;
+    supportedClaim: string;
+    quote?: string | null;
+    displayOrder: number;
+};
+
+export type AiQuestionProposal = {
+    id: string;
+    generationJobId: string;
+    proposalOrder: number;
+    operationType: AiQuestionGenerationOperation;
+    questionType: QuestionType;
+    questionText: string;
+    language: string;
+    answerOptions: Array<AiQuestionProposalOption>;
+    explanation: string;
+    rationale: string;
+    targetKnowledgeFactId: string;
+    targetKnowledgeFactVersionId: string;
+    targetVersion: number;
+    targetChecksum: string;
+    learningObjectiveId: string;
+    warnings: Array<string>;
+    evidence: Array<AiQuestionProposalEvidence>;
+    confidence?: 'HIGH' | 'MEDIUM' | 'LOW' | null;
+    validationStatus: 'VALID';
+    status: AiQuestionProposalStatus;
+    rejectionReason?: string | null;
+    rejectedBy?: string | null;
+    rejectedAt?: string | null;
+    provider: string;
+    model: string;
+    promptVersion: string;
+    providerRequestId?: string | null;
+    inputTokens?: number | null;
+    outputTokens?: number | null;
+    totalTokens?: number | null;
+    createdAt: string;
+    updatedAt: string;
+    version: number;
+};
+
+export type AiQuestionProposalRejection = {
+    reason?: string | null;
+    version: number;
+};
+
 export type AiEditorialOperation = 'REWRITE_FOR_CLARITY' | 'SIMPLIFY_LANGUAGE' | 'MAKE_ATOMIC' | 'SPLIT_FACT' | 'CHECK_SOURCE_SUPPORT' | 'DETECT_AMBIGUITY' | 'EDITORIAL_REVIEW_NOTES';
 
 export type AiEditorialRequest = {
@@ -2046,6 +2150,173 @@ export type GetKnowledgeFactAiProvenanceResponses = {
 };
 
 export type GetKnowledgeFactAiProvenanceResponse = GetKnowledgeFactAiProvenanceResponses[keyof GetKnowledgeFactAiProvenanceResponses];
+
+export type CreateAiQuestionGenerationJobData = {
+    body: AiQuestionGenerationRequest;
+    path: {
+        knowledgeFactId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/knowledge-facts/{knowledgeFactId}/ai-question-generation-jobs';
+};
+
+export type CreateAiQuestionGenerationJobErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Resource not found
+     */
+    404: ApiError;
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+    /**
+     * Request validation failed
+     */
+    422: ApiError;
+    /**
+     * AI rate limit exceeded
+     */
+    429: unknown;
+    /**
+     * AI feature unavailable
+     */
+    503: unknown;
+};
+
+export type CreateAiQuestionGenerationJobError = CreateAiQuestionGenerationJobErrors[keyof CreateAiQuestionGenerationJobErrors];
+
+export type CreateAiQuestionGenerationJobResponses = {
+    /**
+     * Queued question-generation job
+     */
+    202: AiQuestionGenerationJob;
+};
+
+export type CreateAiQuestionGenerationJobResponse = CreateAiQuestionGenerationJobResponses[keyof CreateAiQuestionGenerationJobResponses];
+
+export type GetAiQuestionGenerationJobData = {
+    body?: never;
+    path: {
+        jobId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/ai/question-generation-jobs/{jobId}';
+};
+
+export type GetAiQuestionGenerationJobErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Resource not found
+     */
+    404: ApiError;
+};
+
+export type GetAiQuestionGenerationJobError = GetAiQuestionGenerationJobErrors[keyof GetAiQuestionGenerationJobErrors];
+
+export type GetAiQuestionGenerationJobResponses = {
+    /**
+     * Job
+     */
+    200: AiQuestionGenerationJob;
+};
+
+export type GetAiQuestionGenerationJobResponse = GetAiQuestionGenerationJobResponses[keyof GetAiQuestionGenerationJobResponses];
+
+export type ListAiQuestionProposalsData = {
+    body?: never;
+    path: {
+        jobId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/ai/question-generation-jobs/{jobId}/proposals';
+};
+
+export type ListAiQuestionProposalsErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type ListAiQuestionProposalsError = ListAiQuestionProposalsErrors[keyof ListAiQuestionProposalsErrors];
+
+export type ListAiQuestionProposalsResponses = {
+    /**
+     * Question proposals
+     */
+    200: Array<AiQuestionProposal>;
+};
+
+export type ListAiQuestionProposalsResponse = ListAiQuestionProposalsResponses[keyof ListAiQuestionProposalsResponses];
+
+export type CancelAiQuestionGenerationJobData = {
+    body?: never;
+    path: {
+        jobId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/ai/question-generation-jobs/{jobId}/cancel';
+};
+
+export type CancelAiQuestionGenerationJobErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type CancelAiQuestionGenerationJobError = CancelAiQuestionGenerationJobErrors[keyof CancelAiQuestionGenerationJobErrors];
+
+export type CancelAiQuestionGenerationJobResponses = {
+    /**
+     * Cancelled or cancellation requested
+     */
+    200: AiQuestionGenerationJob;
+};
+
+export type CancelAiQuestionGenerationJobResponse = CancelAiQuestionGenerationJobResponses[keyof CancelAiQuestionGenerationJobResponses];
+
+export type RejectAiQuestionProposalData = {
+    body: AiQuestionProposalRejection;
+    path: {
+        proposalId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/ai/question-proposals/{proposalId}/reject';
+};
+
+export type RejectAiQuestionProposalErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type RejectAiQuestionProposalError = RejectAiQuestionProposalErrors[keyof RejectAiQuestionProposalErrors];
+
+export type RejectAiQuestionProposalResponses = {
+    /**
+     * Rejected proposal
+     */
+    200: AiQuestionProposal;
+};
+
+export type RejectAiQuestionProposalResponse = RejectAiQuestionProposalResponses[keyof RejectAiQuestionProposalResponses];
 
 export type CreateAiEditorialJobData = {
     body: AiEditorialRequest;

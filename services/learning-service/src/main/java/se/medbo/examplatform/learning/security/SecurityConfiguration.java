@@ -44,6 +44,6 @@ class SecurityConfiguration {
         });
         return converter;
     }
-    @Bean CorsConfigurationSource corsConfigurationSource(@Value("${learning.identity.allowed-origins:http://localhost:*,http://127.0.0.1:*}")List<String> origins){var c=new CorsConfiguration();c.setAllowedOriginPatterns(origins);c.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));c.setAllowedHeaders(List.of("Authorization","Content-Type","X-Learner-Identity","X-Internal-Api-Key"));var source=new UrlBasedCorsConfigurationSource();source.registerCorsConfiguration("/**",c);return source;}
+    @Bean CorsConfigurationSource corsConfigurationSource(@Value("${learning.identity.allowed-origins:http://localhost:*,http://127.0.0.1:*}")List<String> origins){var c=new CorsConfiguration();c.setAllowedOriginPatterns(origins);c.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));c.setAllowedHeaders(List.of("Authorization","Content-Type","X-Learner-Identity","X-Internal-Api-Key"));c.setAllowCredentials(false);c.setMaxAge(3600L);var source=new UrlBasedCorsConfigurationSource();source.registerCorsConfiguration("/**",c);return source;}
     private static void write(HttpServletResponse response,ObjectMapper mapper,int status,String code,String message)throws java.io.IOException{response.setStatus(status);response.setContentType(MediaType.APPLICATION_JSON_VALUE);mapper.writeValue(response.getOutputStream(),java.util.Map.of("code",code,"message",message,"errors",List.of()));}
 }

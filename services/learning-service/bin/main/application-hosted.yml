@@ -1,0 +1,31 @@
+spring:
+  config:
+    activate:
+      on-profile: hosted | production
+  datasource:
+    url: ${LEARNING_DATABASE_URL}
+    username: ${LEARNING_DATABASE_USERNAME}
+    password: ${LEARNING_DATABASE_PASSWORD}
+    hikari:
+      maximum-pool-size: ${LEARNING_DB_MAX_POOL_SIZE:5}
+      minimum-idle: ${LEARNING_DB_MIN_IDLE:1}
+      connection-timeout: ${LEARNING_DB_CONNECTION_TIMEOUT_MS:10000}
+      validation-timeout: ${LEARNING_DB_VALIDATION_TIMEOUT_MS:5000}
+      idle-timeout: ${LEARNING_DB_IDLE_TIMEOUT_MS:300000}
+      max-lifetime: ${LEARNING_DB_MAX_LIFETIME_MS:1200000}
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://${OIDC_INTERNAL_HOSTPORT}/auth/realms/exam-platform/protocol/openid-connect/certs
+server:
+  shutdown: graceful
+  forward-headers-strategy: native
+learning:
+  identity:
+    development-header-enabled: false
+    allowed-origins: ${CORS_ALLOWED_ORIGINS}
+email:
+  provider: ${EMAIL_PROVIDER:resend}

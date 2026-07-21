@@ -12,13 +12,16 @@ export interface AdminEnvironment {
 }
 
 export function readEnvironment(source: Record<string, string | boolean | undefined>): AdminEnvironment {
-  const baseUrl = typeof source.VITE_CONTENT_SERVICE_BASE_URL === 'string' ? source.VITE_CONTENT_SERVICE_BASE_URL.trim().replace(/\/$/, '') : '';
+  const publicApiBaseUrl = typeof source.VITE_API_BASE_URL === 'string' ? source.VITE_API_BASE_URL.trim().replace(/\/+$/, '') : '';
+  const legacyBaseUrl = typeof source.VITE_CONTENT_SERVICE_BASE_URL === 'string' ? source.VITE_CONTENT_SERVICE_BASE_URL.trim().replace(/\/+$/, '') : '';
+  const baseUrl = publicApiBaseUrl ? `${publicApiBaseUrl}/content` : legacyBaseUrl;
   if (baseUrl) {
     try {
       const parsed = new URL(baseUrl);
       if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') throw new Error('unsupported protocol');
-    } catch { throw new Error('VITE_CONTENT_SERVICE_BASE_URL must be an absolute URL using HTTP(S)'); }
+    } catch { throw new Error('VITE_API_BASE_URL must be an absolute URL using HTTP(S)'); }
   }
+  if (source.PROD === true && (!publicApiBaseUrl || /localhost|127\.0\.0\.1/i.test(publicApiBaseUrl))) throw new Error('Production requires a non-local VITE_API_BASE_URL');
   const enabled = source.VITE_DEV_ADMIN_AUTH_ENABLED === true || source.VITE_DEV_ADMIN_AUTH_ENABLED === 'true';
   const roles = typeof source.VITE_DEV_ADMIN_ROLES === 'string' ? source.VITE_DEV_ADMIN_ROLES.split(',').map((role) => role.trim()).filter(Boolean) : [];
   const reviewerRoles = typeof source.VITE_DEV_REVIEWER_ROLES === 'string' ? source.VITE_DEV_REVIEWER_ROLES.split(',').map((role) => role.trim()).filter(Boolean) : [];
@@ -37,7 +40,7 @@ export function readEnvironment(source: Record<string, string | boolean | undefi
     developmentReviewerId: typeof source.VITE_DEV_REVIEWER_ID === 'string' ? source.VITE_DEV_REVIEWER_ID : undefined,
     developmentReviewerName: typeof source.VITE_DEV_REVIEWER_NAME === 'string' ? source.VITE_DEV_REVIEWER_NAME : undefined,
     developmentReviewerRoles: reviewerRoles,
-    oidcAuthority: typeof source.VITE_OIDC_AUTHORITY === 'string' ? source.VITE_OIDC_AUTHORITY.replace(/\/$/,'') : 'http://localhost:8090/realms/exam-platform',
+    oidcAuthority: typeof source.VITE_OIDC_AUTHORITY === 'string' ? source.VITE_OIDC_AUTHORITY.replace(/\/$/,'') : publicApiBaseUrl ? `${publicApiBaseUrl}/auth/realms/exam-platform` : '',
     oidcClientId: typeof source.VITE_OIDC_CLIENT_ID === 'string' ? source.VITE_OIDC_CLIENT_ID : 'admin-portal',
   };
 }

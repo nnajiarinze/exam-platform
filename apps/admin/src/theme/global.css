@@ -343,6 +343,9 @@ h3 {
 .proposal-grid blockquote footer { color:var(--muted); margin-top:0.4rem; }
 .ai-editorial { margin-top:1.5rem; }
 .ai-editorial-proposal { border:1px solid var(--border); }
+.question-proposal-options { display:grid; gap:0.65rem; padding-left:1.5rem; }
+.question-proposal-options li { border:1px solid var(--border); border-radius:var(--radius-sm); padding:0.75rem; }
+.question-proposal-correct { background:var(--surface-low); border-color:var(--primary) !important; }
 .ai-comparison { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
 .ai-comparison > div { background:var(--surface-low); border-radius:var(--radius-md); padding:1rem; }
 .ai-comparison textarea { width:100%; }

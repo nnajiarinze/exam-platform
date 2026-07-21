@@ -97,6 +97,26 @@ class ContentServiceIntegrationTest {
     }
 
     @Test
+    void questionGenerationEndpointIsRegisteredAndEnforcesServerSideRoles() throws Exception {
+        var factId=java.util.UUID.randomUUID();
+        mvc.perform(post("/api/v1/admin/knowledge-facts/"+factId+"/ai-question-generation-jobs")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"proposalCount\":3,\"questionType\":\"SINGLE_CHOICE\",\"idempotencyKey\":\"test\"}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("AUTHENTICATION_REQUIRED"));
+        mvc.perform(post("/api/v1/admin/knowledge-facts/"+factId+"/ai-question-generation-jobs")
+                        .headers(reviewer()).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"proposalCount\":3,\"questionType\":\"SINGLE_CHOICE\",\"idempotencyKey\":\"test\"}"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        mvc.perform(post("/api/v1/admin/knowledge-facts/"+factId+"/ai-question-generation-jobs")
+                        .headers(author()).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"proposalCount\":4,\"questionType\":\"SINGLE_CHOICE\",\"idempotencyKey\":\"test\"}"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+    }
+
+    @Test
     void reviewerCanReachAnalysisJobEndpointButCannotAcceptSplitProposals() throws Exception {
         mvc.perform(post("/api/v1/admin/ai/editorial-jobs")
                         .header("X-Admin-Identity", "reviewer-1")

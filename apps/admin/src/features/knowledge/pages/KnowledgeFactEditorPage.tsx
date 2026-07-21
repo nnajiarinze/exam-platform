@@ -27,6 +27,7 @@ import { useAuth } from "../../../app/auth/AuthContext";
 import { can, Permission } from "../../../app/permissions/permissions";
 import { SafeDeleteDialog } from "../../../components/SafeDeleteDialog";
 import { AiEditorialWorkspace } from "../../ai/components/AiEditorialWorkspace";
+import { AiQuestionGenerationWorkspace } from "../../ai/components/AiQuestionGenerationWorkspace";
 import { validateEditorialInput } from "../../ai/editorialInputValidation";
 
 export function KnowledgeFactEditorPage() {
@@ -280,6 +281,17 @@ export function KnowledgeFactEditorPage() {
             fact={fact.data}
             enabled={author || reviewer}
             canMutate={author}
+            sourcesReady={fact.data.sourceIds.every((sourceId) =>
+              Boolean(sources.data?.items.find((source) => source.id === sourceId)?.contentChecksum),
+            )}
+          />
+        )}
+        {edit && fact.data && (
+          <AiQuestionGenerationWorkspace
+            key={`questions:${fact.data.id}:${fact.data.currentVersionId}:${fact.data.version}`}
+            fact={fact.data}
+            canGenerate={author}
+            canInspect={author || reviewer}
             sourcesReady={fact.data.sourceIds.every((sourceId) =>
               Boolean(sources.data?.items.find((source) => source.id === sourceId)?.contentChecksum),
             )}

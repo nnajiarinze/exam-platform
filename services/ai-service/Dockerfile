@@ -1,5 +1,11 @@
+FROM eclipse-temurin:21-jdk AS build
+WORKDIR /workspace
+COPY . .
+RUN ./gradlew :services:ai-service:bootJar --no-daemon
+
 FROM eclipse-temurin:21-jre
 WORKDIR /app
-COPY build/libs/*.jar app.jar
+COPY --from=build /workspace/services/ai-service/build/libs/ai-service-*.jar app.jar
+USER 65532:65532
 EXPOSE 8080
-ENTRYPOINT ["java","-jar","app.jar"]
+ENTRYPOINT ["java","-jar","/app/app.jar"]

@@ -13,6 +13,7 @@ import org.springframework.boot.testcontainers.service.connection.ServiceConnect
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -40,9 +41,25 @@ class AiEditorialIntegrationTest {
   @Test
   void migrationsCreateThePersistentEditorialWorkspace() {
     assertThat(jdbc.sql("SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank")
-        .query(String.class).list()).containsExactly("1", "2", "3", "4", "5", "6");
-    assertThat(jdbc.sql("SELECT to_regclass('public.ai_editorial_target') IS NOT NULL AND to_regclass('public.ai_editorial_proposal') IS NOT NULL AND to_regclass('public.ai_editorial_finding') IS NOT NULL AND to_regclass('public.ai_editorial_validation_metric') IS NOT NULL AND to_regclass('public.ai_quota_profile') IS NOT NULL AND to_regclass('public.ai_quota_reservation') IS NOT NULL AND to_regclass('public.ai_provider_circuit') IS NOT NULL AND to_regclass('public.ai_provider_alert') IS NOT NULL")
+        .query(String.class).list()).containsExactly("1", "2", "3", "4", "5", "6", "7", "8");
+    assertThat(jdbc.sql("SELECT to_regclass('public.ai_editorial_target') IS NOT NULL AND to_regclass('public.ai_editorial_proposal') IS NOT NULL AND to_regclass('public.ai_editorial_finding') IS NOT NULL AND to_regclass('public.ai_editorial_validation_metric') IS NOT NULL AND to_regclass('public.ai_quota_profile') IS NOT NULL AND to_regclass('public.ai_quota_reservation') IS NOT NULL AND to_regclass('public.ai_provider_circuit') IS NOT NULL AND to_regclass('public.ai_provider_alert') IS NOT NULL AND to_regclass('public.ai_question_proposal') IS NOT NULL AND to_regclass('public.ai_question_proposal_option') IS NOT NULL")
         .query(Boolean.class).single()).isTrue();
+  }
+
+  @Test
+  void approvedSnapshotCanProducePersistentQuestionProposalsWithoutCanonicalWrites() throws Exception {
+    var response=mvc.perform(post("/internal/v1/question-generation/jobs")
+        .header("X-Internal-Api-Key","test-internal-key").contentType(MediaType.APPLICATION_JSON).content("""
+        {"target":{"knowledgeFactId":"11111111-1111-1111-1111-111111111111","knowledgeFactVersionId":"22222222-2222-2222-2222-222222222222","version":1,"text":"Riksdagen beslutar om lagar.","checksum":"f46784f3035aa325c8f3463bb2d34f0ebaf7861181506fb98a85fa90fc544a25","language":"sv"},
+         "context":{"learningObjectiveId":"33333333-3333-3333-3333-333333333333","learningObjectiveTitle":"Demokrati","learningObjectiveDescription":null,"topicId":"44444444-4444-4444-4444-444444444444","topicTitle":"Styrelseskick","subjectId":"55555555-5555-5555-5555-555555555555","subjectTitle":"Samhälle","examId":"66666666-6666-6666-6666-666666666666","examVersionId":"77777777-7777-7777-7777-777777777777","sources":[{"sourceId":"88888888-8888-8888-8888-888888888888","title":"Riksdagen","checksum":"25467c5617b6223429b5763106eebd724b90a9237c37466a86b4caa9f2262670","contentExcerpt":"Riksdagen beslutar om lagar och om statens budget."}]},
+         "proposalCount":3,"questionType":"SINGLE_CHOICE","requestedBy":"author-questions","idempotencyKey":"question-generation-integration-1"}
+        """)) .andExpect(status().isAccepted()).andExpect(jsonPath("$.operationType").value("GENERATE_QUESTIONS_FROM_FACT")).andReturn().getResponse().getContentAsString();
+    UUID job=UUID.fromString(mapper.readTree(response).get("id").asText());
+    for(int attempt=0;attempt<30;attempt++){String state=jdbc.sql("SELECT status FROM ai_generation_job WHERE id=:id").param("id",job).query(String.class).single();if(List.of("COMPLETED","PARTIALLY_COMPLETED","FAILED").contains(state))break;Thread.sleep(100);}
+    assertThat(jdbc.sql("SELECT status FROM ai_generation_job WHERE id=:id").param("id",job).query(String.class).single()).isEqualTo("COMPLETED");
+    assertThat(jdbc.sql("SELECT count(*) FROM ai_question_proposal WHERE generation_job_id=:id").param("id",job).query(Long.class).single()).isEqualTo(3);
+    assertThat(jdbc.sql("SELECT count(*) FROM ai_question_proposal_option o JOIN ai_question_proposal p ON p.id=o.proposal_id WHERE p.generation_job_id=:id").param("id",job).query(Long.class).single()).isEqualTo(9);
+    assertThat(jdbc.sql("SELECT count(*) FROM ai_audit_event WHERE entity_type='AI_QUESTION_PROPOSAL'").query(Long.class).single()).isGreaterThanOrEqualTo(3);
   }
 
   @Test

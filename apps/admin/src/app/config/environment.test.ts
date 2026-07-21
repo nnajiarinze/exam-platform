@@ -5,6 +5,17 @@ describe('environment configuration', () => {
     expect(readEnvironment({ VITE_CONTENT_SERVICE_BASE_URL: 'https://content.example/', VITE_DEV_ADMIN_AUTH_ENABLED: 'true', VITE_DEV_ADMIN_ID: 'a', VITE_DEV_ADMIN_NAME: 'Admin', VITE_DEV_ADMIN_ROLES: 'CONTENT_AUTHOR', VITE_DEV_REVIEWER_ID: 'r', VITE_DEV_REVIEWER_NAME: 'Reviewer', VITE_DEV_REVIEWER_ROLES: 'CONTENT_REVIEWER' })).toMatchObject({ contentServiceBaseUrl: 'https://content.example', developmentAdminRoles: ['CONTENT_AUTHOR'], developmentReviewerRoles: ['CONTENT_REVIEWER'] });
   });
 
+  it('derives Content Service and OIDC routes from the public gateway', () => {
+    expect(readEnvironment({ VITE_API_BASE_URL: 'https://api.example.test/' })).toMatchObject({
+      contentServiceBaseUrl: 'https://api.example.test/content',
+      oidcAuthority: 'https://api.example.test/auth/realms/exam-platform',
+    });
+  });
+
+  it('rejects localhost in production', () => {
+    expect(() => readEnvironment({ PROD: true, VITE_API_BASE_URL: 'http://localhost:8088' })).toThrow(/non-local/);
+  });
+
   it('rejects invalid URLs', () => {
     expect(() => readEnvironment({ VITE_CONTENT_SERVICE_BASE_URL: 'localhost:8081' })).toThrow(/absolute URL/);
   });
