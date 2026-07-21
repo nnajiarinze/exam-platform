@@ -9,6 +9,34 @@ info:
 servers:
   - url: /
 paths:
+  /api/v1/me:
+    get:
+      operationId: getMyLearnerProfile
+      summary: Load or create the authenticated learner profile
+      tags: [Learner account]
+      security: [{ learnerBearer: [] }]
+      responses:
+        "200": {description: Current learner profile,content: {application/json: {schema: {$ref: "#/components/schemas/LearnerProfile"}}}}
+        "401": {$ref: "#/components/responses/Unauthorized"}
+        "403": {$ref: "#/components/responses/Forbidden"}
+    put:
+      operationId: updateMyLearnerProfile
+      summary: Update the current learner profile
+      tags: [Learner account]
+      security: [{ learnerBearer: [] }]
+      requestBody: {required: true,content: {application/json: {schema: {$ref: "#/components/schemas/UpdateLearnerProfile"}}}}
+      responses:
+        "200": {description: Updated learner profile,content: {application/json: {schema: {$ref: "#/components/schemas/LearnerProfile"}}}}
+        "401": {$ref: "#/components/responses/Unauthorized"}
+        "422": {$ref: "#/components/responses/Unprocessable"}
+    delete:
+      operationId: deleteMyLearnerAccount
+      summary: Anonymise and disable the current learner account
+      tags: [Learner account]
+      security: [{ learnerBearer: [] }]
+      responses:
+        "204": {description: Account anonymised and disabled}
+        "401": {$ref: "#/components/responses/Unauthorized"}
   /internal/v1/reports/learner-health:
     get:
       operationId: getInternalLearnerHealth
@@ -24,7 +52,7 @@ paths:
       summary: List active subjects and topics
       operationId: getSubjects
       tags: [Content projection]
-      security: [{ learnerIdentity: [] }]
+      security: [{ learnerBearer: [] }]
       parameters:
         - name: examId
           in: query
@@ -89,7 +117,7 @@ paths:
       summary: Create a practice session
       operationId: createPracticeSession
       tags: [Practice]
-      security: [{ learnerIdentity: [] }]
+      security: [{ learnerBearer: [] }]
       requestBody:
         required: true
         content:
@@ -112,7 +140,7 @@ paths:
       summary: Get a practice session
       operationId: getPracticeSession
       tags: [Practice]
-      security: [{ learnerIdentity: [] }]
+      security: [{ learnerBearer: [] }]
       responses:
         "200":
           description: Session owned by the current learner.
@@ -128,7 +156,7 @@ paths:
       summary: Get the next unanswered question
       operationId: getNextPracticeQuestion
       tags: [Practice]
-      security: [{ learnerIdentity: [] }]
+      security: [{ learnerBearer: [] }]
       responses:
         "200":
           description: Next unanswered question. Correctness and explanation are intentionally absent.
@@ -144,7 +172,7 @@ paths:
       summary: Submit one answer
       operationId: submitPracticeResponse
       tags: [Practice]
-      security: [{ learnerIdentity: [] }]
+      security: [{ learnerBearer: [] }]
       requestBody:
         required: true
         content:
@@ -165,7 +193,7 @@ paths:
       summary: List topic progress
       operationId: getTopicProgress
       tags: [Progress]
-      security: [{ learnerIdentity: [] }]
+      security: [{ learnerBearer: [] }]
       responses:
         "200":
           description: Basic topic aggregates; not a readiness score.
@@ -180,7 +208,7 @@ paths:
       summary: Start a mock examination from the active configured blueprint
       operationId: createMockExam
       tags: [Mock examinations]
-      security: [{ learnerIdentity: [] }]
+      security: [{ learnerBearer: [] }]
       requestBody:
         required: true
         content:
@@ -198,7 +226,7 @@ paths:
       summary: List finalized mock examination attempts
       operationId: getMockExamHistory
       tags: [Mock examinations]
-      security: [{ learnerIdentity: [] }]
+      security: [{ learnerBearer: [] }]
       responses:
         "200":
           description: Finalized attempts in reverse chronological order.
@@ -230,7 +258,7 @@ paths:
       summary: Get mock examination metadata and navigation state
       operationId: getMockExam
       tags: [Mock examinations]
-      security: [{ learnerIdentity: [] }]
+      security: [{ learnerBearer: [] }]
       responses:
         "200":
           description: Learner-owned mock examination attempt.
@@ -249,7 +277,7 @@ paths:
       summary: Get a mock examination question
       operationId: getMockExamQuestion
       tags: [Mock examinations]
-      security: [{ learnerIdentity: [] }]
+      security: [{ learnerBearer: [] }]
       responses:
         "200":
           description: Question without correctness or explanation.
@@ -264,7 +292,7 @@ paths:
       summary: Store or replace an answer before final submission
       operationId: submitMockExamResponse
       tags: [Mock examinations]
-      security: [{ learnerIdentity: [] }]
+      security: [{ learnerBearer: [] }]
       requestBody:
         required: true
         content:
@@ -289,7 +317,7 @@ paths:
       summary: Set or clear a review flag
       operationId: flagMockExamQuestion
       tags: [Mock examinations]
-      security: [{ learnerIdentity: [] }]
+      security: [{ learnerBearer: [] }]
       requestBody:
         required: true
         content:
@@ -309,7 +337,7 @@ paths:
       summary: Finalize and score a mock examination
       operationId: submitMockExam
       tags: [Mock examinations]
-      security: [{ learnerIdentity: [] }]
+      security: [{ learnerBearer: [] }]
       responses:
         "200":
           description: Permanently stored score and detailed results.
@@ -324,7 +352,7 @@ paths:
       summary: Get detailed results for a finalized mock examination
       operationId: getMockExamResults
       tags: [Mock examinations]
-      security: [{ learnerIdentity: [] }]
+      security: [{ learnerBearer: [] }]
       responses:
         "200":
           description: Stored score, topic breakdown, and incorrect-question review.
@@ -334,6 +362,11 @@ paths:
         "409": { $ref: "#/components/responses/Conflict" }
 components:
   securitySchemes:
+    learnerBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: OIDC access token with audience learning-api and LEARNER role.
     internalApiKey:
       type: apiKey
       in: header
@@ -362,6 +395,9 @@ components:
     Unauthorized:
       description: Authentication is absent or invalid.
       content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    Forbidden:
+      description: The authenticated account is not allowed to perform this operation.
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
     NotFound:
       description: Learner-owned or requested resource was not found.
       content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
@@ -372,6 +408,29 @@ components:
       description: Structurally valid request violates content or selection rules.
       content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
   schemas:
+    LearnerProfile:
+      type: object
+      required: [id,emailVerified,displayName,interfaceLanguage,explanationLanguage,accountStatus,onboardingCompleted,createdAt,updatedAt]
+      properties:
+        id: {type: string,format: uuid}
+        email: {type: [string,"null"],format: email}
+        emailVerified: {type: boolean}
+        displayName: {type: string}
+        interfaceLanguage: {type: string}
+        explanationLanguage: {type: string}
+        accountStatus: {type: string,enum: [ACTIVE,DISABLED,DELETED]}
+        onboardingCompleted: {type: boolean}
+        createdAt: {type: string,format: date-time}
+        updatedAt: {type: string,format: date-time}
+        deletedAt: {type: [string,"null"],format: date-time}
+    UpdateLearnerProfile:
+      type: object
+      required: [displayName,interfaceLanguage,explanationLanguage,onboardingCompleted]
+      properties:
+        displayName: {type: string,minLength: 1,maxLength: 200}
+        interfaceLanguage: {type: string,minLength: 1,maxLength: 35}
+        explanationLanguage: {type: string,minLength: 1,maxLength: 35}
+        onboardingCompleted: {type: boolean}
     Subject:
       type: object
       additionalProperties: false

@@ -1,22 +1,31 @@
 import { client } from './generated/client.gen';
-import { createMockExam, createPracticeSession, flagMockExamQuestion, getMockExam, getMockExamConfiguration, getMockExamHistory,
+import { createMockExam, createPracticeSession, deleteMyLearnerAccount, flagMockExamQuestion, getMockExam, getMockExamConfiguration, getMockExamHistory,
   getMockExamQuestion, getMockExamResults, getNextPracticeQuestion, getSubjects, getTopicProgress,
-  submitMockExam, submitMockExamResponse, submitPracticeResponse } from './generated/sdk.gen';
+  getMyLearnerProfile, submitMockExam, submitMockExamResponse, submitPracticeResponse } from './generated/sdk.gen';
 import type { CreatePracticeSessionRequest, SubmitAnswerRequest } from './generated/types.gen';
 import { appConfig } from './config';
+import { authenticationExpired, validAccessToken } from '../features/auth/authTokenStore';
 
 client.setConfig({ baseUrl: appConfig.learningBaseUrl, throwOnError: true });
+client.interceptors.request.use(async (request) => {
+  const token = await validAccessToken();
+  if (token) request.headers.set('Authorization', `Bearer ${token}`);
+  return request;
+});
 client.interceptors.response.use(async (response, request) => {
   if (__DEV__ && !response.ok) {
     const details = await response.clone().text();
     console.error(`[Learning Service] ${request.method} ${request.url} -> ${response.status}`, details);
   }
+  if (response.status === 401) authenticationExpired();
   return response;
 });
 
-const headers = (identity: string) => ({ 'X-Learner-Identity': identity });
+const headers = (identity: string) => appConfig.defaultLearnerIdentity && identity === appConfig.defaultLearnerIdentity ? ({ 'X-Learner-Identity': identity }) : undefined;
 
 export const learningApi = {
+  profile: async (identity: string) => (await getMyLearnerProfile({ headers: headers(identity), throwOnError: true })).data,
+  deleteAccount: async (identity: string) => (await deleteMyLearnerAccount({ headers: headers(identity), throwOnError: true })).data,
   subjects: async (identity: string) => (await getSubjects({ query: { examId: appConfig.examId }, headers: headers(identity), throwOnError: true })).data,
   createSession: async (identity: string, body: CreatePracticeSessionRequest) => (await createPracticeSession({ body, headers: headers(identity), throwOnError: true })).data,
   nextQuestion: async (identity: string, sessionId: string) => (await getNextPracticeQuestion({ path: { sessionId }, headers: headers(identity), throwOnError: true })).data,

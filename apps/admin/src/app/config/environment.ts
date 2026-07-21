@@ -7,6 +7,8 @@ export interface AdminEnvironment {
   developmentReviewerId?: string;
   developmentReviewerName?: string;
   developmentReviewerRoles: string[];
+  oidcAuthority: string;
+  oidcClientId: string;
 }
 
 export function readEnvironment(source: Record<string, string | boolean | undefined>): AdminEnvironment {
@@ -35,6 +37,8 @@ export function readEnvironment(source: Record<string, string | boolean | undefi
     developmentReviewerId: typeof source.VITE_DEV_REVIEWER_ID === 'string' ? source.VITE_DEV_REVIEWER_ID : undefined,
     developmentReviewerName: typeof source.VITE_DEV_REVIEWER_NAME === 'string' ? source.VITE_DEV_REVIEWER_NAME : undefined,
     developmentReviewerRoles: reviewerRoles,
+    oidcAuthority: typeof source.VITE_OIDC_AUTHORITY === 'string' ? source.VITE_OIDC_AUTHORITY.replace(/\/$/,'') : 'http://localhost:8090/realms/exam-platform',
+    oidcClientId: typeof source.VITE_OIDC_CLIENT_ID === 'string' ? source.VITE_OIDC_CLIENT_ID : 'admin-portal',
   };
 }
 

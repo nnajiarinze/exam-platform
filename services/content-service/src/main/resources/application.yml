@@ -9,6 +9,12 @@ spring:
     enabled: true
   jackson:
     default-property-inclusion: non_null
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${OIDC_ISSUER_URI:http://localhost:8090/realms/exam-platform}
+          jwk-set-uri: ${OIDC_JWK_SET_URI:http://localhost:8090/realms/exam-platform/protocol/openid-connect/certs}
 
 management:
   endpoints:
@@ -23,6 +29,8 @@ content:
   identity:
     development-header-enabled: ${CONTENT_DEV_IDENTITY_ENABLED:false}
     development-allowed-origins: ${CONTENT_DEV_ALLOWED_ORIGINS:http://localhost:*,http://127.0.0.1:*}
+  security:
+    audience: ${CONTENT_OIDC_AUDIENCE:content-api}
   learning-service:
     base-url: ${LEARNING_SERVICE_BASE_URL:http://localhost:8080}
     internal-api-key: ${LEARNING_INTERNAL_API_KEY:}

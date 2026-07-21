@@ -4,6 +4,27 @@ export type ClientOptions = {
     baseUrl: `${string}://${string}` | (string & {});
 };
 
+export type LearnerProfile = {
+    id: string;
+    email?: string | null;
+    emailVerified: boolean;
+    displayName: string;
+    interfaceLanguage: string;
+    explanationLanguage: string;
+    accountStatus: 'ACTIVE' | 'DISABLED' | 'DELETED';
+    onboardingCompleted: boolean;
+    createdAt: string;
+    updatedAt: string;
+    deletedAt?: string | null;
+};
+
+export type UpdateLearnerProfile = {
+    displayName: string;
+    interfaceLanguage: string;
+    explanationLanguage: string;
+    onboardingCompleted: boolean;
+};
+
 export type Subject = {
     id: string;
     name: string;
@@ -313,6 +334,89 @@ export type ContentSnapshotV1Schema = {
 export type SessionId = string;
 
 export type AttemptId = string;
+
+export type DeleteMyLearnerAccountData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/me';
+};
+
+export type DeleteMyLearnerAccountErrors = {
+    /**
+     * Authentication is absent or invalid.
+     */
+    401: Error;
+};
+
+export type DeleteMyLearnerAccountError = DeleteMyLearnerAccountErrors[keyof DeleteMyLearnerAccountErrors];
+
+export type DeleteMyLearnerAccountResponses = {
+    /**
+     * Account anonymised and disabled
+     */
+    204: void;
+};
+
+export type DeleteMyLearnerAccountResponse = DeleteMyLearnerAccountResponses[keyof DeleteMyLearnerAccountResponses];
+
+export type GetMyLearnerProfileData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/me';
+};
+
+export type GetMyLearnerProfileErrors = {
+    /**
+     * Authentication is absent or invalid.
+     */
+    401: Error;
+    /**
+     * The authenticated account is not allowed to perform this operation.
+     */
+    403: Error;
+};
+
+export type GetMyLearnerProfileError = GetMyLearnerProfileErrors[keyof GetMyLearnerProfileErrors];
+
+export type GetMyLearnerProfileResponses = {
+    /**
+     * Current learner profile
+     */
+    200: LearnerProfile;
+};
+
+export type GetMyLearnerProfileResponse = GetMyLearnerProfileResponses[keyof GetMyLearnerProfileResponses];
+
+export type UpdateMyLearnerProfileData = {
+    body: UpdateLearnerProfile;
+    path?: never;
+    query?: never;
+    url: '/api/v1/me';
+};
+
+export type UpdateMyLearnerProfileErrors = {
+    /**
+     * Authentication is absent or invalid.
+     */
+    401: Error;
+    /**
+     * Structurally valid request violates content or selection rules.
+     */
+    422: Error;
+};
+
+export type UpdateMyLearnerProfileError = UpdateMyLearnerProfileErrors[keyof UpdateMyLearnerProfileErrors];
+
+export type UpdateMyLearnerProfileResponses = {
+    /**
+     * Updated learner profile
+     */
+    200: LearnerProfile;
+};
+
+export type UpdateMyLearnerProfileResponse = UpdateMyLearnerProfileResponses[keyof UpdateMyLearnerProfileResponses];
 
 export type GetInternalLearnerHealthData = {
     body?: never;

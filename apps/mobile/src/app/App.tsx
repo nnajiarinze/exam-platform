@@ -3,9 +3,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootNavigator } from '../navigation/RootNavigator';
+import { AuthProvider } from '../features/auth/AuthContext';
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 2, staleTime: 30_000 }, mutations: { retry: 0 } } });
 
 export default function App() {
-  return <SafeAreaProvider><QueryClientProvider client={queryClient}><NavigationContainer><StatusBar style="dark" /><RootNavigator /></NavigationContainer></QueryClientProvider></SafeAreaProvider>;
+  return <SafeAreaProvider><QueryClientProvider client={queryClient}><AuthProvider><NavigationContainer><StatusBar style="dark" /><RootNavigator /></NavigationContainer></AuthProvider></QueryClientProvider></SafeAreaProvider>;
 }

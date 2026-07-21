@@ -339,7 +339,7 @@ def seed_blueprint(dataset: dict[str, object]) -> str:
     for index, subject in enumerate(dataset["subjects"]):
         topic = subject["topics"][0]
         allocations.append(f"({sql(stable_id('allocation', topic['code']))},{sql(BLUEPRINT_ID)},{sql(topic['id'])},4)")
-    learner = "INSERT INTO learner_profile(id,external_identity_id,display_name,interface_language,explanation_language,created_at,updated_at) VALUES(" + ",".join(map(sql, (DEMO_LEARNER_ID, "dev-learner-001", "Demo learner", "sv", "sv", FIXED_AT, FIXED_AT))) + ");"
+    learner = "INSERT INTO learner_profile(id,external_identity_id,email,email_verified,display_name,interface_language,explanation_language,account_status,onboarding_completed,created_at,updated_at) VALUES(" + ",".join(map(sql, (DEMO_LEARNER_ID, DEMO_LEARNER_ID, "learner@example.test", True, "Demo learner", "sv", "sv", "ACTIVE", True, FIXED_AT, FIXED_AT))) + ");"
     return "BEGIN; " + learner + " INSERT INTO mock_exam_blueprint(id,exam_id,name,total_questions,duration_minutes,passing_percentage,active,created_at,updated_at,description,randomize_questions,randomize_options,max_attempts_per_day,version) VALUES(" + ",".join(map(sql, (BLUEPRINT_ID, "swedish-citizenship", "Demonstrationsprov – inga officiella provregler", 20, 30, 70, True, FIXED_AT, FIXED_AT, "Lokalt demonstrationsprov för att testa hela flödet.", True, True, 10, 1))) + "); INSERT INTO mock_exam_topic_allocation(id,blueprint_id,external_topic_id,question_count) VALUES " + ",".join(allocations) + "; COMMIT;"
 
 

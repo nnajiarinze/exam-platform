@@ -20,7 +20,7 @@ export function HomeScreen({ navigation }: NativeStackScreenProps<RootStackParam
   const navigateTab = (tab: 'home' | 'topics' | 'exam' | 'progress') => { if (tab === 'topics') navigation.navigate('Topics'); else if (tab === 'exam') navigation.navigate('MockExam'); else if (tab === 'progress') navigation.navigate('Progress'); };
 
   return <View style={styles.page}><Screen bottomInset>
-    <AppHeader action="profile" onAction={() => navigation.navigate('Settings')} />
+    <AppHeader action="profile" onAction={() => navigation.navigate('Profile')} />
     <View style={styles.hero}><View style={styles.heroOrb} /><Text style={styles.heroTitle}>Welcome to Svea Study</Text><Text style={styles.heroBody}>Your path to Swedish citizenship starts here.</Text></View>
     <Text style={styles.sectionLabel}>STUDY NOW</Text>
     {sessionId && <Card><Text style={styles.resumeTitle}>Continue studying</Text><Text style={styles.muted}>Your current practice session is ready.</Text><Button label="Continue" icon={<Icon name="play" color={theme.colors.onPrimary} size={18} />} onPress={() => navigation.navigate('Question', { sessionId })} /></Card>}

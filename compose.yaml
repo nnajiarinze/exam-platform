@@ -1,4 +1,26 @@
 services:
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+  identity-provider:
+    image: quay.io/keycloak/keycloak:26.3
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: local-keycloak-admin
+      KC_HOSTNAME: ${OIDC_PUBLIC_BASE_URL:-http://localhost:8090}
+      KC_HTTP_ENABLED: "true"
+    ports:
+      - "8090:8080"
+    volumes:
+      - ./infrastructure/keycloak/exam-platform-realm.json:/opt/keycloak/data/import/exam-platform-realm.json:ro
+    depends_on:
+      mailpit:
+        condition: service_started
+
   content-database:
     image: postgres:16-alpine
     environment:
@@ -25,12 +47,17 @@ services:
       CONTENT_DEV_IDENTITY_ENABLED: "true"
       LEARNING_SERVICE_BASE_URL: http://learning-service:8080
       LEARNING_INTERNAL_API_KEY: ${LEARNING_INTERNAL_API_KEY:-local-development-only}
+      OIDC_ISSUER_URI: ${OIDC_PUBLIC_BASE_URL:-http://localhost:8090}/realms/exam-platform
+      OIDC_JWK_SET_URI: http://identity-provider:8080/realms/exam-platform/protocol/openid-connect/certs
+      CONTENT_OIDC_AUDIENCE: content-api
     ports:
       - "8082:8080"
     depends_on:
       content-database:
         condition: service_healthy
       learning-service:
+        condition: service_started
+      identity-provider:
         condition: service_started
 
   learning-database:
@@ -58,11 +85,16 @@ services:
       LEARNING_DATABASE_PASSWORD: learning
       LEARNING_DEV_IDENTITY_ENABLED: "true"
       LEARNING_INTERNAL_API_KEY: ${LEARNING_INTERNAL_API_KEY:-local-development-only}
+      OIDC_ISSUER_URI: ${OIDC_PUBLIC_BASE_URL:-http://localhost:8090}/realms/exam-platform
+      OIDC_JWK_SET_URI: http://identity-provider:8080/realms/exam-platform/protocol/openid-connect/certs
+      LEARNING_OIDC_AUDIENCE: learning-api
     ports:
       - "8080:8080"
     depends_on:
       learning-database:
         condition: service_healthy
+      identity-provider:
+        condition: service_started
 
 volumes:
   content-database-data:

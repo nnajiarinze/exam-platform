@@ -22,7 +22,7 @@ export function StatusBadge({ label, tone = 'neutral' }: { label: string; tone?:
 }
 export function Loading({ label = 'Loading…' }: { label?: string }) { return <View style={styles.center}><ActivityIndicator color={theme.colors.primary} /><Text style={styles.stateText}>{label}</Text></View>; }
 export function EmptyState({ message }: { message: string }) { return <Card><Text style={styles.stateText}>{message}</Text></Card>; }
-export function ErrorState({ message, retry }: { message: string; retry?: () => void }) { return <Card><Text accessibilityRole="alert" style={styles.error}>{message}</Text>{retry && <Button label="Try again" onPress={retry} variant="secondary" />}</Card>; }
+export function ErrorState({ message, retry, actionLabel, action }: { message: string; retry?: () => void; actionLabel?: string; action?: () => void }) { return <Card><Text accessibilityRole="alert" style={styles.error}>{message}</Text>{retry && <Button label="Try again" onPress={retry} variant="secondary" />}{actionLabel&&action?<Button label={actionLabel} onPress={action} variant="secondary"/>:null}</Card>; }
 
 const styles = StyleSheet.create({
   title: { color: theme.colors.text, ...theme.typography.heading },

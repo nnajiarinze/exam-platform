@@ -2,6 +2,7 @@ import { environment } from '../../app/config/environment';
 import { readDevelopmentAdmin } from '../../app/auth/authSession';
 import type { AdminIdentity } from '../../app/permissions/permissions';
 import { createClient, type Client } from '../generated/client';
+import { currentAccessToken } from '../../app/auth/oidc';
 
 interface ContentServiceClientOptions {
   baseUrl?: string;
@@ -13,7 +14,9 @@ interface ContentServiceClientOptions {
 export function createContentServiceClient(options: ContentServiceClientOptions): Client {
   const client = createClient({ baseUrl: options.baseUrl, fetch: options.fetch });
   client.interceptors.request.use((request) => {
-    if (!options.developmentAuthEnabled) return request;
+    if (!options.developmentAuthEnabled) {
+      const token=currentAccessToken();if(!token)return request;const headers=new Headers(request.headers);headers.set('Authorization',`Bearer ${token}`);return new Request(request,{headers});
+    }
     const admin = options.currentAdmin();
     if (!admin) return request;
     const headers = new Headers(request.headers);

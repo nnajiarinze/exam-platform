@@ -14,6 +14,12 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.jwt.JwtValidators;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -53,6 +59,7 @@ class SecurityConfiguration {
                 .exceptionHandling(errors -> errors
                         .authenticationEntryPoint((request, response, exception) -> writeError(mapper, response, 401, "AUTHENTICATION_REQUIRED", "Valid admin authentication is required"))
                         .accessDeniedHandler((request, response, exception) -> writeError(mapper, response, 403, "FORBIDDEN", "The administrator does not have a required role")))
+                .oauth2ResourceServer(oauth -> oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(adminJwtConverter())))
                 .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(rateLimitFilter, DevelopmentAdminAuthenticationFilter.class)
                 .addFilterBefore(correlationFilter, AdministrativeRateLimitFilter.class)
@@ -64,15 +71,17 @@ class SecurityConfiguration {
             @Value("${content.identity.development-header-enabled:false}") boolean developmentEnabled,
             @Value("${content.identity.development-allowed-origins:http://localhost:*,http://127.0.0.1:*}") List<String> origins) {
         var source = new UrlBasedCorsConfigurationSource();
-        if (developmentEnabled) {
-            var config = new CorsConfiguration();
+        var config = new CorsConfiguration();
             config.setAllowedOriginPatterns(origins);
             config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-            config.setAllowedHeaders(List.of("Accept", "Content-Type", DevelopmentAdminAuthenticationFilter.IDENTITY_HEADER, DevelopmentAdminAuthenticationFilter.ROLES_HEADER));
+            config.setAllowedHeaders(List.of("Accept", "Authorization", "Content-Type", DevelopmentAdminAuthenticationFilter.IDENTITY_HEADER, DevelopmentAdminAuthenticationFilter.ROLES_HEADER));
             source.registerCorsConfiguration("/api/**", config);
-        }
         return source;
     }
+
+    @Bean NimbusJwtDecoder jwtDecoder(@Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")String issuer,@Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")String jwks,@Value("${content.security.audience:content-api}")String audience){var decoder=NimbusJwtDecoder.withJwkSetUri(jwks).build();decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(JwtValidators.createDefaultWithIssuer(issuer),new AudienceValidator(audience)));return decoder;}
+
+    private static JwtAuthenticationConverter adminJwtConverter(){var converter=new JwtAuthenticationConverter();converter.setJwtGrantedAuthoritiesConverter(jwt->{Object access=jwt.getClaim("realm_access");if(!(access instanceof java.util.Map<?,?> map)||!(map.get("roles") instanceof java.util.Collection<?> roles))return List.of();return roles.stream().map(Object::toString).filter(role->{try{AdminRole.valueOf(role);return true;}catch(IllegalArgumentException ignored){return false;}}).map(role->(GrantedAuthority)new SimpleGrantedAuthority("ROLE_"+role)).toList();});converter.setPrincipalClaimName("sub");return converter;}
 
     private static void writeError(ObjectMapper mapper, HttpServletResponse response, int status, String code, String message)
             throws IOException {

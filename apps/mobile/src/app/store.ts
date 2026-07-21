@@ -20,6 +20,8 @@ type AppState = {
   setSession: (sessionId?: string, label?: string) => void;
   setMockAttempt: (attemptId?: string) => void;
   recordAnswer: (correct: boolean) => void;
+  setLearnerIdentity: (identity: string) => void;
+  clearUserData: () => void;
   reset: () => void;
 };
 
@@ -35,6 +37,8 @@ export const useAppStore = create<AppState>()(persist((set) => ({
   setSession: (currentSessionId, currentPracticeLabel) => set({ currentSessionId, currentPracticeLabel: currentSessionId ? currentPracticeLabel : undefined, sessionStartedAt: currentSessionId ? new Date().toISOString() : undefined, correctAnswers: 0 }),
   setMockAttempt: (currentMockAttemptId) => set({ currentMockAttemptId }),
   recordAnswer: (correct) => set((state) => ({ correctAnswers: state.correctAnswers + (correct ? 1 : 0) })),
+  setLearnerIdentity: (learnerIdentity) => set({ learnerIdentity }),
+  clearUserData: () => set({ learnerIdentity: '', currentSessionId: undefined, currentPracticeLabel: undefined, sessionStartedAt: undefined, currentMockAttemptId: undefined, correctAnswers: 0 }),
   reset: () => set({ onboardingComplete: false, currentSessionId: undefined, currentPracticeLabel: undefined, sessionStartedAt: undefined, correctAnswers: 0 }),
 }), {
   name: 'medbo-mobile-state', storage: createJSONStorage(() => AsyncStorage),

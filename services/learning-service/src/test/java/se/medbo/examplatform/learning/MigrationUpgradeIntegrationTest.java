@@ -36,7 +36,7 @@ class MigrationUpgradeIntegrationTest {
                 .migrate();
 
         assertThat(jdbc.sql("SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank")
-                .query(String.class).list()).containsExactly("1", "2", "3", "4", "5", "6", "7", "8", "9");
+                .query(String.class).list()).containsExactly("1", "2", "3", "4", "5", "6", "7", "8", "9", "10");
         assertThat(jdbc.sql("""
                 SELECT is_nullable FROM information_schema.columns
                 WHERE table_name = 'imported_answer_option' AND column_name = 'content_release_id'

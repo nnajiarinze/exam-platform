@@ -1,6 +1,12 @@
 import type { PracticeMode } from '../api/generated/types.gen';
 
 export type RootStackParamList = {
+  Welcome: undefined;
+  Login: undefined;
+  Register: undefined;
+  ForgotPassword: undefined;
+  VerificationPending: undefined;
+  SessionExpired: undefined;
   Splash: undefined;
   Onboarding: undefined;
   Home: undefined;
@@ -10,6 +16,7 @@ export type RootStackParamList = {
   SessionComplete: { total: number };
   Progress: undefined;
   Settings: undefined;
+  Profile: undefined;
   MockExam: undefined;
   MockQuestion: { attemptId: string; sequenceNumber: number };
   MockResults: { attemptId: string };

@@ -24,7 +24,7 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  * Requires at least one recognized admin role. The development headers are replaced by bearer authentication in production.
  */
 export const getContentServiceStatus = <ThrowOnError extends boolean = false>(options?: Options<GetContentServiceStatusData, ThrowOnError>) => (options?.client ?? client).get<GetContentServiceStatusResponses, GetContentServiceStatusErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/status',
     ...options
 });
@@ -33,7 +33,7 @@ export const getContentServiceStatus = <ThrowOnError extends boolean = false>(op
  * listExams
  */
 export const listExams = <ThrowOnError extends boolean = false>(options?: Options<ListExamsData, ThrowOnError>) => (options?.client ?? client).get<ListExamsResponses, ListExamsErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/exams',
     ...options
 });
@@ -42,7 +42,7 @@ export const listExams = <ThrowOnError extends boolean = false>(options?: Option
  * createExam
  */
 export const createExam = <ThrowOnError extends boolean = false>(options: Options<CreateExamData, ThrowOnError>) => (options.client ?? client).post<CreateExamResponses, CreateExamErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/exams',
     ...options,
     headers: {
@@ -55,7 +55,7 @@ export const createExam = <ThrowOnError extends boolean = false>(options: Option
  * Delete an empty draft exam
  */
 export const deleteExam = <ThrowOnError extends boolean = false>(options: Options<DeleteExamData, ThrowOnError>) => (options.client ?? client).delete<DeleteExamResponses, DeleteExamErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/exams/{examId}',
     ...options
 });
@@ -64,7 +64,7 @@ export const deleteExam = <ThrowOnError extends boolean = false>(options: Option
  * getExam
  */
 export const getExam = <ThrowOnError extends boolean = false>(options: Options<GetExamData, ThrowOnError>) => (options.client ?? client).get<GetExamResponses, GetExamErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/exams/{examId}',
     ...options
 });
@@ -73,7 +73,7 @@ export const getExam = <ThrowOnError extends boolean = false>(options: Options<G
  * updateExam
  */
 export const updateExam = <ThrowOnError extends boolean = false>(options: Options<UpdateExamData, ThrowOnError>) => (options.client ?? client).put<UpdateExamResponses, UpdateExamErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/exams/{examId}',
     ...options,
     headers: {
@@ -86,7 +86,7 @@ export const updateExam = <ThrowOnError extends boolean = false>(options: Option
  * archiveExam
  */
 export const archiveExam = <ThrowOnError extends boolean = false>(options: Options<ArchiveExamData, ThrowOnError>) => (options.client ?? client).post<ArchiveExamResponses, ArchiveExamErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/exams/{examId}/archive',
     ...options,
     headers: {
@@ -99,7 +99,7 @@ export const archiveExam = <ThrowOnError extends boolean = false>(options: Optio
  * listExamVersions
  */
 export const listExamVersions = <ThrowOnError extends boolean = false>(options: Options<ListExamVersionsData, ThrowOnError>) => (options.client ?? client).get<ListExamVersionsResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/exams/{examId}/versions',
     ...options
 });
@@ -108,7 +108,7 @@ export const listExamVersions = <ThrowOnError extends boolean = false>(options: 
  * createExamVersion
  */
 export const createExamVersion = <ThrowOnError extends boolean = false>(options: Options<CreateExamVersionData, ThrowOnError>) => (options.client ?? client).post<CreateExamVersionResponses, CreateExamVersionErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/exams/{examId}/versions',
     ...options,
     headers: {
@@ -121,7 +121,7 @@ export const createExamVersion = <ThrowOnError extends boolean = false>(options:
  * Delete an empty draft exam version
  */
 export const deleteExamVersion = <ThrowOnError extends boolean = false>(options: Options<DeleteExamVersionData, ThrowOnError>) => (options.client ?? client).delete<DeleteExamVersionResponses, DeleteExamVersionErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/exam-versions/{examVersionId}',
     ...options
 });
@@ -130,7 +130,7 @@ export const deleteExamVersion = <ThrowOnError extends boolean = false>(options:
  * getExamVersion
  */
 export const getExamVersion = <ThrowOnError extends boolean = false>(options: Options<GetExamVersionData, ThrowOnError>) => (options.client ?? client).get<GetExamVersionResponses, GetExamVersionErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/exam-versions/{examVersionId}',
     ...options
 });
@@ -139,7 +139,7 @@ export const getExamVersion = <ThrowOnError extends boolean = false>(options: Op
  * updateExamVersion
  */
 export const updateExamVersion = <ThrowOnError extends boolean = false>(options: Options<UpdateExamVersionData, ThrowOnError>) => (options.client ?? client).put<UpdateExamVersionResponses, UpdateExamVersionErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/exam-versions/{examVersionId}',
     ...options,
     headers: {
@@ -152,7 +152,7 @@ export const updateExamVersion = <ThrowOnError extends boolean = false>(options:
  * archiveExamVersion
  */
 export const archiveExamVersion = <ThrowOnError extends boolean = false>(options: Options<ArchiveExamVersionData, ThrowOnError>) => (options.client ?? client).post<ArchiveExamVersionResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/exam-versions/{examVersionId}/archive',
     ...options,
     headers: {
@@ -165,7 +165,7 @@ export const archiveExamVersion = <ThrowOnError extends boolean = false>(options
  * listSubjects
  */
 export const listSubjects = <ThrowOnError extends boolean = false>(options: Options<ListSubjectsData, ThrowOnError>) => (options.client ?? client).get<ListSubjectsResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/exam-versions/{examVersionId}/subjects',
     ...options
 });
@@ -174,7 +174,7 @@ export const listSubjects = <ThrowOnError extends boolean = false>(options: Opti
  * createSubject
  */
 export const createSubject = <ThrowOnError extends boolean = false>(options: Options<CreateSubjectData, ThrowOnError>) => (options.client ?? client).post<CreateSubjectResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/exam-versions/{examVersionId}/subjects',
     ...options,
     headers: {
@@ -187,7 +187,7 @@ export const createSubject = <ThrowOnError extends boolean = false>(options: Opt
  * reorderSubjects
  */
 export const reorderSubjects = <ThrowOnError extends boolean = false>(options: Options<ReorderSubjectsData, ThrowOnError>) => (options.client ?? client).put<ReorderSubjectsResponses, ReorderSubjectsErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/exam-versions/{examVersionId}/subjects/order',
     ...options,
     headers: {
@@ -200,7 +200,7 @@ export const reorderSubjects = <ThrowOnError extends boolean = false>(options: O
  * Delete an empty draft subject
  */
 export const deleteSubject = <ThrowOnError extends boolean = false>(options: Options<DeleteSubjectData, ThrowOnError>) => (options.client ?? client).delete<DeleteSubjectResponses, DeleteSubjectErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/subjects/{subjectId}',
     ...options
 });
@@ -209,7 +209,7 @@ export const deleteSubject = <ThrowOnError extends boolean = false>(options: Opt
  * getSubject
  */
 export const getSubject = <ThrowOnError extends boolean = false>(options: Options<GetSubjectData, ThrowOnError>) => (options.client ?? client).get<GetSubjectResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/subjects/{subjectId}',
     ...options
 });
@@ -218,7 +218,7 @@ export const getSubject = <ThrowOnError extends boolean = false>(options: Option
  * updateSubject
  */
 export const updateSubject = <ThrowOnError extends boolean = false>(options: Options<UpdateSubjectData, ThrowOnError>) => (options.client ?? client).put<UpdateSubjectResponses, UpdateSubjectErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/subjects/{subjectId}',
     ...options,
     headers: {
@@ -231,7 +231,7 @@ export const updateSubject = <ThrowOnError extends boolean = false>(options: Opt
  * archiveSubject
  */
 export const archiveSubject = <ThrowOnError extends boolean = false>(options: Options<ArchiveSubjectData, ThrowOnError>) => (options.client ?? client).post<ArchiveSubjectResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/subjects/{subjectId}/archive',
     ...options,
     headers: {
@@ -244,7 +244,7 @@ export const archiveSubject = <ThrowOnError extends boolean = false>(options: Op
  * listTopics
  */
 export const listTopics = <ThrowOnError extends boolean = false>(options: Options<ListTopicsData, ThrowOnError>) => (options.client ?? client).get<ListTopicsResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/subjects/{subjectId}/topics',
     ...options
 });
@@ -253,7 +253,7 @@ export const listTopics = <ThrowOnError extends boolean = false>(options: Option
  * createTopic
  */
 export const createTopic = <ThrowOnError extends boolean = false>(options: Options<CreateTopicData, ThrowOnError>) => (options.client ?? client).post<CreateTopicResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/subjects/{subjectId}/topics',
     ...options,
     headers: {
@@ -266,7 +266,7 @@ export const createTopic = <ThrowOnError extends boolean = false>(options: Optio
  * reorderTopics
  */
 export const reorderTopics = <ThrowOnError extends boolean = false>(options: Options<ReorderTopicsData, ThrowOnError>) => (options.client ?? client).put<ReorderTopicsResponses, ReorderTopicsErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/subjects/{subjectId}/topics/order',
     ...options,
     headers: {
@@ -279,7 +279,7 @@ export const reorderTopics = <ThrowOnError extends boolean = false>(options: Opt
  * Delete an empty draft topic
  */
 export const deleteTopic = <ThrowOnError extends boolean = false>(options: Options<DeleteTopicData, ThrowOnError>) => (options.client ?? client).delete<DeleteTopicResponses, DeleteTopicErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/topics/{topicId}',
     ...options
 });
@@ -288,7 +288,7 @@ export const deleteTopic = <ThrowOnError extends boolean = false>(options: Optio
  * getTopic
  */
 export const getTopic = <ThrowOnError extends boolean = false>(options: Options<GetTopicData, ThrowOnError>) => (options.client ?? client).get<GetTopicResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/topics/{topicId}',
     ...options
 });
@@ -297,7 +297,7 @@ export const getTopic = <ThrowOnError extends boolean = false>(options: Options<
  * updateTopic
  */
 export const updateTopic = <ThrowOnError extends boolean = false>(options: Options<UpdateTopicData, ThrowOnError>) => (options.client ?? client).put<UpdateTopicResponses, UpdateTopicErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/topics/{topicId}',
     ...options,
     headers: {
@@ -310,7 +310,7 @@ export const updateTopic = <ThrowOnError extends boolean = false>(options: Optio
  * archiveTopic
  */
 export const archiveTopic = <ThrowOnError extends boolean = false>(options: Options<ArchiveTopicData, ThrowOnError>) => (options.client ?? client).post<ArchiveTopicResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/topics/{topicId}/archive',
     ...options,
     headers: {
@@ -323,7 +323,7 @@ export const archiveTopic = <ThrowOnError extends boolean = false>(options: Opti
  * listSources
  */
 export const listSources = <ThrowOnError extends boolean = false>(options?: Options<ListSourcesData, ThrowOnError>) => (options?.client ?? client).get<ListSourcesResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/sources',
     ...options
 });
@@ -332,7 +332,7 @@ export const listSources = <ThrowOnError extends boolean = false>(options?: Opti
  * createSource
  */
 export const createSource = <ThrowOnError extends boolean = false>(options: Options<CreateSourceData, ThrowOnError>) => (options.client ?? client).post<CreateSourceResponses, CreateSourceErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/sources',
     ...options,
     headers: {
@@ -345,7 +345,7 @@ export const createSource = <ThrowOnError extends boolean = false>(options: Opti
  * Delete an unused unreviewed source
  */
 export const deleteSource = <ThrowOnError extends boolean = false>(options: Options<DeleteSourceData, ThrowOnError>) => (options.client ?? client).delete<DeleteSourceResponses, DeleteSourceErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/sources/{sourceId}',
     ...options
 });
@@ -354,7 +354,7 @@ export const deleteSource = <ThrowOnError extends boolean = false>(options: Opti
  * getSource
  */
 export const getSource = <ThrowOnError extends boolean = false>(options: Options<GetSourceData, ThrowOnError>) => (options.client ?? client).get<GetSourceResponses, GetSourceErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/sources/{sourceId}',
     ...options
 });
@@ -363,7 +363,7 @@ export const getSource = <ThrowOnError extends boolean = false>(options: Options
  * updateSource
  */
 export const updateSource = <ThrowOnError extends boolean = false>(options: Options<UpdateSourceData, ThrowOnError>) => (options.client ?? client).put<UpdateSourceResponses, UpdateSourceErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/sources/{sourceId}',
     ...options,
     headers: {
@@ -376,7 +376,7 @@ export const updateSource = <ThrowOnError extends boolean = false>(options: Opti
  * reviewSource
  */
 export const reviewSource = <ThrowOnError extends boolean = false>(options: Options<ReviewSourceData, ThrowOnError>) => (options.client ?? client).post<ReviewSourceResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/sources/{sourceId}/review',
     ...options,
     headers: {
@@ -389,7 +389,7 @@ export const reviewSource = <ThrowOnError extends boolean = false>(options: Opti
  * requireSourceUpdate
  */
 export const requireSourceUpdate = <ThrowOnError extends boolean = false>(options: Options<RequireSourceUpdateData, ThrowOnError>) => (options.client ?? client).post<RequireSourceUpdateResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/sources/{sourceId}/require-update',
     ...options,
     headers: {
@@ -402,7 +402,7 @@ export const requireSourceUpdate = <ThrowOnError extends boolean = false>(option
  * retireSource
  */
 export const retireSource = <ThrowOnError extends boolean = false>(options: Options<RetireSourceData, ThrowOnError>) => (options.client ?? client).post<RetireSourceResponses, RetireSourceErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/sources/{sourceId}/retire',
     ...options,
     headers: {
@@ -415,7 +415,7 @@ export const retireSource = <ThrowOnError extends boolean = false>(options: Opti
  * List learning objectives
  */
 export const listLearningObjectives = <ThrowOnError extends boolean = false>(options?: Options<ListLearningObjectivesData, ThrowOnError>) => (options?.client ?? client).get<ListLearningObjectivesResponses, ListLearningObjectivesErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/learning-objectives',
     ...options
 });
@@ -424,7 +424,7 @@ export const listLearningObjectives = <ThrowOnError extends boolean = false>(opt
  * Create learning objective
  */
 export const createLearningObjective = <ThrowOnError extends boolean = false>(options: Options<CreateLearningObjectiveData, ThrowOnError>) => (options.client ?? client).post<CreateLearningObjectiveResponses, CreateLearningObjectiveErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/learning-objectives',
     ...options,
     headers: {
@@ -437,7 +437,7 @@ export const createLearningObjective = <ThrowOnError extends boolean = false>(op
  * Delete an empty draft learning objective
  */
 export const deleteLearningObjective = <ThrowOnError extends boolean = false>(options: Options<DeleteLearningObjectiveData, ThrowOnError>) => (options.client ?? client).delete<DeleteLearningObjectiveResponses, DeleteLearningObjectiveErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/learning-objectives/{learningObjectiveId}',
     ...options
 });
@@ -446,7 +446,7 @@ export const deleteLearningObjective = <ThrowOnError extends boolean = false>(op
  * Get learning objective
  */
 export const getLearningObjective = <ThrowOnError extends boolean = false>(options: Options<GetLearningObjectiveData, ThrowOnError>) => (options.client ?? client).get<GetLearningObjectiveResponses, GetLearningObjectiveErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/learning-objectives/{learningObjectiveId}',
     ...options
 });
@@ -455,7 +455,7 @@ export const getLearningObjective = <ThrowOnError extends boolean = false>(optio
  * Update learning objective
  */
 export const updateLearningObjective = <ThrowOnError extends boolean = false>(options: Options<UpdateLearningObjectiveData, ThrowOnError>) => (options.client ?? client).put<UpdateLearningObjectiveResponses, UpdateLearningObjectiveErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/learning-objectives/{learningObjectiveId}',
     ...options,
     headers: {
@@ -468,7 +468,7 @@ export const updateLearningObjective = <ThrowOnError extends boolean = false>(op
  * Archive learning objective
  */
 export const archiveLearningObjective = <ThrowOnError extends boolean = false>(options: Options<ArchiveLearningObjectiveData, ThrowOnError>) => (options.client ?? client).post<ArchiveLearningObjectiveResponses, ArchiveLearningObjectiveErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/learning-objectives/{learningObjectiveId}/archive',
     ...options,
     headers: {
@@ -481,7 +481,7 @@ export const archiveLearningObjective = <ThrowOnError extends boolean = false>(o
  * Search knowledge facts
  */
 export const listKnowledgeFacts = <ThrowOnError extends boolean = false>(options?: Options<ListKnowledgeFactsData, ThrowOnError>) => (options?.client ?? client).get<ListKnowledgeFactsResponses, ListKnowledgeFactsErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/knowledge-facts',
     ...options
 });
@@ -490,7 +490,7 @@ export const listKnowledgeFacts = <ThrowOnError extends boolean = false>(options
  * Create knowledge fact
  */
 export const createKnowledgeFact = <ThrowOnError extends boolean = false>(options: Options<CreateKnowledgeFactData, ThrowOnError>) => (options.client ?? client).post<CreateKnowledgeFactResponses, CreateKnowledgeFactErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/knowledge-facts',
     ...options,
     headers: {
@@ -503,7 +503,7 @@ export const createKnowledgeFact = <ThrowOnError extends boolean = false>(option
  * Delete an owned unused unreviewed draft fact
  */
 export const deleteKnowledgeFact = <ThrowOnError extends boolean = false>(options: Options<DeleteKnowledgeFactData, ThrowOnError>) => (options.client ?? client).delete<DeleteKnowledgeFactResponses, DeleteKnowledgeFactErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/knowledge-facts/{knowledgeFactId}',
     ...options
 });
@@ -512,7 +512,7 @@ export const deleteKnowledgeFact = <ThrowOnError extends boolean = false>(option
  * Get knowledge fact
  */
 export const getKnowledgeFact = <ThrowOnError extends boolean = false>(options: Options<GetKnowledgeFactData, ThrowOnError>) => (options.client ?? client).get<GetKnowledgeFactResponses, GetKnowledgeFactErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/knowledge-facts/{knowledgeFactId}',
     ...options
 });
@@ -521,7 +521,7 @@ export const getKnowledgeFact = <ThrowOnError extends boolean = false>(options: 
  * Update knowledge fact or create a draft version from an approved fact
  */
 export const updateKnowledgeFact = <ThrowOnError extends boolean = false>(options: Options<UpdateKnowledgeFactData, ThrowOnError>) => (options.client ?? client).put<UpdateKnowledgeFactResponses, UpdateKnowledgeFactErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/knowledge-facts/{knowledgeFactId}',
     ...options,
     headers: {
@@ -534,7 +534,7 @@ export const updateKnowledgeFact = <ThrowOnError extends boolean = false>(option
  * List immutable fact version history
  */
 export const listKnowledgeFactVersions = <ThrowOnError extends boolean = false>(options: Options<ListKnowledgeFactVersionsData, ThrowOnError>) => (options.client ?? client).get<ListKnowledgeFactVersionsResponses, ListKnowledgeFactVersionsErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/knowledge-facts/{knowledgeFactId}/versions',
     ...options
 });
@@ -543,7 +543,7 @@ export const listKnowledgeFactVersions = <ThrowOnError extends boolean = false>(
  * Submit fact for review
  */
 export const submitKnowledgeFact = <ThrowOnError extends boolean = false>(options: Options<SubmitKnowledgeFactData, ThrowOnError>) => (options.client ?? client).post<SubmitKnowledgeFactResponses, SubmitKnowledgeFactErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/knowledge-facts/{knowledgeFactId}/submit',
     ...options,
     headers: {
@@ -556,7 +556,7 @@ export const submitKnowledgeFact = <ThrowOnError extends boolean = false>(option
  * Approve fact
  */
 export const approveKnowledgeFact = <ThrowOnError extends boolean = false>(options: Options<ApproveKnowledgeFactData, ThrowOnError>) => (options.client ?? client).post<ApproveKnowledgeFactResponses, ApproveKnowledgeFactErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/knowledge-facts/{knowledgeFactId}/approve',
     ...options,
     headers: {
@@ -569,7 +569,7 @@ export const approveKnowledgeFact = <ThrowOnError extends boolean = false>(optio
  * Reject fact
  */
 export const rejectKnowledgeFact = <ThrowOnError extends boolean = false>(options: Options<RejectKnowledgeFactData, ThrowOnError>) => (options.client ?? client).post<RejectKnowledgeFactResponses, RejectKnowledgeFactErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/knowledge-facts/{knowledgeFactId}/reject',
     ...options,
     headers: {
@@ -582,7 +582,7 @@ export const rejectKnowledgeFact = <ThrowOnError extends boolean = false>(option
  * Require fact update
  */
 export const requireKnowledgeFactUpdate = <ThrowOnError extends boolean = false>(options: Options<RequireKnowledgeFactUpdateData, ThrowOnError>) => (options.client ?? client).post<RequireKnowledgeFactUpdateResponses, RequireKnowledgeFactUpdateErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/knowledge-facts/{knowledgeFactId}/require-update',
     ...options,
     headers: {
@@ -595,7 +595,7 @@ export const requireKnowledgeFactUpdate = <ThrowOnError extends boolean = false>
  * Retire fact
  */
 export const retireKnowledgeFact = <ThrowOnError extends boolean = false>(options: Options<RetireKnowledgeFactData, ThrowOnError>) => (options.client ?? client).post<RetireKnowledgeFactResponses, RetireKnowledgeFactErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/knowledge-facts/{knowledgeFactId}/retire',
     ...options,
     headers: {
@@ -608,7 +608,7 @@ export const retireKnowledgeFact = <ThrowOnError extends boolean = false>(option
  * Search and filter questions
  */
 export const listQuestions = <ThrowOnError extends boolean = false>(options?: Options<ListQuestionsData, ThrowOnError>) => (options?.client ?? client).get<ListQuestionsResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/questions',
     ...options
 });
@@ -617,7 +617,7 @@ export const listQuestions = <ThrowOnError extends boolean = false>(options?: Op
  * Create a draft question
  */
 export const createQuestion = <ThrowOnError extends boolean = false>(options: Options<CreateQuestionData, ThrowOnError>) => (options.client ?? client).post<CreateQuestionResponses, CreateQuestionErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/questions',
     ...options,
     headers: {
@@ -630,7 +630,7 @@ export const createQuestion = <ThrowOnError extends boolean = false>(options: Op
  * Search question text, codes, and linked facts
  */
 export const searchQuestions = <ThrowOnError extends boolean = false>(options?: Options<SearchQuestionsData, ThrowOnError>) => (options?.client ?? client).get<SearchQuestionsResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/questions/search',
     ...options
 });
@@ -639,7 +639,7 @@ export const searchQuestions = <ThrowOnError extends boolean = false>(options?: 
  * Delete an owned unused unreviewed draft question
  */
 export const deleteQuestion = <ThrowOnError extends boolean = false>(options: Options<DeleteQuestionData, ThrowOnError>) => (options.client ?? client).delete<DeleteQuestionResponses, DeleteQuestionErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/questions/{questionId}',
     ...options
 });
@@ -648,7 +648,7 @@ export const deleteQuestion = <ThrowOnError extends boolean = false>(options: Op
  * Get question details
  */
 export const getQuestion = <ThrowOnError extends boolean = false>(options: Options<GetQuestionData, ThrowOnError>) => (options.client ?? client).get<GetQuestionResponses, GetQuestionErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/questions/{questionId}',
     ...options
 });
@@ -657,7 +657,7 @@ export const getQuestion = <ThrowOnError extends boolean = false>(options: Optio
  * Update a draft or create a new draft version from an approved question
  */
 export const updateQuestion = <ThrowOnError extends boolean = false>(options: Options<UpdateQuestionData, ThrowOnError>) => (options.client ?? client).put<UpdateQuestionResponses, UpdateQuestionErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/questions/{questionId}',
     ...options,
     headers: {
@@ -670,7 +670,7 @@ export const updateQuestion = <ThrowOnError extends boolean = false>(options: Op
  * List question version history
  */
 export const listQuestionVersions = <ThrowOnError extends boolean = false>(options: Options<ListQuestionVersionsData, ThrowOnError>) => (options.client ?? client).get<ListQuestionVersionsResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/questions/{questionId}/versions',
     ...options
 });
@@ -679,7 +679,7 @@ export const listQuestionVersions = <ThrowOnError extends boolean = false>(optio
  * Submit question for review
  */
 export const submitQuestion = <ThrowOnError extends boolean = false>(options: Options<SubmitQuestionData, ThrowOnError>) => (options.client ?? client).post<SubmitQuestionResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/questions/{questionId}/submit',
     ...options,
     headers: {
@@ -692,7 +692,7 @@ export const submitQuestion = <ThrowOnError extends boolean = false>(options: Op
  * Approve question
  */
 export const approveQuestion = <ThrowOnError extends boolean = false>(options: Options<ApproveQuestionData, ThrowOnError>) => (options.client ?? client).post<ApproveQuestionResponses, ApproveQuestionErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/questions/{questionId}/approve',
     ...options,
     headers: {
@@ -705,7 +705,7 @@ export const approveQuestion = <ThrowOnError extends boolean = false>(options: O
  * Reject question
  */
 export const rejectQuestion = <ThrowOnError extends boolean = false>(options: Options<RejectQuestionData, ThrowOnError>) => (options.client ?? client).post<RejectQuestionResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/questions/{questionId}/reject',
     ...options,
     headers: {
@@ -718,7 +718,7 @@ export const rejectQuestion = <ThrowOnError extends boolean = false>(options: Op
  * Require question changes
  */
 export const requireQuestionUpdate = <ThrowOnError extends boolean = false>(options: Options<RequireQuestionUpdateData, ThrowOnError>) => (options.client ?? client).post<RequireQuestionUpdateResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/questions/{questionId}/require-update',
     ...options,
     headers: {
@@ -731,7 +731,7 @@ export const requireQuestionUpdate = <ThrowOnError extends boolean = false>(opti
  * Retire question
  */
 export const retireQuestion = <ThrowOnError extends boolean = false>(options: Options<RetireQuestionData, ThrowOnError>) => (options.client ?? client).post<RetireQuestionResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/questions/{questionId}/retire',
     ...options,
     headers: {
@@ -744,7 +744,7 @@ export const retireQuestion = <ThrowOnError extends boolean = false>(options: Op
  * Centralized fact and question review queue
  */
 export const listReviews = <ThrowOnError extends boolean = false>(options?: Options<ListReviewsData, ThrowOnError>) => (options?.client ?? client).get<ListReviewsResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/reviews',
     ...options
 });
@@ -753,7 +753,7 @@ export const listReviews = <ThrowOnError extends boolean = false>(options?: Opti
  * Review queue counts
  */
 export const getReviewSummary = <ThrowOnError extends boolean = false>(options?: Options<GetReviewSummaryData, ThrowOnError>) => (options?.client ?? client).get<GetReviewSummaryResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/reviews/summary',
     ...options
 });
@@ -762,7 +762,7 @@ export const getReviewSummary = <ThrowOnError extends boolean = false>(options?:
  * Review workspace details and supporting context
  */
 export const getReview = <ThrowOnError extends boolean = false>(options: Options<GetReviewData, ThrowOnError>) => (options.client ?? client).get<GetReviewResponses, GetReviewErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/reviews/{reviewItemId}',
     ...options
 });
@@ -771,7 +771,7 @@ export const getReview = <ThrowOnError extends boolean = false>(options: Options
  * Immutable review timeline
  */
 export const listReviewHistory = <ThrowOnError extends boolean = false>(options: Options<ListReviewHistoryData, ThrowOnError>) => (options.client ?? client).get<ListReviewHistoryResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/reviews/{reviewItemId}/history',
     ...options
 });
@@ -780,7 +780,7 @@ export const listReviewHistory = <ThrowOnError extends boolean = false>(options:
  * Version-specific review comments
  */
 export const listReviewComments = <ThrowOnError extends boolean = false>(options: Options<ListReviewCommentsData, ThrowOnError>) => (options.client ?? client).get<ListReviewCommentsResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/reviews/{reviewItemId}/comments',
     ...options
 });
@@ -789,7 +789,7 @@ export const listReviewComments = <ThrowOnError extends boolean = false>(options
  * Add a review comment
  */
 export const addReviewComment = <ThrowOnError extends boolean = false>(options: Options<AddReviewCommentData, ThrowOnError>) => (options.client ?? client).post<AddReviewCommentResponses, AddReviewCommentErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/reviews/{reviewItemId}/comments',
     ...options,
     headers: {
@@ -802,7 +802,7 @@ export const addReviewComment = <ThrowOnError extends boolean = false>(options: 
  * Claim an unassigned review
  */
 export const claimReview = <ThrowOnError extends boolean = false>(options: Options<ClaimReviewData, ThrowOnError>) => (options.client ?? client).post<ClaimReviewResponses, ClaimReviewErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/reviews/{reviewItemId}/claim',
     ...options,
     headers: {
@@ -815,7 +815,7 @@ export const claimReview = <ThrowOnError extends boolean = false>(options: Optio
  * Unclaim own review
  */
 export const unclaimReview = <ThrowOnError extends boolean = false>(options: Options<UnclaimReviewData, ThrowOnError>) => (options.client ?? client).post<UnclaimReviewResponses, UnclaimReviewErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/reviews/{reviewItemId}/unclaim',
     ...options,
     headers: {
@@ -828,7 +828,7 @@ export const unclaimReview = <ThrowOnError extends boolean = false>(options: Opt
  * Admin assignment or reassignment
  */
 export const assignReview = <ThrowOnError extends boolean = false>(options: Options<AssignReviewData, ThrowOnError>) => (options.client ?? client).post<AssignReviewResponses, AssignReviewErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/reviews/{reviewItemId}/assign',
     ...options,
     headers: {
@@ -841,7 +841,7 @@ export const assignReview = <ThrowOnError extends boolean = false>(options: Opti
  * Admin priority change
  */
 export const changeReviewPriority = <ThrowOnError extends boolean = false>(options: Options<ChangeReviewPriorityData, ThrowOnError>) => (options.client ?? client).post<ChangeReviewPriorityResponses, ChangeReviewPriorityErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/reviews/{reviewItemId}/priority',
     ...options,
     headers: {
@@ -854,7 +854,7 @@ export const changeReviewPriority = <ThrowOnError extends boolean = false>(optio
  * List content releases
  */
 export const listReleases = <ThrowOnError extends boolean = false>(options?: Options<ListReleasesData, ThrowOnError>) => (options?.client ?? client).get<ListReleasesResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/releases',
     ...options
 });
@@ -863,7 +863,7 @@ export const listReleases = <ThrowOnError extends boolean = false>(options?: Opt
  * Create draft release
  */
 export const createRelease = <ThrowOnError extends boolean = false>(options: Options<CreateReleaseData, ThrowOnError>) => (options.client ?? client).post<CreateReleaseResponses, CreateReleaseErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/releases',
     ...options,
     headers: {
@@ -876,7 +876,7 @@ export const createRelease = <ThrowOnError extends boolean = false>(options: Opt
  * Delete a never-published owned draft release
  */
 export const deleteRelease = <ThrowOnError extends boolean = false>(options: Options<DeleteReleaseData, ThrowOnError>) => (options.client ?? client).delete<DeleteReleaseResponses, DeleteReleaseErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/releases/{releaseId}',
     ...options
 });
@@ -885,7 +885,7 @@ export const deleteRelease = <ThrowOnError extends boolean = false>(options: Opt
  * Get release workspace
  */
 export const getRelease = <ThrowOnError extends boolean = false>(options: Options<GetReleaseData, ThrowOnError>) => (options.client ?? client).get<GetReleaseResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/releases/{releaseId}',
     ...options
 });
@@ -894,7 +894,7 @@ export const getRelease = <ThrowOnError extends boolean = false>(options: Option
  * Update draft metadata
  */
 export const updateRelease = <ThrowOnError extends boolean = false>(options: Options<UpdateReleaseData, ThrowOnError>) => (options.client ?? client).put<UpdateReleaseResponses, UpdateReleaseErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/releases/{releaseId}',
     ...options,
     headers: {
@@ -907,7 +907,7 @@ export const updateRelease = <ThrowOnError extends boolean = false>(options: Opt
  * Freeze explicit question/fact version selection
  */
 export const replaceReleaseSelection = <ThrowOnError extends boolean = false>(options: Options<ReplaceReleaseSelectionData, ThrowOnError>) => (options.client ?? client).put<ReplaceReleaseSelectionResponses, ReplaceReleaseSelectionErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/releases/{releaseId}/selection',
     ...options,
     headers: {
@@ -920,7 +920,7 @@ export const replaceReleaseSelection = <ThrowOnError extends boolean = false>(op
  * List eligible approved questions
  */
 export const listEligibleReleaseQuestions = <ThrowOnError extends boolean = false>(options: Options<ListEligibleReleaseQuestionsData, ThrowOnError>) => (options.client ?? client).get<ListEligibleReleaseQuestionsResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/releases/{releaseId}/eligible-questions',
     ...options
 });
@@ -929,7 +929,7 @@ export const listEligibleReleaseQuestions = <ThrowOnError extends boolean = fals
  * List eligible approved facts
  */
 export const listEligibleReleaseFacts = <ThrowOnError extends boolean = false>(options: Options<ListEligibleReleaseFactsData, ThrowOnError>) => (options.client ?? client).get<ListEligibleReleaseFactsResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/releases/{releaseId}/eligible-facts',
     ...options
 });
@@ -938,7 +938,7 @@ export const listEligibleReleaseFacts = <ThrowOnError extends boolean = false>(o
  * Validate without publishing
  */
 export const validateRelease = <ThrowOnError extends boolean = false>(options: Options<ValidateReleaseData, ThrowOnError>) => (options.client ?? client).post<ValidateReleaseResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/releases/{releaseId}/validate',
     ...options,
     headers: {
@@ -951,7 +951,7 @@ export const validateRelease = <ThrowOnError extends boolean = false>(options: O
  * Preview exact hierarchy and snapshot
  */
 export const previewRelease = <ThrowOnError extends boolean = false>(options: Options<PreviewReleaseData, ThrowOnError>) => (options.client ?? client).get<PreviewReleaseResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/releases/{releaseId}/preview',
     ...options
 });
@@ -960,7 +960,7 @@ export const previewRelease = <ThrowOnError extends boolean = false>(options: Op
  * Retrieve immutable published snapshot
  */
 export const getPublishedReleaseSnapshot = <ThrowOnError extends boolean = false>(options: Options<GetPublishedReleaseSnapshotData, ThrowOnError>) => (options.client ?? client).get<GetPublishedReleaseSnapshotResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/releases/{releaseId}/snapshot',
     ...options
 });
@@ -969,7 +969,7 @@ export const getPublishedReleaseSnapshot = <ThrowOnError extends boolean = false
  * Compare exact IDs and versions with previous release
  */
 export const getReleaseDiff = <ThrowOnError extends boolean = false>(options: Options<GetReleaseDiffData, ThrowOnError>) => (options.client ?? client).get<GetReleaseDiffResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/releases/{releaseId}/diff',
     ...options
 });
@@ -978,7 +978,7 @@ export const getReleaseDiff = <ThrowOnError extends boolean = false>(options: Op
  * List delivery history
  */
 export const listReleaseDeliveryAttempts = <ThrowOnError extends boolean = false>(options: Options<ListReleaseDeliveryAttemptsData, ThrowOnError>) => (options.client ?? client).get<ListReleaseDeliveryAttemptsResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/releases/{releaseId}/delivery-attempts',
     ...options
 });
@@ -987,7 +987,7 @@ export const listReleaseDeliveryAttempts = <ThrowOnError extends boolean = false
  * Irreversibly publish validated snapshot
  */
 export const publishRelease = <ThrowOnError extends boolean = false>(options: Options<PublishReleaseData, ThrowOnError>) => (options.client ?? client).post<PublishReleaseResponses, PublishReleaseErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/releases/{releaseId}/publish',
     ...options,
     headers: {
@@ -1000,7 +1000,7 @@ export const publishRelease = <ThrowOnError extends boolean = false>(options: Op
  * Import snapshot into Learning Service
  */
 export const deliverRelease = <ThrowOnError extends boolean = false>(options: Options<DeliverReleaseData, ThrowOnError>) => (options.client ?? client).post<DeliverReleaseResponses, DeliverReleaseErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/releases/{releaseId}/deliver',
     ...options
 });
@@ -1009,7 +1009,7 @@ export const deliverRelease = <ThrowOnError extends boolean = false>(options: Op
  * Retry immutable snapshot delivery
  */
 export const retryReleaseDelivery = <ThrowOnError extends boolean = false>(options: Options<RetryReleaseDeliveryData, ThrowOnError>) => (options.client ?? client).post<RetryReleaseDeliveryResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/releases/{releaseId}/retry-delivery',
     ...options
 });
@@ -1018,7 +1018,7 @@ export const retryReleaseDelivery = <ThrowOnError extends boolean = false>(optio
  * Activate imported release for new learner sessions
  */
 export const activateRelease = <ThrowOnError extends boolean = false>(options: Options<ActivateReleaseData, ThrowOnError>) => (options.client ?? client).post<ActivateReleaseResponses, ActivateReleaseErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/releases/{releaseId}/activate',
     ...options
 });
@@ -1027,7 +1027,7 @@ export const activateRelease = <ThrowOnError extends boolean = false>(options: O
  * Retire non-active release
  */
 export const retireRelease = <ThrowOnError extends boolean = false>(options: Options<RetireReleaseData, ThrowOnError>) => (options.client ?? client).post<RetireReleaseResponses, unknown, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/releases/{releaseId}/retire',
     ...options,
     headers: {
@@ -1040,7 +1040,7 @@ export const retireRelease = <ThrowOnError extends boolean = false>(options: Opt
  * Search immutable administrative audit events
  */
 export const searchAuditEvents = <ThrowOnError extends boolean = false>(options?: Options<SearchAuditEventsData, ThrowOnError>) => (options?.client ?? client).get<SearchAuditEventsResponses, SearchAuditEventsErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/audit-events',
     ...options
 });
@@ -1049,7 +1049,7 @@ export const searchAuditEvents = <ThrowOnError extends boolean = false>(options?
  * Content coverage and lifecycle health
  */
 export const getContentHealthReport = <ThrowOnError extends boolean = false>(options?: Options<GetContentHealthReportData, ThrowOnError>) => (options?.client ?? client).get<GetContentHealthReportResponses, GetContentHealthReportErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/reports/content-health',
     ...options
 });
@@ -1058,7 +1058,7 @@ export const getContentHealthReport = <ThrowOnError extends boolean = false>(opt
  * Review queue health
  */
 export const getReviewHealthReport = <ThrowOnError extends boolean = false>(options?: Options<GetReviewHealthReportData, ThrowOnError>) => (options?.client ?? client).get<GetReviewHealthReportResponses, GetReviewHealthReportErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/reports/review-health',
     ...options
 });
@@ -1067,7 +1067,7 @@ export const getReviewHealthReport = <ThrowOnError extends boolean = false>(opti
  * Source freshness and usage health
  */
 export const getSourceHealthReport = <ThrowOnError extends boolean = false>(options?: Options<GetSourceHealthReportData, ThrowOnError>) => (options?.client ?? client).get<GetSourceHealthReportResponses, GetSourceHealthReportErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/reports/source-health',
     ...options
 });
@@ -1076,7 +1076,7 @@ export const getSourceHealthReport = <ThrowOnError extends boolean = false>(opti
  * Release delivery and activation health
  */
 export const getReleaseHealthReport = <ThrowOnError extends boolean = false>(options?: Options<GetReleaseHealthReportData, ThrowOnError>) => (options?.client ?? client).get<GetReleaseHealthReportResponses, GetReleaseHealthReportErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/reports/release-health',
     ...options
 });
@@ -1085,7 +1085,7 @@ export const getReleaseHealthReport = <ThrowOnError extends boolean = false>(opt
  * Aggregate learner runtime health without learner PII
  */
 export const getLearnerHealthReport = <ThrowOnError extends boolean = false>(options?: Options<GetLearnerHealthReportData, ThrowOnError>) => (options?.client ?? client).get<GetLearnerHealthReportResponses, GetLearnerHealthReportErrors, ThrowOnError>({
-    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/reports/learner-health',
     ...options
 });

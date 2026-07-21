@@ -9,6 +9,12 @@ spring:
     enabled: true
   jackson:
     default-property-inclusion: non_null
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${OIDC_ISSUER_URI:http://localhost:8090/realms/exam-platform}
+          jwk-set-uri: ${OIDC_JWK_SET_URI:http://localhost:8090/realms/exam-platform/protocol/openid-connect/certs}
 
 management:
   endpoints:
@@ -22,6 +28,9 @@ learning:
     window-seconds: ${LEARNING_RATE_LIMIT_WINDOW_SECONDS:60}
   identity:
     development-header-enabled: ${LEARNING_DEV_IDENTITY_ENABLED:false}
+    allowed-origins: ${LEARNING_ALLOWED_ORIGINS:http://localhost:*,http://127.0.0.1:*}
+  security:
+    audience: ${LEARNING_OIDC_AUDIENCE:learning-api}
   practice:
     max-question-count: ${LEARNING_MAX_PRACTICE_QUESTIONS:50}
   mock-exam:

@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ActivateImportedContentReleaseData, ActivateImportedContentReleaseErrors, ActivateImportedContentReleaseResponses, CreateMockExamData, CreateMockExamErrors, CreateMockExamResponses, CreatePracticeSessionData, CreatePracticeSessionErrors, CreatePracticeSessionResponses, FlagMockExamQuestionData, FlagMockExamQuestionErrors, FlagMockExamQuestionResponses, GetInternalLearnerHealthData, GetInternalLearnerHealthErrors, GetInternalLearnerHealthResponses, GetMockExamConfigurationData, GetMockExamConfigurationErrors, GetMockExamConfigurationResponses, GetMockExamData, GetMockExamErrors, GetMockExamHistoryData, GetMockExamHistoryErrors, GetMockExamHistoryResponses, GetMockExamQuestionData, GetMockExamQuestionErrors, GetMockExamQuestionResponses, GetMockExamResponses, GetMockExamResultsData, GetMockExamResultsErrors, GetMockExamResultsResponses, GetNextPracticeQuestionData, GetNextPracticeQuestionErrors, GetNextPracticeQuestionResponses, GetPracticeSessionData, GetPracticeSessionErrors, GetPracticeSessionResponses, GetSubjectsData, GetSubjectsErrors, GetSubjectsResponses, GetTopicProgressData, GetTopicProgressErrors, GetTopicProgressResponses, ImportContentReleaseData, ImportContentReleaseErrors, ImportContentReleaseResponses, SubmitMockExamData, SubmitMockExamErrors, SubmitMockExamResponseData, SubmitMockExamResponseErrors, SubmitMockExamResponseResponses, SubmitMockExamResponses, SubmitPracticeResponseData, SubmitPracticeResponseErrors, SubmitPracticeResponseResponses } from './types.gen';
+import type { ActivateImportedContentReleaseData, ActivateImportedContentReleaseErrors, ActivateImportedContentReleaseResponses, CreateMockExamData, CreateMockExamErrors, CreateMockExamResponses, CreatePracticeSessionData, CreatePracticeSessionErrors, CreatePracticeSessionResponses, DeleteMyLearnerAccountData, DeleteMyLearnerAccountErrors, DeleteMyLearnerAccountResponses, FlagMockExamQuestionData, FlagMockExamQuestionErrors, FlagMockExamQuestionResponses, GetInternalLearnerHealthData, GetInternalLearnerHealthErrors, GetInternalLearnerHealthResponses, GetMockExamConfigurationData, GetMockExamConfigurationErrors, GetMockExamConfigurationResponses, GetMockExamData, GetMockExamErrors, GetMockExamHistoryData, GetMockExamHistoryErrors, GetMockExamHistoryResponses, GetMockExamQuestionData, GetMockExamQuestionErrors, GetMockExamQuestionResponses, GetMockExamResponses, GetMockExamResultsData, GetMockExamResultsErrors, GetMockExamResultsResponses, GetMyLearnerProfileData, GetMyLearnerProfileErrors, GetMyLearnerProfileResponses, GetNextPracticeQuestionData, GetNextPracticeQuestionErrors, GetNextPracticeQuestionResponses, GetPracticeSessionData, GetPracticeSessionErrors, GetPracticeSessionResponses, GetSubjectsData, GetSubjectsErrors, GetSubjectsResponses, GetTopicProgressData, GetTopicProgressErrors, GetTopicProgressResponses, ImportContentReleaseData, ImportContentReleaseErrors, ImportContentReleaseResponses, SubmitMockExamData, SubmitMockExamErrors, SubmitMockExamResponseData, SubmitMockExamResponseErrors, SubmitMockExamResponseResponses, SubmitMockExamResponses, SubmitPracticeResponseData, SubmitPracticeResponseErrors, SubmitPracticeResponseResponses, UpdateMyLearnerProfileData, UpdateMyLearnerProfileErrors, UpdateMyLearnerProfileResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -19,6 +19,37 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
 };
 
 /**
+ * Anonymise and disable the current learner account
+ */
+export const deleteMyLearnerAccount = <ThrowOnError extends boolean = false>(options?: Options<DeleteMyLearnerAccountData, ThrowOnError>): RequestResult<DeleteMyLearnerAccountResponses, DeleteMyLearnerAccountErrors, ThrowOnError> => (options?.client ?? client).delete<DeleteMyLearnerAccountResponses, DeleteMyLearnerAccountErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/me',
+    ...options
+});
+
+/**
+ * Load or create the authenticated learner profile
+ */
+export const getMyLearnerProfile = <ThrowOnError extends boolean = false>(options?: Options<GetMyLearnerProfileData, ThrowOnError>): RequestResult<GetMyLearnerProfileResponses, GetMyLearnerProfileErrors, ThrowOnError> => (options?.client ?? client).get<GetMyLearnerProfileResponses, GetMyLearnerProfileErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/me',
+    ...options
+});
+
+/**
+ * Update the current learner profile
+ */
+export const updateMyLearnerProfile = <ThrowOnError extends boolean = false>(options: Options<UpdateMyLearnerProfileData, ThrowOnError>): RequestResult<UpdateMyLearnerProfileResponses, UpdateMyLearnerProfileErrors, ThrowOnError> => (options.client ?? client).put<UpdateMyLearnerProfileResponses, UpdateMyLearnerProfileErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/me',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * Aggregate learner runtime health for trusted operational reporting
  */
 export const getInternalLearnerHealth = <ThrowOnError extends boolean = false>(options?: Options<GetInternalLearnerHealthData, ThrowOnError>): RequestResult<GetInternalLearnerHealthResponses, GetInternalLearnerHealthErrors, ThrowOnError> => (options?.client ?? client).get<GetInternalLearnerHealthResponses, GetInternalLearnerHealthErrors, ThrowOnError>({
@@ -31,7 +62,7 @@ export const getInternalLearnerHealth = <ThrowOnError extends boolean = false>(o
  * List active subjects and topics
  */
 export const getSubjects = <ThrowOnError extends boolean = false>(options: Options<GetSubjectsData, ThrowOnError>): RequestResult<GetSubjectsResponses, GetSubjectsErrors, ThrowOnError> => (options.client ?? client).get<GetSubjectsResponses, GetSubjectsErrors, ThrowOnError>({
-    security: [{ name: 'X-Learner-Identity', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/content/subjects',
     ...options
 });
@@ -64,7 +95,7 @@ export const activateImportedContentRelease = <ThrowOnError extends boolean = fa
  * Create a practice session
  */
 export const createPracticeSession = <ThrowOnError extends boolean = false>(options: Options<CreatePracticeSessionData, ThrowOnError>): RequestResult<CreatePracticeSessionResponses, CreatePracticeSessionErrors, ThrowOnError> => (options.client ?? client).post<CreatePracticeSessionResponses, CreatePracticeSessionErrors, ThrowOnError>({
-    security: [{ name: 'X-Learner-Identity', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/practice-sessions',
     ...options,
     headers: {
@@ -77,7 +108,7 @@ export const createPracticeSession = <ThrowOnError extends boolean = false>(opti
  * Get a practice session
  */
 export const getPracticeSession = <ThrowOnError extends boolean = false>(options: Options<GetPracticeSessionData, ThrowOnError>): RequestResult<GetPracticeSessionResponses, GetPracticeSessionErrors, ThrowOnError> => (options.client ?? client).get<GetPracticeSessionResponses, GetPracticeSessionErrors, ThrowOnError>({
-    security: [{ name: 'X-Learner-Identity', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/practice-sessions/{sessionId}',
     ...options
 });
@@ -86,7 +117,7 @@ export const getPracticeSession = <ThrowOnError extends boolean = false>(options
  * Get the next unanswered question
  */
 export const getNextPracticeQuestion = <ThrowOnError extends boolean = false>(options: Options<GetNextPracticeQuestionData, ThrowOnError>): RequestResult<GetNextPracticeQuestionResponses, GetNextPracticeQuestionErrors, ThrowOnError> => (options.client ?? client).get<GetNextPracticeQuestionResponses, GetNextPracticeQuestionErrors, ThrowOnError>({
-    security: [{ name: 'X-Learner-Identity', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/practice-sessions/{sessionId}/next',
     ...options
 });
@@ -95,7 +126,7 @@ export const getNextPracticeQuestion = <ThrowOnError extends boolean = false>(op
  * Submit one answer
  */
 export const submitPracticeResponse = <ThrowOnError extends boolean = false>(options: Options<SubmitPracticeResponseData, ThrowOnError>): RequestResult<SubmitPracticeResponseResponses, SubmitPracticeResponseErrors, ThrowOnError> => (options.client ?? client).post<SubmitPracticeResponseResponses, SubmitPracticeResponseErrors, ThrowOnError>({
-    security: [{ name: 'X-Learner-Identity', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/practice-sessions/{sessionId}/responses',
     ...options,
     headers: {
@@ -108,7 +139,7 @@ export const submitPracticeResponse = <ThrowOnError extends boolean = false>(opt
  * List topic progress
  */
 export const getTopicProgress = <ThrowOnError extends boolean = false>(options?: Options<GetTopicProgressData, ThrowOnError>): RequestResult<GetTopicProgressResponses, GetTopicProgressErrors, ThrowOnError> => (options?.client ?? client).get<GetTopicProgressResponses, GetTopicProgressErrors, ThrowOnError>({
-    security: [{ name: 'X-Learner-Identity', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/progress/topics',
     ...options
 });
@@ -117,7 +148,7 @@ export const getTopicProgress = <ThrowOnError extends boolean = false>(options?:
  * Start a mock examination from the active configured blueprint
  */
 export const createMockExam = <ThrowOnError extends boolean = false>(options: Options<CreateMockExamData, ThrowOnError>): RequestResult<CreateMockExamResponses, CreateMockExamErrors, ThrowOnError> => (options.client ?? client).post<CreateMockExamResponses, CreateMockExamErrors, ThrowOnError>({
-    security: [{ name: 'X-Learner-Identity', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/mock-exams',
     ...options,
     headers: {
@@ -130,7 +161,7 @@ export const createMockExam = <ThrowOnError extends boolean = false>(options: Op
  * List finalized mock examination attempts
  */
 export const getMockExamHistory = <ThrowOnError extends boolean = false>(options?: Options<GetMockExamHistoryData, ThrowOnError>): RequestResult<GetMockExamHistoryResponses, GetMockExamHistoryErrors, ThrowOnError> => (options?.client ?? client).get<GetMockExamHistoryResponses, GetMockExamHistoryErrors, ThrowOnError>({
-    security: [{ name: 'X-Learner-Identity', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/mock-exams/history',
     ...options
 });
@@ -144,7 +175,7 @@ export const getMockExamConfiguration = <ThrowOnError extends boolean = false>(o
  * Get mock examination metadata and navigation state
  */
 export const getMockExam = <ThrowOnError extends boolean = false>(options: Options<GetMockExamData, ThrowOnError>): RequestResult<GetMockExamResponses, GetMockExamErrors, ThrowOnError> => (options.client ?? client).get<GetMockExamResponses, GetMockExamErrors, ThrowOnError>({
-    security: [{ name: 'X-Learner-Identity', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/mock-exams/{attemptId}',
     ...options
 });
@@ -153,7 +184,7 @@ export const getMockExam = <ThrowOnError extends boolean = false>(options: Optio
  * Get a mock examination question
  */
 export const getMockExamQuestion = <ThrowOnError extends boolean = false>(options: Options<GetMockExamQuestionData, ThrowOnError>): RequestResult<GetMockExamQuestionResponses, GetMockExamQuestionErrors, ThrowOnError> => (options.client ?? client).get<GetMockExamQuestionResponses, GetMockExamQuestionErrors, ThrowOnError>({
-    security: [{ name: 'X-Learner-Identity', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/mock-exams/{attemptId}/next',
     ...options
 });
@@ -162,7 +193,7 @@ export const getMockExamQuestion = <ThrowOnError extends boolean = false>(option
  * Store or replace an answer before final submission
  */
 export const submitMockExamResponse = <ThrowOnError extends boolean = false>(options: Options<SubmitMockExamResponseData, ThrowOnError>): RequestResult<SubmitMockExamResponseResponses, SubmitMockExamResponseErrors, ThrowOnError> => (options.client ?? client).post<SubmitMockExamResponseResponses, SubmitMockExamResponseErrors, ThrowOnError>({
-    security: [{ name: 'X-Learner-Identity', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/mock-exams/{attemptId}/responses',
     ...options,
     headers: {
@@ -175,7 +206,7 @@ export const submitMockExamResponse = <ThrowOnError extends boolean = false>(opt
  * Set or clear a review flag
  */
 export const flagMockExamQuestion = <ThrowOnError extends boolean = false>(options: Options<FlagMockExamQuestionData, ThrowOnError>): RequestResult<FlagMockExamQuestionResponses, FlagMockExamQuestionErrors, ThrowOnError> => (options.client ?? client).post<FlagMockExamQuestionResponses, FlagMockExamQuestionErrors, ThrowOnError>({
-    security: [{ name: 'X-Learner-Identity', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/mock-exams/{attemptId}/questions/{attemptQuestionId}/flag',
     ...options,
     headers: {
@@ -188,7 +219,7 @@ export const flagMockExamQuestion = <ThrowOnError extends boolean = false>(optio
  * Finalize and score a mock examination
  */
 export const submitMockExam = <ThrowOnError extends boolean = false>(options: Options<SubmitMockExamData, ThrowOnError>): RequestResult<SubmitMockExamResponses, SubmitMockExamErrors, ThrowOnError> => (options.client ?? client).post<SubmitMockExamResponses, SubmitMockExamErrors, ThrowOnError>({
-    security: [{ name: 'X-Learner-Identity', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/mock-exams/{attemptId}/submit',
     ...options
 });
@@ -197,7 +228,7 @@ export const submitMockExam = <ThrowOnError extends boolean = false>(options: Op
  * Get detailed results for a finalized mock examination
  */
 export const getMockExamResults = <ThrowOnError extends boolean = false>(options: Options<GetMockExamResultsData, ThrowOnError>): RequestResult<GetMockExamResultsResponses, GetMockExamResultsErrors, ThrowOnError> => (options.client ?? client).get<GetMockExamResultsResponses, GetMockExamResultsErrors, ThrowOnError>({
-    security: [{ name: 'X-Learner-Identity', type: 'apiKey' }],
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/mock-exams/{attemptId}/results',
     ...options
 });

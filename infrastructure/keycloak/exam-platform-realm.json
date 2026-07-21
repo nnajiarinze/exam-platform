@@ -1,0 +1,56 @@
+{
+  "realm": "exam-platform",
+  "enabled": true,
+  "displayName": "Svea Study",
+  "registrationAllowed": true,
+  "verifyEmail": true,
+  "resetPasswordAllowed": true,
+  "rememberMe": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "defaultRoles": ["LEARNER"],
+  "smtpServer": {
+    "from": "no-reply@svea-study.local",
+    "fromDisplayName": "Svea Study",
+    "host": "mailpit",
+    "port": "1025",
+    "ssl": "false",
+    "starttls": "false",
+    "auth": "false"
+  },
+  "roles": { "realm": [
+    { "name": "LEARNER" }, { "name": "CONTENT_AUTHOR" },
+    { "name": "CONTENT_REVIEWER" }, { "name": "CONTENT_PUBLISHER" }, { "name": "ADMIN" }
+  ]},
+  "clients": [
+    {
+      "clientId": "mobile-app", "name": "Svea Study mobile", "publicClient": true,
+      "standardFlowEnabled": true, "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "sveastudy://auth/callback",
+        "exp://192.168.1.213:8081/--/auth/callback"
+      ],
+      "webOrigins": ["+"],
+      "attributes": { "pkce.code.challenge.method": "S256" },
+      "protocolMappers": [{ "name": "learning audience", "protocol": "openid-connect", "protocolMapper": "oidc-audience-mapper", "config": { "included.custom.audience": "learning-api", "access.token.claim": "true" } }]
+    },
+    {
+      "clientId": "admin-portal", "name": "Content Admin Portal", "publicClient": true,
+      "standardFlowEnabled": true, "directAccessGrantsEnabled": false,
+      "redirectUris": ["http://localhost:5173/auth/callback", "http://127.0.0.1:5173/auth/callback"],
+      "webOrigins": ["http://localhost:5173", "http://127.0.0.1:5173"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:5173/*##http://127.0.0.1:5173/*"
+      },
+      "protocolMappers": [{ "name": "content audience", "protocol": "openid-connect", "protocolMapper": "oidc-audience-mapper", "config": { "included.custom.audience": "content-api", "access.token.claim": "true" } }]
+    }
+  ],
+  "users": [
+    { "id": "80000000-0000-5000-8000-000000000001", "username": "demo.learner", "email": "learner@example.test", "emailVerified": true, "enabled": true, "firstName": "Demo", "lastName": "Learner", "realmRoles": ["LEARNER"], "credentials": [{ "type": "password", "value": "DemoLearner2026!", "temporary": false }] },
+    { "username": "demo.author", "email": "author@example.test", "emailVerified": true, "enabled": true, "firstName": "Demo", "lastName": "Author", "realmRoles": ["CONTENT_AUTHOR"], "credentials": [{ "type": "password", "value": "DemoAuthor2026!", "temporary": false }] },
+    { "username": "demo.reviewer", "email": "reviewer@example.test", "emailVerified": true, "enabled": true, "firstName": "Demo", "lastName": "Reviewer", "realmRoles": ["CONTENT_REVIEWER"], "credentials": [{ "type": "password", "value": "DemoReviewer2026!", "temporary": false }] },
+    { "username": "demo.publisher", "email": "publisher@example.test", "emailVerified": true, "enabled": true, "firstName": "Demo", "lastName": "Publisher", "realmRoles": ["CONTENT_PUBLISHER"], "credentials": [{ "type": "password", "value": "DemoPublisher2026!", "temporary": false }] },
+    { "username": "demo.admin", "email": "admin@example.test", "emailVerified": true, "enabled": true, "firstName": "Demo", "lastName": "Administrator", "realmRoles": ["ADMIN"], "credentials": [{ "type": "password", "value": "DemoAdmin2026!", "temporary": false }] }
+  ]
+}

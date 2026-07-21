@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
+import { AuthCallbackPage } from '../../features/auth/AuthCallbackPage';
 import { ProtectedRoute } from '../auth/ProtectedRoute';
 import { AdminLayout } from '../../components/AdminLayout';
 import { DashboardPage } from '../../features/dashboard/DashboardPage';
@@ -28,6 +29,7 @@ import { ContentSystemGuidePage } from '../../features/help/content-system/Conte
 export function AppRouter() {
   return <Routes>
     <Route path="/login" element={<LoginPage />} />
+    <Route path="/auth/callback" element={<AuthCallbackPage />} />
     <Route path="/unauthorized" element={<UnauthorizedPage />} />
     <Route element={<ProtectedRoute />}>
       <Route element={<AdminLayout />}>

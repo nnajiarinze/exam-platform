@@ -8,4 +8,6 @@ export const appConfig = {
   learningBaseUrl: learningBaseUrl ?? '',
   defaultLearnerIdentity: process.env.EXPO_PUBLIC_LEARNER_IDENTITY ?? '',
   examId: process.env.EXPO_PUBLIC_EXAM_ID ?? 'swedish-citizenship',
+  oidcIssuer: process.env.EXPO_PUBLIC_OIDC_ISSUER ?? 'http://localhost:8090/realms/exam-platform',
+  oidcClientId: process.env.EXPO_PUBLIC_OIDC_CLIENT_ID ?? 'mobile-app',
 };
