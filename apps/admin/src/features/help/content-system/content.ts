@@ -1,7 +1,7 @@
 export type Concept = { id:string; term:string; definition:string; example:string; purpose:string; connects:string; mistake?:string };
 export type GlossaryEntry = { term:string; meaning:string; example:string };
 
-export const supportedLearnerQuestionTypes=['SINGLE_CHOICE','TRUE_FALSE'] as const;
+export const supportedLearnerQuestionTypes=['SINGLE_CHOICE','MULTIPLE_CHOICE','TRUE_FALSE'] as const;
 
 export const concepts:Concept[]=[
  {id:'exam',term:'Exam',definition:'The top-level product or examination category.',example:'Swedish Citizenship (canonical ID: swedish-citizenship)',purpose:'Keeps the overall content domain stable across services.',connects:'Contains one or more exam versions; it is not itself a question set.',mistake:'Do not use a mutable display name as the integration identifier.'},

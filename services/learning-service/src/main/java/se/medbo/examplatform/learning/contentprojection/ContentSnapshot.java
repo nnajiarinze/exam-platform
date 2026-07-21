@@ -36,8 +36,20 @@ public record ContentSnapshot(
                            @NotBlank String prompt, @NotBlank String explanation,
                            @NotBlank @Size(min = 2, max = 35) String language,
                            @Size(max = 50) String difficulty, boolean active,
-                           @NotEmpty List<@Valid AnswerOption> answerOptions) {}
+                           List<@NotBlank @Size(max = 200) String> correctOptionIds,
+                           @NotEmpty List<@Valid AnswerOption> answerOptions) {
+        public Question(String id, String versionId, String knowledgeFactId, String questionType, String prompt,
+                        String explanation, String language, String difficulty, boolean active,
+                        List<AnswerOption> answerOptions) {
+            this(id, versionId, knowledgeFactId, questionType, prompt, explanation, language, difficulty, active,
+                    null, answerOptions);
+        }
+    }
 
     public record AnswerOption(@NotBlank @Size(max = 200) String id, @NotBlank String text, boolean correct,
-                               @PositiveOrZero int sortOrder) {}
+                               String feedback, @PositiveOrZero int sortOrder) {
+        public AnswerOption(String id, String text, boolean correct, int sortOrder) {
+            this(id, text, correct, null, sortOrder);
+        }
+    }
 }

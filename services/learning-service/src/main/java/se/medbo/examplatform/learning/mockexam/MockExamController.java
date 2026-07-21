@@ -60,7 +60,7 @@ public class MockExamController {
             @RequestHeader(value = "X-Learner-Identity", required = false) String identity,
             @PathVariable UUID attemptId, @Valid @RequestBody SubmitMockAnswerRequest request) {
         return service.answer(identityResolver.resolve(identity), attemptId, request.attemptQuestionId(),
-                request.selectedAnswerOptionId(), request.version());
+                request.selectedOptionIds(), request.version());
     }
 
     @PostMapping("/{attemptId}/questions/{attemptQuestionId}/flag")
@@ -94,7 +94,8 @@ public class MockExamController {
 
     public record CreateMockExamRequest(@NotBlank @Size(max = 200) String examId) {}
     public record SubmitMockAnswerRequest(@NotNull UUID attemptQuestionId,
-                                          @NotBlank @Size(max = 200) String selectedAnswerOptionId,
+                                          @jakarta.validation.constraints.NotEmpty @Size(max = 6)
+                                          List<@NotBlank @Size(max = 200) String> selectedOptionIds,
                                           @Min(0) Long version) {}
     public record FlagMockQuestionRequest(@NotNull Boolean flagged, @Min(0) Long version) {}
 }

@@ -1,5 +1,7 @@
 # Learning Service
 
+Learner answer submissions use `selectedOptionIds` for every supported question type. `MULTIPLE_CHOICE` uses exact-set scoring with no partial credit. Correctness remains server-side: practice reveals it only after answering, while mock exams reveal it only after final submission.
+
 ## Mock-exam lifecycle
 
 The Learning Service resolves configuration and the active release only when an attempt starts. One active attempt is allowed per learner and canonical exam ID; repeated starts resume it. The attempt stores its release, configuration values, selected question records, sequence, option order, `startedAt`, and `expiresAt`. Answers remain editable without feedback while status is `ACTIVE`. Manual submission or authoritative server expiry atomically freezes the attempt, scores unanswered questions as incorrect, persists overall and subject/topic results, and enables answer review. Repeated submission returns the existing result. This differs from practice sessions, which provide immediate feedback and update learner progress per response.

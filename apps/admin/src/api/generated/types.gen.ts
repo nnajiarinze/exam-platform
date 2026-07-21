@@ -592,6 +592,11 @@ export type Size = number;
 
 export type Search = string;
 
+/**
+ * Optional audit reason for the irreversible deletion
+ */
+export type DeleteReason = string;
+
 export type VersionOnly2 = VersionOnly;
 
 export type Order = OrderRequest;
@@ -703,6 +708,46 @@ export type CreateExamResponses = {
 };
 
 export type CreateExamResponse = CreateExamResponses[keyof CreateExamResponses];
+
+export type DeleteExamData = {
+    body?: never;
+    path: {
+        examId: string;
+    };
+    query?: {
+        /**
+         * Optional audit reason for the irreversible deletion
+         */
+        reason?: string;
+    };
+    url: '/api/v1/admin/exams/{examId}';
+};
+
+export type DeleteExamErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Resource not found
+     */
+    404: ApiError;
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type DeleteExamError = DeleteExamErrors[keyof DeleteExamErrors];
+
+export type DeleteExamResponses = {
+    /**
+     * Deleted
+     */
+    204: void;
+};
+
+export type DeleteExamResponse = DeleteExamResponses[keyof DeleteExamResponses];
 
 export type GetExamData = {
     body?: never;
@@ -842,6 +887,46 @@ export type CreateExamVersionResponses = {
 
 export type CreateExamVersionResponse = CreateExamVersionResponses[keyof CreateExamVersionResponses];
 
+export type DeleteExamVersionData = {
+    body?: never;
+    path: {
+        examVersionId: string;
+    };
+    query?: {
+        /**
+         * Optional audit reason for the irreversible deletion
+         */
+        reason?: string;
+    };
+    url: '/api/v1/admin/exam-versions/{examVersionId}';
+};
+
+export type DeleteExamVersionErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Resource not found
+     */
+    404: ApiError;
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type DeleteExamVersionError = DeleteExamVersionErrors[keyof DeleteExamVersionErrors];
+
+export type DeleteExamVersionResponses = {
+    /**
+     * Deleted
+     */
+    204: void;
+};
+
+export type DeleteExamVersionResponse = DeleteExamVersionResponses[keyof DeleteExamVersionResponses];
+
 export type GetExamVersionData = {
     body?: never;
     path: {
@@ -977,6 +1062,46 @@ export type ReorderSubjectsResponses = {
 
 export type ReorderSubjectsResponse = ReorderSubjectsResponses[keyof ReorderSubjectsResponses];
 
+export type DeleteSubjectData = {
+    body?: never;
+    path: {
+        subjectId: string;
+    };
+    query?: {
+        /**
+         * Optional audit reason for the irreversible deletion
+         */
+        reason?: string;
+    };
+    url: '/api/v1/admin/subjects/{subjectId}';
+};
+
+export type DeleteSubjectErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Resource not found
+     */
+    404: ApiError;
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type DeleteSubjectError = DeleteSubjectErrors[keyof DeleteSubjectErrors];
+
+export type DeleteSubjectResponses = {
+    /**
+     * Deleted
+     */
+    204: void;
+};
+
+export type DeleteSubjectResponse = DeleteSubjectResponses[keyof DeleteSubjectResponses];
+
 export type GetSubjectData = {
     body?: never;
     path: {
@@ -1103,6 +1228,46 @@ export type ReorderTopicsResponses = {
 
 export type ReorderTopicsResponse = ReorderTopicsResponses[keyof ReorderTopicsResponses];
 
+export type DeleteTopicData = {
+    body?: never;
+    path: {
+        topicId: string;
+    };
+    query?: {
+        /**
+         * Optional audit reason for the irreversible deletion
+         */
+        reason?: string;
+    };
+    url: '/api/v1/admin/topics/{topicId}';
+};
+
+export type DeleteTopicErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Resource not found
+     */
+    404: ApiError;
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type DeleteTopicError = DeleteTopicErrors[keyof DeleteTopicErrors];
+
+export type DeleteTopicResponses = {
+    /**
+     * Deleted
+     */
+    204: void;
+};
+
+export type DeleteTopicResponse = DeleteTopicResponses[keyof DeleteTopicResponses];
+
 export type GetTopicData = {
     body?: never;
     path: {
@@ -1221,6 +1386,46 @@ export type CreateSourceResponses = {
 };
 
 export type CreateSourceResponse = CreateSourceResponses[keyof CreateSourceResponses];
+
+export type DeleteSourceData = {
+    body?: never;
+    path: {
+        sourceId: string;
+    };
+    query?: {
+        /**
+         * Optional audit reason for the irreversible deletion
+         */
+        reason?: string;
+    };
+    url: '/api/v1/admin/sources/{sourceId}';
+};
+
+export type DeleteSourceErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Resource not found
+     */
+    404: ApiError;
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type DeleteSourceError = DeleteSourceErrors[keyof DeleteSourceErrors];
+
+export type DeleteSourceResponses = {
+    /**
+     * Deleted
+     */
+    204: void;
+};
+
+export type DeleteSourceResponse = DeleteSourceResponses[keyof DeleteSourceResponses];
 
 export type GetSourceData = {
     body?: never;
@@ -1403,6 +1608,46 @@ export type CreateLearningObjectiveResponses = {
 
 export type CreateLearningObjectiveResponse = CreateLearningObjectiveResponses[keyof CreateLearningObjectiveResponses];
 
+export type DeleteLearningObjectiveData = {
+    body?: never;
+    path: {
+        learningObjectiveId: string;
+    };
+    query?: {
+        /**
+         * Optional audit reason for the irreversible deletion
+         */
+        reason?: string;
+    };
+    url: '/api/v1/admin/learning-objectives/{learningObjectiveId}';
+};
+
+export type DeleteLearningObjectiveErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Resource not found
+     */
+    404: ApiError;
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type DeleteLearningObjectiveError = DeleteLearningObjectiveErrors[keyof DeleteLearningObjectiveErrors];
+
+export type DeleteLearningObjectiveResponses = {
+    /**
+     * Deleted
+     */
+    204: void;
+};
+
+export type DeleteLearningObjectiveResponse = DeleteLearningObjectiveResponses[keyof DeleteLearningObjectiveResponses];
+
 export type GetLearningObjectiveData = {
     body?: never;
     path: {
@@ -1556,6 +1801,46 @@ export type CreateKnowledgeFactResponses = {
 };
 
 export type CreateKnowledgeFactResponse = CreateKnowledgeFactResponses[keyof CreateKnowledgeFactResponses];
+
+export type DeleteKnowledgeFactData = {
+    body?: never;
+    path: {
+        knowledgeFactId: string;
+    };
+    query?: {
+        /**
+         * Optional audit reason for the irreversible deletion
+         */
+        reason?: string;
+    };
+    url: '/api/v1/admin/knowledge-facts/{knowledgeFactId}';
+};
+
+export type DeleteKnowledgeFactErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Resource not found
+     */
+    404: ApiError;
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type DeleteKnowledgeFactError = DeleteKnowledgeFactErrors[keyof DeleteKnowledgeFactErrors];
+
+export type DeleteKnowledgeFactResponses = {
+    /**
+     * Deleted
+     */
+    204: void;
+};
+
+export type DeleteKnowledgeFactResponse = DeleteKnowledgeFactResponses[keyof DeleteKnowledgeFactResponses];
 
 export type GetKnowledgeFactData = {
     body?: never;
@@ -1859,6 +2144,46 @@ export type SearchQuestionsResponses = {
 };
 
 export type SearchQuestionsResponse = SearchQuestionsResponses[keyof SearchQuestionsResponses];
+
+export type DeleteQuestionData = {
+    body?: never;
+    path: {
+        questionId: string;
+    };
+    query?: {
+        /**
+         * Optional audit reason for the irreversible deletion
+         */
+        reason?: string;
+    };
+    url: '/api/v1/admin/questions/{questionId}';
+};
+
+export type DeleteQuestionErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Resource not found
+     */
+    404: ApiError;
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type DeleteQuestionError = DeleteQuestionErrors[keyof DeleteQuestionErrors];
+
+export type DeleteQuestionResponses = {
+    /**
+     * Deleted
+     */
+    204: void;
+};
+
+export type DeleteQuestionResponse = DeleteQuestionResponses[keyof DeleteQuestionResponses];
 
 export type GetQuestionData = {
     body?: never;
@@ -2333,6 +2658,46 @@ export type CreateReleaseResponses = {
 };
 
 export type CreateReleaseResponse = CreateReleaseResponses[keyof CreateReleaseResponses];
+
+export type DeleteReleaseData = {
+    body?: never;
+    path: {
+        releaseId: string;
+    };
+    query?: {
+        /**
+         * Optional audit reason for the irreversible deletion
+         */
+        reason?: string;
+    };
+    url: '/api/v1/admin/releases/{releaseId}';
+};
+
+export type DeleteReleaseErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Resource not found
+     */
+    404: ApiError;
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type DeleteReleaseError = DeleteReleaseErrors[keyof DeleteReleaseErrors];
+
+export type DeleteReleaseResponses = {
+    /**
+     * Deleted
+     */
+    204: void;
+};
+
+export type DeleteReleaseResponse = DeleteReleaseResponses[keyof DeleteReleaseResponses];
 
 export type GetReleaseData = {
     body?: never;

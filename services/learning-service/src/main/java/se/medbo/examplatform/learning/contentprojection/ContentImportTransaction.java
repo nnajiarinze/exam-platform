@@ -115,12 +115,13 @@ public class ContentImportTransaction {
                         jdbc.sql("""
                                 INSERT INTO imported_answer_option
                                   (id, external_answer_option_id, question_id, content_release_id,
-                                   text, correct, sort_order)
-                                VALUES (:id, :externalId, :questionId, :releaseId, :text, :correct, :sortOrder)
-                                """).params(Map.of("id", UUID.randomUUID(), "externalId", option.id(),
+                                   text, correct, feedback, sort_order)
+                                VALUES (:id, :externalId, :questionId, :releaseId, :text, :correct, :feedback, :sortOrder)
+                                """).params(new java.util.HashMap<>(Map.of("id", UUID.randomUUID(), "externalId", option.id(),
                                 "questionId", questionId, "releaseId", releaseId,
                                 "text", option.text(), "correct", option.correct(),
-                                "sortOrder", option.sortOrder())).update();
+                                "sortOrder", option.sortOrder())))
+                                .param("feedback", option.feedback(), java.sql.Types.VARCHAR).update();
                     }
                 }
             }

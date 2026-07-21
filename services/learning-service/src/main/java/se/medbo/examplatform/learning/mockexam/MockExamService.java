@@ -114,7 +114,7 @@ public class MockExamService {
         var eligible = jdbc.sql("""
                 SELECT id, topic_id, knowledge_fact_id FROM imported_question
                 WHERE content_release_id = :releaseId AND active
-                  AND question_type IN ('SINGLE_CHOICE', 'TRUE_FALSE')
+                  AND question_type IN ('SINGLE_CHOICE', 'MULTIPLE_CHOICE', 'TRUE_FALSE')
                 ORDER BY id
                 """).param("releaseId", releaseId)
                 .query((rs, row) -> new MockExamGenerator.QuestionCandidate(rs.getObject("id", UUID.class),
@@ -179,12 +179,10 @@ public class MockExamService {
         var query = jdbc.sql("""
                 SELECT question.id, imported.external_question_version_id, imported.prompt,
                        imported.question_type, question.sequence_number, question.flagged,
-                       question.version AS question_version, response.version AS answer_version,
-                       response_option.external_answer_option_id AS selected_option_id
+                       question.version AS question_version, response.version AS answer_version
                 FROM mock_exam_question question
                 JOIN imported_question imported ON imported.id = question.imported_question_id
                 LEFT JOIN mock_exam_response response ON response.attempt_question_id = question.id
-                LEFT JOIN imported_answer_option response_option ON response_option.id = response.selected_answer_option_id
                 WHERE question.attempt_id = :attemptId %s
                 ORDER BY question.sequence_number LIMIT 1
                 """.formatted(sequenceFilter)).param("attemptId", attemptId);
@@ -192,8 +190,7 @@ public class MockExamService {
         var row = query.query((rs, index) -> new QuestionRow(rs.getObject("id", UUID.class),
                 rs.getString("external_question_version_id"), rs.getString("prompt"),
                 rs.getString("question_type"), rs.getInt("sequence_number"), rs.getBoolean("flagged"),
-                rs.getLong("question_version"), rs.getObject("answer_version", Long.class),
-                rs.getString("selected_option_id"))).optional()
+                rs.getLong("question_version"), rs.getObject("answer_version", Long.class))).optional()
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "MOCK_QUESTION_NOT_FOUND",
                         sequenceNumber == null ? "No unanswered question remains" : "Mock exam question not found"));
         var options = jdbc.sql("""
@@ -205,41 +202,67 @@ public class MockExamService {
                 WHERE question.id = :id ORDER BY ordering.position
                 """).param("id", row.id()).query((rs, index) -> new AnswerOptionView(
                         rs.getString("external_answer_option_id"), rs.getString("text"))).list();
+        var selectedOptionIds = jdbc.sql("""
+                SELECT option.external_answer_option_id FROM mock_exam_response response
+                JOIN mock_exam_response_selection selection ON selection.mock_exam_response_id = response.id
+                JOIN imported_answer_option option ON option.id = selection.answer_option_id
+                WHERE response.attempt_question_id = :id ORDER BY option.sort_order
+                """).param("id", row.id()).query(String.class).list();
         var timer = MockExamTimer.state(attempt.startedAt(), attempt.durationMinutes(), clock.instant());
         return new QuestionView(row.id(), row.questionId(), row.prompt(), row.questionType(), options,
-                row.sequenceNumber(), attempt.totalQuestions(), row.selectedOptionId(), row.flagged(),
+                row.sequenceNumber(), attempt.totalQuestions(), selectedOptionIds, row.flagged(),
                 row.questionVersion(), row.answerVersion() == null ? 0 : row.answerVersion(), timer.remainingSeconds());
     }
 
     @Transactional
     public AttemptProgress answer(UUID learnerId, UUID attemptId, UUID attemptQuestionId, String optionId) {
-        return answer(learnerId, attemptId, attemptQuestionId, optionId, null);
+        return answer(learnerId, attemptId, attemptQuestionId, List.of(optionId), null);
     }
 
     @Transactional
     public AttemptProgress answer(UUID learnerId, UUID attemptId, UUID attemptQuestionId, String optionId,
                                   Long expectedVersion) {
+        return answer(learnerId, attemptId, attemptQuestionId, List.of(optionId), expectedVersion);
+    }
+
+    @Transactional
+    public AttemptProgress answer(UUID learnerId, UUID attemptId, UUID attemptQuestionId, List<String> optionIds,
+                                  Long expectedVersion) {
+        if (optionIds == null || optionIds.isEmpty() || optionIds.size() != new java.util.HashSet<>(optionIds).size()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_MOCK_ANSWER_SELECTION",
+                    "At least one unique answer option must be selected");
+        }
         var attempt = attempt(learnerId, attemptId, true);
         if (expireIfRequired(attempt)) throw notActive("Mock examination time has expired");
         if (!"ACTIVE".equals(attempt.status())) throw notActive("Mock examination is not active");
         var answer = jdbc.sql("""
-                SELECT question.imported_question_id, option.id, option.correct
+                SELECT question.imported_question_id, imported.question_type
                 FROM mock_exam_question question
-                JOIN imported_answer_option option
-                  ON option.question_id = question.imported_question_id
-                 AND option.external_answer_option_id = :optionId
+                JOIN imported_question imported ON imported.id = question.imported_question_id
                 WHERE question.id = :questionId AND question.attempt_id = :attemptId
-                """).param("optionId", optionId).param("questionId", attemptQuestionId)
+                """).param("questionId", attemptQuestionId)
                 .param("attemptId", attemptId)
                 .query((rs, row) -> new AnswerContext(rs.getObject("imported_question_id", UUID.class),
-                        rs.getObject("id", UUID.class), rs.getBoolean("correct"))).optional()
+                        rs.getString("question_type"))).optional()
                 .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "MOCK_ANSWER_OPTION_INVALID",
                         "Answer option does not belong to the mock exam question"));
-        long currentVersion = jdbc.sql("SELECT COALESCE((SELECT version FROM mock_exam_response WHERE attempt_question_id = :id), 0)")
-                .param("id", attemptQuestionId).query(Long.class).single();
+        var options = jdbc.sql("SELECT id,external_answer_option_id,correct FROM imported_answer_option WHERE question_id=:id")
+                .param("id", answer.importedQuestionId()).query((rs,row)->new AnswerSelection(
+                        rs.getObject("id",UUID.class),rs.getString("external_answer_option_id"),rs.getBoolean("correct"))).list();
+        var byId=options.stream().collect(java.util.stream.Collectors.toMap(AnswerSelection::externalId,o->o));
+        if(!byId.keySet().containsAll(optionIds)) throw new ApiException(HttpStatus.BAD_REQUEST,
+                "MOCK_ANSWER_OPTION_INVALID","Answer option does not belong to the mock exam question");
+        if(!"MULTIPLE_CHOICE".equals(answer.questionType())&&optionIds.size()!=1) throw new ApiException(
+                HttpStatus.BAD_REQUEST,"INVALID_MOCK_ANSWER_SELECTION","Single-choice questions require exactly one selected option");
+        boolean correct=se.medbo.examplatform.learning.shared.ExactSetScoring.matches(optionIds,
+                options.stream().filter(AnswerSelection::correct).map(AnswerSelection::externalId).toList());
+        var existing=jdbc.sql("SELECT id,version FROM mock_exam_response WHERE attempt_question_id=:id")
+                .param("id",attemptQuestionId).query((rs,row)->new ExistingResponse(rs.getObject("id",UUID.class),rs.getLong("version"))).optional();
+        long currentVersion=existing.map(ExistingResponse::version).orElse(0L);
         if (expectedVersion != null && expectedVersion != currentVersion) {
             throw new ApiException(HttpStatus.CONFLICT, "STALE_ANSWER_VERSION", "The answer was changed by another request");
         }
+        UUID responseId=existing.map(ExistingResponse::id).orElseGet(UUID::randomUUID);
         jdbc.sql("""
                 INSERT INTO mock_exam_response
                   (id, attempt_id, attempt_question_id, imported_question_id,
@@ -251,10 +274,14 @@ public class MockExamService {
                   answered_at = EXCLUDED.answered_at,
                   updated_at = EXCLUDED.updated_at,
                   version = mock_exam_response.version + 1
-                """).params(Map.of("id", UUID.randomUUID(), "attemptId", attemptId,
+                """).params(new java.util.HashMap<>(Map.of("id", responseId, "attemptId", attemptId,
                         "questionId", attemptQuestionId, "importedQuestionId", answer.importedQuestionId(),
-                        "optionId", answer.optionId(), "correct", answer.correct(),
-                        "answeredAt", utc(clock.instant()), "updatedAt", utc(clock.instant()))).update();
+                        "correct", correct, "answeredAt", utc(clock.instant()), "updatedAt", utc(clock.instant()))))
+                .param("optionId",optionIds.size()==1?byId.get(optionIds.getFirst()).id():null,java.sql.Types.OTHER).update();
+        jdbc.sql("DELETE FROM mock_exam_response_selection WHERE mock_exam_response_id=:id").param("id",responseId).update();
+        for(String optionId:optionIds) jdbc.sql("INSERT INTO mock_exam_response_selection(mock_exam_response_id,imported_question_id,answer_option_id) VALUES(:response,:question,:option)")
+                .param("response",responseId).param("question",answer.importedQuestionId())
+                .param("option",byId.get(optionId).id()).update();
         log.info("mock_exam_answer_saved mockExamId={} learnerId={} questionId={}",
                 attemptId, learnerId, attemptQuestionId);
         return progress(attemptId, attempt);
@@ -489,21 +516,33 @@ public class MockExamService {
                             total, rs.getInt("answered"), correct,
                             MockExamScoring.calculate(correct, total, BigDecimal.ZERO).percentage());
                 }).list();
-        var incorrect = jdbc.sql("""
-                SELECT imported.external_question_version_id, imported.prompt, imported.explanation,
-                       selected.external_answer_option_id AS selected_id, selected.text AS selected_text,
-                       correct.external_answer_option_id AS correct_id, correct.text AS correct_text
+        var incorrectRows = jdbc.sql("""
+                SELECT imported.id, imported.external_question_version_id, imported.prompt, imported.explanation,
+                       imported.question_type, response.id AS response_id
                 FROM mock_exam_question question
                 JOIN imported_question imported ON imported.id = question.imported_question_id
-                JOIN imported_answer_option correct ON correct.question_id = imported.id AND correct.correct
                 LEFT JOIN mock_exam_response response ON response.attempt_question_id = question.id
-                LEFT JOIN imported_answer_option selected ON selected.id = response.selected_answer_option_id
                 WHERE question.attempt_id = :attemptId AND (response.id IS NULL OR NOT response.correct)
                 ORDER BY question.sequence_number
-                """).param("attemptId", attemptId).query((rs, row) -> new IncorrectQuestion(
-                        rs.getString("external_question_version_id"), rs.getString("prompt"),
-                        rs.getString("selected_id"), rs.getString("selected_text"), rs.getString("correct_id"),
-                        rs.getString("correct_text"), rs.getString("explanation"))).list();
+                """).param("attemptId", attemptId).query((rs, row) -> new IncorrectRow(
+                        rs.getObject("id",UUID.class),rs.getString("external_question_version_id"),
+                        rs.getString("prompt"),rs.getString("explanation"),rs.getString("question_type"),
+                        rs.getObject("response_id",UUID.class))).list();
+        var incorrect = incorrectRows.stream().map(row -> {
+            var selectedIds=row.responseId()==null?List.<String>of():jdbc.sql("""
+                    SELECT option.external_answer_option_id FROM mock_exam_response_selection selection
+                    JOIN imported_answer_option option ON option.id=selection.answer_option_id
+                    WHERE selection.mock_exam_response_id=:id ORDER BY option.sort_order
+                    """).param("id",row.responseId()).query(String.class).list();
+            var options=jdbc.sql("SELECT external_answer_option_id,text,correct,feedback FROM imported_answer_option WHERE question_id=:id ORDER BY sort_order")
+                    .param("id",row.importedQuestionId()).query((rs,index)->new ReviewOption(
+                            rs.getString("external_answer_option_id"),rs.getString("text"),
+                            selectedIds.contains(rs.getString("external_answer_option_id")),rs.getBoolean("correct"),
+                            rs.getBoolean("correct")&&!selectedIds.contains(rs.getString("external_answer_option_id")),
+                            rs.getString("feedback"))).list();
+            return new IncorrectQuestion(row.questionId(),row.prompt(),row.questionType(),selectedIds,
+                    options.stream().filter(ReviewOption::correct).map(ReviewOption::id).toList(),options,row.explanation());
+        }).toList();
         return new ResultView(attempt.id(), attempt.blueprintName(), attempt.status(), attempt.startedAt(),
                 attempt.completedAt(), attempt.durationSeconds(), attempt.score(), attempt.incorrectCount(),
                 attempt.unansweredCount(), attempt.percentage(), attempt.passPercentage(), attempt.passed(),
@@ -566,7 +605,7 @@ public class MockExamService {
     public record NavigationItem(UUID attemptQuestionId, int sequenceNumber, boolean answered, boolean flagged) {}
     public record QuestionView(UUID attemptQuestionId, String questionId, String prompt, String questionType,
                                List<AnswerOptionView> answerOptions, int sequenceNumber, int totalQuestions,
-                               String selectedAnswerOptionId, boolean flagged, long questionVersion,
+                               List<String> selectedOptionIds, boolean flagged, long questionVersion,
                                long answerVersion, int remainingSeconds) {}
     public record AnswerOptionView(String id, String text) {}
     public record AttemptProgress(int answered, int total, int flagged, int remainingSeconds) {}
@@ -579,9 +618,16 @@ public class MockExamService {
                                 int unanswered, BigDecimal percentage) {}
     public record TopicResult(String topicId, String topicName, int total, int answered, int correct,
                               BigDecimal percentage) {}
-    public record IncorrectQuestion(String questionId, String prompt, String selectedAnswerOptionId,
-                                    String selectedAnswerText, String correctAnswerOptionId,
-                                    String correctAnswerText, String explanation) {}
+    public record IncorrectQuestion(String questionId, String prompt, String questionType,
+                                    List<String> selectedOptionIds, List<String> correctOptionIds,
+                                    List<ReviewOption> options, String explanation) {
+        public IncorrectQuestion(String questionId,String prompt,String selectedId,String selectedText,
+                                 String correctId,String correctText,String explanation){this(questionId,prompt,
+                "SINGLE_CHOICE",selectedId==null?List.of():List.of(selectedId),List.of(correctId),
+                List.of(new ReviewOption(correctId,correctText,correctId.equals(selectedId),true,!correctId.equals(selectedId),null)),explanation);}
+        public String correctAnswerOptionId(){return correctOptionIds.isEmpty()?null:correctOptionIds.getFirst();}
+    }
+    public record ReviewOption(String id,String text,boolean selected,boolean correct,boolean missed,String feedback) {}
     public record HistoryView(UUID attemptId, String name, String status, Instant startedAt, int durationSeconds,
                               int score, BigDecimal percentage, boolean passed, int totalQuestions) {}
     private record Blueprint(UUID id, String name, String description, int totalQuestions, int durationMinutes,
@@ -590,8 +636,12 @@ public class MockExamService {
                            int totalQuestions, int durationMinutes, BigDecimal passingPercentage,
                            String blueprintName, String examId, UUID releaseId, String description) {}
     private record QuestionRow(UUID id, String questionId, String prompt, String questionType, int sequenceNumber,
-                               boolean flagged, long questionVersion, Long answerVersion, String selectedOptionId) {}
-    private record AnswerContext(UUID importedQuestionId, UUID optionId, boolean correct) {}
+                               boolean flagged, long questionVersion, Long answerVersion) {}
+    private record AnswerContext(UUID importedQuestionId, String questionType) {}
+    private record AnswerSelection(UUID id,String externalId,boolean correct) {}
+    private record ExistingResponse(UUID id,long version) {}
+    private record IncorrectRow(UUID importedQuestionId,String questionId,String prompt,String explanation,
+                                String questionType,UUID responseId) {}
     private record ResultRow(UUID id, String blueprintName, String status, Instant startedAt, Instant completedAt,
                              int durationSeconds, int score, BigDecimal percentage, boolean passed,
                              int totalQuestions, BigDecimal passPercentage, int incorrectCount,

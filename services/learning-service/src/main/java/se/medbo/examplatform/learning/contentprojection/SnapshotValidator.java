@@ -22,8 +22,8 @@ public class SnapshotValidator {
 
     public void validate(ContentSnapshot snapshot) {
         ExternalExamIdentifier.normalize(snapshot.examId());
-        if (!"1.0".equals(snapshot.schemaVersion()) || !"PUBLISHED".equals(snapshot.releaseStatus())) {
-            invalid("Only published content snapshot schema 1.0 is accepted");
+        if (!java.util.Set.of("1.0", "1.1").contains(snapshot.schemaVersion()) || !"PUBLISHED".equals(snapshot.releaseStatus())) {
+            invalid("Only published content snapshot schemas 1.0 and 1.1 are accepted");
         }
         var subjectIds = new HashSet<String>();
         var topicIds = new HashSet<String>();
@@ -37,12 +37,13 @@ public class SnapshotValidator {
                 for (var question : topic.questions()) {
                     if (!questionIds.add(question.id())) invalid("Duplicate question identifier");
                     if (!questionVersions.add(question.versionId())) invalid("Duplicate question version identifier");
-                    if (!java.util.Set.of("SINGLE_CHOICE", "TRUE_FALSE").contains(question.questionType())) {
+                    if (!java.util.Set.of("SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE").contains(question.questionType())) {
                         invalid("Unsupported question type");
                     }
                     long correct = question.answerOptions().stream().filter(ContentSnapshot.AnswerOption::correct).count();
-                    if (question.answerOptions().size() < 2 || correct != 1) {
-                        invalid("A single-choice question requires at least two options and exactly one correct option");
+                    if (question.answerOptions().size() < 2 || question.answerOptions().size() > 6
+                            || ("MULTIPLE_CHOICE".equals(question.questionType()) ? correct < 1 : correct != 1)) {
+                        invalid("Question answer structure is invalid for its type");
                     }
                     var optionIds = new HashSet<String>();
                     var optionSortOrders = new HashSet<Integer>();
@@ -52,6 +53,15 @@ public class SnapshotValidator {
                         }
                         if (!optionSortOrders.add(option.sortOrder())) {
                             invalid("Duplicate answer option sort order");
+                        }
+                    }
+                    var flaggedCorrect = question.answerOptions().stream().filter(ContentSnapshot.AnswerOption::correct)
+                            .map(ContentSnapshot.AnswerOption::id).collect(java.util.stream.Collectors.toSet());
+                    if ("1.1".equals(snapshot.schemaVersion())) {
+                        if (question.correctOptionIds() == null || question.correctOptionIds().isEmpty()
+                                || question.correctOptionIds().size() != new HashSet<>(question.correctOptionIds()).size()
+                                || !flaggedCorrect.equals(new HashSet<>(question.correctOptionIds()))) {
+                            invalid("Correct option identifiers must exactly match the correct option flags");
                         }
                     }
                 }
@@ -70,8 +80,15 @@ public class SnapshotValidator {
             var material = new SnapshotWithoutChecksum(snapshot.schemaVersion(), snapshot.externalReleaseId(),
                     snapshot.examId(), snapshot.examVersionId(), snapshot.releaseVersion(), snapshot.releaseStatus(),
                     snapshot.publishedAt(), snapshot.subjects());
+            var tree = objectMapper.valueToTree(material);
+            if ("1.0".equals(snapshot.schemaVersion())) {
+                tree.findParents("correctOptionIds").forEach(node -> ((com.fasterxml.jackson.databind.node.ObjectNode) node)
+                        .remove("correctOptionIds"));
+                tree.findParents("feedback").forEach(node -> ((com.fasterxml.jackson.databind.node.ObjectNode) node)
+                        .remove("feedback"));
+            }
             return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
-                    .digest(objectMapper.writeValueAsBytes(material)));
+                    .digest(objectMapper.writeValueAsBytes(tree)));
         } catch (JsonProcessingException | NoSuchAlgorithmException exception) {
             throw new IllegalStateException("Cannot calculate snapshot checksum", exception);
         }

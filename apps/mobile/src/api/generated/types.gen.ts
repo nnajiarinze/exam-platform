@@ -47,8 +47,9 @@ export type PracticeQuestion = {
     sessionQuestionId: string;
     questionId: string;
     prompt: string;
-    questionType: 'SINGLE_CHOICE' | 'TRUE_FALSE';
+    questionType: 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TRUE_FALSE';
     answerOptions: Array<AnswerOption>;
+    selectedOptionIds: Array<string>;
     sequenceNumber: number;
     totalQuestionCount: number;
 };
@@ -60,15 +61,21 @@ export type AnswerOption = {
 
 export type SubmitAnswerRequest = {
     sessionQuestionId: string;
-    selectedAnswerOptionId: string;
+    selectedOptionIds: Array<string>;
     responseTimeMillis?: number | null;
 };
 
 export type AnswerResult = {
     correct: boolean;
-    selectedAnswerOptionId: string;
-    correctAnswerOptionId: string;
+    selectedOptionIds: Array<string>;
+    correctOptionIds: Array<string>;
     explanation: string;
+    optionFeedback: Array<{
+        optionId: string;
+        selected: boolean;
+        correct: boolean;
+        feedback?: string | null;
+    }>;
     sessionProgress: {
         answered: number;
         total: number;
@@ -142,11 +149,11 @@ export type MockExamQuestion = {
     attemptQuestionId: string;
     questionId: string;
     prompt: string;
-    questionType: 'SINGLE_CHOICE' | 'TRUE_FALSE';
+    questionType: 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TRUE_FALSE';
     answerOptions: Array<AnswerOption>;
     sequenceNumber: number;
     totalQuestions: number;
-    selectedAnswerOptionId?: string | null;
+    selectedOptionIds: Array<string>;
     flagged: boolean;
     questionVersion: number;
     answerVersion: number;
@@ -155,7 +162,7 @@ export type MockExamQuestion = {
 
 export type SubmitMockExamAnswerRequest = {
     attemptQuestionId: string;
-    selectedAnswerOptionId: string;
+    selectedOptionIds: Array<string>;
     /**
      * Optional optimistic-lock version; omitted for backwards compatibility.
      */
@@ -199,10 +206,17 @@ export type MockExamSubjectResult = {
 export type MockExamIncorrectQuestion = {
     questionId: string;
     prompt: string;
-    selectedAnswerOptionId?: string | null;
-    selectedAnswerText?: string | null;
-    correctAnswerOptionId: string;
-    correctAnswerText: string;
+    questionType: 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TRUE_FALSE';
+    selectedOptionIds: Array<string>;
+    correctOptionIds: Array<string>;
+    options: Array<{
+        id: string;
+        text: string;
+        selected: boolean;
+        correct: boolean;
+        missed: boolean;
+        feedback?: string | null;
+    }>;
     explanation: string;
 };
 
@@ -253,7 +267,7 @@ export type Error = {
  * SHA-256 checksum is calculated over canonical JSON serialization of the snapshot with the checksum field omitted. Object field order follows this schema and array order is significant.
  */
 export type ContentSnapshotV1Schema = {
-    schemaVersion: '1.0';
+    schemaVersion: '1.1';
     externalReleaseId: string;
     /**
      * Canonical lowercase kebab-case cross-service exam identifier.
@@ -277,16 +291,18 @@ export type ContentSnapshotV1Schema = {
                 id: string;
                 versionId: string;
                 knowledgeFactId: string;
-                questionType: 'SINGLE_CHOICE';
+                questionType: 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TRUE_FALSE';
                 prompt: string;
                 explanation: string;
                 language: string;
                 difficulty?: string | null;
                 active: boolean;
+                correctOptionIds: Array<string>;
                 answerOptions: Array<{
                     id: string;
                     text: string;
                     correct: boolean;
+                    feedback?: string | null;
                     sortOrder: number;
                 }>;
             }>;
@@ -297,6 +313,37 @@ export type ContentSnapshotV1Schema = {
 export type SessionId = string;
 
 export type AttemptId = string;
+
+export type GetInternalLearnerHealthData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/internal/v1/reports/learner-health';
+};
+
+export type GetInternalLearnerHealthErrors = {
+    /**
+     * Authentication is absent or invalid.
+     */
+    401: Error;
+    /**
+     * Unexpected error
+     */
+    500: Error;
+};
+
+export type GetInternalLearnerHealthError = GetInternalLearnerHealthErrors[keyof GetInternalLearnerHealthErrors];
+
+export type GetInternalLearnerHealthResponses = {
+    /**
+     * Aggregate counts and averages without learner PII
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type GetInternalLearnerHealthResponse = GetInternalLearnerHealthResponses[keyof GetInternalLearnerHealthResponses];
 
 export type GetSubjectsData = {
     body?: never;

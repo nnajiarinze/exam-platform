@@ -15,8 +15,8 @@ export function MockAnswerReviewScreen({ route }: NativeStackScreenProps<RootSta
   if (query.isError) return <Screen><ErrorState message={friendlyError(query.error)} retry={() => query.refetch()} /></Screen>;
   return <Screen><Title>Answer review</Title><Body>Incorrect and unanswered questions are shown below. Answers can no longer be changed.</Body>
     {query.data.incorrectQuestions.length === 0 ? <Card><Body>Every question was answered correctly.</Body></Card> : query.data.incorrectQuestions.map((question) => <Card key={question.questionId}>
-      <Text accessibilityRole="header">{question.prompt}</Text><Text>Status: {question.selectedAnswerText ? 'Incorrect' : 'Unanswered'}</Text>
-      <Text>Your answer: {question.selectedAnswerText ?? 'No answer'}</Text><Text>Correct answer: {question.correctAnswerText}</Text><Body>{question.explanation}</Body>
+      <Text accessibilityRole="header">{question.prompt}</Text><Text>{question.questionType.replaceAll('_', ' ')}</Text><Text>Status: {question.selectedOptionIds.length ? 'Incorrect' : 'Unanswered'}</Text>
+      {question.options.map((option) => <Text key={option.id}>{option.selected ? 'Selected' : option.missed ? 'Missed' : option.correct ? 'Correct' : 'Not selected'}: {option.text}</Text>)}<Body>{question.explanation}</Body>
     </Card>)}
   </Screen>;
 }

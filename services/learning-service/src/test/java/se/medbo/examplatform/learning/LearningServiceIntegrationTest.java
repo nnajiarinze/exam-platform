@@ -143,6 +143,37 @@ class LearningServiceIntegrationTest {
     }
 
     @Test
+    void importsAndScoresMultipleChoiceUsingTheExactOptionSet() {
+        var multiple = new ContentSnapshot.Question("multi-1", "multi-1-v1", "fact-multi",
+                "MULTIPLE_CHOICE", "Select both correct answers", "Both are required", "sv", null, true,
+                List.of("multi-a", "multi-c"), List.of(
+                        new ContentSnapshot.AnswerOption("multi-a", "A", true, "A feedback", 0),
+                        new ContentSnapshot.AnswerOption("multi-b", "B", false, "B feedback", 1),
+                        new ContentSnapshot.AnswerOption("multi-c", "C", true, "C feedback", 2)));
+        var candidate = new ContentSnapshot("1.1", "multi-release", "swedish-citizenship", "exam-v1",
+                "10", "PUBLISHED", Instant.parse("2026-03-01T00:00:00Z"), "pending",
+                List.of(new ContentSnapshot.Subject("subject-multi", "Multiple", 0,
+                        List.of(new ContentSnapshot.Topic("topic-multi", "Multiple", null, 0, List.of(multiple))))));
+        importAndActivate(withChecksum(candidate));
+
+        var exactSession = practiceService.create(learnerId, new PracticeService.CreateSession(
+                "swedish-citizenship", "topic-multi", PracticeMode.TOPIC, 1));
+        var exact = practiceService.submit(learnerId, exactSession.sessionId(), new PracticeService.SubmitAnswer(
+                exactSession.nextQuestion().orElseThrow().sessionQuestionId(), List.of("multi-c", "multi-a"), null));
+        assertThat(exact.correct()).isTrue();
+        assertThat(exact.correctOptionIds()).containsExactly("multi-a", "multi-c");
+        assertThat(exact.optionFeedback()).hasSize(3);
+
+        var partialSession = practiceService.create(learnerId, new PracticeService.CreateSession(
+                "swedish-citizenship", "topic-multi", PracticeMode.TOPIC, 1));
+        var partial = practiceService.submit(learnerId, partialSession.sessionId(), new PracticeService.SubmitAnswer(
+                partialSession.nextQuestion().orElseThrow().sessionQuestionId(), List.of("multi-a"), null));
+        assertThat(partial.correct()).isFalse();
+        assertThat(jdbc.sql("SELECT count(*) FROM practice_response_selection")
+                .query(Integer.class).single()).isEqualTo(3);
+    }
+
+    @Test
     void uppercaseImportAndRequestsResolveTheCanonicalActiveExam() throws Exception {
         var canonical = snapshot("canonical-release", "1");
         var uppercase = withChecksum(new ContentSnapshot(canonical.schemaVersion(), canonical.externalReleaseId(),

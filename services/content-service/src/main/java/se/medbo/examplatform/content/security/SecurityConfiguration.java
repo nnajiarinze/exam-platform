@@ -36,6 +36,9 @@ class SecurityConfiguration {
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers("/api/v1/status").hasAnyRole(ADMIN_ROLES)
                         .requestMatchers(HttpMethod.GET, "/api/v1/admin/**").hasAnyRole(ADMIN_ROLES)
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/admin/releases/*").hasAnyRole("CONTENT_PUBLISHER", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/admin/knowledge-facts/*", "/api/v1/admin/questions/*").hasAnyRole("CONTENT_AUTHOR", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/v1/admin/sources/*/review", "/api/v1/admin/sources/*/require-update", "/api/v1/admin/sources/*/retire").hasAnyRole("CONTENT_REVIEWER", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/v1/admin/knowledge-facts/*/approve", "/api/v1/admin/knowledge-facts/*/reject", "/api/v1/admin/knowledge-facts/*/require-update", "/api/v1/admin/knowledge-facts/*/retire").hasAnyRole("CONTENT_REVIEWER", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/v1/admin/questions/*/approve", "/api/v1/admin/questions/*/reject", "/api/v1/admin/questions/*/require-update", "/api/v1/admin/questions/*/retire").hasAnyRole("CONTENT_REVIEWER", "ADMIN")
@@ -64,7 +67,7 @@ class SecurityConfiguration {
         if (developmentEnabled) {
             var config = new CorsConfiguration();
             config.setAllowedOriginPatterns(origins);
-            config.setAllowedMethods(List.of("GET", "POST", "PUT", "OPTIONS"));
+            config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
             config.setAllowedHeaders(List.of("Accept", "Content-Type", DevelopmentAdminAuthenticationFilter.IDENTITY_HEADER, DevelopmentAdminAuthenticationFilter.ROLES_HEADER));
             source.registerCorsConfiguration("/api/**", config);
         }

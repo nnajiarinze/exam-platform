@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ActivateReleaseData, ActivateReleaseErrors, ActivateReleaseResponses, AddReviewCommentData, AddReviewCommentErrors, AddReviewCommentResponses, ApproveKnowledgeFactData, ApproveKnowledgeFactErrors, ApproveKnowledgeFactResponses, ApproveQuestionData, ApproveQuestionErrors, ApproveQuestionResponses, ArchiveExamData, ArchiveExamErrors, ArchiveExamResponses, ArchiveExamVersionData, ArchiveExamVersionResponses, ArchiveLearningObjectiveData, ArchiveLearningObjectiveErrors, ArchiveLearningObjectiveResponses, ArchiveSubjectData, ArchiveSubjectResponses, ArchiveTopicData, ArchiveTopicResponses, AssignReviewData, AssignReviewErrors, AssignReviewResponses, ChangeReviewPriorityData, ChangeReviewPriorityErrors, ChangeReviewPriorityResponses, ClaimReviewData, ClaimReviewErrors, ClaimReviewResponses, CreateExamData, CreateExamErrors, CreateExamResponses, CreateExamVersionData, CreateExamVersionErrors, CreateExamVersionResponses, CreateKnowledgeFactData, CreateKnowledgeFactErrors, CreateKnowledgeFactResponses, CreateLearningObjectiveData, CreateLearningObjectiveErrors, CreateLearningObjectiveResponses, CreateQuestionData, CreateQuestionErrors, CreateQuestionResponses, CreateReleaseData, CreateReleaseErrors, CreateReleaseResponses, CreateSourceData, CreateSourceErrors, CreateSourceResponses, CreateSubjectData, CreateSubjectResponses, CreateTopicData, CreateTopicResponses, DeliverReleaseData, DeliverReleaseErrors, DeliverReleaseResponses, GetContentHealthReportData, GetContentHealthReportErrors, GetContentHealthReportResponses, GetContentServiceStatusData, GetContentServiceStatusErrors, GetContentServiceStatusResponses, GetExamData, GetExamErrors, GetExamResponses, GetExamVersionData, GetExamVersionErrors, GetExamVersionResponses, GetKnowledgeFactData, GetKnowledgeFactErrors, GetKnowledgeFactResponses, GetLearnerHealthReportData, GetLearnerHealthReportErrors, GetLearnerHealthReportResponses, GetLearningObjectiveData, GetLearningObjectiveErrors, GetLearningObjectiveResponses, GetPublishedReleaseSnapshotData, GetPublishedReleaseSnapshotResponses, GetQuestionData, GetQuestionErrors, GetQuestionResponses, GetReleaseData, GetReleaseDiffData, GetReleaseDiffResponses, GetReleaseHealthReportData, GetReleaseHealthReportErrors, GetReleaseHealthReportResponses, GetReleaseResponses, GetReviewData, GetReviewErrors, GetReviewHealthReportData, GetReviewHealthReportErrors, GetReviewHealthReportResponses, GetReviewResponses, GetReviewSummaryData, GetReviewSummaryResponses, GetSourceData, GetSourceErrors, GetSourceHealthReportData, GetSourceHealthReportErrors, GetSourceHealthReportResponses, GetSourceResponses, GetSubjectData, GetSubjectResponses, GetTopicData, GetTopicResponses, ListEligibleReleaseFactsData, ListEligibleReleaseFactsResponses, ListEligibleReleaseQuestionsData, ListEligibleReleaseQuestionsResponses, ListExamsData, ListExamsErrors, ListExamsResponses, ListExamVersionsData, ListExamVersionsResponses, ListKnowledgeFactsData, ListKnowledgeFactsErrors, ListKnowledgeFactsResponses, ListKnowledgeFactVersionsData, ListKnowledgeFactVersionsErrors, ListKnowledgeFactVersionsResponses, ListLearningObjectivesData, ListLearningObjectivesErrors, ListLearningObjectivesResponses, ListQuestionsData, ListQuestionsResponses, ListQuestionVersionsData, ListQuestionVersionsResponses, ListReleaseDeliveryAttemptsData, ListReleaseDeliveryAttemptsResponses, ListReleasesData, ListReleasesResponses, ListReviewCommentsData, ListReviewCommentsResponses, ListReviewHistoryData, ListReviewHistoryResponses, ListReviewsData, ListReviewsResponses, ListSourcesData, ListSourcesResponses, ListSubjectsData, ListSubjectsResponses, ListTopicsData, ListTopicsResponses, PreviewReleaseData, PreviewReleaseResponses, PublishReleaseData, PublishReleaseErrors, PublishReleaseResponses, RejectKnowledgeFactData, RejectKnowledgeFactErrors, RejectKnowledgeFactResponses, RejectQuestionData, RejectQuestionResponses, ReorderSubjectsData, ReorderSubjectsErrors, ReorderSubjectsResponses, ReorderTopicsData, ReorderTopicsErrors, ReorderTopicsResponses, ReplaceReleaseSelectionData, ReplaceReleaseSelectionErrors, ReplaceReleaseSelectionResponses, RequireKnowledgeFactUpdateData, RequireKnowledgeFactUpdateErrors, RequireKnowledgeFactUpdateResponses, RequireQuestionUpdateData, RequireQuestionUpdateResponses, RequireSourceUpdateData, RequireSourceUpdateResponses, RetireKnowledgeFactData, RetireKnowledgeFactErrors, RetireKnowledgeFactResponses, RetireQuestionData, RetireQuestionResponses, RetireReleaseData, RetireReleaseResponses, RetireSourceData, RetireSourceErrors, RetireSourceResponses, RetryReleaseDeliveryData, RetryReleaseDeliveryResponses, ReviewSourceData, ReviewSourceResponses, SearchAuditEventsData, SearchAuditEventsErrors, SearchAuditEventsResponses, SearchQuestionsData, SearchQuestionsResponses, SubmitKnowledgeFactData, SubmitKnowledgeFactErrors, SubmitKnowledgeFactResponses, SubmitQuestionData, SubmitQuestionResponses, UnclaimReviewData, UnclaimReviewErrors, UnclaimReviewResponses, UpdateExamData, UpdateExamErrors, UpdateExamResponses, UpdateExamVersionData, UpdateExamVersionErrors, UpdateExamVersionResponses, UpdateKnowledgeFactData, UpdateKnowledgeFactErrors, UpdateKnowledgeFactResponses, UpdateLearningObjectiveData, UpdateLearningObjectiveErrors, UpdateLearningObjectiveResponses, UpdateQuestionData, UpdateQuestionErrors, UpdateQuestionResponses, UpdateReleaseData, UpdateReleaseErrors, UpdateReleaseResponses, UpdateSourceData, UpdateSourceErrors, UpdateSourceResponses, UpdateSubjectData, UpdateSubjectErrors, UpdateSubjectResponses, UpdateTopicData, UpdateTopicErrors, UpdateTopicResponses, ValidateReleaseData, ValidateReleaseResponses } from './types.gen';
+import type { ActivateReleaseData, ActivateReleaseErrors, ActivateReleaseResponses, AddReviewCommentData, AddReviewCommentErrors, AddReviewCommentResponses, ApproveKnowledgeFactData, ApproveKnowledgeFactErrors, ApproveKnowledgeFactResponses, ApproveQuestionData, ApproveQuestionErrors, ApproveQuestionResponses, ArchiveExamData, ArchiveExamErrors, ArchiveExamResponses, ArchiveExamVersionData, ArchiveExamVersionResponses, ArchiveLearningObjectiveData, ArchiveLearningObjectiveErrors, ArchiveLearningObjectiveResponses, ArchiveSubjectData, ArchiveSubjectResponses, ArchiveTopicData, ArchiveTopicResponses, AssignReviewData, AssignReviewErrors, AssignReviewResponses, ChangeReviewPriorityData, ChangeReviewPriorityErrors, ChangeReviewPriorityResponses, ClaimReviewData, ClaimReviewErrors, ClaimReviewResponses, CreateExamData, CreateExamErrors, CreateExamResponses, CreateExamVersionData, CreateExamVersionErrors, CreateExamVersionResponses, CreateKnowledgeFactData, CreateKnowledgeFactErrors, CreateKnowledgeFactResponses, CreateLearningObjectiveData, CreateLearningObjectiveErrors, CreateLearningObjectiveResponses, CreateQuestionData, CreateQuestionErrors, CreateQuestionResponses, CreateReleaseData, CreateReleaseErrors, CreateReleaseResponses, CreateSourceData, CreateSourceErrors, CreateSourceResponses, CreateSubjectData, CreateSubjectResponses, CreateTopicData, CreateTopicResponses, DeleteExamData, DeleteExamErrors, DeleteExamResponses, DeleteExamVersionData, DeleteExamVersionErrors, DeleteExamVersionResponses, DeleteKnowledgeFactData, DeleteKnowledgeFactErrors, DeleteKnowledgeFactResponses, DeleteLearningObjectiveData, DeleteLearningObjectiveErrors, DeleteLearningObjectiveResponses, DeleteQuestionData, DeleteQuestionErrors, DeleteQuestionResponses, DeleteReleaseData, DeleteReleaseErrors, DeleteReleaseResponses, DeleteSourceData, DeleteSourceErrors, DeleteSourceResponses, DeleteSubjectData, DeleteSubjectErrors, DeleteSubjectResponses, DeleteTopicData, DeleteTopicErrors, DeleteTopicResponses, DeliverReleaseData, DeliverReleaseErrors, DeliverReleaseResponses, GetContentHealthReportData, GetContentHealthReportErrors, GetContentHealthReportResponses, GetContentServiceStatusData, GetContentServiceStatusErrors, GetContentServiceStatusResponses, GetExamData, GetExamErrors, GetExamResponses, GetExamVersionData, GetExamVersionErrors, GetExamVersionResponses, GetKnowledgeFactData, GetKnowledgeFactErrors, GetKnowledgeFactResponses, GetLearnerHealthReportData, GetLearnerHealthReportErrors, GetLearnerHealthReportResponses, GetLearningObjectiveData, GetLearningObjectiveErrors, GetLearningObjectiveResponses, GetPublishedReleaseSnapshotData, GetPublishedReleaseSnapshotResponses, GetQuestionData, GetQuestionErrors, GetQuestionResponses, GetReleaseData, GetReleaseDiffData, GetReleaseDiffResponses, GetReleaseHealthReportData, GetReleaseHealthReportErrors, GetReleaseHealthReportResponses, GetReleaseResponses, GetReviewData, GetReviewErrors, GetReviewHealthReportData, GetReviewHealthReportErrors, GetReviewHealthReportResponses, GetReviewResponses, GetReviewSummaryData, GetReviewSummaryResponses, GetSourceData, GetSourceErrors, GetSourceHealthReportData, GetSourceHealthReportErrors, GetSourceHealthReportResponses, GetSourceResponses, GetSubjectData, GetSubjectResponses, GetTopicData, GetTopicResponses, ListEligibleReleaseFactsData, ListEligibleReleaseFactsResponses, ListEligibleReleaseQuestionsData, ListEligibleReleaseQuestionsResponses, ListExamsData, ListExamsErrors, ListExamsResponses, ListExamVersionsData, ListExamVersionsResponses, ListKnowledgeFactsData, ListKnowledgeFactsErrors, ListKnowledgeFactsResponses, ListKnowledgeFactVersionsData, ListKnowledgeFactVersionsErrors, ListKnowledgeFactVersionsResponses, ListLearningObjectivesData, ListLearningObjectivesErrors, ListLearningObjectivesResponses, ListQuestionsData, ListQuestionsResponses, ListQuestionVersionsData, ListQuestionVersionsResponses, ListReleaseDeliveryAttemptsData, ListReleaseDeliveryAttemptsResponses, ListReleasesData, ListReleasesResponses, ListReviewCommentsData, ListReviewCommentsResponses, ListReviewHistoryData, ListReviewHistoryResponses, ListReviewsData, ListReviewsResponses, ListSourcesData, ListSourcesResponses, ListSubjectsData, ListSubjectsResponses, ListTopicsData, ListTopicsResponses, PreviewReleaseData, PreviewReleaseResponses, PublishReleaseData, PublishReleaseErrors, PublishReleaseResponses, RejectKnowledgeFactData, RejectKnowledgeFactErrors, RejectKnowledgeFactResponses, RejectQuestionData, RejectQuestionResponses, ReorderSubjectsData, ReorderSubjectsErrors, ReorderSubjectsResponses, ReorderTopicsData, ReorderTopicsErrors, ReorderTopicsResponses, ReplaceReleaseSelectionData, ReplaceReleaseSelectionErrors, ReplaceReleaseSelectionResponses, RequireKnowledgeFactUpdateData, RequireKnowledgeFactUpdateErrors, RequireKnowledgeFactUpdateResponses, RequireQuestionUpdateData, RequireQuestionUpdateResponses, RequireSourceUpdateData, RequireSourceUpdateResponses, RetireKnowledgeFactData, RetireKnowledgeFactErrors, RetireKnowledgeFactResponses, RetireQuestionData, RetireQuestionResponses, RetireReleaseData, RetireReleaseResponses, RetireSourceData, RetireSourceErrors, RetireSourceResponses, RetryReleaseDeliveryData, RetryReleaseDeliveryResponses, ReviewSourceData, ReviewSourceResponses, SearchAuditEventsData, SearchAuditEventsErrors, SearchAuditEventsResponses, SearchQuestionsData, SearchQuestionsResponses, SubmitKnowledgeFactData, SubmitKnowledgeFactErrors, SubmitKnowledgeFactResponses, SubmitQuestionData, SubmitQuestionResponses, UnclaimReviewData, UnclaimReviewErrors, UnclaimReviewResponses, UpdateExamData, UpdateExamErrors, UpdateExamResponses, UpdateExamVersionData, UpdateExamVersionErrors, UpdateExamVersionResponses, UpdateKnowledgeFactData, UpdateKnowledgeFactErrors, UpdateKnowledgeFactResponses, UpdateLearningObjectiveData, UpdateLearningObjectiveErrors, UpdateLearningObjectiveResponses, UpdateQuestionData, UpdateQuestionErrors, UpdateQuestionResponses, UpdateReleaseData, UpdateReleaseErrors, UpdateReleaseResponses, UpdateSourceData, UpdateSourceErrors, UpdateSourceResponses, UpdateSubjectData, UpdateSubjectErrors, UpdateSubjectResponses, UpdateTopicData, UpdateTopicErrors, UpdateTopicResponses, ValidateReleaseData, ValidateReleaseResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -49,6 +49,15 @@ export const createExam = <ThrowOnError extends boolean = false>(options: Option
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * Delete an empty draft exam
+ */
+export const deleteExam = <ThrowOnError extends boolean = false>(options: Options<DeleteExamData, ThrowOnError>) => (options.client ?? client).delete<DeleteExamResponses, DeleteExamErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/exams/{examId}',
+    ...options
 });
 
 /**
@@ -106,6 +115,15 @@ export const createExamVersion = <ThrowOnError extends boolean = false>(options:
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * Delete an empty draft exam version
+ */
+export const deleteExamVersion = <ThrowOnError extends boolean = false>(options: Options<DeleteExamVersionData, ThrowOnError>) => (options.client ?? client).delete<DeleteExamVersionResponses, DeleteExamVersionErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/exam-versions/{examVersionId}',
+    ...options
 });
 
 /**
@@ -179,6 +197,15 @@ export const reorderSubjects = <ThrowOnError extends boolean = false>(options: O
 });
 
 /**
+ * Delete an empty draft subject
+ */
+export const deleteSubject = <ThrowOnError extends boolean = false>(options: Options<DeleteSubjectData, ThrowOnError>) => (options.client ?? client).delete<DeleteSubjectResponses, DeleteSubjectErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/subjects/{subjectId}',
+    ...options
+});
+
+/**
  * getSubject
  */
 export const getSubject = <ThrowOnError extends boolean = false>(options: Options<GetSubjectData, ThrowOnError>) => (options.client ?? client).get<GetSubjectResponses, unknown, ThrowOnError>({
@@ -249,6 +276,15 @@ export const reorderTopics = <ThrowOnError extends boolean = false>(options: Opt
 });
 
 /**
+ * Delete an empty draft topic
+ */
+export const deleteTopic = <ThrowOnError extends boolean = false>(options: Options<DeleteTopicData, ThrowOnError>) => (options.client ?? client).delete<DeleteTopicResponses, DeleteTopicErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/topics/{topicId}',
+    ...options
+});
+
+/**
  * getTopic
  */
 export const getTopic = <ThrowOnError extends boolean = false>(options: Options<GetTopicData, ThrowOnError>) => (options.client ?? client).get<GetTopicResponses, unknown, ThrowOnError>({
@@ -303,6 +339,15 @@ export const createSource = <ThrowOnError extends boolean = false>(options: Opti
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * Delete an unused unreviewed source
+ */
+export const deleteSource = <ThrowOnError extends boolean = false>(options: Options<DeleteSourceData, ThrowOnError>) => (options.client ?? client).delete<DeleteSourceResponses, DeleteSourceErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/sources/{sourceId}',
+    ...options
 });
 
 /**
@@ -389,6 +434,15 @@ export const createLearningObjective = <ThrowOnError extends boolean = false>(op
 });
 
 /**
+ * Delete an empty draft learning objective
+ */
+export const deleteLearningObjective = <ThrowOnError extends boolean = false>(options: Options<DeleteLearningObjectiveData, ThrowOnError>) => (options.client ?? client).delete<DeleteLearningObjectiveResponses, DeleteLearningObjectiveErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/learning-objectives/{learningObjectiveId}',
+    ...options
+});
+
+/**
  * Get learning objective
  */
 export const getLearningObjective = <ThrowOnError extends boolean = false>(options: Options<GetLearningObjectiveData, ThrowOnError>) => (options.client ?? client).get<GetLearningObjectiveResponses, GetLearningObjectiveErrors, ThrowOnError>({
@@ -443,6 +497,15 @@ export const createKnowledgeFact = <ThrowOnError extends boolean = false>(option
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * Delete an owned unused unreviewed draft fact
+ */
+export const deleteKnowledgeFact = <ThrowOnError extends boolean = false>(options: Options<DeleteKnowledgeFactData, ThrowOnError>) => (options.client ?? client).delete<DeleteKnowledgeFactResponses, DeleteKnowledgeFactErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/knowledge-facts/{knowledgeFactId}',
+    ...options
 });
 
 /**
@@ -569,6 +632,15 @@ export const createQuestion = <ThrowOnError extends boolean = false>(options: Op
 export const searchQuestions = <ThrowOnError extends boolean = false>(options?: Options<SearchQuestionsData, ThrowOnError>) => (options?.client ?? client).get<SearchQuestionsResponses, unknown, ThrowOnError>({
     security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
     url: '/api/v1/admin/questions/search',
+    ...options
+});
+
+/**
+ * Delete an owned unused unreviewed draft question
+ */
+export const deleteQuestion = <ThrowOnError extends boolean = false>(options: Options<DeleteQuestionData, ThrowOnError>) => (options.client ?? client).delete<DeleteQuestionResponses, DeleteQuestionErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/questions/{questionId}',
     ...options
 });
 
@@ -798,6 +870,15 @@ export const createRelease = <ThrowOnError extends boolean = false>(options: Opt
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * Delete a never-published owned draft release
+ */
+export const deleteRelease = <ThrowOnError extends boolean = false>(options: Options<DeleteReleaseData, ThrowOnError>) => (options.client ?? client).delete<DeleteReleaseResponses, DeleteReleaseErrors, ThrowOnError>({
+    security: [{ name: 'X-Admin-Identity', type: 'apiKey' }, { name: 'X-Admin-Roles', type: 'apiKey' }],
+    url: '/api/v1/admin/releases/{releaseId}',
+    ...options
 });
 
 /**

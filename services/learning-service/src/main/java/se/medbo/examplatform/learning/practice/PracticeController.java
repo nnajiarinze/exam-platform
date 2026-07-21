@@ -5,9 +5,11 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import java.util.UUID;
+import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -56,7 +58,7 @@ public class PracticeController {
             @RequestHeader(value = "X-Learner-Identity", required = false) String identity,
             @PathVariable UUID sessionId, @Valid @RequestBody SubmitAnswerRequest request) {
         return service.submit(identityResolver.resolve(identity), sessionId,
-                new PracticeService.SubmitAnswer(request.sessionQuestionId(), request.selectedAnswerOptionId(),
+                new PracticeService.SubmitAnswer(request.sessionQuestionId(), request.selectedOptionIds(),
                         request.responseTimeMillis()));
     }
 
@@ -64,6 +66,6 @@ public class PracticeController {
             @Size(max = 200) String topicId,
             @NotNull PracticeMode mode, @Min(1) @Max(50) int questionCount) {}
     public record SubmitAnswerRequest(@NotNull UUID sessionQuestionId,
-            @NotBlank @Size(max = 200) String selectedAnswerOptionId,
+            @NotEmpty @Size(max = 6) List<@NotBlank @Size(max = 200) String> selectedOptionIds,
             @PositiveOrZero Long responseTimeMillis) {}
 }

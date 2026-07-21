@@ -135,6 +135,11 @@ public class PracticeService {
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public AnswerResult submit(UUID learnerId, UUID sessionId, SubmitAnswer command) {
+        if (command.selectedOptionIds() == null || command.selectedOptionIds().isEmpty()
+                || command.selectedOptionIds().size() != new java.util.HashSet<>(command.selectedOptionIds()).size()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_ANSWER_SELECTION",
+                    "At least one unique answer option must be selected");
+        }
         var session = jdbc.sql("""
                 SELECT status FROM practice_session WHERE id = :id AND learner_id = :learnerId FOR UPDATE
                 """).param("id", sessionId).param("learnerId", learnerId).query(String.class).optional()
@@ -157,30 +162,39 @@ public class PracticeService {
         }
         var answerContext = jdbc.sql("""
                 SELECT psq.id AS session_question_id, psq.answered, iq.id AS question_id,
-                       iq.topic_id, iq.explanation, iao.id AS selected_id, iao.correct,
-                       correct_option.id AS correct_id, iao.external_answer_option_id AS selected_external_id,
-                       correct_option.external_answer_option_id AS correct_external_id
+                       iq.topic_id, iq.explanation, iq.question_type
                 FROM practice_session_question psq
                 JOIN imported_question iq ON iq.id = psq.imported_question_id
-                JOIN imported_answer_option iao ON iao.question_id = iq.id
-                  AND iao.external_answer_option_id = :optionId
-                JOIN imported_answer_option correct_option ON correct_option.question_id = iq.id
-                  AND correct_option.correct = TRUE
                 WHERE psq.id = :sessionQuestionId AND psq.practice_session_id = :sessionId
                 FOR UPDATE OF psq
-                """).param("optionId", command.selectedAnswerOptionId())
-                .param("sessionQuestionId", command.sessionQuestionId()).param("sessionId", sessionId)
+                """).param("sessionQuestionId", command.sessionQuestionId()).param("sessionId", sessionId)
                 .query((rs, row) -> new AnswerContext(rs.getObject("session_question_id", UUID.class),
                         rs.getObject("question_id", UUID.class), rs.getBoolean("answered"),
                         rs.getObject("topic_id", UUID.class),
-                        rs.getString("explanation"), rs.getObject("selected_id", UUID.class),
-                        AnswerEvaluator.isCorrect(rs.getBoolean("correct")), rs.getString("selected_external_id"),
-                        rs.getString("correct_external_id"))).optional()
+                        rs.getString("explanation"), rs.getString("question_type"))).optional()
                 .orElseThrow(() -> answerContextError(sessionId, command));
         if (answerContext.answered()) {
             throw new ApiException(HttpStatus.CONFLICT, "DUPLICATE_RESPONSE", "Question was already answered");
         }
+        var options = jdbc.sql("""
+                SELECT id, external_answer_option_id, correct, feedback
+                FROM imported_answer_option WHERE question_id = :questionId ORDER BY sort_order
+                """).param("questionId", answerContext.importedQuestionId())
+                .query((rs, row) -> new AnswerDetail(rs.getObject("id", UUID.class),
+                        rs.getString("external_answer_option_id"), rs.getBoolean("correct"),
+                        rs.getString("feedback"))).list();
+        var byExternalId = options.stream().collect(java.util.stream.Collectors.toMap(AnswerDetail::externalId, o -> o));
+        if (!byExternalId.keySet().containsAll(command.selectedOptionIds())) {
+            throw answerContextError(sessionId, command);
+        }
+        if (!"MULTIPLE_CHOICE".equals(answerContext.questionType()) && command.selectedOptionIds().size() != 1) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_ANSWER_SELECTION",
+                    "Single-choice questions require exactly one selected option");
+        }
+        var correctOptionIds = options.stream().filter(AnswerDetail::correct).map(AnswerDetail::externalId).toList();
+        boolean correct = AnswerEvaluator.isExactMatch(command.selectedOptionIds(), correctOptionIds);
         Instant now = clock.instant();
+        UUID responseId = UUID.randomUUID();
         int inserted = jdbc.sql("""
                 INSERT INTO practice_response
                   (id, practice_session_id, practice_session_question_id, learner_id,
@@ -189,18 +203,24 @@ public class PracticeService {
                 VALUES (:id, :sessionId, :sessionQuestionId, :learnerId, :optionId, :questionId,
                         :correct, :answeredAt, :responseTime)
                 ON CONFLICT (practice_session_question_id) DO NOTHING
-                """).params(new HashMap<>(Map.of("id", UUID.randomUUID(), "sessionId", sessionId,
+                """).params(new HashMap<>(Map.of("id", responseId, "sessionId", sessionId,
                 "sessionQuestionId", answerContext.sessionQuestionId(), "learnerId", learnerId,
-                "optionId", answerContext.selectedOptionId(), "questionId", answerContext.importedQuestionId(),
-                "correct", answerContext.correct(),
+                "questionId", answerContext.importedQuestionId(), "correct", correct,
                 "answeredAt", OffsetDateTime.ofInstant(now, ZoneOffset.UTC))))
+                .param("optionId", command.selectedOptionIds().size() == 1
+                        ? byExternalId.get(command.selectedOptionIds().getFirst()).id() : null, java.sql.Types.OTHER)
                 .param("responseTime", command.responseTimeMillis()).update();
         if (inserted == 0) {
             throw new ApiException(HttpStatus.CONFLICT, "DUPLICATE_RESPONSE", "Question was already answered");
         }
+        for (String selectedId : command.selectedOptionIds()) {
+            jdbc.sql("INSERT INTO practice_response_selection(practice_response_id,imported_question_id,answer_option_id) VALUES(:responseId,:questionId,:optionId)")
+                    .param("responseId", responseId).param("questionId",answerContext.importedQuestionId())
+                    .param("optionId", byExternalId.get(selectedId).id()).update();
+        }
         jdbc.sql("UPDATE practice_session_question SET answered = TRUE WHERE id = :id")
                 .param("id", answerContext.sessionQuestionId()).update();
-        updateProgress(learnerId, answerContext.topicId(), answerContext.correct(), now);
+        updateProgress(learnerId, answerContext.topicId(), correct, now);
         int total = jdbc.sql("SELECT count(*) FROM practice_session_question WHERE practice_session_id = :id")
                 .param("id", sessionId).query(Integer.class).single();
         int answered = jdbc.sql("SELECT count(*) FROM practice_session_question WHERE practice_session_id = :id AND answered")
@@ -211,8 +231,10 @@ public class PracticeService {
             log.atInfo().addKeyValue("sessionId", sessionId).addKeyValue("learnerId", learnerId)
                     .log("practice_session_completed");
         }
-        return new AnswerResult(answerContext.correct(), answerContext.selectedExternalId(),
-                answerContext.correctExternalId(), answerContext.explanation(), new SessionProgress(answered, total));
+        var feedback = options.stream().map(o -> new OptionFeedback(o.externalId(),
+                command.selectedOptionIds().contains(o.externalId()), o.correct(), o.feedback())).toList();
+        return new AnswerResult(correct, List.copyOf(command.selectedOptionIds()), correctOptionIds,
+                answerContext.explanation(), feedback, new SessionProgress(answered, total));
     }
 
     private ApiException answerContextError(UUID sessionId, SubmitAnswer command) {
@@ -285,25 +307,32 @@ public class PracticeService {
                     .query((rs, index) -> new AnswerOptionView(rs.getString("external_answer_option_id"),
                             rs.getString("text"))).list();
             return new QuestionView(row.sessionQuestionId(), row.questionId(), row.prompt(), row.questionType(),
-                    options, row.sequenceNumber(), row.total());
+                    options, List.of(), row.sequenceNumber(), row.total());
         });
     }
 
     public record CreateSession(String examId, String topicId, PracticeMode mode, int questionCount) {}
-    public record SubmitAnswer(UUID sessionQuestionId, String selectedAnswerOptionId, Long responseTimeMillis) {}
+    public record SubmitAnswer(UUID sessionQuestionId, List<String> selectedOptionIds, Long responseTimeMillis) {
+        public SubmitAnswer(UUID sessionQuestionId,String selectedOptionId,Long responseTimeMillis){
+            this(sessionQuestionId,List.of(selectedOptionId),responseTimeMillis);
+        }
+    }
     public record SessionView(UUID sessionId, PracticeMode mode, String topicId, String status, int answered,
                               int total, java.util.Optional<QuestionView> nextQuestion) {}
     public record QuestionView(UUID sessionQuestionId, String questionId, String prompt, String questionType,
-                               List<AnswerOptionView> answerOptions, int sequenceNumber, int totalQuestionCount) {}
+                               List<AnswerOptionView> answerOptions, List<String> selectedOptionIds,
+                               int sequenceNumber, int totalQuestionCount) {}
     public record AnswerOptionView(String id, String text) {}
-    public record AnswerResult(boolean correct, String selectedAnswerOptionId, String correctAnswerOptionId,
-                               String explanation, SessionProgress sessionProgress) {}
+    public record AnswerResult(boolean correct, List<String> selectedOptionIds, List<String> correctOptionIds,
+                               String explanation, List<OptionFeedback> optionFeedback,
+                               SessionProgress sessionProgress) {}
+    public record OptionFeedback(String optionId, boolean selected, boolean correct, String feedback) {}
     public record SessionProgress(int answered, int total) {}
     private record ActiveRelease(UUID id, String examId) {}
     private record SessionMetadata(UUID id, PracticeMode mode, String topicExternalId, String status, int total) {}
     private record QuestionRow(UUID sessionQuestionId, String questionId, String prompt, String questionType,
                                int sequenceNumber, int total) {}
     private record AnswerContext(UUID sessionQuestionId, UUID importedQuestionId, boolean answered, UUID topicId,
-                                 String explanation, UUID selectedOptionId, boolean correct, String selectedExternalId,
-                                 String correctExternalId) {}
+                                 String explanation, String questionType) {}
+    private record AnswerDetail(UUID id, String externalId, boolean correct, String feedback) {}
 }

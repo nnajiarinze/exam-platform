@@ -13,7 +13,7 @@ final class ApiErrorHandler {
     private static final org.slf4j.Logger log=org.slf4j.LoggerFactory.getLogger(ApiErrorHandler.class);
     @ExceptionHandler(DomainException.class)
     ResponseEntity<ApiErrorResponse> domain(DomainException exception) {
-        return ResponseEntity.status(exception.status()).body(ApiErrorResponse.of(exception.code(), exception.getMessage()));
+        return ResponseEntity.status(exception.status()).body(new ApiErrorResponse(exception.code(), exception.getMessage(), java.time.Instant.now(), exception.errors()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

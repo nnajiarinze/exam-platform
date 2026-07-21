@@ -1,2 +1,195 @@
-import{useEffect}from'react';import{useForm}from'react-hook-form';import{useMutation,useQuery,useQueryClient}from'@tanstack/react-query';import{useNavigate,useParams}from'react-router-dom';import{createSource,getSource,updateSource,reviewSource,requireSourceUpdate,retireSource,type SourceRequest}from'../../../api/generated';import{contentServiceClient}from'../../../api/client/contentServiceClient';import{unwrap}from'../../../api/client/adminApi';import{adminQueryKeys}from'../../../api/query-keys/adminQueryKeys';import{AsyncState}from'../../../components/AsyncState';import{useUnsavedWarning}from'../../../hooks/useUnsavedWarning';
-export function SourceEditorPage(){const{id}=useParams();const edit=!!id;const nav=useNavigate();const qc=useQueryClient();const q=useQuery({queryKey:adminQueryKeys.sources.detail(id??'new'),queryFn:()=>unwrap(getSource({client:contentServiceClient,path:{sourceId:id!}})),enabled:edit});const f=useForm<SourceRequest>({defaultValues:{publisher:'',title:'',sourceType:'GOVERNMENT_WEBPAGE',accessedAt:new Date().toISOString().slice(0,10),url:''}});useEffect(()=>{if(q.data)f.reset(q.data)},[q.data,f]);useUnsavedWarning(f.formState.isDirty);const save=useMutation({mutationFn:(v:SourceRequest)=>edit?unwrap(updateSource({client:contentServiceClient,path:{sourceId:id!},body:{...v,version:q.data!.version}})):unwrap(createSource({client:contentServiceClient,body:v})),onSuccess:x=>{qc.invalidateQueries({queryKey:adminQueryKeys.sources.all});nav(`/sources/${x.id}`)}});const action=(kind:'review'|'update'|'retire')=>{if(!q.data)return;const p=kind==='review'?reviewSource({client:contentServiceClient,path:{sourceId:id!},body:{version:q.data.version}}):kind==='update'?requireSourceUpdate({client:contentServiceClient,path:{sourceId:id!},body:{version:q.data.version}}):retireSource({client:contentServiceClient,path:{sourceId:id!},body:{version:q.data.version,replacementSourceId:null}});unwrap(p).then(()=>qc.invalidateQueries({queryKey:adminQueryKeys.sources.detail(id!)}))};return <><header className="page-header"><h1>{edit?'Source details':'Create source'}</h1></header><p className="warning card">Store source metadata and internal notes. Do not paste full copyrighted documents unless reuse rights are confirmed.</p><AsyncState loading={edit&&q.isPending} error={q.error}><form className="form" onSubmit={f.handleSubmit(v=>save.mutate(v))}><label>Publisher<input {...f.register('publisher',{required:true})}/></label><label>Title<input {...f.register('title',{required:true})}/></label><label>URL<input type="url" {...f.register('url')}/></label><label>Source type<select {...f.register('sourceType')}><option>GOVERNMENT_WEBPAGE</option><option>GOVERNMENT_DOCUMENT</option><option>LEGISLATION</option><option>PUBLIC_AUTHORITY_GUIDANCE</option><option>LICENSED_MATERIAL</option><option>INTERNAL_RESEARCH</option><option>OTHER</option></select></label><label>Document version<input {...f.register('documentVersion')}/></label><label>Publication date<input type="date" {...f.register('publicationDate')}/></label><label>Accessed date<input type="date" {...f.register('accessedAt',{required:true})}/></label><label>Copyright notes<textarea {...f.register('copyrightNotes')}/></label><label>Internal notes<textarea {...f.register('internalNotes')}/></label>{save.error&&<p role="alert" className="error">{save.error.message}</p>}<button disabled={save.isPending}>Save source</button></form>{edit&&q.data&&<div className="actions"><button onClick={()=>action('review')}>Mark reviewed</button><button onClick={()=>action('update')}>Require update</button><button onClick={()=>confirm('Retire this source?')&&action('retire')}>Retire source</button><span>Version {q.data.version} · {q.data.reviewStatus} · {q.data.status}</span></div>}</AsyncState></>}
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate, useParams } from "react-router-dom";
+import {
+  createSource,
+  deleteSource,
+  getSource,
+  updateSource,
+  reviewSource,
+  requireSourceUpdate,
+  retireSource,
+  type SourceRequest,
+} from "../../../api/generated";
+import { contentServiceClient } from "../../../api/client/contentServiceClient";
+import { unwrap, unwrapVoid } from "../../../api/client/adminApi";
+import { adminQueryKeys } from "../../../api/query-keys/adminQueryKeys";
+import { AsyncState } from "../../../components/AsyncState";
+import { useUnsavedWarning } from "../../../hooks/useUnsavedWarning";
+import { SafeDeleteDialog } from "../../../components/SafeDeleteDialog";
+import { useAuth } from "../../../app/auth/AuthContext";
+import { AdminRole } from "../../../app/permissions/permissions";
+export function SourceEditorPage() {
+  const { id } = useParams();
+  const edit = !!id;
+  const nav = useNavigate();
+  const qc = useQueryClient();
+  const { admin } = useAuth();
+  const q = useQuery({
+    queryKey: adminQueryKeys.sources.detail(id ?? "new"),
+    queryFn: () =>
+      unwrap(
+        getSource({ client: contentServiceClient, path: { sourceId: id! } }),
+      ),
+    enabled: edit,
+  });
+  const f = useForm<SourceRequest>({
+    defaultValues: {
+      publisher: "",
+      title: "",
+      sourceType: "GOVERNMENT_WEBPAGE",
+      accessedAt: new Date().toISOString().slice(0, 10),
+      url: "",
+    },
+  });
+  useEffect(() => {
+    if (q.data) f.reset(q.data);
+  }, [q.data, f]);
+  useUnsavedWarning(f.formState.isDirty);
+  const save = useMutation({
+    mutationFn: (v: SourceRequest) =>
+      edit
+        ? unwrap(
+            updateSource({
+              client: contentServiceClient,
+              path: { sourceId: id! },
+              body: { ...v, version: q.data!.version },
+            }),
+          )
+        : unwrap(createSource({ client: contentServiceClient, body: v })),
+    onSuccess: (x) => {
+      qc.invalidateQueries({ queryKey: adminQueryKeys.sources.all });
+      nav(`/sources/${x.id}`);
+    },
+  });
+  const action = (kind: "review" | "update" | "retire") => {
+    if (!q.data) return;
+    const p =
+      kind === "review"
+        ? reviewSource({
+            client: contentServiceClient,
+            path: { sourceId: id! },
+            body: { version: q.data.version },
+          })
+        : kind === "update"
+          ? requireSourceUpdate({
+              client: contentServiceClient,
+              path: { sourceId: id! },
+              body: { version: q.data.version },
+            })
+          : retireSource({
+              client: contentServiceClient,
+              path: { sourceId: id! },
+              body: { version: q.data.version, replacementSourceId: null },
+            });
+    unwrap(p).then(() =>
+      qc.invalidateQueries({ queryKey: adminQueryKeys.sources.detail(id!) }),
+    );
+  };
+  return (
+    <>
+      <header className="page-header">
+        <h1>{edit ? "Source details" : "Create source"}</h1>
+      </header>
+      <p className="warning card">
+        Store source metadata and internal notes. Do not paste full copyrighted
+        documents unless reuse rights are confirmed.
+      </p>
+      <AsyncState loading={edit && q.isPending} error={q.error}>
+        <form className="form" onSubmit={f.handleSubmit((v) => save.mutate(v))}>
+          <label>
+            Publisher
+            <input {...f.register("publisher", { required: true })} />
+          </label>
+          <label>
+            Title
+            <input {...f.register("title", { required: true })} />
+          </label>
+          <label>
+            URL
+            <input type="url" {...f.register("url")} />
+          </label>
+          <label>
+            Source type
+            <select {...f.register("sourceType")}>
+              <option>GOVERNMENT_WEBPAGE</option>
+              <option>GOVERNMENT_DOCUMENT</option>
+              <option>LEGISLATION</option>
+              <option>PUBLIC_AUTHORITY_GUIDANCE</option>
+              <option>LICENSED_MATERIAL</option>
+              <option>INTERNAL_RESEARCH</option>
+              <option>OTHER</option>
+            </select>
+          </label>
+          <label>
+            Document version
+            <input {...f.register("documentVersion")} />
+          </label>
+          <label>
+            Publication date
+            <input type="date" {...f.register("publicationDate")} />
+          </label>
+          <label>
+            Accessed date
+            <input
+              type="date"
+              {...f.register("accessedAt", { required: true })}
+            />
+          </label>
+          <label>
+            Copyright notes
+            <textarea {...f.register("copyrightNotes")} />
+          </label>
+          <label>
+            Internal notes
+            <textarea {...f.register("internalNotes")} />
+          </label>
+          {save.error && (
+            <p role="alert" className="error">
+              {save.error.message}
+            </p>
+          )}
+          <button disabled={save.isPending}>Save source</button>
+        </form>
+        {edit && q.data && (
+          <div className="actions">
+            <button onClick={() => action("review")}>Mark reviewed</button>
+            <button onClick={() => action("update")}>Require update</button>
+            <button
+              onClick={() => confirm("Retire this source?") && action("retire")}
+            >
+              Retire source
+            </button>
+            {q.data.reviewStatus === "UNREVIEWED" &&
+              q.data.status === "ACTIVE" &&
+              admin?.roles.includes(AdminRole.Admin) && (
+                <SafeDeleteDialog
+                  entityName={q.data.title}
+                  entityLabel="Source"
+                  onDelete={(reason) =>
+                    unwrapVoid(
+                      deleteSource({
+                        client: contentServiceClient,
+                        path: { sourceId: id! },
+                        query: { reason: reason || undefined },
+                      }),
+                    )
+                  }
+                  onDeleted={() => {
+                    qc.invalidateQueries({
+                      queryKey: adminQueryKeys.sources.all,
+                    });
+                    nav("/sources");
+                  }}
+                />
+              )}
+            <span>
+              Version {q.data.version} · {q.data.reviewStatus} · {q.data.status}
+            </span>
+          </div>
+        )}
+      </AsyncState>
+    </>
+  );
+}
