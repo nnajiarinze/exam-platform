@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -31,6 +32,7 @@ final class QuestionGenerationController {
   record Reject(@Size(max=500)String reason,@NotBlank String actor,@PositiveOrZero long version){}
   @PostMapping("/jobs")@ResponseStatus(HttpStatus.ACCEPTED)Map<String,Object>create(@Valid@RequestBody Create r){return service.create(new QuestionGenerationProviderClient.Request(r.target(),r.context(),r.proposalCount(),r.questionType(),"question-generation-foundation-v1",null,null,0),r.requestedBy(),r.idempotencyKey(),provider,model);}
   @GetMapping("/jobs/{id}")Map<String,Object>job(@PathVariable UUID id){return service.get(id);}
+  @GetMapping("/jobs")List<Map<String,Object>>jobs(@RequestParam UUID knowledgeFactId,@RequestParam(defaultValue="10")@Min(1)@Max(50)int limit){return service.history(knowledgeFactId,limit);}
   @GetMapping("/jobs/{id}/proposals")List<Map<String,Object>>proposals(@PathVariable UUID id){return service.proposals(id);}
   @PostMapping("/jobs/{id}/cancel")Map<String,Object>cancel(@PathVariable UUID id){return service.cancel(id);}
   @GetMapping("/proposals/{id}")Map<String,Object>proposal(@PathVariable UUID id){return service.proposal(id);}

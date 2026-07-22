@@ -54,6 +54,7 @@ class SecurityConfiguration {
                         .requestMatchers(HttpMethod.POST, "/api/v1/admin/releases/*/validate", "/api/v1/admin/releases/*/publish", "/api/v1/admin/releases/*/deliver", "/api/v1/admin/releases/*/retry-delivery", "/api/v1/admin/releases/*/activate", "/api/v1/admin/releases/*/retire").hasAnyRole("CONTENT_PUBLISHER", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/v1/admin/releases").hasAnyRole("CONTENT_PUBLISHER", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/v1/admin/ai/editorial-jobs", "/api/v1/admin/ai/editorial-findings/*/dismiss").hasAnyRole("CONTENT_AUTHOR", "CONTENT_REVIEWER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/admin/ai/question-proposals/*/reject").hasAnyRole("CONTENT_AUTHOR", "CONTENT_REVIEWER", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/v1/admin/ai/**").hasAnyRole("CONTENT_AUTHOR", "ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/admin/ai/**").hasAnyRole("CONTENT_AUTHOR", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/admin/releases/**").hasAnyRole("CONTENT_PUBLISHER", "ADMIN")

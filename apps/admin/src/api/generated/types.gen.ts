@@ -346,6 +346,18 @@ export type AiQuestionGenerationOperation = 'GENERATE_QUESTIONS_FROM_FACT';
 
 export type AiQuestionGenerationResultType = 'QUESTIONS_PROPOSED' | 'INSUFFICIENT_GROUNDED_INFORMATION' | 'FACT_NOT_SUITABLE_FOR_QUESTION';
 
+export type AiQuestionGenerationEligibilityReason = 'FACT_NOT_APPROVED' | 'FACT_RETIRED' | 'FACT_INACTIVE' | 'FACT_HIERARCHY_INACTIVE' | 'SOURCE_CONTEXT_NOT_READY' | 'INVALID_CONTENT' | 'UNSUPPORTED_LANGUAGE';
+
+export type AiQuestionGenerationEligibility = {
+    eligible: boolean;
+    reasons: Array<AiQuestionGenerationEligibilityReason>;
+    factStatus: FactStatus;
+    reviewStatus: FactReviewStatus;
+    sourceContextReady: boolean;
+    canGenerate: boolean;
+    canInspect: boolean;
+};
+
 export type AiQuestionGenerationRequest = {
     proposalCount: number;
     questionType?: QuestionType | null;
@@ -2151,6 +2163,43 @@ export type GetKnowledgeFactAiProvenanceResponses = {
 
 export type GetKnowledgeFactAiProvenanceResponse = GetKnowledgeFactAiProvenanceResponses[keyof GetKnowledgeFactAiProvenanceResponses];
 
+export type ListAiQuestionGenerationJobsData = {
+    body?: never;
+    path: {
+        knowledgeFactId: string;
+    };
+    query?: {
+        limit?: number;
+    };
+    url: '/api/v1/admin/knowledge-facts/{knowledgeFactId}/ai-question-generation-jobs';
+};
+
+export type ListAiQuestionGenerationJobsErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Resource not found
+     */
+    404: ApiError;
+    /**
+     * AI feature unavailable
+     */
+    503: unknown;
+};
+
+export type ListAiQuestionGenerationJobsError = ListAiQuestionGenerationJobsErrors[keyof ListAiQuestionGenerationJobsErrors];
+
+export type ListAiQuestionGenerationJobsResponses = {
+    /**
+     * Fact-scoped job history
+     */
+    200: Array<AiQuestionGenerationJob>;
+};
+
+export type ListAiQuestionGenerationJobsResponse = ListAiQuestionGenerationJobsResponses[keyof ListAiQuestionGenerationJobsResponses];
+
 export type CreateAiQuestionGenerationJobData = {
     body: AiQuestionGenerationRequest;
     path: {
@@ -2197,6 +2246,33 @@ export type CreateAiQuestionGenerationJobResponses = {
 };
 
 export type CreateAiQuestionGenerationJobResponse = CreateAiQuestionGenerationJobResponses[keyof CreateAiQuestionGenerationJobResponses];
+
+export type GetAiQuestionGenerationEligibilityData = {
+    body?: never;
+    path: {
+        knowledgeFactId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/knowledge-facts/{knowledgeFactId}/ai-question-generation-eligibility';
+};
+
+export type GetAiQuestionGenerationEligibilityErrors = {
+    /**
+     * Resource not found
+     */
+    404: ApiError;
+};
+
+export type GetAiQuestionGenerationEligibilityError = GetAiQuestionGenerationEligibilityErrors[keyof GetAiQuestionGenerationEligibilityErrors];
+
+export type GetAiQuestionGenerationEligibilityResponses = {
+    /**
+     * Eligibility and capability details
+     */
+    200: AiQuestionGenerationEligibility;
+};
+
+export type GetAiQuestionGenerationEligibilityResponse = GetAiQuestionGenerationEligibilityResponses[keyof GetAiQuestionGenerationEligibilityResponses];
 
 export type GetAiQuestionGenerationJobData = {
     body?: never;

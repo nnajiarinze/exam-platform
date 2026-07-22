@@ -117,6 +117,36 @@ class ContentServiceIntegrationTest {
     }
 
     @Test
+    void questionGenerationEligibilityUsesTheLinkedSourceInsteadOfAListPage() throws Exception {
+        var now=java.time.OffsetDateTime.now(java.time.ZoneOffset.UTC);var exam=java.util.UUID.randomUUID();var examVersion=java.util.UUID.randomUUID();var subject=java.util.UUID.randomUUID();var topic=java.util.UUID.randomUUID();var objective=java.util.UUID.randomUUID();var fact=java.util.UUID.randomUUID();var factVersion=java.util.UUID.randomUUID();var source=java.util.UUID.randomUUID();
+        jdbc.sql("INSERT INTO exam(id,code,name,country_code,status,created_at,updated_at) VALUES(:id,:code,'Eligibility','SE','ACTIVE',:now,:now)").param("id",exam).param("code","ELIG_"+exam).param("now",now).update();
+        jdbc.sql("INSERT INTO exam_version(id,exam_id,version_code,display_name,status,created_at,updated_at) VALUES(:id,:exam,'E1','Eligibility','ACTIVE',:now,:now)").param("id",examVersion).param("exam",exam).param("now",now).update();
+        jdbc.sql("INSERT INTO subject(id,exam_version_id,code,name,sort_order,status,created_at,updated_at) VALUES(:id,:version,'ES','Eligibility',0,'ACTIVE',:now,:now)").param("id",subject).param("version",examVersion).param("now",now).update();
+        jdbc.sql("INSERT INTO topic(id,subject_id,code,name,sort_order,status,created_at,updated_at) VALUES(:id,:subject,'ET','Eligibility',0,'ACTIVE',:now,:now)").param("id",topic).param("subject",subject).param("now",now).update();
+        jdbc.sql("INSERT INTO learning_objective(id,topic_id,code,title,status,created_at,updated_at) VALUES(:id,:topic,'EO','Eligibility objective','ACTIVE',:now,:now)").param("id",objective).param("topic",topic).param("now",now).update();
+        jdbc.sql("INSERT INTO source_reference(id,publisher,title,source_type,accessed_at,content_text,content_checksum,review_status,status,created_at,updated_at) VALUES(:id,'Authority','Source beyond any picker page','GOVERNMENT_DOCUMENT',CURRENT_DATE,'Riksdagen granskar regeringen.',:checksum,'REVIEWED','ACTIVE',:now,:now)").param("id",source).param("checksum","a".repeat(64)).param("now",now).update();
+        jdbc.sql("INSERT INTO knowledge_fact(id,learning_objective_id,canonical_statement,review_status,status,created_at,updated_at) VALUES(:id,:objective,'Riksdagen granskar regeringen.','APPROVED','ACTIVE',:now,:now)").param("id",fact).param("objective",objective).param("now",now).update();
+        jdbc.sql("INSERT INTO knowledge_fact_version(id,knowledge_fact_id,version_number,canonical_statement,review_status,author_id,reviewer_id,created_at,updated_at) VALUES(:id,:fact,1,'Riksdagen granskar regeringen.','APPROVED','author-1','reviewer-1',:now,:now)").param("id",factVersion).param("fact",fact).param("now",now).update();
+        jdbc.sql("UPDATE knowledge_fact SET current_version_id=:version WHERE id=:id").param("version",factVersion).param("id",fact).update();
+        jdbc.sql("INSERT INTO knowledge_fact_source(knowledge_fact_version_id,source_reference_id) VALUES(:version,:source)").param("version",factVersion).param("source",source).update();
+
+        mvc.perform(get("/api/v1/admin/knowledge-facts/"+fact+"/ai-question-generation-eligibility").headers(author()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.eligible").value(true)).andExpect(jsonPath("$.sourceContextReady").value(true)).andExpect(jsonPath("$.canGenerate").value(true));
+        mvc.perform(get("/api/v1/admin/knowledge-facts/"+fact+"/ai-question-generation-eligibility").headers(reviewer()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.canGenerate").value(false)).andExpect(jsonPath("$.canInspect").value(true));
+        mvc.perform(get("/api/v1/admin/knowledge-facts/"+fact+"/ai-question-generation-eligibility").header("X-Admin-Identity","publisher-1").header("X-Admin-Roles","CONTENT_PUBLISHER"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.canGenerate").value(false)).andExpect(jsonPath("$.canInspect").value(false));
+
+        jdbc.sql("UPDATE source_reference SET content_text=NULL,content_checksum=NULL WHERE id=:id").param("id",source).update();
+        mvc.perform(get("/api/v1/admin/knowledge-facts/"+fact+"/ai-question-generation-eligibility").headers(author()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.eligible").value(false)).andExpect(jsonPath("$.reasons[0]").value("SOURCE_CONTEXT_NOT_READY"));
+        jdbc.sql("UPDATE knowledge_fact SET review_status='UNREVIEWED',status='DRAFT' WHERE id=:id").param("id",fact).update();
+        jdbc.sql("UPDATE knowledge_fact_version SET review_status='UNREVIEWED' WHERE id=:id").param("id",factVersion).update();
+        mvc.perform(get("/api/v1/admin/knowledge-facts/"+fact+"/ai-question-generation-eligibility").headers(author()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.reasons[0]").value("FACT_NOT_APPROVED")).andExpect(jsonPath("$.reasons[1]").value("FACT_INACTIVE"));
+    }
+
+    @Test
     void reviewerCanReachAnalysisJobEndpointButCannotAcceptSplitProposals() throws Exception {
         mvc.perform(post("/api/v1/admin/ai/editorial-jobs")
                         .header("X-Admin-Identity", "reviewer-1")

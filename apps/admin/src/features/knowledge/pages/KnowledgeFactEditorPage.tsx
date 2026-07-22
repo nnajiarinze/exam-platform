@@ -276,22 +276,17 @@ export function KnowledgeFactEditorPage() {
           <button disabled={save.isPending || !author}>Save draft</button>
         </form>
         {edit && fact.data && (
+          <AiQuestionGenerationWorkspace
+            key={`questions:${fact.data.id}:${fact.data.currentVersionId}:${fact.data.version}`}
+            fact={fact.data}
+          />
+        )}
+        {edit && fact.data && (
           <AiEditorialWorkspace
             key={`${fact.data.id}:${fact.data.currentVersionId}:${fact.data.version}`}
             fact={fact.data}
             enabled={author || reviewer}
             canMutate={author}
-            sourcesReady={fact.data.sourceIds.every((sourceId) =>
-              Boolean(sources.data?.items.find((source) => source.id === sourceId)?.contentChecksum),
-            )}
-          />
-        )}
-        {edit && fact.data && (
-          <AiQuestionGenerationWorkspace
-            key={`questions:${fact.data.id}:${fact.data.currentVersionId}:${fact.data.version}`}
-            fact={fact.data}
-            canGenerate={author}
-            canInspect={author || reviewer}
             sourcesReady={fact.data.sourceIds.every((sourceId) =>
               Boolean(sources.data?.items.find((source) => source.id === sourceId)?.contentChecksum),
             )}

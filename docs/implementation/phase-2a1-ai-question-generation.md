@@ -26,6 +26,8 @@ The platform currently stores no language field on Knowledge Facts. Content Serv
 ## APIs
 
 - `POST /api/v1/admin/knowledge-facts/{knowledgeFactId}/ai-question-generation-jobs`
+- `GET /api/v1/admin/knowledge-facts/{knowledgeFactId}/ai-question-generation-eligibility`
+- `GET /api/v1/admin/knowledge-facts/{knowledgeFactId}/ai-question-generation-jobs?limit=10`
 - `GET /api/v1/admin/ai/question-generation-jobs/{jobId}`
 - `GET /api/v1/admin/ai/question-generation-jobs/{jobId}/proposals`
 - `POST /api/v1/admin/ai/question-generation-jobs/{jobId}/cancel`
@@ -42,6 +44,8 @@ The provider must return strict structured JSON with a controlled result type: `
 Facts, Source excerpts, and titles are untrusted data. The Gemini system instruction forbids embedded instructions, browsing, tools, prompt disclosure, canonical writes, and workflow decisions. Source context is bounded to 12,000 characters by default. The maximum proposal count is three.
 
 Creation is idempotent per requester and explicit key. Transient provider failures use the existing bounded exponential retry policy. Deterministic validation failures are not retried. Cancellation is idempotent and late provider output is discarded. AI Service verifies stored snapshot hashes before dispatch; Content Service re-checks the current fact version/checksum before proposals can be read or rejected.
+
+Eligibility is derived from the fact's authoritative current version and directly linked Sources; the Admin Source picker and its pagination are not used. Fact-scoped history returns an active job first when present, otherwise the latest terminal job. The Admin workspace recovers that selection after refresh, resumes polling active work, and reloads persistent proposals including rejected proposals.
 
 ## Authorization
 
@@ -61,7 +65,7 @@ Gemini uses the configured `AI_GEMINI_MODEL` (locally `gemini-3.1-flash-lite`), 
 
 1. Start PostgreSQL, Keycloak, Content Service, AI Service with the fake provider, and Admin Portal.
 2. Sign in as a content author and open an approved active Knowledge Fact with stored Source content.
-3. Select **Generate questions**, choose one to three proposals and a question type, then generate.
+3. In **AI Question Proposals**, select **Generate Questions**, choose one to three proposals and a question type, then generate.
 4. Observe queued/running state change without refresh and inspect the completed proposals, options, proposed correct answers, explanation, evidence, and provenance.
 5. Reject one proposal with a reason and refresh; confirm it remains visible as rejected.
 6. Confirm the Knowledge Fact and canonical Question list are unchanged.

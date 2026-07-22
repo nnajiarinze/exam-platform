@@ -2,6 +2,7 @@ package se.medbo.examplatform.ai;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -60,6 +61,18 @@ class AiEditorialIntegrationTest {
     assertThat(jdbc.sql("SELECT count(*) FROM ai_question_proposal WHERE generation_job_id=:id").param("id",job).query(Long.class).single()).isEqualTo(3);
     assertThat(jdbc.sql("SELECT count(*) FROM ai_question_proposal_option o JOIN ai_question_proposal p ON p.id=o.proposal_id WHERE p.generation_job_id=:id").param("id",job).query(Long.class).single()).isEqualTo(9);
     assertThat(jdbc.sql("SELECT count(*) FROM ai_audit_event WHERE entity_type='AI_QUESTION_PROPOSAL'").query(Long.class).single()).isGreaterThanOrEqualTo(3);
+    mvc.perform(get("/internal/v1/question-generation/jobs")
+            .header("X-Internal-Api-Key","test-internal-key")
+            .queryParam("knowledgeFactId","11111111-1111-1111-1111-111111111111")
+            .queryParam("limit","10"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].id").value(job.toString()))
+        .andExpect(jsonPath("$[0].targetKnowledgeFactId").value("11111111-1111-1111-1111-111111111111"));
+    mvc.perform(get("/internal/v1/question-generation/jobs")
+            .header("X-Internal-Api-Key","test-internal-key")
+            .queryParam("knowledgeFactId","99999999-9999-9999-9999-999999999999"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$").isEmpty());
   }
 
   @Test
