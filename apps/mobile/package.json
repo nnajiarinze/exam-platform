@@ -31,8 +31,8 @@
   },
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "generate:api": "openapi-ts -i ../../contracts/openapi/learning-service-v1.yaml -o src/api/generated -c @hey-api/client-fetch",
     "typecheck": "tsc --noEmit",
     "test": "jest --runInBand",

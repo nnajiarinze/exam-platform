@@ -6,22 +6,33 @@ describe('mobile API configuration',()=>{
     const {appConfig}=require('./config') as typeof import('./config');
     expect(appConfig.examId).toBe('swedish-citizenship');
   });
-  it('normalizes and routes a hosted gateway URL',()=>{
-    process.env.EXPO_PUBLIC_API_BASE_URL='https://api.example.test/';delete process.env.EXPO_PUBLIC_OIDC_ISSUER;jest.resetModules();
+  it('uses the remote environment by default',()=>{
     const {appConfig}=require('./config') as typeof import('./config');
-    expect(appConfig.learningBaseUrl).toBe('https://api.example.test/learning');
-    expect(appConfig.oidcIssuer).toBe('https://api.example.test/auth/realms/exam-platform');
+    const {CurrentEnvironment,Environment,environmentConfig}=require('../config/environment') as typeof import('../config/environment');
+    expect(CurrentEnvironment).toBe(Environment.REMOTE);
+    expect(appConfig.publicApiBaseUrl).toBe(environmentConfig.apiBaseUrl);
+    expect(appConfig.learningBaseUrl).toBe(environmentConfig.learningBaseUrl);
+    expect(appConfig.oidcIssuer).toBe(environmentConfig.oidcIssuer);
   });
-  it('keeps the direct learning URL available for local development',()=>{
-    delete process.env.EXPO_PUBLIC_API_BASE_URL;process.env.EXPO_PUBLIC_LEARNING_BASE_URL='http://10.0.2.2:8080/';jest.resetModules();
-    expect((require('./config') as typeof import('./config')).appConfig.learningBaseUrl).toBe('http://10.0.2.2:8080');
+  it('resolves both environments through the same URL builder',()=>{
+    const {Environment,LocalGateway,LocalIdentity,resolveEnvironment}=require('../config/environment') as typeof import('../config/environment');
+    const remote=resolveEnvironment(Environment.REMOTE);
+    const local=resolveEnvironment(Environment.LOCAL);
+    expect(remote.environment).toBe(Environment.REMOTE);
+    expect(local.environment).toBe(Environment.LOCAL);
+    expect(local.apiBaseUrl).toBe(LocalGateway.physicalDevice);
+    expect(remote.learningBaseUrl).toBe(`${remote.apiBaseUrl}/learning`);
+    expect(local.learningBaseUrl).toBe(LocalGateway.physicalDevice);
+    expect(remote.oidcIssuer).toBe(`${remote.apiBaseUrl}/auth/realms/exam-platform`);
+    expect(local.oidcIssuer).toBe(`${LocalIdentity.physicalDevice}/realms/exam-platform`);
   });
-  it('rejects localhost in production',()=>{
-    process.env.EXPO_PUBLIC_APP_ENV='production';process.env.EXPO_PUBLIC_API_BASE_URL='http://localhost:8088';jest.resetModules();
-    expect(()=>require('./config')).toThrow(/non-local/);
+  it('prevents production builds from targeting the local backend',()=>{
+    const {assertSafeEnvironment,Environment}=require('../config/environment') as typeof import('../config/environment');
+    expect(()=>assertSafeEnvironment(Environment.LOCAL,'production')).toThrow(/Production mobile builds/);
+    expect(()=>assertSafeEnvironment(Environment.REMOTE,'production')).not.toThrow();
   });
   it('joins endpoint paths without duplicate slashes',()=>{
-    const {joinBaseUrl}=require('./config') as typeof import('./config');
-    expect(joinBaseUrl('https://api.example.test/','/learning')).toBe('https://api.example.test/learning');
+    const {environmentConfig,joinBaseUrl}=require('../config/environment') as typeof import('../config/environment');
+    expect(joinBaseUrl(`${environmentConfig.apiBaseUrl}/`,'/learning')).toBe(environmentConfig.learningBaseUrl);
   });
 });

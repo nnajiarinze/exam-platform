@@ -9,7 +9,11 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "se.medbo.sveastudy"
+      "bundleIdentifier": "se.medbo.sveastudy",
+      "appleTeamId": "HDCE2MC4L7",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "se.medbo.sveastudy",
@@ -28,6 +32,12 @@
     ],
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "d8becd2b-3868-457f-902a-cffeec081999"
+      }
+    },
+    "owner": "nnajiarinze"
   }
 }

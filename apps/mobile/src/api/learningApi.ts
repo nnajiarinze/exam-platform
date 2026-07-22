@@ -5,9 +5,11 @@ import { createMockExam, createPracticeSession, deleteMyLearnerAccount, flagMock
 import type { CreatePracticeSessionRequest, SubmitAnswerRequest, UpdateLearnerProfile, UpdateLearnerSettings } from './generated/types.gen';
 import { appConfig } from './config';
 import { authenticationExpired, validAccessToken } from '../features/auth/authTokenStore';
+import { wakeHostedServices } from './serviceWarmup';
 
 client.setConfig({ baseUrl: appConfig.learningBaseUrl, throwOnError: true });
 client.interceptors.request.use(async (request) => {
+  void wakeHostedServices();
   const token = await validAccessToken();
   if (token) request.headers.set('Authorization', `Bearer ${token}`);
   return request;
