@@ -185,7 +185,7 @@ class ContentServiceIntegrationTest {
     void flywayAppliesTheOwnedFoundationMigration() {
         var versions = jdbc.sql("SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank")
                 .query(String.class).list();
-        org.assertj.core.api.Assertions.assertThat(versions).containsExactly("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11");
+        org.assertj.core.api.Assertions.assertThat(versions).containsExactly("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12");
     }
 
     @Test

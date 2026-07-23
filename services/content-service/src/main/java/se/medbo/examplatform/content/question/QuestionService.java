@@ -29,6 +29,9 @@ public class QuestionService {
     public QuestionService(JdbcClient jdbc, QuestionValidator validator,ReviewWorkflowService reviews) { this.jdbc = jdbc; this.validator = validator;this.reviews=reviews; }
     public record OptionInput(UUID id, Integer displayOrder, String text, boolean correct, String feedback) {}
     public record QuestionInput(UUID learningObjectiveId, String code, String questionType, String questionText, String difficulty, String explanation, List<UUID> factIds, List<String> tags, List<OptionInput> options, Boolean trueFalseCorrect, Long version) {}
+    public record AiQuestionInput(UUID proposalId,UUID learningObjectiveId,String questionType,String questionText,String difficulty,
+                                  String explanation,String language,UUID factId,List<OptionInput> options,String bloomsLevel,String complexity,
+                                  String generationIntent,Integer estimatedReadingSeconds) {}
     public record ActionInput(Long version, String reason,String reasonCode) {}
 
     public Map<String,Object> questions(int page,int size,String search,UUID objectiveId,String type,String difficulty,String review,String status) {
@@ -42,11 +45,11 @@ public class QuestionService {
     public Map<String,Object> question(UUID id) {
         var value=one("SELECT "+FIELDS+JOIN+" WHERE q.id=:id",id,"Question"); UUID current=(UUID)value.get("currentVersionId");
         value.put("options",options(current)); value.put("knowledgeFacts",facts(current)); value.put("factIds",factIds(current)); value.put("tags",tags(current));
-        var version=one("SELECT explanation,author_id AS \"authorId\",reviewer_id AS \"reviewerId\",review_note AS \"reviewNote\" FROM question_version WHERE id=:id",current,"Question version"); value.putAll(version); return value;
+        var version=one("SELECT explanation,language,author_id AS \"authorId\",reviewer_id AS \"reviewerId\",review_note AS \"reviewNote\",blooms_level AS \"bloomsLevel\",complexity,generation_intent AS \"generationIntent\",estimated_reading_seconds AS \"estimatedReadingSeconds\" FROM question_version WHERE id=:id",current,"Question version"); value.putAll(version); return value;
     }
 
     public List<Map<String,Object>> versions(UUID questionId) {
-        exists("question",questionId,"Question"); var rows=jdbc.sql("SELECT id,question_id AS \"questionId\",version_number AS \"versionNumber\",learning_objective_id AS \"learningObjectiveId\",question_type AS \"questionType\",question_text AS \"questionText\",difficulty,explanation,review_status AS \"reviewStatus\",author_id AS \"authorId\",reviewer_id AS \"reviewerId\",review_note AS \"reviewNote\",created_at AS \"createdAt\",updated_at AS \"updatedAt\" FROM question_version WHERE question_id=:id ORDER BY version_number DESC").param("id",questionId).query().listOfRows();
+        exists("question",questionId,"Question"); var rows=jdbc.sql("SELECT id,question_id AS \"questionId\",version_number AS \"versionNumber\",learning_objective_id AS \"learningObjectiveId\",question_type AS \"questionType\",question_text AS \"questionText\",difficulty,explanation,language,review_status AS \"reviewStatus\",author_id AS \"authorId\",reviewer_id AS \"reviewerId\",review_note AS \"reviewNote\",blooms_level AS \"bloomsLevel\",complexity,generation_intent AS \"generationIntent\",estimated_reading_seconds AS \"estimatedReadingSeconds\",created_at AS \"createdAt\",updated_at AS \"updatedAt\" FROM question_version WHERE question_id=:id ORDER BY version_number DESC").param("id",questionId).query().listOfRows();
         rows.forEach(row->{UUID versionId=(UUID)row.get("id");row.put("options",options(versionId));row.put("knowledgeFacts",facts(versionId));row.put("tags",tags(versionId));}); return rows;
     }
 
@@ -55,6 +58,24 @@ public class QuestionService {
         try { jdbc.sql("INSERT INTO question(id,learning_objective_id,code,question_type,question_text,difficulty,review_status,status,created_at,updated_at) VALUES(:id,:objective,:code,:type,:text,:difficulty,'UNREVIEWED','DRAFT',:now,:now)").param("id",id).param("objective",input.learningObjectiveId()).param("code",input.code().trim()).param("type",input.questionType()).param("text",input.questionText().trim()).param("difficulty",input.difficulty()).param("now",now).update(); }
         catch (org.springframework.dao.DuplicateKeyException e) { throw conflict("Question code already exists"); }
         insertVersion(versionId,id,1,input,now); jdbc.sql("UPDATE question SET current_version_id=:version WHERE id=:id").param("version",versionId).param("id",id).update(); insertChildren(versionId,input); log("question.created",id); return question(id);
+    }
+
+    @Transactional public Map<String,Object> createAcceptedProposal(AiQuestionInput input) {
+        Boolean trueFalseCorrect="TRUE_FALSE".equals(input.questionType())?input.options().stream().filter(OptionInput::correct).findFirst().map(o->"TRUE".equalsIgnoreCase(o.text())||"TRUE".equalsIgnoreCase(String.valueOf(o.displayOrder()))).orElse(false):null;
+        var normal=new QuestionInput(input.learningObjectiveId(),"AI-"+input.proposalId(),input.questionType(),input.questionText(),input.difficulty(),
+            input.explanation(),List.of(input.factId()),List.of("AI_ACCEPTED_PROPOSAL"),input.options(),trueFalseCorrect,null);
+        validator.validate(normal);validateReferences(normal);
+        UUID id=UUID.randomUUID(),versionId=UUID.randomUUID();var now=now();
+        jdbc.sql("INSERT INTO question(id,learning_objective_id,code,question_type,question_text,difficulty,review_status,status,created_at,updated_at) VALUES(:id,:objective,:code,:type,:text,:difficulty,'UNREVIEWED','DRAFT',:now,:now)")
+            .param("id",id).param("objective",input.learningObjectiveId()).param("code",normal.code()).param("type",input.questionType())
+            .param("text",input.questionText().trim()).param("difficulty",input.difficulty()).param("now",now).update();
+        jdbc.sql("INSERT INTO question_version(id,question_id,version_number,learning_objective_id,question_type,question_text,difficulty,explanation,language,review_status,author_id,blooms_level,complexity,generation_intent,estimated_reading_seconds,created_at,updated_at) VALUES(:id,:question,1,:objective,:type,:text,:difficulty,:explanation,:language,'UNREVIEWED',:author,:bloom,:complexity,:intent,:reading,:now,:now)")
+            .param("id",versionId).param("question",id).param("objective",input.learningObjectiveId()).param("type",input.questionType())
+            .param("text",input.questionText().trim()).param("difficulty",input.difficulty()).param("explanation",blank(input.explanation()),Types.VARCHAR)
+            .param("language",input.language()).param("author",actor()).param("bloom",input.bloomsLevel()).param("complexity",input.complexity()).param("intent",input.generationIntent())
+            .param("reading",input.estimatedReadingSeconds()).param("now",now).update();
+        jdbc.sql("UPDATE question SET current_version_id=:version WHERE id=:id").param("version",versionId).param("id",id).update();
+        insertChildren(versionId,normal);log("question.created_from_ai_proposal",id);return question(id);
     }
 
     @Transactional public Map<String,Object> update(UUID id,QuestionInput input) {

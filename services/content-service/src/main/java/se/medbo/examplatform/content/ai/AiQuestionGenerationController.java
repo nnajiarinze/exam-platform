@@ -25,6 +25,7 @@ final class AiQuestionGenerationController {
   AiQuestionGenerationController(AiQuestionGenerationService service){this.service=service;}
   record Create(@Min(1)@Max(3)int proposalCount,String questionType,@Size(min=1,max=200)String idempotencyKey){}
   record Reject(@Size(max=500)String reason,@PositiveOrZero long version){}
+  record Accept(@PositiveOrZero long version){}
   @PostMapping("/knowledge-facts/{factId}/ai-question-generation-jobs")@ResponseStatus(HttpStatus.ACCEPTED)Map<String,Object>create(@PathVariable UUID factId,@Valid@RequestBody Create request){return service.create(factId,request.proposalCount(),request.questionType(),request.idempotencyKey());}
   @GetMapping("/knowledge-facts/{factId}/ai-question-generation-eligibility")Map<String,Object>eligibility(@PathVariable UUID factId){return service.eligibility(factId);}
   @GetMapping("/knowledge-facts/{factId}/ai-question-generation-jobs")List<Map<String,Object>>history(@PathVariable UUID factId,@RequestParam(defaultValue="10")@Min(1)@Max(50)int limit){return service.history(factId,limit);}
@@ -32,4 +33,5 @@ final class AiQuestionGenerationController {
   @GetMapping("/ai/question-generation-jobs/{jobId}/proposals")List<Map<String,Object>>proposals(@PathVariable UUID jobId){return service.proposals(jobId);}
   @PostMapping("/ai/question-generation-jobs/{jobId}/cancel")Map<String,Object>cancel(@PathVariable UUID jobId){return service.cancel(jobId);}
   @PostMapping("/ai/question-proposals/{proposalId}/reject")Map<String,Object>reject(@PathVariable UUID proposalId,@Valid@RequestBody Reject request){return service.reject(proposalId,request.reason(),request.version());}
+  @PostMapping("/ai/question-proposals/{proposalId}/accept")Map<String,Object>accept(@PathVariable UUID proposalId,@Valid@RequestBody Accept request){return service.accept(proposalId,request.version());}
 }

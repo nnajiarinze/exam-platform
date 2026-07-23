@@ -395,7 +395,7 @@ export type AiQuestionGenerationJob = {
     version: number;
 };
 
-export type AiQuestionProposalStatus = 'PROPOSED' | 'REJECTED';
+export type AiQuestionProposalStatus = 'PROPOSED' | 'REJECTED' | 'ACCEPTED';
 
 export type AiQuestionProposalOption = {
     id: string;
@@ -415,6 +415,39 @@ export type AiQuestionProposalEvidence = {
     supportedClaim: string;
     quote?: string | null;
     displayOrder: number;
+};
+
+export type AiQuestionIntelligenceFinding = {
+    code: string;
+    severity: 'INFO' | 'WARNING' | 'ERROR';
+    category: string;
+    message: string;
+    field?: string | null;
+    blocking: boolean;
+    details?: {
+        [key: string]: unknown;
+    };
+    validatorName: string;
+    validatorVersion: string;
+};
+
+export type AiQuestionIntelligenceAssessment = {
+    evaluationStatus: 'NOT_EVALUATED' | 'EVALUATED';
+    difficulty?: 'VERY_EASY' | 'EASY' | 'MEDIUM' | 'HARD' | 'VERY_HARD' | null;
+    bloomsLevel?: 'REMEMBER' | 'UNDERSTAND' | 'APPLY' | 'ANALYZE' | 'EVALUATE' | 'CREATE' | null;
+    complexity?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+    generationIntent?: 'PRACTICE' | 'MOCK_EXAM' | 'FINAL_EXAM' | 'FLASHCARD' | 'REVISION' | null;
+    estimatedReadingSeconds?: number | null;
+    overallQualityScore?: number | null;
+    qualityLevel?: 'EXCELLENT' | 'GOOD' | 'ACCEPTABLE' | 'NEEDS_REVIEW' | 'REJECTED' | null;
+    passedValidation?: boolean | null;
+    engineVersion?: string | null;
+    qualityRationale?: string | null;
+    evaluatedAt?: string | null;
+    findings?: Array<AiQuestionIntelligenceFinding>;
+    componentScores?: {
+        [key: string]: number;
+    };
 };
 
 export type AiQuestionProposal = {
@@ -441,6 +474,9 @@ export type AiQuestionProposal = {
     rejectionReason?: string | null;
     rejectedBy?: string | null;
     rejectedAt?: string | null;
+    acceptedQuestionId?: string | null;
+    acceptedBy?: string | null;
+    acceptedAt?: string | null;
     provider: string;
     model: string;
     promptVersion: string;
@@ -448,6 +484,7 @@ export type AiQuestionProposal = {
     inputTokens?: number | null;
     outputTokens?: number | null;
     totalTokens?: number | null;
+    intelligenceAssessment: AiQuestionIntelligenceAssessment;
     createdAt: string;
     updatedAt: string;
     version: number;
@@ -456,6 +493,17 @@ export type AiQuestionProposal = {
 export type AiQuestionProposalRejection = {
     reason?: string | null;
     version: number;
+};
+
+export type AiQuestionProposalAcceptance = {
+    version: number;
+};
+
+export type AiQuestionAcceptanceResult = {
+    questionId: string;
+    status: 'DRAFT';
+    reviewStatus: 'UNREVIEWED';
+    location: string;
 };
 
 export type AiEditorialOperation = 'REWRITE_FOR_CLARITY' | 'SIMPLIFY_LANGUAGE' | 'MAKE_ATOMIC' | 'SPLIT_FACT' | 'CHECK_SOURCE_SUPPORT' | 'DETECT_AMBIGUITY' | 'EDITORIAL_REVIEW_NOTES';
@@ -682,6 +730,11 @@ export type QuestionSummary = AuditFields & {
 
 export type Question = QuestionSummary & {
     explanation?: string | null;
+    language?: string | null;
+    bloomsLevel?: string | null;
+    complexity?: string | null;
+    generationIntent?: string | null;
+    estimatedReadingSeconds?: number | null;
     options: Array<QuestionOption>;
     knowledgeFacts: Array<LinkedKnowledgeFact>;
     factIds: Array<string>;
@@ -708,6 +761,11 @@ export type QuestionVersion = {
     questionText: string;
     difficulty: QuestionDifficulty;
     explanation?: string | null;
+    language?: string | null;
+    bloomsLevel?: string | null;
+    complexity?: string | null;
+    generationIntent?: string | null;
+    estimatedReadingSeconds?: number | null;
     reviewStatus: FactReviewStatus;
     authorId: string;
     reviewerId?: string | null;
@@ -2393,6 +2451,41 @@ export type RejectAiQuestionProposalResponses = {
 };
 
 export type RejectAiQuestionProposalResponse = RejectAiQuestionProposalResponses[keyof RejectAiQuestionProposalResponses];
+
+export type AcceptAiQuestionProposalData = {
+    body: AiQuestionProposalAcceptance;
+    path: {
+        proposalId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/ai/question-proposals/{proposalId}/accept';
+};
+
+export type AcceptAiQuestionProposalErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+    /**
+     * Request validation failed
+     */
+    422: ApiError;
+};
+
+export type AcceptAiQuestionProposalError = AcceptAiQuestionProposalErrors[keyof AcceptAiQuestionProposalErrors];
+
+export type AcceptAiQuestionProposalResponses = {
+    /**
+     * Created canonical draft Question
+     */
+    200: AiQuestionAcceptanceResult;
+};
+
+export type AcceptAiQuestionProposalResponse = AcceptAiQuestionProposalResponses[keyof AcceptAiQuestionProposalResponses];
 
 export type CreateAiEditorialJobData = {
     body: AiEditorialRequest;

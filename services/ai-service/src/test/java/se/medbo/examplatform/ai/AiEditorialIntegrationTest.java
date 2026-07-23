@@ -15,6 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -42,7 +43,7 @@ class AiEditorialIntegrationTest {
   @Test
   void migrationsCreateThePersistentEditorialWorkspace() {
     assertThat(jdbc.sql("SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank")
-        .query(String.class).list()).containsExactly("1", "2", "3", "4", "5", "6", "7", "8");
+        .query(String.class).list()).containsExactly("1", "2", "3", "4", "5", "6", "7", "8", "9", "10");
     assertThat(jdbc.sql("SELECT to_regclass('public.ai_editorial_target') IS NOT NULL AND to_regclass('public.ai_editorial_proposal') IS NOT NULL AND to_regclass('public.ai_editorial_finding') IS NOT NULL AND to_regclass('public.ai_editorial_validation_metric') IS NOT NULL AND to_regclass('public.ai_quota_profile') IS NOT NULL AND to_regclass('public.ai_quota_reservation') IS NOT NULL AND to_regclass('public.ai_provider_circuit') IS NOT NULL AND to_regclass('public.ai_provider_alert') IS NOT NULL AND to_regclass('public.ai_question_proposal') IS NOT NULL AND to_regclass('public.ai_question_proposal_option') IS NOT NULL")
         .query(Boolean.class).single()).isTrue();
   }
@@ -61,6 +62,24 @@ class AiEditorialIntegrationTest {
     assertThat(jdbc.sql("SELECT count(*) FROM ai_question_proposal WHERE generation_job_id=:id").param("id",job).query(Long.class).single()).isEqualTo(3);
     assertThat(jdbc.sql("SELECT count(*) FROM ai_question_proposal_option o JOIN ai_question_proposal p ON p.id=o.proposal_id WHERE p.generation_job_id=:id").param("id",job).query(Long.class).single()).isEqualTo(9);
     assertThat(jdbc.sql("SELECT count(*) FROM ai_audit_event WHERE entity_type='AI_QUESTION_PROPOSAL'").query(Long.class).single()).isGreaterThanOrEqualTo(3);
+    assertThat(jdbc.sql("SELECT count(*) FROM ai_question_proposal WHERE generation_job_id=:id AND intelligence_evaluation_status='EVALUATED' AND overall_quality_score BETWEEN 0 AND 100").param("id",job).query(Long.class).single()).isEqualTo(3);
+    assertThat(jdbc.sql("SELECT count(*) FROM ai_question_intelligence_component_score s JOIN ai_question_proposal p ON p.id=s.proposal_id WHERE p.generation_job_id=:id").param("id",job).query(Long.class).single()).isEqualTo(15);
+    mvc.perform(get("/internal/v1/question-generation/jobs/{id}/proposals",job).header("X-Internal-Api-Key","test-internal-key"))
+        .andExpect(status().isOk()).andExpect(jsonPath("$[0].intelligenceAssessment.evaluationStatus").value("EVALUATED"))
+        .andExpect(jsonPath("$[0].intelligenceAssessment.overallQualityScore").isNumber())
+        .andExpect(jsonPath("$[0].intelligenceAssessment.componentScores.STRUCTURE").isNumber());
+    UUID proposal=jdbc.sql("SELECT id FROM ai_question_proposal WHERE generation_job_id=:id ORDER BY proposal_order LIMIT 1").param("id",job).query(UUID.class).single();
+    String validation=mvc.perform(post("/internal/v1/question-generation/proposals/{id}/revalidate",proposal)
+            .header("X-Internal-Api-Key","test-internal-key"))
+        .andExpect(status().isOk()).andExpect(jsonPath("$.valid").value(true)).andReturn().getResponse().getContentAsString();
+    String validationChecksum=mapper.readTree(validation).get("validationChecksum").asText();UUID question=UUID.randomUUID();
+    mvc.perform(post("/internal/v1/question-generation/proposals/{id}/accept",proposal).header("X-Internal-Api-Key","test-internal-key").contentType(MediaType.APPLICATION_JSON)
+            .content(mapper.writeValueAsString(Map.of("questionId",question,"actor","author-questions","version",0,"validationChecksum",validationChecksum))))
+        .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("ACCEPTED")).andExpect(jsonPath("$.acceptedQuestionId").value(question.toString()));
+    mvc.perform(post("/internal/v1/question-generation/proposals/{id}/reject",proposal).header("X-Internal-Api-Key","test-internal-key").contentType(MediaType.APPLICATION_JSON)
+            .content("{\"reason\":\"late rejection\",\"actor\":\"author-questions\",\"version\":1}"))
+        .andExpect(status().isConflict());
+    assertThat(jdbc.sql("SELECT count(*) FROM ai_question_proposal WHERE id=:id AND status='ACCEPTED' AND accepted_question_id=:question").param("id",proposal).param("question",question).query(Long.class).single()).isEqualTo(1);
     mvc.perform(get("/internal/v1/question-generation/jobs")
             .header("X-Internal-Api-Key","test-internal-key")
             .queryParam("knowledgeFactId","11111111-1111-1111-1111-111111111111")

@@ -22,9 +22,19 @@ public interface QuestionGenerationProviderClient {
   record FactEvidence(UUID knowledgeFactId, long knowledgeFactVersion, String knowledgeFactChecksum,
                       String supportedClaim) {}
   record SourceEvidence(UUID sourceId, String sourceTitle, String sourceChecksum, String quote) {}
+  record PedagogicalMetadata(String difficulty, String bloomsLevel, String complexity,
+                             String intent, Integer estimatedReadingSeconds) {}
   record Proposal(String questionType, String questionText, String language, List<Option> answerOptions,
                   String explanation, String rationale, FactEvidence factEvidence,
-                  List<SourceEvidence> sourceEvidence, String confidence, List<String> warnings) {}
+                  List<SourceEvidence> sourceEvidence, String confidence, List<String> warnings,
+                  PedagogicalMetadata metadata, String qualityRationale) {
+    public Proposal(String questionType, String questionText, String language, List<Option> answerOptions,
+             String explanation, String rationale, FactEvidence factEvidence,
+             List<SourceEvidence> sourceEvidence, String confidence, List<String> warnings) {
+      this(questionType, questionText, language, answerOptions, explanation, rationale, factEvidence,
+          sourceEvidence, confidence, warnings, null, null);
+    }
+  }
   record Usage(Integer inputTokens, Integer outputTokens, String requestId) {}
   record Result(String resultType, List<Proposal> proposals, String reason, List<String> warnings,
                 Usage usage, String structuredOutputChecksum) {}

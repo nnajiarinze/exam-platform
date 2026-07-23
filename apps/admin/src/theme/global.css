@@ -343,6 +343,9 @@ h3 {
 .proposal-grid blockquote footer { color:var(--muted); margin-top:0.4rem; }
 .ai-editorial { margin-top:1.5rem; }
 .ai-editorial-proposal { border:1px solid var(--border); }
+.ai-job-summary { background:var(--surface-low); border:1px solid var(--border); border-radius:var(--radius-sm); margin-top:1rem; padding:1rem; }
+.ai-editorial-proposal .success { background:var(--surface-low); border-left:4px solid var(--success); margin-top:1rem; padding:1rem; }
+.ai-editorial-proposal .button-link { display:inline-flex; align-items:center; background:var(--primary); border-radius:var(--radius-sm); color:white; font-weight:700; padding:0.65rem 1rem; text-decoration:none; }
 .question-proposal-options { display:grid; gap:0.65rem; padding-left:1.5rem; }
 .question-proposal-options li { border:1px solid var(--border); border-radius:var(--radius-sm); padding:0.75rem; }
 .question-proposal-correct { background:var(--surface-low); border-color:var(--primary) !important; }
@@ -633,11 +636,13 @@ legend {
   white-space: nowrap;
 }
 .status-active,
+.status-accepted,
 .status-approved,
 .status-connected,
 .status-delivered,
 .status-published,
-.status-complete {
+.status-complete,
+.status-completed {
   background: var(--success-bg);
   color: var(--success);
 }
