@@ -9,13 +9,13 @@ import { Screen } from '../../components/Screen';
 import { Button, Card, EmptyState, ErrorState, Loading, ProgressBar } from '../../components/ui';
 import type { RootStackParamList } from '../../navigation/types';
 import { theme } from '../../theme';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export function TopicLessonScreen({navigation,route}:NativeStackScreenProps<RootStackParamList,'TopicLesson'>){
  const identity=useAppStore(s=>s.learnerIdentity);const client=useQueryClient();const query=useQuery({queryKey:['lesson',identity,route.params.topicId],queryFn:()=>learningApi.lesson(identity,route.params.topicId),enabled:Boolean(identity)});
- const [index,setIndex]=useState(0);const [saveError,setSaveError]=useState(false);
- useEffect(()=>{if(query.data){const target=route.params.sectionId??query.data.progress.lastSectionId;setIndex(Math.max(0,query.data.sections.findIndex(s=>s.sectionId===target)));}},[query.data,route.params.sectionId]);
- const mutation=useMutation({mutationFn:({sectionId,completed}:{sectionId:string;completed:boolean})=>learningApi.updateLessonProgress(identity,route.params.topicId,sectionId,completed),retry:2,onSuccess:()=>{setSaveError(false);void client.invalidateQueries({queryKey:['continue-learning']});void client.invalidateQueries({queryKey:['study-topics']});void client.invalidateQueries({queryKey:['lesson',identity,route.params.topicId]});},onError:()=>setSaveError(true)});
+ const [index,setIndex]=useState(0);const [saveError,setSaveError]=useState(false);const initializedTopic=useRef<string|undefined>(undefined);
+ useEffect(()=>{if(query.data&&initializedTopic.current!==query.data.topicId){const target=route.params.sectionId??query.data.progress.lastSectionId;setIndex(Math.max(0,query.data.sections.findIndex(s=>s.sectionId===target)));initializedTopic.current=query.data.topicId;}},[query.data,route.params.sectionId]);
+ const mutation=useMutation({mutationFn:({sectionId,completed}:{sectionId:string;completed:boolean})=>learningApi.updateLessonProgress(identity,route.params.topicId,sectionId,completed),retry:2,onSuccess:progress=>{setSaveError(false);client.setQueryData(['lesson',identity,route.params.topicId],(lesson:typeof query.data)=>lesson?{...lesson,progress}:lesson);void client.invalidateQueries({queryKey:['continue-learning']});void client.invalidateQueries({queryKey:['study-topics']});},onError:()=>setSaveError(true)});
  useEffect(()=>{const section=query.data?.sections[index];if(section)mutation.mutate({sectionId:section.sectionId,completed:false});},[index,query.data?.topicId]);
  if(query.isPending)return <Screen><Loading label="Loading lesson…"/></Screen>;if(query.isError)return <Screen><AppHeader onBack={()=>navigation.goBack()}/><ErrorState message={friendlyError(query.error)} retry={()=>query.refetch()}/></Screen>;if(!query.data.sections.length)return <Screen><EmptyState message="This topic is not available for study yet."/></Screen>;
  const lesson=query.data,section=lesson.sections[index],last=index===lesson.sections.length-1;const completed=Math.max(lesson.progress.completedSectionCount,index);const finish=()=>mutation.mutate({sectionId:section.sectionId,completed:true},{onSuccess:()=>{if(!last)setIndex(value=>value+1);}});
