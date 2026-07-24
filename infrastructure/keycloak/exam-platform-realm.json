@@ -1,6 +1,7 @@
 {
   "realm": "exam-platform",
   "enabled": true,
+  "sslRequired": "none",
   "displayName": "Svea Study",
   "registrationAllowed": true,
   "verifyEmail": true,

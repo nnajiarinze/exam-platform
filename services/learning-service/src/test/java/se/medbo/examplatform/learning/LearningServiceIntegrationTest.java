@@ -93,6 +93,53 @@ class LearningServiceIntegrationTest {
     }
 
     @Test
+    void publishedLessonIsRegisteredOrderedAndProgressIsReleaseScoped() throws Exception {
+        importAndActivate(snapshot("study-release", "1"));
+
+        mockMvc.perform(get("/api/v1/learning/exams/swedish-citizenship/subjects")
+                        .header("X-Learner-Identity", "developer-learner"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].subjectId").value("subject-a"))
+                .andExpect(jsonPath("$[0].topicCount").value(1));
+        mockMvc.perform(get("/api/v1/learning/subjects/subject-a/topics")
+                        .queryParam("examId", "swedish-citizenship")
+                        .header("X-Learner-Identity", "developer-learner"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].keyFactCount").value(3))
+                .andExpect(jsonPath("$[0].relatedQuestionCount").value(3));
+        mockMvc.perform(get("/api/v1/learning/topics/topic-a/lesson")
+                        .queryParam("examId", "swedish-citizenship")
+                        .header("X-Learner-Identity", "developer-learner"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.contentReleaseId").value("study-release"))
+                .andExpect(jsonPath("$.sections[0].sectionId").value("fact-1"))
+                .andExpect(jsonPath("$.sections[2].sectionId").value("fact-3"))
+                .andExpect(jsonPath("$.progress.completed").value(false));
+
+        String update = """
+                {"sectionId":"fact-1","completed":true}
+                """;
+        mockMvc.perform(put("/api/v1/learning/topics/topic-a/progress")
+                        .queryParam("examId", "swedish-citizenship")
+                        .header("X-Learner-Identity", "developer-learner")
+                        .contentType(MediaType.APPLICATION_JSON).content(update))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.completedSectionCount").value(1))
+                .andExpect(jsonPath("$.completed").value(false));
+        mockMvc.perform(put("/api/v1/learning/topics/topic-a/progress")
+                        .queryParam("examId", "swedish-citizenship")
+                        .header("X-Learner-Identity", "developer-learner")
+                        .contentType(MediaType.APPLICATION_JSON).content(update))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.completedSectionCount").value(1));
+        mockMvc.perform(get("/api/v1/learning/continue")
+                        .queryParam("examId", "swedish-citizenship")
+                        .header("X-Learner-Identity", "developer-learner"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.topicId").value("topic-a"));
+    }
+
+    @Test
     void authenticatedLearnerGetsDeterministicSettingsDefaults() throws Exception {
         mockMvc.perform(get("/api/v1/me/settings").header("X-Learner-Identity", "developer-learner"))
                 .andExpect(status().isOk())
@@ -661,19 +708,27 @@ class LearningServiceIntegrationTest {
 
     private ContentSnapshot snapshot(String releaseId, String releaseVersion, Instant publishedAt) {
         var topicA = new ContentSnapshot.Topic("topic-a", "Topic A", "Demo topic", 0,
+                List.of(section("fact-1", 0), section("fact-2", 1), section("fact-3", 2)),
                 List.of(question("q1", "fact-1"), question("q2", "fact-2"), question("q3", "fact-3")));
         var topicB = new ContentSnapshot.Topic("topic-b", "Topic B", null, 0,
+                List.of(section("fact-4", 0)),
                 List.of(question("q4", "fact-4")));
-        var candidate = new ContentSnapshot("1.0", releaseId, "swedish-citizenship", "exam-v1",
+        var candidate = new ContentSnapshot("1.2", releaseId, "swedish-citizenship", "exam-v1",
                 releaseVersion, "PUBLISHED", publishedAt, "pending",
                 List.of(new ContentSnapshot.Subject("subject-a", "Subject A", 0, List.of(topicA)),
                         new ContentSnapshot.Subject("subject-b", "Subject B", 1, List.of(topicB))));
         return withChecksum(candidate);
     }
 
+    private ContentSnapshot.LessonSection section(String id, int order) {
+        return new ContentSnapshot.LessonSection(id, id + "-v1", "Key fact " + (order + 1),
+                "A concise learner-facing explanation for " + id + ".", order,
+                List.of(new ContentSnapshot.SourceLink("Official source", "https://example.test/" + id)));
+    }
+
     private ContentSnapshot.Question question(String id, String factId) {
         return new ContentSnapshot.Question(id, id + "-v1", factId, "SINGLE_CHOICE", "Prompt " + id,
-                "Reviewed explanation " + id, "sv", null, true,
+                "Reviewed explanation " + id, "sv", null, true, List.of(id + "-a"),
                 List.of(new ContentSnapshot.AnswerOption(id + "-a", "Correct", true, 0),
                         new ContentSnapshot.AnswerOption(id + "-b", "Incorrect", false, 1)));
     }

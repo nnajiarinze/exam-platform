@@ -22,8 +22,8 @@ public class SnapshotValidator {
 
     public void validate(ContentSnapshot snapshot) {
         ExternalExamIdentifier.normalize(snapshot.examId());
-        if (!java.util.Set.of("1.0", "1.1").contains(snapshot.schemaVersion()) || !"PUBLISHED".equals(snapshot.releaseStatus())) {
-            invalid("Only published content snapshot schemas 1.0 and 1.1 are accepted");
+        if (!java.util.Set.of("1.0", "1.1", "1.2").contains(snapshot.schemaVersion()) || !"PUBLISHED".equals(snapshot.releaseStatus())) {
+            invalid("Only published content snapshot schemas 1.0, 1.1, and 1.2 are accepted");
         }
         var subjectIds = new HashSet<String>();
         var topicIds = new HashSet<String>();
@@ -57,7 +57,7 @@ public class SnapshotValidator {
                     }
                     var flaggedCorrect = question.answerOptions().stream().filter(ContentSnapshot.AnswerOption::correct)
                             .map(ContentSnapshot.AnswerOption::id).collect(java.util.stream.Collectors.toSet());
-                    if ("1.1".equals(snapshot.schemaVersion())) {
+                    if (!"1.0".equals(snapshot.schemaVersion())) {
                         if (question.correctOptionIds() == null || question.correctOptionIds().isEmpty()
                                 || question.correctOptionIds().size() != new HashSet<>(question.correctOptionIds()).size()
                                 || !flaggedCorrect.equals(new HashSet<>(question.correctOptionIds()))) {

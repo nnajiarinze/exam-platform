@@ -29,12 +29,19 @@ final class QuestionGenerationController {
   record Create(@NotNull QuestionGenerationProviderClient.Target target,@NotNull QuestionGenerationProviderClient.Context context,
                 @Min(1)@Max(3)int proposalCount,String questionType,@NotBlank String requestedBy,
                 @NotBlank@Size(max=200)String idempotencyKey){}
-  record Reject(@Size(max=500)String reason,@NotBlank String actor,@PositiveOrZero long version){}
-  @PostMapping("/jobs")@ResponseStatus(HttpStatus.ACCEPTED)Map<String,Object>create(@Valid@RequestBody Create r){return service.create(new QuestionGenerationProviderClient.Request(r.target(),r.context(),r.proposalCount(),r.questionType(),"question-generation-foundation-v1",null,null,0),r.requestedBy(),r.idempotencyKey(),provider,model);}
+  record Reject(@NotBlank String reasonCode,@Size(max=1000)String comment,@NotBlank String actor,@PositiveOrZero long version){}
+  record Regenerate(@NotBlank@Size(max=1000)String reviewerFeedback,@NotBlank String actor,@PositiveOrZero long version,
+                    @NotBlank@Size(max=200)String idempotencyKey){}
+  record Accept(@NotNull UUID questionId,@NotBlank String actor,@PositiveOrZero long version,@NotBlank String validationChecksum){}
+  @PostMapping("/jobs")@ResponseStatus(HttpStatus.ACCEPTED)Map<String,Object>create(@Valid@RequestBody Create r){return service.create(new QuestionGenerationProviderClient.Request(r.target(),r.context(),r.proposalCount(),r.questionType(),"question-generation-intelligence-v1",null,null,0),r.requestedBy(),r.idempotencyKey(),provider,model);}
   @GetMapping("/jobs/{id}")Map<String,Object>job(@PathVariable UUID id){return service.get(id);}
   @GetMapping("/jobs")List<Map<String,Object>>jobs(@RequestParam UUID knowledgeFactId,@RequestParam(defaultValue="10")@Min(1)@Max(50)int limit){return service.history(knowledgeFactId,limit);}
-  @GetMapping("/jobs/{id}/proposals")List<Map<String,Object>>proposals(@PathVariable UUID id){return service.proposals(id);}
+  @GetMapping("/jobs/{id}/proposals")List<Map<String,Object>>proposals(@PathVariable UUID id){return service.proposals(id).stream().map(service::withIntelligence).toList();}
   @PostMapping("/jobs/{id}/cancel")Map<String,Object>cancel(@PathVariable UUID id){return service.cancel(id);}
-  @GetMapping("/proposals/{id}")Map<String,Object>proposal(@PathVariable UUID id){return service.proposal(id);}
-  @PostMapping("/proposals/{id}/reject")Map<String,Object>reject(@PathVariable UUID id,@Valid@RequestBody Reject r){return service.reject(id,r.reason(),r.actor(),r.version());}
+  @GetMapping("/proposals/{id}")Map<String,Object>proposal(@PathVariable UUID id){return service.withIntelligence(service.proposal(id));}
+  @PostMapping("/proposals/{id}/reject")Map<String,Object>reject(@PathVariable UUID id,@Valid@RequestBody Reject r){return service.withIntelligence(service.reject(id,r.reasonCode(),r.comment(),r.actor(),r.version()));}
+  @PostMapping("/proposals/{id}/regenerate")@ResponseStatus(HttpStatus.ACCEPTED)Map<String,Object>regenerate(@PathVariable UUID id,@Valid@RequestBody Regenerate r){return service.regenerate(id,r.reviewerFeedback(),r.actor(),r.version(),r.idempotencyKey(),provider,model);}
+  @GetMapping("/proposals/{id}/lineage")List<Map<String,Object>>lineage(@PathVariable UUID id){return service.lineage(id).stream().map(service::withIntelligence).toList();}
+  @PostMapping("/proposals/{id}/revalidate")Map<String,Object>revalidate(@PathVariable UUID id){return service.revalidate(id);}
+  @PostMapping("/proposals/{id}/accept")Map<String,Object>accept(@PathVariable UUID id,@Valid@RequestBody Accept r){return service.withIntelligence(service.accept(id,r.questionId(),r.actor(),r.version(),r.validationChecksum()));}
 }

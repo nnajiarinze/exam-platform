@@ -42,6 +42,13 @@ Scoring is deterministic for the pinned versions and records rule/configuration 
 
 The importer consumes published release events, downloads the checksummed snapshot, validates schema/checksum/references, and atomically activates a complete projection. Re-import of the same release is idempotent. Previous releases remain available while referenced by historical attempts. Learner reads do not depend on Content Service availability. See [publishing flow](content-publishing-flow.md).
 
+Snapshot schema `1.2` also projects published Knowledge Fact versions as short
+lesson sections. Learning progress belongs to this service and is scoped by
+learner, imported release, and topic; canonical lesson text and source links
+remain owned by Content Service. The Study API reads only the active release,
+while historical progress remains attached to the release that produced it.
+See [mobile learning area](../implementation/mobile-learning-area.md).
+
 ## Failure scenarios
 
 - Missing/corrupt release remains inactive and is retried/alerted.

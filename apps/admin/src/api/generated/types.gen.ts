@@ -364,6 +364,157 @@ export type AiQuestionGenerationRequest = {
     idempotencyKey: string;
 };
 
+export type AiQuestionBatchScope = {
+    type: 'KNOWLEDGE_FACT' | 'MULTIPLE_KNOWLEDGE_FACTS' | 'TOPIC' | 'SUBJECT' | 'EXAM_VERSION';
+    id?: string | null;
+    knowledgeFactIds?: Array<string>;
+};
+
+export type AiQuestionBatchRequest = {
+    scope: AiQuestionBatchScope;
+    language: 'sv' | 'en';
+    questionsPerKnowledgeFact: number;
+    questionTypes: Array<QuestionType>;
+    difficultyDistribution: {
+        [key: string]: number;
+    };
+    bloomDistribution: {
+        [key: string]: number;
+    };
+    idempotencyKey?: string | null;
+};
+
+export type AiQuestionBatchPreview = {
+    resolvedKnowledgeFactCount: number;
+    estimatedProposalCount: number;
+    excludedKnowledgeFactCount: number;
+    configuredMaximum: number;
+    withinLimit: boolean;
+    estimatedProviderCalls: number;
+    warnings: Array<string>;
+    [key: string]: unknown | number | boolean | Array<string>;
+};
+
+export type AiQuestionBatchStatus = 'PENDING' | 'RUNNING' | 'PARTIALLY_COMPLETED' | 'COMPLETED' | 'FAILED' | 'CANCELLING' | 'CANCELLED';
+
+export type AiQuestionBatch = {
+    id: string;
+    scopeType: string;
+    scopeId?: string | null;
+    scopeLabel?: string | null;
+    language: string;
+    configuration: {
+        [key: string]: unknown;
+    };
+    createdBy: string;
+    status: AiQuestionBatchStatus;
+    provider: string;
+    model: string;
+    createdAt: string;
+    requested: number;
+    generated: number;
+    failed: number;
+    cancelled: number;
+    generationProgressPercentage: number;
+    reviewProgressPercentage: number;
+    acceptanceProgressPercentage: number;
+    version: number;
+    [key: string]: unknown | string | string | null | string | null | {
+        [key: string]: unknown;
+    } | AiQuestionBatchStatus | number | undefined;
+};
+
+export type AiQuestionBatchItemStatus = 'PENDING' | 'PROCESSING' | 'RETRY_SCHEDULED' | 'GENERATED' | 'FAILED' | 'CANCELLED';
+
+export type AiQuestionBatchItem = {
+    id: string;
+    batchId: string;
+    sequence: number;
+    knowledgeFactId: string;
+    knowledgeFactVersionId: string;
+    questionType: QuestionType;
+    language: string;
+    targetDifficulty?: string | null;
+    targetBloomLevel?: string | null;
+    status: AiQuestionBatchItemStatus;
+    generationJobId?: string | null;
+    proposalId?: string | null;
+    attemptCount: number;
+    rateLimitCount: number;
+    failureCode?: string | null;
+    failureMessage?: string | null;
+    createdAt: string;
+    version: number;
+    [key: string]: unknown | string | number | QuestionType | string | null | string | null | AiQuestionBatchItemStatus | string | null | string | null | string | null | string | null | undefined;
+};
+
+export type AiQuestionBatchPage = {
+    items: Array<AiQuestionBatch>;
+    page: number;
+    size: number;
+    totalItems: number;
+    totalPages: number;
+};
+
+export type AiQuestionBatchItemPage = {
+    items: Array<AiQuestionBatchItem>;
+    page: number;
+    size: number;
+    totalItems: number;
+    totalPages: number;
+};
+
+export type AiQuestionProposalPage = {
+    items: Array<AiQuestionProposal>;
+    page: number;
+    size: number;
+    totalItems: number;
+    totalPages: number;
+};
+
+export type AiQuestionSelection = {
+    proposalIds: Array<string>;
+};
+
+export type AiQuestionAssignmentRequest = AiQuestionSelection & {
+    reviewerId: string;
+    reviewDeadline?: string | null;
+};
+
+export type AiBulkQuestionRejection = AiQuestionSelection & {
+    reasonCode: AiQuestionRejectionReason;
+    reviewerComment?: string | null;
+    versions: {
+        [key: string]: number;
+    };
+};
+
+export type AiBulkQuestionRegeneration = AiQuestionSelection & {
+    reviewerFeedback: string;
+    versions: {
+        [key: string]: number;
+    };
+    idempotencyKey: string;
+};
+
+export type AiBulkQuestionAcceptance = AiQuestionSelection & {
+    versions: {
+        [key: string]: number;
+    };
+};
+
+export type AiBulkActionResult = {
+    requested: number;
+    succeeded: number;
+    failed: number;
+    results: Array<{
+        [key: string]: unknown;
+    }>;
+    [key: string]: unknown | number | Array<{
+        [key: string]: unknown;
+    }>;
+};
+
 export type AiQuestionGenerationJob = {
     id: string;
     operationType: AiQuestionGenerationOperation;
@@ -395,7 +546,9 @@ export type AiQuestionGenerationJob = {
     version: number;
 };
 
-export type AiQuestionProposalStatus = 'PROPOSED' | 'REJECTED';
+export type AiQuestionProposalStatus = 'PROPOSED' | 'REJECTED' | 'ACCEPTED' | 'SUPERSEDED';
+
+export type AiQuestionRejectionReason = 'FACTUALLY_INCORRECT' | 'AMBIGUOUS' | 'DUPLICATE' | 'POOR_DISTRACTORS' | 'WRONG_CORRECT_ANSWER' | 'WRONG_DIFFICULTY' | 'WRONG_BLOOM_LEVEL' | 'WRONG_QUESTION_TYPE' | 'UNSUPPORTED_BY_KNOWLEDGE_FACT' | 'UNSUPPORTED_BY_SOURCE' | 'LANGUAGE_QUALITY' | 'READABILITY' | 'BIAS_OR_SAFETY' | 'FORMAT_INVALID' | 'OTHER';
 
 export type AiQuestionProposalOption = {
     id: string;
@@ -415,6 +568,39 @@ export type AiQuestionProposalEvidence = {
     supportedClaim: string;
     quote?: string | null;
     displayOrder: number;
+};
+
+export type AiQuestionIntelligenceFinding = {
+    code: string;
+    severity: 'INFO' | 'WARNING' | 'ERROR';
+    category: string;
+    message: string;
+    field?: string | null;
+    blocking: boolean;
+    details?: {
+        [key: string]: unknown;
+    };
+    validatorName: string;
+    validatorVersion: string;
+};
+
+export type AiQuestionIntelligenceAssessment = {
+    evaluationStatus: 'NOT_EVALUATED' | 'EVALUATED';
+    difficulty?: 'VERY_EASY' | 'EASY' | 'MEDIUM' | 'HARD' | 'VERY_HARD' | null;
+    bloomsLevel?: 'REMEMBER' | 'UNDERSTAND' | 'APPLY' | 'ANALYZE' | 'EVALUATE' | 'CREATE' | null;
+    complexity?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+    generationIntent?: 'PRACTICE' | 'MOCK_EXAM' | 'FINAL_EXAM' | 'FLASHCARD' | 'REVISION' | null;
+    estimatedReadingSeconds?: number | null;
+    overallQualityScore?: number | null;
+    qualityLevel?: 'EXCELLENT' | 'GOOD' | 'ACCEPTABLE' | 'NEEDS_REVIEW' | 'REJECTED' | null;
+    passedValidation?: boolean | null;
+    engineVersion?: string | null;
+    qualityRationale?: string | null;
+    evaluatedAt?: string | null;
+    findings?: Array<AiQuestionIntelligenceFinding>;
+    componentScores?: {
+        [key: string]: number;
+    };
 };
 
 export type AiQuestionProposal = {
@@ -439,8 +625,21 @@ export type AiQuestionProposal = {
     validationStatus: 'VALID';
     status: AiQuestionProposalStatus;
     rejectionReason?: string | null;
+    rejectionReasonCode?: AiQuestionRejectionReason | null;
+    reviewerComment?: string | null;
     rejectedBy?: string | null;
     rejectedAt?: string | null;
+    rootProposalId?: string | null;
+    parentProposalId?: string | null;
+    supersededByProposalId?: string | null;
+    generationAttempt: number;
+    regeneratedBy?: string | null;
+    regeneratedAt?: string | null;
+    regenerationFeedback?: string | null;
+    active: boolean;
+    acceptedQuestionId?: string | null;
+    acceptedBy?: string | null;
+    acceptedAt?: string | null;
     provider: string;
     model: string;
     promptVersion: string;
@@ -448,14 +647,40 @@ export type AiQuestionProposal = {
     inputTokens?: number | null;
     outputTokens?: number | null;
     totalTokens?: number | null;
+    intelligenceAssessment: AiQuestionIntelligenceAssessment;
     createdAt: string;
     updatedAt: string;
     version: number;
 };
 
 export type AiQuestionProposalRejection = {
-    reason?: string | null;
+    reasonCode: AiQuestionRejectionReason;
+    comment?: string | null;
     version: number;
+};
+
+export type AiQuestionProposalRegeneration = {
+    reviewerFeedback: string;
+    version: number;
+    idempotencyKey: string;
+};
+
+export type AiQuestionRegenerationResult = {
+    jobId: string;
+    parentProposalId: string;
+    status: AiJobStatus;
+    location: string;
+};
+
+export type AiQuestionProposalAcceptance = {
+    version: number;
+};
+
+export type AiQuestionAcceptanceResult = {
+    questionId: string;
+    status: 'DRAFT';
+    reviewStatus: 'UNREVIEWED';
+    location: string;
 };
 
 export type AiEditorialOperation = 'REWRITE_FOR_CLARITY' | 'SIMPLIFY_LANGUAGE' | 'MAKE_ATOMIC' | 'SPLIT_FACT' | 'CHECK_SOURCE_SUPPORT' | 'DETECT_AMBIGUITY' | 'EDITORIAL_REVIEW_NOTES';
@@ -682,6 +907,11 @@ export type QuestionSummary = AuditFields & {
 
 export type Question = QuestionSummary & {
     explanation?: string | null;
+    language?: string | null;
+    bloomsLevel?: string | null;
+    complexity?: string | null;
+    generationIntent?: string | null;
+    estimatedReadingSeconds?: number | null;
     options: Array<QuestionOption>;
     knowledgeFacts: Array<LinkedKnowledgeFact>;
     factIds: Array<string>;
@@ -708,6 +938,11 @@ export type QuestionVersion = {
     questionText: string;
     difficulty: QuestionDifficulty;
     explanation?: string | null;
+    language?: string | null;
+    bloomsLevel?: string | null;
+    complexity?: string | null;
+    generationIntent?: string | null;
+    estimatedReadingSeconds?: number | null;
     reviewStatus: FactReviewStatus;
     authorId: string;
     reviewerId?: string | null;
@@ -987,6 +1222,8 @@ export type QuestionId = string;
 export type ReviewItemId = string;
 
 export type ReleaseId = string;
+
+export type AiBatchId = string;
 
 export type Page = number;
 
@@ -2393,6 +2630,404 @@ export type RejectAiQuestionProposalResponses = {
 };
 
 export type RejectAiQuestionProposalResponse = RejectAiQuestionProposalResponses[keyof RejectAiQuestionProposalResponses];
+
+export type RegenerateAiQuestionProposalData = {
+    body: AiQuestionProposalRegeneration;
+    path: {
+        proposalId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/ai/question-proposals/{proposalId}/regenerate';
+};
+
+export type RegenerateAiQuestionProposalErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+    /**
+     * Request validation failed
+     */
+    422: ApiError;
+};
+
+export type RegenerateAiQuestionProposalError = RegenerateAiQuestionProposalErrors[keyof RegenerateAiQuestionProposalErrors];
+
+export type RegenerateAiQuestionProposalResponses = {
+    /**
+     * Regeneration job queued
+     */
+    202: AiQuestionRegenerationResult;
+};
+
+export type RegenerateAiQuestionProposalResponse = RegenerateAiQuestionProposalResponses[keyof RegenerateAiQuestionProposalResponses];
+
+export type GetAiQuestionProposalLineageData = {
+    body?: never;
+    path: {
+        proposalId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/ai/question-proposals/{proposalId}/lineage';
+};
+
+export type GetAiQuestionProposalLineageErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Resource not found
+     */
+    404: ApiError;
+};
+
+export type GetAiQuestionProposalLineageError = GetAiQuestionProposalLineageErrors[keyof GetAiQuestionProposalLineageErrors];
+
+export type GetAiQuestionProposalLineageResponses = {
+    /**
+     * Ordered lineage
+     */
+    200: Array<AiQuestionProposal>;
+};
+
+export type GetAiQuestionProposalLineageResponse = GetAiQuestionProposalLineageResponses[keyof GetAiQuestionProposalLineageResponses];
+
+export type AcceptAiQuestionProposalData = {
+    body: AiQuestionProposalAcceptance;
+    path: {
+        proposalId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/ai/question-proposals/{proposalId}/accept';
+};
+
+export type AcceptAiQuestionProposalErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+    /**
+     * Request validation failed
+     */
+    422: ApiError;
+};
+
+export type AcceptAiQuestionProposalError = AcceptAiQuestionProposalErrors[keyof AcceptAiQuestionProposalErrors];
+
+export type AcceptAiQuestionProposalResponses = {
+    /**
+     * Created canonical draft Question
+     */
+    200: AiQuestionAcceptanceResult;
+};
+
+export type AcceptAiQuestionProposalResponse = AcceptAiQuestionProposalResponses[keyof AcceptAiQuestionProposalResponses];
+
+export type PreviewAiQuestionGenerationBatchData = {
+    body: AiQuestionBatchRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/ai/question-generation-batches/preview';
+};
+
+export type PreviewAiQuestionGenerationBatchErrors = {
+    /**
+     * Request validation failed
+     */
+    422: ApiError;
+};
+
+export type PreviewAiQuestionGenerationBatchError = PreviewAiQuestionGenerationBatchErrors[keyof PreviewAiQuestionGenerationBatchErrors];
+
+export type PreviewAiQuestionGenerationBatchResponses = {
+    /**
+     * Batch preview
+     */
+    200: AiQuestionBatchPreview;
+};
+
+export type PreviewAiQuestionGenerationBatchResponse = PreviewAiQuestionGenerationBatchResponses[keyof PreviewAiQuestionGenerationBatchResponses];
+
+export type ListAiQuestionGenerationBatchesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        page?: number;
+        size?: number;
+        status?: string;
+        scopeType?: string;
+        createdBy?: string;
+    };
+    url: '/api/v1/admin/ai/question-generation-batches';
+};
+
+export type ListAiQuestionGenerationBatchesResponses = {
+    /**
+     * Batch page
+     */
+    200: AiQuestionBatchPage;
+};
+
+export type ListAiQuestionGenerationBatchesResponse = ListAiQuestionGenerationBatchesResponses[keyof ListAiQuestionGenerationBatchesResponses];
+
+export type CreateAiQuestionGenerationBatchData = {
+    body: AiQuestionBatchRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/ai/question-generation-batches';
+};
+
+export type CreateAiQuestionGenerationBatchErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+    /**
+     * Request validation failed
+     */
+    422: ApiError;
+};
+
+export type CreateAiQuestionGenerationBatchError = CreateAiQuestionGenerationBatchErrors[keyof CreateAiQuestionGenerationBatchErrors];
+
+export type CreateAiQuestionGenerationBatchResponses = {
+    /**
+     * Created batch
+     */
+    202: AiQuestionBatch;
+};
+
+export type CreateAiQuestionGenerationBatchResponse = CreateAiQuestionGenerationBatchResponses[keyof CreateAiQuestionGenerationBatchResponses];
+
+export type GetAiQuestionGenerationBatchData = {
+    body?: never;
+    path: {
+        batchId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/ai/question-generation-batches/{batchId}';
+};
+
+export type GetAiQuestionGenerationBatchErrors = {
+    /**
+     * Resource not found
+     */
+    404: ApiError;
+};
+
+export type GetAiQuestionGenerationBatchError = GetAiQuestionGenerationBatchErrors[keyof GetAiQuestionGenerationBatchErrors];
+
+export type GetAiQuestionGenerationBatchResponses = {
+    /**
+     * Batch detail
+     */
+    200: AiQuestionBatch;
+};
+
+export type GetAiQuestionGenerationBatchResponse = GetAiQuestionGenerationBatchResponses[keyof GetAiQuestionGenerationBatchResponses];
+
+export type ListAiQuestionGenerationBatchItemsData = {
+    body?: never;
+    path: {
+        batchId: string;
+    };
+    query?: {
+        page?: number;
+        size?: number;
+        status?: string;
+        knowledgeFactId?: string;
+    };
+    url: '/api/v1/admin/ai/question-generation-batches/{batchId}/items';
+};
+
+export type ListAiQuestionGenerationBatchItemsResponses = {
+    /**
+     * Batch item page
+     */
+    200: AiQuestionBatchItemPage;
+};
+
+export type ListAiQuestionGenerationBatchItemsResponse = ListAiQuestionGenerationBatchItemsResponses[keyof ListAiQuestionGenerationBatchItemsResponses];
+
+export type ListAiQuestionGenerationBatchProposalsData = {
+    body?: never;
+    path: {
+        batchId: string;
+    };
+    query?: {
+        page?: number;
+        size?: number;
+        status?: string;
+    };
+    url: '/api/v1/admin/ai/question-generation-batches/{batchId}/proposals';
+};
+
+export type ListAiQuestionGenerationBatchProposalsResponses = {
+    /**
+     * Batch proposal page
+     */
+    200: AiQuestionProposalPage;
+};
+
+export type ListAiQuestionGenerationBatchProposalsResponse = ListAiQuestionGenerationBatchProposalsResponses[keyof ListAiQuestionGenerationBatchProposalsResponses];
+
+export type CancelAiQuestionGenerationBatchData = {
+    body?: never;
+    path: {
+        batchId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/ai/question-generation-batches/{batchId}/cancel';
+};
+
+export type CancelAiQuestionGenerationBatchErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type CancelAiQuestionGenerationBatchError = CancelAiQuestionGenerationBatchErrors[keyof CancelAiQuestionGenerationBatchErrors];
+
+export type CancelAiQuestionGenerationBatchResponses = {
+    /**
+     * Cancellation state
+     */
+    200: AiQuestionBatch;
+};
+
+export type CancelAiQuestionGenerationBatchResponse = CancelAiQuestionGenerationBatchResponses[keyof CancelAiQuestionGenerationBatchResponses];
+
+export type RetryFailedAiQuestionGenerationBatchItemsData = {
+    body?: {
+        itemIds?: Array<string>;
+    };
+    path: {
+        batchId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/ai/question-generation-batches/{batchId}/retry-failed';
+};
+
+export type RetryFailedAiQuestionGenerationBatchItemsResponses = {
+    /**
+     * Updated batch
+     */
+    200: AiQuestionBatch;
+};
+
+export type RetryFailedAiQuestionGenerationBatchItemsResponse = RetryFailedAiQuestionGenerationBatchItemsResponses[keyof RetryFailedAiQuestionGenerationBatchItemsResponses];
+
+export type ExportAiQuestionGenerationBatchData = {
+    body?: never;
+    path: {
+        batchId: string;
+    };
+    query?: {
+        format?: 'JSON' | 'CSV';
+    };
+    url: '/api/v1/admin/ai/question-generation-batches/{batchId}/export';
+};
+
+export type ExportAiQuestionGenerationBatchResponses = {
+    /**
+     * Bounded review export
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type ExportAiQuestionGenerationBatchResponse = ExportAiQuestionGenerationBatchResponses[keyof ExportAiQuestionGenerationBatchResponses];
+
+export type AssignAiQuestionProposalReviewerData = {
+    body: AiQuestionAssignmentRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/ai/question-generation-batches/proposals/assign';
+};
+
+export type AssignAiQuestionProposalReviewerResponses = {
+    /**
+     * Itemized assignment result
+     */
+    200: AiBulkActionResult;
+};
+
+export type AssignAiQuestionProposalReviewerResponse = AssignAiQuestionProposalReviewerResponses[keyof AssignAiQuestionProposalReviewerResponses];
+
+export type UnassignAiQuestionProposalReviewerData = {
+    body: AiQuestionSelection;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/ai/question-generation-batches/proposals/unassign';
+};
+
+export type UnassignAiQuestionProposalReviewerResponses = {
+    /**
+     * Itemized result
+     */
+    200: AiBulkActionResult;
+};
+
+export type UnassignAiQuestionProposalReviewerResponse = UnassignAiQuestionProposalReviewerResponses[keyof UnassignAiQuestionProposalReviewerResponses];
+
+export type BulkRejectAiQuestionProposalsData = {
+    body: AiBulkQuestionRejection;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/ai/question-generation-batches/proposals/reject';
+};
+
+export type BulkRejectAiQuestionProposalsResponses = {
+    /**
+     * Independent itemized results
+     */
+    200: AiBulkActionResult;
+};
+
+export type BulkRejectAiQuestionProposalsResponse = BulkRejectAiQuestionProposalsResponses[keyof BulkRejectAiQuestionProposalsResponses];
+
+export type BulkRegenerateAiQuestionProposalsData = {
+    body: AiBulkQuestionRegeneration;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/ai/question-generation-batches/proposals/regenerate';
+};
+
+export type BulkRegenerateAiQuestionProposalsResponses = {
+    /**
+     * Independent itemized results
+     */
+    200: AiBulkActionResult;
+};
+
+export type BulkRegenerateAiQuestionProposalsResponse = BulkRegenerateAiQuestionProposalsResponses[keyof BulkRegenerateAiQuestionProposalsResponses];
+
+export type BulkAcceptAiQuestionProposalsData = {
+    body: AiBulkQuestionAcceptance;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/ai/question-generation-batches/proposals/accept';
+};
+
+export type BulkAcceptAiQuestionProposalsResponses = {
+    /**
+     * Independently revalidated acceptance results
+     */
+    200: AiBulkActionResult;
+};
+
+export type BulkAcceptAiQuestionProposalsResponse = BulkAcceptAiQuestionProposalsResponses[keyof BulkAcceptAiQuestionProposalsResponses];
 
 export type CreateAiEditorialJobData = {
     body: AiEditorialRequest;

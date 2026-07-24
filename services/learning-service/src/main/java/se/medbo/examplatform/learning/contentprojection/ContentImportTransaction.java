@@ -88,6 +88,31 @@ public class ContentImportTransaction {
                           (id, external_topic_id, subject_id, content_release_id, name, description, sort_order)
                         VALUES (:id, :externalId, :subjectId, :releaseId, :name, :description, :sortOrder)
                         """).params(topicParams).update();
+                if (topic.lessonSections() != null) {
+                    for (var section : topic.lessonSections()) {
+                        UUID sectionId = UUID.randomUUID();
+                        jdbc.sql("""
+                                INSERT INTO imported_lesson_section
+                                  (id, external_section_id, external_section_version_id, content_release_id,
+                                   topic_id, title, explanation, display_order)
+                                VALUES (:id, :externalId, :versionId, :releaseId, :topicId, :title,
+                                        :explanation, :displayOrder)
+                                """).params(Map.of("id", sectionId, "externalId", section.id(),
+                                "versionId", section.versionId(), "releaseId", releaseId, "topicId", topicId,
+                                "title", section.title(), "explanation", section.explanation(),
+                                "displayOrder", section.displayOrder())).update();
+                        if (section.sourceLinks() != null) {
+                            for (var source : section.sourceLinks()) {
+                                jdbc.sql("""
+                                        INSERT INTO imported_lesson_source
+                                          (id, lesson_section_id, title, url)
+                                        VALUES (:id, :sectionId, :title, :url)
+                                        """).params(Map.of("id", UUID.randomUUID(), "sectionId", sectionId,
+                                        "title", source.title(), "url", source.url())).update();
+                            }
+                        }
+                    }
+                }
                 for (var question : topic.questions()) {
                     UUID questionId = UUID.randomUUID();
                     var questionParams = new java.util.HashMap<String, Object>();

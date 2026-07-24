@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.dao.DataIntegrityViolationException;
 import java.util.List;
 
@@ -21,6 +22,15 @@ final class ApiErrorHandler {
         var errors = exception.getBindingResult().getFieldErrors().stream()
                 .map(error -> (Object) new FieldError(error.getField(), error.getDefaultMessage())).toList();
         return ResponseEntity.unprocessableEntity().body(new ApiErrorResponse("VALIDATION_ERROR", "Request validation failed", java.time.Instant.now(), errors));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    ResponseEntity<ApiErrorResponse> malformedRequest(HttpMessageNotReadableException exception) {
+        return ResponseEntity.unprocessableEntity().body(new ApiErrorResponse(
+                "VALIDATION_ERROR",
+                "Request body contains an invalid value",
+                java.time.Instant.now(),
+                List.of(new FieldError("request", "Check identifier and field formats"))));
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)

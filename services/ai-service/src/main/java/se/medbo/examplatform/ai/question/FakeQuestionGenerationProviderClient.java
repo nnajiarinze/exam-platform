@@ -20,6 +20,8 @@ final class FakeQuestionGenerationProviderClient implements QuestionGenerationPr
     if(text.contains("[[FACT_NOT_SUITABLE]]"))return result(request,"FACT_NOT_SUITABLE_FOR_QUESTION",List.of(),"The fact is not suitable for assessment");
     String type=request.questionType()==null?"SINGLE_CHOICE":request.questionType();var proposals=new ArrayList<Proposal>();
     for(int i=0;i<request.proposalCount();i++)proposals.add(proposal(request,type,i));
+    if(text.contains("[[INTELLIGENCE_METADATA_INVALID]]")){var p=proposals.getFirst();proposals.set(0,new Proposal(p.questionType(),p.questionText(),p.language(),p.answerOptions(),p.explanation(),p.rationale(),p.factEvidence(),p.sourceEvidence(),p.confidence(),p.warnings(),new PedagogicalMetadata("IMPOSSIBLE","REMEMBER","LOW","PRACTICE",10),p.qualityRationale()));}
+    if(text.contains("[[INTELLIGENCE_METADATA_MISMATCH]]")){var p=proposals.getFirst();proposals.set(0,new Proposal(p.questionType(),p.questionText(),p.language(),p.answerOptions(),p.explanation(),p.rationale(),p.factEvidence(),p.sourceEvidence(),p.confidence(),p.warnings(),new PedagogicalMetadata("VERY_HARD","CREATE","HIGH","PRACTICE",90),p.qualityRationale()));}
     if(text.contains("[[DUPLICATE_OPTIONS]]")){var p=proposals.getFirst();proposals.set(0,new Proposal(p.questionType(),p.questionText(),p.language(),List.of(new Option("A","Riksdagen",true,null),new Option("B","Riksdagen",false,null)),p.explanation(),p.rationale(),p.factEvidence(),p.sourceEvidence(),p.confidence(),p.warnings()));}
     if(text.contains("[[WRONG_FACT_ID]]")){var p=proposals.getFirst();proposals.set(0,new Proposal(p.questionType(),p.questionText(),p.language(),p.answerOptions(),p.explanation(),p.rationale(),new FactEvidence(UUID.randomUUID(),request.target().version(),request.target().checksum(),text),p.sourceEvidence(),p.confidence(),p.warnings()));}
     if(text.contains("[[WRONG_FACT_CHECKSUM]]")){var p=proposals.getFirst();proposals.set(0,withFact(p,new FactEvidence(request.target().knowledgeFactId(),request.target().version(),"0".repeat(64),text)));}
@@ -34,11 +36,15 @@ final class FakeQuestionGenerationProviderClient implements QuestionGenerationPr
     return result(request,"QUESTIONS_PROPOSED",proposals,null);
   }
   private Proposal proposal(Request r,String type,int index){
-    String actor=primaryActor(r.target().text());String stem=index==0?"Vilken uppgift beskrivs i kunskapsfaktumet?":"Vad anges i den godkända kunskapsfaktumet (variant "+(index+1)+")?";
+    String actor=primaryActor(r.target().text());
+    String stem=r.regeneration()==null
+        ? (index==0?"Vilken uppgift beskrivs i kunskapsfaktumet?":"Vad anges i den godkända kunskapsfaktumet (variant "+(index+1)+")?")
+        : "Vilket påstående stöds av det godkända kunskapsfaktumet? (omarbetning "+r.regeneration().generationAttempt()+")";
     List<Option> options=switch(type){case "TRUE_FALSE"->List.of(new Option("TRUE",actor+" är den aktör som beskrivs.",true,null),new Option("FALSE",actor+" är inte den aktör som beskrivs.",false,null));case "MULTIPLE_CHOICE"->List.of(new Option("A",actor,true,null),new Option("B","Den svenska institution som nämns",true,null),new Option("C","Polisen",false,null));default->List.of(new Option("A",actor,true,null),new Option("B","Polisen",false,null),new Option("C","Kommunen",false,null));};
     var fact=new FactEvidence(r.target().knowledgeFactId(),r.target().version(),r.target().checksum(),r.target().text());
     var evidence=new ArrayList<SourceEvidence>();if(!r.context().sources().isEmpty()){var s=r.context().sources().getFirst();String quote=firstSentence(s.contentExcerpt());if(QuestionProposalValidator.normalize(quote).contains(QuestionProposalValidator.normalize(actor)))evidence.add(new SourceEvidence(s.sourceId(),s.title(),s.checksum(),quote));}
-    return new Proposal(type,stem,r.target().language(),options,r.target().text(),"Tests the approved fact directly.",fact,evidence,"HIGH",List.of());
+    var metadata=new PedagogicalMetadata(r.targetDifficulty()==null?"EASY":r.targetDifficulty(),r.targetBloomLevel()==null?"REMEMBER":r.targetBloomLevel(),"LOW","PRACTICE",10);
+    return new Proposal(type,stem,r.target().language(),options,r.target().text(),"Tests the approved fact directly.",fact,evidence,"HIGH",List.of(),metadata,"The proposal directly tests one approved factual claim.");
   }
   private Result result(Request r,String type,List<Proposal> proposals,String reason){return new Result(type,proposals,reason,List.of(),usage(r,proposals.size()),sha(type+proposals));}
   private Usage usage(Request r,int count){return new Usage(Math.max(1,r.target().text().length()/4),Math.max(1,count*40),"fake-question-"+UUID.randomUUID());}

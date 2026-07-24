@@ -8,7 +8,7 @@ export function BottomTabBar({ active, onNavigate }: { active: Tab; onNavigate: 
   const insets = useSafeAreaInsets();
   const tabs: { key: Tab; label: string }[] = active === 'settings'
     ? [{ key: 'home', label: 'Home' }, { key: 'topics', label: 'Study' }, { key: 'progress', label: 'Progress' }, { key: 'settings', label: 'Settings' }]
-    : [{ key: 'home', label: 'Home' }, { key: 'topics', label: 'Topics' }, { key: 'exam', label: 'Exam' }, { key: 'progress', label: 'Progress' }];
+    : [{ key: 'home', label: 'Home' }, { key: 'topics', label: 'Study' }, { key: 'exam', label: 'Exam' }, { key: 'progress', label: 'Progress' }];
   return <View style={[styles.shell, { paddingBottom: Math.max(insets.bottom, 8) }]}>{tabs.map((tab) => {
     const selected = active === tab.key;
     return <Pressable accessibilityRole="tab" accessibilityState={{ selected }} accessibilityLabel={tab.label} key={tab.key} onPress={() => onNavigate(tab.key)} style={[styles.tab, selected && styles.active]}><Icon name={tab.key} size={23} color={selected ? theme.colors.text : theme.colors.muted} /><Text style={[styles.label, selected && styles.activeLabel]}>{tab.label}</Text></Pressable>;

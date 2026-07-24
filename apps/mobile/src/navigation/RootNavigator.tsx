@@ -13,6 +13,9 @@ import { MockQuestionScreen } from '../features/mockexam/MockQuestionScreen';
 import { MockResultsScreen } from '../features/mockexam/MockResultsScreen';
 import { MockHistoryScreen } from '../features/mockexam/MockHistoryScreen';
 import { MockAnswerReviewScreen } from '../features/mockexam/MockAnswerReviewScreen';
+import { StudySubjectsScreen } from '../features/study/StudySubjectsScreen';
+import { StudyTopicsScreen } from '../features/study/StudyTopicsScreen';
+import { TopicLessonScreen } from '../features/study/TopicLessonScreen';
 import type { RootStackParamList } from './types';
 import { useAuth } from '../features/auth/AuthContext';
 import { useAppStore } from '../app/store';
@@ -38,6 +41,9 @@ export function RootNavigator() {
     <Stack.Screen name="Onboarding" component={OnboardingScreen} options={{ headerShown: false }} />
     <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
     <Stack.Screen name="Topics" component={TopicsScreen} options={{ headerShown: false }} />
+    <Stack.Screen name="StudySubjects" component={StudySubjectsScreen} options={{ headerShown: false }} />
+    <Stack.Screen name="StudyTopics" component={StudyTopicsScreen} options={{ headerShown: false }} />
+    <Stack.Screen name="TopicLesson" component={TopicLessonScreen} options={{ headerShown: false }} />
     <Stack.Screen name="PracticeSetup" component={PracticeSetupScreen} options={{ title: 'Practice setup' }} />
     <Stack.Screen name="Question" component={QuestionScreen} options={{ headerShown: false }} />
     <Stack.Screen name="SessionComplete" component={SessionCompleteScreen} options={{ headerShown: false }} />

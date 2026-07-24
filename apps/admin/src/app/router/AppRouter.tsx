@@ -26,6 +26,8 @@ import { ReportsPage } from '../../features/reports/ReportsPage';
 import { AuditPage } from '../../features/audit/AuditPage';
 import { ContentSystemGuidePage } from '../../features/help/content-system/ContentSystemGuidePage';
 import { AiKnowledgeFactGenerationPage } from '../../features/ai/pages/AiKnowledgeFactGenerationPage';
+import { AiQuestionBatchListPage } from '../../features/ai/pages/AiQuestionBatchListPage';
+import { AiQuestionBatchDetailPage } from '../../features/ai/pages/AiQuestionBatchDetailPage';
 
 export function AppRouter() {
   return <Routes>
@@ -45,6 +47,8 @@ export function AppRouter() {
         <Route path="sources/:id" element={<SourceEditorPage />} />
         <Route path="sources/:sourceId/ai-generation" element={<AiKnowledgeFactGenerationPage />} />
         <Route path="sources/:sourceId/ai-generation/:jobId" element={<AiKnowledgeFactGenerationPage />} />
+        <Route path="ai/question-batches" element={<AiQuestionBatchListPage />} />
+        <Route path="ai/question-batches/:id" element={<AiQuestionBatchDetailPage />} />
         <Route path="knowledge" element={<KnowledgeFactListPage />} />
         <Route path="knowledge/facts/new" element={<KnowledgeFactEditorPage />} />
         <Route path="knowledge/facts/:id" element={<KnowledgeFactEditorPage />} />

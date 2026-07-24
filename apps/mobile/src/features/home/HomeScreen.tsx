@@ -14,16 +14,19 @@ export function HomeScreen({ navigation }: NativeStackScreenProps<RootStackParam
   const sessionId = useAppStore((s) => s.currentSessionId);
   const identity = useAppStore((s) => s.learnerIdentity);
   const progress = useQuery({ queryKey: ['progress'], queryFn: () => learningApi.progress(identity), enabled: Boolean(identity) });
+  const learning = useQuery({ queryKey: ['continue-learning', identity], queryFn: () => learningApi.continueLearning(identity), enabled: Boolean(identity) });
   const answered = progress.data?.reduce((sum, item) => sum + item.questionsAnswered, 0) ?? 0;
   const correct = progress.data?.reduce((sum, item) => sum + item.correctAnswers, 0) ?? 0;
   const accuracy = answered > 0 ? Math.round((correct / answered) * 100) : 0;
-  const navigateTab = (tab: 'home' | 'topics' | 'exam' | 'progress' | 'settings') => { if (tab === 'topics') navigation.navigate('Topics'); else if (tab === 'exam') navigation.navigate('MockExam'); else if (tab === 'progress') navigation.navigate('Progress'); else if(tab==='settings')navigation.navigate('Settings'); };
+  const navigateTab = (tab: 'home' | 'topics' | 'exam' | 'progress' | 'settings') => { if (tab === 'topics') navigation.navigate('StudySubjects'); else if (tab === 'exam') navigation.navigate('MockExam'); else if (tab === 'progress') navigation.navigate('Progress'); else if(tab==='settings')navigation.navigate('Settings'); };
 
   return <View style={styles.page}><Screen bottomInset>
     <AppHeader action="profile" onAction={() => navigation.navigate('Profile')} />
     <View style={styles.hero}><View style={styles.heroOrb} /><Text style={styles.heroTitle}>Welcome to Svea Study</Text><Text style={styles.heroBody}>Your path to Swedish citizenship starts here.</Text></View>
     <Text style={styles.sectionLabel}>STUDY NOW</Text>
+    {learning.data && <Card><Text style={styles.resumeTitle}>Continue learning</Text><Text style={styles.cardTitle}>{learning.data.topicTitle}</Text><Text style={styles.muted}>{learning.data.subjectTitle} · {learning.data.completedSectionCount} of {learning.data.totalSectionCount} key facts complete</Text><Button label="Continue lesson" onPress={() => navigation.navigate('TopicLesson', { topicId: learning.data!.topicId, topicTitle: learning.data!.topicTitle, sectionId: learning.data!.lastSectionId })} /></Card>}
     {sessionId && <Card><Text style={styles.resumeTitle}>Continue studying</Text><Text style={styles.muted}>Your current practice session is ready.</Text><Button label="Continue" icon={<Icon name="play" color={theme.colors.onPrimary} size={18} />} onPress={() => navigation.navigate('Question', { sessionId })} /></Card>}
+    <Button label="Study key topics" variant="secondary" icon={<Icon name="topics" size={20} />} onPress={() => navigation.navigate('StudySubjects')} />
     <Button label="Start practice" icon={<Icon name="play" color={theme.colors.onPrimary} size={18} />} onPress={() => navigation.navigate('Topics')} />
     <Button label="Mixed practice" variant="secondary" icon={<Icon name="shuffle" size={20} />} onPress={() => navigation.navigate('PracticeSetup', { mode: 'MIXED' })} />
     <Text style={styles.sectionLabel}>YOUR PROFILE</Text>

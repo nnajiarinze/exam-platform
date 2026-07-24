@@ -4,7 +4,7 @@ import { useAuth } from '../app/auth/AuthContext';
 import { AdminIcon } from './AdminIcon';
 
 const links = [
-  ['/dashboard', 'Dashboard', 'dashboard'], ['/exam-structure', 'Exam Structure', 'exams'], ['/sources', 'Sources', 'source'], ['/knowledge', 'Knowledge Base', 'knowledge'], ['/questions', 'Questions', 'content'], ['/reviews', 'Review Queue', 'review'], ['/releases', 'Releases', 'releases'], ['/reports', 'Reports', 'reports'], ['/audit', 'Audit Log', 'audit'], ['/help/content-system', 'How the Content System Works', 'help'],
+  ['/dashboard', 'Dashboard', 'dashboard'], ['/exam-structure', 'Exam Structure', 'exams'], ['/sources', 'Sources', 'source'], ['/knowledge', 'Knowledge Base', 'knowledge'], ['/questions', 'Questions', 'content'], ['/ai/question-batches', 'AI Question Batches', 'knowledge'], ['/reviews', 'Review Queue', 'review'], ['/releases', 'Releases', 'releases'], ['/reports', 'Reports', 'reports'], ['/audit', 'Audit Log', 'audit'], ['/help/content-system', 'How the Content System Works', 'help'],
 ] as const;
 
 export function AdminLayout() {

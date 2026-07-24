@@ -91,6 +91,73 @@ paths:
                 items: { $ref: "#/components/schemas/Subject" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /api/v1/learning/exams/{examId}/subjects:
+    get:
+      operationId: getStudySubjects
+      summary: List subjects with lesson progress from the active content release
+      tags: [Study]
+      security: [{ learnerBearer: [] }]
+      parameters:
+        - {name: examId, in: path, required: true, schema: {type: string, minLength: 1, maxLength: 200}}
+      responses:
+        "200": {description: Study subjects,content: {application/json: {schema: {type: array,items: {$ref: "#/components/schemas/StudySubject"}}}}}
+        "401": {$ref: "#/components/responses/Unauthorized"}
+        "404": {$ref: "#/components/responses/NotFound"}
+  /api/v1/learning/subjects/{subjectId}/topics:
+    get:
+      operationId: getStudyTopics
+      summary: List learner-facing topics for a subject
+      tags: [Study]
+      security: [{ learnerBearer: [] }]
+      parameters:
+        - {name: subjectId, in: path, required: true, schema: {type: string, minLength: 1, maxLength: 200}}
+        - {name: examId, in: query, required: true, schema: {type: string, minLength: 1, maxLength: 200}}
+      responses:
+        "200": {description: Study topics,content: {application/json: {schema: {type: array,items: {$ref: "#/components/schemas/StudyTopic"}}}}}
+        "401": {$ref: "#/components/responses/Unauthorized"}
+        "404": {$ref: "#/components/responses/NotFound"}
+  /api/v1/learning/topics/{topicId}/lesson:
+    get:
+      operationId: getTopicLesson
+      summary: Get the published lesson and release-scoped learner progress
+      tags: [Study]
+      security: [{ learnerBearer: [] }]
+      parameters:
+        - {name: topicId, in: path, required: true, schema: {type: string, minLength: 1, maxLength: 200}}
+        - {name: examId, in: query, required: true, schema: {type: string, minLength: 1, maxLength: 200}}
+      responses:
+        "200": {description: Topic lesson,content: {application/json: {schema: {$ref: "#/components/schemas/TopicLesson"}}}}
+        "401": {$ref: "#/components/responses/Unauthorized"}
+        "404": {$ref: "#/components/responses/NotFound"}
+  /api/v1/learning/topics/{topicId}/progress:
+    put:
+      operationId: updateLessonProgress
+      summary: Idempotently record the current or completed lesson section
+      tags: [Study]
+      security: [{ learnerBearer: [] }]
+      parameters:
+        - {name: topicId, in: path, required: true, schema: {type: string, minLength: 1, maxLength: 200}}
+        - {name: examId, in: query, required: true, schema: {type: string, minLength: 1, maxLength: 200}}
+      requestBody: {required: true,content: {application/json: {schema: {$ref: "#/components/schemas/LessonProgressUpdate"}}}}
+      responses:
+        "200": {description: Updated progress,content: {application/json: {schema: {$ref: "#/components/schemas/LessonProgress"}}}}
+        "401": {$ref: "#/components/responses/Unauthorized"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "422": {$ref: "#/components/responses/Unprocessable"}
+  /api/v1/learning/continue:
+    get:
+      operationId: getContinueLearning
+      summary: Get the learner's most recently accessed incomplete lesson
+      tags: [Study]
+      security: [{ learnerBearer: [] }]
+      parameters:
+        - {name: examId, in: query, required: true, schema: {type: string, minLength: 1, maxLength: 200}}
+      responses:
+        "200":
+          description: Continue item, or an empty body when no lesson is in progress
+          content: {application/json: {schema: {oneOf: [{$ref: "#/components/schemas/ContinueLearning"}, {type: "null"}]}}}
+        "401": {$ref: "#/components/responses/Unauthorized"}
+        "404": {$ref: "#/components/responses/NotFound"}
   /internal/v1/content-releases/import:
     description: The version segment is required; there is no `/internal/content-releases/import` alias.
     post:
@@ -495,6 +562,91 @@ components:
         id: { type: string, maxLength: 200 }
         name: { type: string, maxLength: 500 }
         description: { type: [string, "null"] }
+    StudySubject:
+      type: object
+      additionalProperties: false
+      required: [subjectId,title,topicCount,completedTopicCount]
+      properties:
+        subjectId: {type: string}
+        title: {type: string}
+        topicCount: {type: integer,minimum: 0}
+        completedTopicCount: {type: integer,minimum: 0}
+    StudyTopic:
+      type: object
+      additionalProperties: false
+      required: [topicId,title,keyFactCount,readingTimeSeconds,relatedQuestionCount,completedSectionCount,completionPercentage,completed]
+      properties:
+        topicId: {type: string}
+        title: {type: string}
+        summary: {type: [string, "null"]}
+        keyFactCount: {type: integer,minimum: 0}
+        readingTimeSeconds: {type: integer,minimum: 0,description: "Calculated at 200 words per minute, with a 15-second minimum."}
+        relatedQuestionCount: {type: integer,minimum: 0}
+        completedSectionCount: {type: integer,minimum: 0}
+        completionPercentage: {type: integer,minimum: 0,maximum: 100}
+        completed: {type: boolean}
+    LessonSourceLink:
+      type: object
+      additionalProperties: false
+      required: [title,url]
+      properties:
+        title: {type: string}
+        url: {type: string,format: uri}
+    LessonSection:
+      type: object
+      additionalProperties: false
+      required: [sectionId,title,explanation,displayOrder,sourceLinks]
+      properties:
+        sectionId: {type: string}
+        title: {type: string}
+        explanation: {type: string}
+        displayOrder: {type: integer,minimum: 0}
+        sourceLinks: {type: array,items: {$ref: "#/components/schemas/LessonSourceLink"}}
+    LessonProgress:
+      type: object
+      additionalProperties: false
+      required: [lastSectionId,completedSectionCount,totalSectionCount,completionPercentage,completed]
+      properties:
+        lastSectionId: {type: string}
+        completedSectionCount: {type: integer,minimum: 0}
+        totalSectionCount: {type: integer,minimum: 1}
+        completionPercentage: {type: integer,minimum: 0,maximum: 100}
+        completed: {type: boolean}
+        startedAt: {type: [string, "null"],format: date-time}
+        lastAccessedAt: {type: [string, "null"],format: date-time}
+        completedAt: {type: [string, "null"],format: date-time}
+    LessonProgressUpdate:
+      type: object
+      additionalProperties: false
+      required: [sectionId,completed]
+      properties:
+        sectionId: {type: string,minLength: 1,maxLength: 200}
+        completed: {type: boolean}
+    TopicLesson:
+      type: object
+      additionalProperties: false
+      required: [topicId,title,readingTimeSeconds,relatedQuestionCount,contentReleaseId,version,sections,progress]
+      properties:
+        topicId: {type: string}
+        title: {type: string}
+        summary: {type: [string, "null"]}
+        readingTimeSeconds: {type: integer,minimum: 0}
+        relatedQuestionCount: {type: integer,minimum: 0}
+        contentReleaseId: {type: string}
+        version: {type: string}
+        sections: {type: array,minItems: 1,items: {$ref: "#/components/schemas/LessonSection"}}
+        progress: {$ref: "#/components/schemas/LessonProgress"}
+    ContinueLearning:
+      type: object
+      additionalProperties: false
+      required: [topicId,topicTitle,subjectTitle,lastSectionId,completedSectionCount,totalSectionCount]
+      properties:
+        topicId: {type: string}
+        topicTitle: {type: string}
+        subjectTitle: {type: string}
+        lastSectionId: {type: string}
+        completedSectionCount: {type: integer,minimum: 0}
+        totalSectionCount: {type: integer,minimum: 1}
     PracticeMode:
       type: string
       enum: [TOPIC, MIXED, INCORRECT_REVIEW]

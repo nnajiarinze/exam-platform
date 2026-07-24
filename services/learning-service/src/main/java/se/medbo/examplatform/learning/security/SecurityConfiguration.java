@@ -26,7 +26,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 class SecurityConfiguration {
     @Bean SecurityFilterChain learningSecurity(HttpSecurity http,DevelopmentLearnerAuthenticationFilter development,ObjectMapper mapper)throws Exception{
         return http.csrf(csrf->csrf.disable()).cors(Customizer.withDefaults()).sessionManagement(s->s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(a->a.requestMatchers("/actuator/health","/actuator/health/**","/internal/v1/**").permitAll().requestMatchers("/api/v1/content/**","/api/v1/me","/api/v1/me/**","/api/v1/practice-sessions","/api/v1/practice-sessions/**","/api/v1/mock-exams","/api/v1/mock-exams/**","/api/v1/progress","/api/v1/progress/**").hasRole("LEARNER").anyRequest().permitAll())
+            .authorizeHttpRequests(a->a.requestMatchers("/actuator/health","/actuator/health/**","/internal/v1/**").permitAll().requestMatchers("/api/v1/content/**","/api/v1/learning/**","/api/v1/me","/api/v1/me/**","/api/v1/practice-sessions","/api/v1/practice-sessions/**","/api/v1/mock-exams","/api/v1/mock-exams/**","/api/v1/progress","/api/v1/progress/**").hasRole("LEARNER").anyRequest().permitAll())
             .oauth2ResourceServer(o->o.jwt(jwt->jwt.jwtAuthenticationConverter(learnerJwtConverter())).authenticationEntryPoint((req,res,error)->write(res,mapper,401,"AUTHENTICATION_REQUIRED","Valid learner authentication is required")))
             .exceptionHandling(e->e.accessDeniedHandler((req,res,error)->write(res,mapper,403,"ACCESS_DENIED","Learner access is forbidden")))
             .addFilterBefore(development,UsernamePasswordAuthenticationFilter.class).build();

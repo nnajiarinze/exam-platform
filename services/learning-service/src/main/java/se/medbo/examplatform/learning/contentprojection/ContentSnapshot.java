@@ -27,7 +27,22 @@ public record ContentSnapshot(
 
     public record Topic(@NotBlank @Size(max = 200) String id,
                         @NotBlank @Size(max = 500) String name, String description,
-                        @PositiveOrZero int sortOrder, @NotEmpty List<@Valid Question> questions) {}
+                        @PositiveOrZero int sortOrder, List<@Valid LessonSection> lessonSections,
+                        @NotEmpty List<@Valid Question> questions) {
+        public Topic(String id, String name, String description, int sortOrder, List<Question> questions) {
+            this(id, name, description, sortOrder, List.of(), questions);
+        }
+    }
+
+    public record LessonSection(@NotBlank @Size(max = 200) String id,
+                                @NotBlank @Size(max = 200) String versionId,
+                                @NotBlank @Size(max = 500) String title,
+                                @NotBlank String explanation,
+                                @PositiveOrZero int displayOrder,
+                                List<@Valid SourceLink> sourceLinks) {}
+
+    public record SourceLink(@NotBlank @Size(max = 500) String title,
+                             @NotBlank @Size(max = 2000) String url) {}
 
     public record Question(@NotBlank @Size(max = 200) String id,
                            @NotBlank @Size(max = 200) String versionId,

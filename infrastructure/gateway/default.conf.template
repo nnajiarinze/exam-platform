@@ -9,6 +9,11 @@ server {
   }
 
   location /content/ {
+    mirror /__warm_identity;
+    mirror /__warm_learning;
+    mirror /__warm_content;
+    mirror /__warm_ai;
+    mirror_request_body off;
     proxy_pass ${CONTENT_UPSTREAM}/;
     proxy_ssl_server_name on;
     proxy_set_header Host $proxy_host;
@@ -17,6 +22,11 @@ server {
   }
 
   location /learning/ {
+    mirror /__warm_identity;
+    mirror /__warm_learning;
+    mirror /__warm_content;
+    mirror /__warm_ai;
+    mirror_request_body off;
     proxy_pass ${LEARNING_UPSTREAM}/;
     proxy_ssl_server_name on;
     proxy_set_header Host $proxy_host;
@@ -25,12 +35,47 @@ server {
   }
 
   location /auth/ {
+    mirror /__warm_identity;
+    mirror /__warm_learning;
+    mirror /__warm_content;
+    mirror /__warm_ai;
+    mirror_request_body off;
     proxy_pass ${IDENTITY_UPSTREAM}/auth/;
     proxy_ssl_server_name on;
     proxy_set_header Host $proxy_host;
     proxy_set_header X-Forwarded-Host $host;
     proxy_set_header X-Forwarded-Proto $scheme;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  }
+
+  # Application traffic wakes all independently hosted backends in parallel.
+  # Mirror responses are discarded and never replace the caller's response.
+  location = /__warm_identity {
+    internal;
+    proxy_pass ${IDENTITY_UPSTREAM}/auth/;
+    proxy_ssl_server_name on;
+    proxy_set_header Host $proxy_host;
+  }
+
+  location = /__warm_learning {
+    internal;
+    proxy_pass ${LEARNING_UPSTREAM}/actuator/health/readiness;
+    proxy_ssl_server_name on;
+    proxy_set_header Host $proxy_host;
+  }
+
+  location = /__warm_content {
+    internal;
+    proxy_pass ${CONTENT_UPSTREAM}/actuator/health/readiness;
+    proxy_ssl_server_name on;
+    proxy_set_header Host $proxy_host;
+  }
+
+  location = /__warm_ai {
+    internal;
+    proxy_pass ${AI_UPSTREAM}/actuator/health/readiness;
+    proxy_ssl_server_name on;
+    proxy_set_header Host $proxy_host;
   }
 
   location / { return 404; }
