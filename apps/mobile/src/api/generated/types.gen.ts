@@ -63,6 +63,78 @@ export type Topic = {
     description?: string | null;
 };
 
+export type StudySubject = {
+    subjectId: string;
+    title: string;
+    topicCount: number;
+    completedTopicCount: number;
+};
+
+export type StudyTopic = {
+    topicId: string;
+    title: string;
+    summary?: string | null;
+    keyFactCount: number;
+    /**
+     * Calculated at 200 words per minute, with a 15-second minimum.
+     */
+    readingTimeSeconds: number;
+    relatedQuestionCount: number;
+    completedSectionCount: number;
+    completionPercentage: number;
+    completed: boolean;
+};
+
+export type LessonSourceLink = {
+    title: string;
+    url: string;
+};
+
+export type LessonSection = {
+    sectionId: string;
+    title: string;
+    explanation: string;
+    displayOrder: number;
+    sourceLinks: Array<LessonSourceLink>;
+};
+
+export type LessonProgress = {
+    lastSectionId: string;
+    completedSectionCount: number;
+    totalSectionCount: number;
+    completionPercentage: number;
+    completed: boolean;
+    startedAt?: string | null;
+    lastAccessedAt?: string | null;
+    completedAt?: string | null;
+};
+
+export type LessonProgressUpdate = {
+    sectionId: string;
+    completed: boolean;
+};
+
+export type TopicLesson = {
+    topicId: string;
+    title: string;
+    summary?: string | null;
+    readingTimeSeconds: number;
+    relatedQuestionCount: number;
+    contentReleaseId: string;
+    version: string;
+    sections: Array<LessonSection>;
+    progress: LessonProgress;
+};
+
+export type ContinueLearning = {
+    topicId: string;
+    topicTitle: string;
+    subjectTitle: string;
+    lastSectionId: string;
+    completedSectionCount: number;
+    totalSectionCount: number;
+};
+
 /**
  * INCORRECT_REVIEW is reserved but not executable in v1.
  */
@@ -314,7 +386,7 @@ export type Error = {
  * SHA-256 checksum is calculated over canonical JSON serialization of the snapshot with the checksum field omitted. Object field order follows this schema and array order is significant.
  */
 export type ContentSnapshotV1Schema = {
-    schemaVersion: '1.1';
+    schemaVersion: '1.2';
     externalReleaseId: string;
     /**
      * Canonical lowercase kebab-case cross-service exam identifier.
@@ -334,6 +406,17 @@ export type ContentSnapshotV1Schema = {
             name: string;
             description?: string | null;
             sortOrder: number;
+            lessonSections?: Array<{
+                id: string;
+                versionId: string;
+                title: string;
+                explanation: string;
+                displayOrder: number;
+                sourceLinks: Array<{
+                    title: string;
+                    url: string;
+                }>;
+            }>;
             questions: Array<{
                 id: string;
                 versionId: string;
@@ -574,6 +657,171 @@ export type GetSubjectsResponses = {
 };
 
 export type GetSubjectsResponse = GetSubjectsResponses[keyof GetSubjectsResponses];
+
+export type GetStudySubjectsData = {
+    body?: never;
+    path: {
+        examId: string;
+    };
+    query?: never;
+    url: '/api/v1/learning/exams/{examId}/subjects';
+};
+
+export type GetStudySubjectsErrors = {
+    /**
+     * Authentication is absent or invalid.
+     */
+    401: Error;
+    /**
+     * Learner-owned or requested resource was not found.
+     */
+    404: Error;
+};
+
+export type GetStudySubjectsError = GetStudySubjectsErrors[keyof GetStudySubjectsErrors];
+
+export type GetStudySubjectsResponses = {
+    /**
+     * Study subjects
+     */
+    200: Array<StudySubject>;
+};
+
+export type GetStudySubjectsResponse = GetStudySubjectsResponses[keyof GetStudySubjectsResponses];
+
+export type GetStudyTopicsData = {
+    body?: never;
+    path: {
+        subjectId: string;
+    };
+    query: {
+        examId: string;
+    };
+    url: '/api/v1/learning/subjects/{subjectId}/topics';
+};
+
+export type GetStudyTopicsErrors = {
+    /**
+     * Authentication is absent or invalid.
+     */
+    401: Error;
+    /**
+     * Learner-owned or requested resource was not found.
+     */
+    404: Error;
+};
+
+export type GetStudyTopicsError = GetStudyTopicsErrors[keyof GetStudyTopicsErrors];
+
+export type GetStudyTopicsResponses = {
+    /**
+     * Study topics
+     */
+    200: Array<StudyTopic>;
+};
+
+export type GetStudyTopicsResponse = GetStudyTopicsResponses[keyof GetStudyTopicsResponses];
+
+export type GetTopicLessonData = {
+    body?: never;
+    path: {
+        topicId: string;
+    };
+    query: {
+        examId: string;
+    };
+    url: '/api/v1/learning/topics/{topicId}/lesson';
+};
+
+export type GetTopicLessonErrors = {
+    /**
+     * Authentication is absent or invalid.
+     */
+    401: Error;
+    /**
+     * Learner-owned or requested resource was not found.
+     */
+    404: Error;
+};
+
+export type GetTopicLessonError = GetTopicLessonErrors[keyof GetTopicLessonErrors];
+
+export type GetTopicLessonResponses = {
+    /**
+     * Topic lesson
+     */
+    200: TopicLesson;
+};
+
+export type GetTopicLessonResponse = GetTopicLessonResponses[keyof GetTopicLessonResponses];
+
+export type UpdateLessonProgressData = {
+    body: LessonProgressUpdate;
+    path: {
+        topicId: string;
+    };
+    query: {
+        examId: string;
+    };
+    url: '/api/v1/learning/topics/{topicId}/progress';
+};
+
+export type UpdateLessonProgressErrors = {
+    /**
+     * Authentication is absent or invalid.
+     */
+    401: Error;
+    /**
+     * Learner-owned or requested resource was not found.
+     */
+    404: Error;
+    /**
+     * Structurally valid request violates content or selection rules.
+     */
+    422: Error;
+};
+
+export type UpdateLessonProgressError = UpdateLessonProgressErrors[keyof UpdateLessonProgressErrors];
+
+export type UpdateLessonProgressResponses = {
+    /**
+     * Updated progress
+     */
+    200: LessonProgress;
+};
+
+export type UpdateLessonProgressResponse = UpdateLessonProgressResponses[keyof UpdateLessonProgressResponses];
+
+export type GetContinueLearningData = {
+    body?: never;
+    path?: never;
+    query: {
+        examId: string;
+    };
+    url: '/api/v1/learning/continue';
+};
+
+export type GetContinueLearningErrors = {
+    /**
+     * Authentication is absent or invalid.
+     */
+    401: Error;
+    /**
+     * Learner-owned or requested resource was not found.
+     */
+    404: Error;
+};
+
+export type GetContinueLearningError = GetContinueLearningErrors[keyof GetContinueLearningErrors];
+
+export type GetContinueLearningResponses = {
+    /**
+     * Continue item, or an empty body when no lesson is in progress
+     */
+    200: ContinueLearning | null;
+};
+
+export type GetContinueLearningResponse = GetContinueLearningResponses[keyof GetContinueLearningResponses];
 
 export type ImportContentReleaseData = {
     body: ContentSnapshotV1Schema;

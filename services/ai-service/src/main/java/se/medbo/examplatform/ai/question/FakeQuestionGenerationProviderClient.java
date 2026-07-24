@@ -36,11 +36,14 @@ final class FakeQuestionGenerationProviderClient implements QuestionGenerationPr
     return result(request,"QUESTIONS_PROPOSED",proposals,null);
   }
   private Proposal proposal(Request r,String type,int index){
-    String actor=primaryActor(r.target().text());String stem=index==0?"Vilken uppgift beskrivs i kunskapsfaktumet?":"Vad anges i den godkända kunskapsfaktumet (variant "+(index+1)+")?";
+    String actor=primaryActor(r.target().text());
+    String stem=r.regeneration()==null
+        ? (index==0?"Vilken uppgift beskrivs i kunskapsfaktumet?":"Vad anges i den godkända kunskapsfaktumet (variant "+(index+1)+")?")
+        : "Vilket påstående stöds av det godkända kunskapsfaktumet? (omarbetning "+r.regeneration().generationAttempt()+")";
     List<Option> options=switch(type){case "TRUE_FALSE"->List.of(new Option("TRUE",actor+" är den aktör som beskrivs.",true,null),new Option("FALSE",actor+" är inte den aktör som beskrivs.",false,null));case "MULTIPLE_CHOICE"->List.of(new Option("A",actor,true,null),new Option("B","Den svenska institution som nämns",true,null),new Option("C","Polisen",false,null));default->List.of(new Option("A",actor,true,null),new Option("B","Polisen",false,null),new Option("C","Kommunen",false,null));};
     var fact=new FactEvidence(r.target().knowledgeFactId(),r.target().version(),r.target().checksum(),r.target().text());
     var evidence=new ArrayList<SourceEvidence>();if(!r.context().sources().isEmpty()){var s=r.context().sources().getFirst();String quote=firstSentence(s.contentExcerpt());if(QuestionProposalValidator.normalize(quote).contains(QuestionProposalValidator.normalize(actor)))evidence.add(new SourceEvidence(s.sourceId(),s.title(),s.checksum(),quote));}
-    var metadata=new PedagogicalMetadata("EASY","REMEMBER","LOW","PRACTICE",10);
+    var metadata=new PedagogicalMetadata(r.targetDifficulty()==null?"EASY":r.targetDifficulty(),r.targetBloomLevel()==null?"REMEMBER":r.targetBloomLevel(),"LOW","PRACTICE",10);
     return new Proposal(type,stem,r.target().language(),options,r.target().text(),"Tests the approved fact directly.",fact,evidence,"HIGH",List.of(),metadata,"The proposal directly tests one approved factual claim.");
   }
   private Result result(Request r,String type,List<Proposal> proposals,String reason){return new Result(type,proposals,reason,List.of(),usage(r,proposals.size()),sha(type+proposals));}

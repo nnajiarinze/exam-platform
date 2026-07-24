@@ -12,10 +12,21 @@ public interface QuestionGenerationProviderClient {
                  UUID topicId, String topicTitle, UUID subjectId, String subjectTitle,
                  UUID examId, UUID examVersionId, List<Source> sources) {}
   record Source(UUID sourceId, String title, String checksum, String contentExcerpt) {}
+  record Regeneration(UUID parentProposalId, String reasonCode, String reviewerFeedback,
+                      String previousQuestionText, List<Option> previousOptions, int generationAttempt) {}
   record Request(Target target, Context context, int proposalCount, String questionType,
-                 String promptVersion, UUID jobId, String requester, int retryAttempt) {
+                 String promptVersion, UUID jobId, String requester, int retryAttempt,
+                 Regeneration regeneration, String targetDifficulty, String targetBloomLevel) {
+    Request(Target target, Context context, int proposalCount, String questionType,
+            String promptVersion, UUID jobId, String requester, int retryAttempt) {
+      this(target,context,proposalCount,questionType,promptVersion,jobId,requester,retryAttempt,null,null,null);
+    }
+    Request(Target target, Context context, int proposalCount, String questionType,
+            String promptVersion, UUID jobId, String requester, int retryAttempt, Regeneration regeneration) {
+      this(target,context,proposalCount,questionType,promptVersion,jobId,requester,retryAttempt,regeneration,null,null);
+    }
     Request execution(UUID id, String actor, int retry) {
-      return new Request(target, context, proposalCount, questionType, promptVersion, id, actor, retry);
+      return new Request(target, context, proposalCount, questionType, promptVersion, id, actor, retry,regeneration,targetDifficulty,targetBloomLevel);
     }
   }
   record Option(String optionKey, String text, boolean correct, String rationale) {}

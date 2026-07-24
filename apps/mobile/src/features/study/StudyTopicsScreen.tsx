@@ -1,0 +1,17 @@
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useQuery } from '@tanstack/react-query';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { learningApi } from '../../api/learningApi';
+import { friendlyError } from '../../api/errors';
+import { useAppStore } from '../../app/store';
+import { AppHeader } from '../../components/AppHeader';
+import { Screen } from '../../components/Screen';
+import { EmptyState, ErrorState, Icon, Loading, ProgressBar } from '../../components/ui';
+import type { RootStackParamList } from '../../navigation/types';
+import { theme } from '../../theme';
+
+export function StudyTopicsScreen({navigation,route}:NativeStackScreenProps<RootStackParamList,'StudyTopics'>){
+ const identity=useAppStore(s=>s.learnerIdentity);const query=useQuery({queryKey:['study-topics',identity,route.params.subjectId],queryFn:()=>learningApi.studyTopics(identity,route.params.subjectId),enabled:Boolean(identity)});
+ return <Screen><AppHeader onBack={()=>navigation.goBack()} action="profile" onAction={()=>navigation.navigate('Profile')}/><Text accessibilityRole="header" style={styles.title}>{route.params.subjectTitle}</Text><Text style={styles.subtitle}>Choose a short lesson to begin.</Text>{query.isPending?<Loading label="Loading lessons…"/>:query.isError?<ErrorState message={friendlyError(query.error)} retry={()=>query.refetch()}/>:query.data.length===0?<EmptyState message="This subject has no published lessons yet."/>:<View style={styles.list}>{query.data.map(topic=><Pressable accessibilityRole="button" accessibilityLabel={`Open lesson ${topic.title}`} key={topic.topicId} style={styles.card} onPress={()=>navigation.navigate('TopicLesson',{topicId:topic.topicId,topicTitle:topic.title})}><View style={styles.row}><View style={styles.icon}><Icon name="topics" size={23}/></View>{topic.completed&&<Text style={styles.complete}>Completed</Text>}</View><Text accessibilityRole="header" style={styles.cardTitle}>{topic.title}</Text>{topic.summary&&<Text style={styles.body}>{topic.summary}</Text>}<Text style={styles.meta}>{topic.keyFactCount} key facts · {Math.max(1,Math.ceil(topic.readingTimeSeconds/60))} min · {topic.relatedQuestionCount} questions</Text><ProgressBar value={topic.completionPercentage} accessibilityLabel={`${topic.completionPercentage} percent complete`}/><Text style={styles.action}>{topic.completedSectionCount?'Continue lesson':'Start lesson'} →</Text></Pressable>)}</View>}</Screen>
+}
+const styles=StyleSheet.create({title:{color:theme.colors.text,...theme.typography.heading},subtitle:{color:theme.colors.muted,...theme.typography.body,marginBottom:theme.spacing.md},list:{gap:theme.spacing.sm},card:{backgroundColor:theme.colors.surface,borderColor:theme.colors.divider,borderRadius:theme.radii.xl,borderWidth:1,gap:theme.spacing.xs,padding:theme.spacing.md,...theme.shadows.card},row:{alignItems:'center',flexDirection:'row',justifyContent:'space-between'},icon:{alignItems:'center',backgroundColor:theme.colors.surfaceHigh,borderRadius:theme.radii.lg,height:48,justifyContent:'center',width:48},complete:{color:theme.colors.success,...theme.typography.label},cardTitle:{color:theme.colors.text,...theme.typography.subheading},body:{color:theme.colors.muted,...theme.typography.body},meta:{color:theme.colors.primary,...theme.typography.caption},action:{color:theme.colors.primary,...theme.typography.label,marginTop:theme.spacing.xs}});

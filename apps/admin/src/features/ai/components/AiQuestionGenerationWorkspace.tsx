@@ -7,13 +7,16 @@ import {
   createAiQuestionGenerationJob,
   getAiQuestionGenerationEligibility,
   getAiQuestionGenerationJob,
+  getAiQuestionProposalLineage,
   listAiQuestionGenerationJobs,
   listAiQuestionProposals,
   rejectAiQuestionProposal,
+  regenerateAiQuestionProposal,
   type AiQuestionGenerationEligibilityReason,
   type AiQuestionGenerationJob,
   type AiQuestionAcceptanceResult,
   type AiQuestionProposal,
+  type AiQuestionRejectionReason,
   type KnowledgeFact,
   type QuestionType,
 } from "../../../api/generated";
@@ -123,13 +126,63 @@ export function AiQuestionGenerationWorkspace({ fact }: Props) {
     {proposals.data && proposals.data.length > 0 && <div className="actions" aria-label="Question proposal filters"><label>Quality<select aria-label="Filter by quality" value={qualityFilter} onChange={event => setQualityFilter(event.target.value)}><option value="">All</option>{["EXCELLENT","GOOD","ACCEPTABLE","NEEDS_REVIEW","REJECTED"].map(value => <option key={value} value={value}>{value.replaceAll("_"," ")}</option>)}</select></label><label>Difficulty<select aria-label="Filter by difficulty" value={difficultyFilter} onChange={event => setDifficultyFilter(event.target.value)}><option value="">All</option>{["VERY_EASY","EASY","MEDIUM","HARD","VERY_HARD"].map(value => <option key={value} value={value}>{value.replaceAll("_"," ")}</option>)}</select></label><label>Type<select aria-label="Filter by question type" value={typeFilter} onChange={event => setTypeFilter(event.target.value)}><option value="">All</option>{["SINGLE_CHOICE","TRUE_FALSE","MULTIPLE_CHOICE"].map(value => <option key={value} value={value}>{value.replaceAll("_"," ")}</option>)}</select></label></div>}
     {visibleProposals?.length === 0 && proposals.data && proposals.data.length > 0 && <p className="muted">No proposals match these filters.</p>}
     {finished && proposals.data?.length === 0 && <p className="muted" role="status">This job did not produce any question proposals.</p>}
-    <div className="proposal-grid">{visibleProposals?.map(proposal => <QuestionProposalCard key={proposal.id} proposal={proposal} factId={fact.id} factVersionId={fact.currentVersionId} jobId={effectiveJobId!} canAccept={eligibility.data?.canGenerate === true} />)}</div>
+    <div className="proposal-grid">{visibleProposals?.map(proposal => <QuestionProposalCard key={proposal.id} proposal={proposal} factId={fact.id} factVersionId={fact.currentVersionId} jobId={effectiveJobId!} canReview={canInspect} canAccept={eligibility.data?.canGenerate === true} onRegenerationQueued={setSelectedJobId} />)}</div>
   </section>;
 }
 
-function QuestionProposalCard({ proposal, factId, factVersionId, jobId, canAccept }: { proposal: AiQuestionProposal; factId: string; factVersionId: string; jobId: string; canAccept: boolean }) {
-  const queryClient = useQueryClient();const [rejectConfirm, setRejectConfirm] = useState(false);const [acceptConfirm, setAcceptConfirm] = useState(false);const [reason, setReason] = useState("");const [accepted, setAccepted] = useState<AiQuestionAcceptanceResult>();
-  const reject = useMutation({ mutationFn: () => unwrap(rejectAiQuestionProposal({ client: contentServiceClient, path: { proposalId: proposal.id }, body: { reason: reason || null, version: proposal.version } })), onSuccess: () => { setRejectConfirm(false); queryClient.invalidateQueries({ queryKey: adminQueryKeys.ai.questionProposals(factId, factVersionId, jobId) }); } });
+const rejectionReasons: Record<AiQuestionRejectionReason, string> = {
+  FACTUALLY_INCORRECT: "Factually incorrect", AMBIGUOUS: "Ambiguous wording", DUPLICATE: "Duplicate question",
+  POOR_DISTRACTORS: "Poor distractors", WRONG_CORRECT_ANSWER: "Wrong correct answer", WRONG_DIFFICULTY: "Wrong difficulty",
+  WRONG_BLOOM_LEVEL: "Wrong Bloom level", WRONG_QUESTION_TYPE: "Wrong question type",
+  UNSUPPORTED_BY_KNOWLEDGE_FACT: "Unsupported by Knowledge Fact", UNSUPPORTED_BY_SOURCE: "Unsupported by Source",
+  LANGUAGE_QUALITY: "Language quality", READABILITY: "Readability", BIAS_OR_SAFETY: "Bias or safety",
+  FORMAT_INVALID: "Invalid format", OTHER: "Other",
+};
+
+export function QuestionProposalCard({ proposal, factId, factVersionId, jobId, canReview, canAccept, onRegenerationQueued, onChanged }: {
+  proposal: AiQuestionProposal; factId: string; factVersionId: string; jobId: string; canReview: boolean; canAccept: boolean;
+  onRegenerationQueued: (jobId: string) => void;
+  onChanged?: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const [rejectConfirm, setRejectConfirm] = useState(false);
+  const [regenerateConfirm, setRegenerateConfirm] = useState(false);
+  const [acceptConfirm, setAcceptConfirm] = useState(false);
+  const [reasonCode, setReasonCode] = useState<AiQuestionRejectionReason>("AMBIGUOUS");
+  const [comment, setComment] = useState("");
+  const [regenerationFeedback, setRegenerationFeedback] = useState("");
+  const [accepted, setAccepted] = useState<AiQuestionAcceptanceResult>();
+  const lineage = useQuery({
+    queryKey: adminQueryKeys.ai.questionLineage(proposal.id),
+    queryFn: () => unwrap(getAiQuestionProposalLineage({ client: contentServiceClient, path: { proposalId: proposal.id } })),
+    enabled: canReview,
+  });
+  const refreshProposalData = () => {
+    queryClient.invalidateQueries({ queryKey: adminQueryKeys.ai.questionProposals(factId, factVersionId, jobId) });
+    queryClient.invalidateQueries({ queryKey: adminQueryKeys.ai.questionLineage(proposal.id) });
+  };
+  const reject = useMutation({
+    mutationFn: () => unwrap(rejectAiQuestionProposal({
+      client: contentServiceClient,
+      path: { proposalId: proposal.id },
+      body: { reasonCode, comment: comment.trim() || null, version: proposal.version },
+    })),
+    onSuccess: () => { setRejectConfirm(false); refreshProposalData(); onChanged?.(); },
+  });
+  const regenerate = useMutation({
+    mutationFn: () => unwrap(regenerateAiQuestionProposal({
+      client: contentServiceClient,
+      path: { proposalId: proposal.id },
+      body: { reviewerFeedback: regenerationFeedback.trim(), version: proposal.version, idempotencyKey: crypto.randomUUID() },
+    })),
+    onSuccess: result => {
+      setRegenerateConfirm(false);
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.ai.questionHistory(factId) });
+      refreshProposalData();
+      onRegenerationQueued(result.jobId);
+      onChanged?.();
+    },
+  });
   const accept = useMutation({
     mutationFn: () => unwrap(acceptAiQuestionProposal({ client: contentServiceClient, path: { proposalId: proposal.id }, body: { version: proposal.version } })),
     onSuccess: result => {
@@ -137,15 +190,19 @@ function QuestionProposalCard({ proposal, factId, factVersionId, jobId, canAccep
       queryClient.setQueryData<AiQuestionProposal[]>(adminQueryKeys.ai.questionProposals(factId, factVersionId, jobId), current => current?.map(item => item.id === proposal.id ? { ...item, status: "ACCEPTED", acceptedQuestionId: result.questionId } : item));
       queryClient.invalidateQueries({ queryKey: adminQueryKeys.ai.questionProposals(factId, factVersionId, jobId) });
       queryClient.invalidateQueries({ queryKey: adminQueryKeys.questions.all });
+      onChanged?.();
     },
   });
   const intelligence=proposal.intelligenceAssessment;
   const acceptedQuestionId=accepted?.questionId ?? proposal.acceptedQuestionId;
   const isAccepted=proposal.status === "ACCEPTED" || Boolean(accepted);
+  const isSuperseded=proposal.status === "SUPERSEDED";
   const blockingFindings=intelligence.findings?.some(finding => finding.blocking) === true;
   const acceptanceEligible=!isAccepted && proposal.status === "PROPOSED" && proposal.validationStatus === "VALID" && intelligence.evaluationStatus === "EVALUATED" && intelligence.passedValidation === true && !blockingFindings && canAccept;
+  const canReject=canReview && proposal.status === "PROPOSED" && !proposal.supersededByProposalId;
+  const canRegenerate=canReview && ["PROPOSED", "REJECTED"].includes(proposal.status) && !proposal.supersededByProposalId;
   return <article className="card ai-editorial-proposal">
-    <div className="actions"><span className="status-badge">AI proposal</span><span className={`status-badge status-${isAccepted ? "accepted" : proposal.status.toLowerCase()}`}>{isAccepted ? "Accepted" : proposal.status === "REJECTED" ? "Rejected" : "Proposed"}</span><span className="status-badge">{proposal.questionType.replaceAll("_", " ")}</span>{intelligence.evaluationStatus === "EVALUATED" && <><span className="status-badge">{intelligence.qualityLevel?.replaceAll("_"," ")} · {intelligence.overallQualityScore}/100</span><span className="status-badge">{intelligence.difficulty?.replaceAll("_"," ")}</span><span className="status-badge">{intelligence.bloomsLevel}</span></>}</div>
+    <div className="actions"><span className="status-badge">AI proposal</span><span className={`status-badge status-${isAccepted ? "accepted" : proposal.status.toLowerCase()}`}>{isAccepted ? "Accepted" : proposal.status.replaceAll("_", " ")}</span><span className="status-badge">Attempt {proposal.generationAttempt}</span><span className="status-badge">{proposal.questionType.replaceAll("_", " ")}</span>{intelligence.evaluationStatus === "EVALUATED" && <><span className="status-badge">{intelligence.qualityLevel?.replaceAll("_"," ")} · {intelligence.overallQualityScore}/100</span><span className="status-badge">{intelligence.difficulty?.replaceAll("_"," ")}</span><span className="status-badge">{intelligence.bloomsLevel}</span></>}</div>
     {intelligence.evaluationStatus === "NOT_EVALUATED" && <p className="muted">Quality not evaluated (created before the intelligence engine).</p>}
     <h3>{proposal.questionText}</h3>
     <ol className="question-proposal-options">{proposal.answerOptions.map(option => <li key={option.id} className={option.correct ? "question-proposal-correct" : undefined}><strong>{option.optionKey}.</strong> {option.text} {option.correct && <span className="status-badge">Proposed correct answer</span>}</li>)}</ol>
@@ -155,11 +212,14 @@ function QuestionProposalCard({ proposal, factId, factVersionId, jobId, canAccep
     {proposal.warnings.length > 0 && <p className="warning"><strong>Warnings:</strong> {proposal.warnings.join("; ")}</p>}
     <section aria-label="AI provenance"><h4>AI provenance</h4><p><small>{proposal.provider} · {proposal.model} · {proposal.promptVersion} · generated {new Date(proposal.createdAt).toLocaleString()}{proposal.totalTokens == null ? "" : ` · ${proposal.totalTokens} tokens`}</small></p></section>
     {isAccepted && <div className="success" role="status"><strong>Accepted</strong><p>A canonical Question was created as DRAFT / UNREVIEWED.</p>{acceptedQuestionId && <><p>Question ID: <code>{acceptedQuestionId}</code></p><Link className="button-link" to={`/questions/${acceptedQuestionId}`}>View Question</Link></>}{proposal.acceptedBy && <p>Accepted by {proposal.acceptedBy}{proposal.acceptedAt ? ` on ${new Date(proposal.acceptedAt).toLocaleString()}` : ""}</p>}</div>}
-    {acceptanceEligible && !acceptConfirm && !rejectConfirm && <div className="actions"><button type="button" onClick={() => setAcceptConfirm(true)}>Accept Proposal</button><button type="button" className="secondary" onClick={() => setRejectConfirm(true)}>Reject Proposal</button></div>}
-    {proposal.status === "PROPOSED" && !acceptanceEligible && !isAccepted && !rejectConfirm && <p className="muted">{canAccept ? "This proposal is not eligible for acceptance." : "Only content authors and administrators can accept proposals."}</p>}
+    {proposal.status === "REJECTED" && <div className="warning"><strong>Rejected: {proposal.rejectionReasonCode ? rejectionReasons[proposal.rejectionReasonCode] : "Review decision"}</strong>{proposal.reviewerComment && <p>{proposal.reviewerComment}</p>}{proposal.rejectedBy && <small>By {proposal.rejectedBy}{proposal.rejectedAt ? ` on ${new Date(proposal.rejectedAt).toLocaleString()}` : ""}</small>}</div>}
+    {isSuperseded && <p className="muted">This proposal is immutable because a regenerated successor exists.</p>}
+    {!isAccepted && !isSuperseded && !acceptConfirm && !rejectConfirm && !regenerateConfirm && <div className="actions">{acceptanceEligible && <button type="button" onClick={() => setAcceptConfirm(true)}>Accept Proposal</button>}{canReject && <button type="button" className="secondary" onClick={() => setRejectConfirm(true)}>Reject Proposal</button>}{canRegenerate && <button type="button" className="secondary" onClick={() => { setRegenerationFeedback(proposal.reviewerComment ?? ""); setRegenerateConfirm(true); }}>Regenerate Proposal</button>}</div>}
+    {proposal.status === "PROPOSED" && !acceptanceEligible && !isAccepted && !rejectConfirm && !regenerateConfirm && <p className="muted">{canAccept ? "This proposal is not eligible for acceptance." : "Only content authors and administrators can accept proposals."}</p>}
     {acceptConfirm && <section className="card split-confirmation" role="dialog" aria-modal="true" aria-labelledby={`accept-${proposal.id}`}><h4 id={`accept-${proposal.id}`}>Accept this proposal?</h4><p>This creates one canonical Question as <strong>DRAFT / UNREVIEWED</strong>. The proposal becomes immutable and cannot be accepted again.</p><div className="actions"><button type="button" className="secondary" disabled={accept.isPending} onClick={() => setAcceptConfirm(false)}>Cancel</button><button type="button" disabled={accept.isPending} onClick={() => accept.mutate()}>{accept.isPending ? "Accepting…" : "Confirm Acceptance"}</button></div></section>}
-    {rejectConfirm && <section className="card" role="dialog" aria-modal="true" aria-label="Confirm proposal rejection"><label>Optional rejection reason<textarea maxLength={500} rows={3} value={reason} onChange={event => setReason(event.target.value)} /></label><div className="actions"><button type="button" className="secondary" onClick={() => setRejectConfirm(false)}>Keep Proposal</button><button type="button" disabled={reject.isPending} onClick={() => reject.mutate()}>{reject.isPending ? "Rejecting…" : "Confirm Rejection"}</button></div></section>}
-    {proposal.status === "REJECTED" && proposal.rejectionReason && <p><strong>Rejection reason:</strong> {proposal.rejectionReason}</p>}
-    {reject.error && <p role="alert" className="error">{reject.error.message}</p>}{accept.error && <p role="alert" className="error">{questionAcceptanceError(accept.error)}</p>}
+    {rejectConfirm && <section className="card split-confirmation" role="dialog" aria-modal="true" aria-label="Reject question proposal"><h4>Reject this proposal?</h4><label>Reason<select aria-label="Rejection reason" value={reasonCode} onChange={event => setReasonCode(event.target.value as AiQuestionRejectionReason)}>{Object.entries(rejectionReasons).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label><label>Reviewer comment {reasonCode === "OTHER" ? "(required)" : "(optional)"}<textarea aria-label="Reviewer comment" maxLength={1000} rows={3} value={comment} onChange={event => setComment(event.target.value)} /></label><p className="warning">The proposal and its provenance are retained for audit and lineage history.</p><div className="actions"><button type="button" className="secondary" onClick={() => setRejectConfirm(false)}>Keep Proposal</button><button type="button" disabled={reject.isPending || (reasonCode === "OTHER" && !comment.trim())} onClick={() => reject.mutate()}>{reject.isPending ? "Rejecting…" : "Confirm Rejection"}</button></div></section>}
+    {regenerateConfirm && <section className="card split-confirmation" role="dialog" aria-modal="true" aria-label="Regenerate question proposal"><h4>Regenerate this proposal?</h4>{proposal.rejectionReasonCode && <p><strong>Previous reason:</strong> {rejectionReasons[proposal.rejectionReasonCode]}</p>}<label>Required reviewer feedback<textarea aria-label="Regeneration feedback" maxLength={1000} rows={4} value={regenerationFeedback} onChange={event => setRegenerationFeedback(event.target.value)} /></label><p className="warning">A new asynchronous generation job will create one successor. This proposal remains immutable in the lineage.</p><div className="actions"><button type="button" className="secondary" onClick={() => setRegenerateConfirm(false)}>Cancel</button><button type="button" disabled={regenerate.isPending || !regenerationFeedback.trim()} onClick={() => regenerate.mutate()}>{regenerate.isPending ? "Queueing…" : "Confirm Regeneration"}</button></div></section>}
+    {lineage.data && lineage.data.length > 1 && <details><summary>Proposal history ({lineage.data.length} attempts)</summary>{lineage.data.map((item,index) => <section key={item.id} className="lineage-entry"><p><strong>Attempt {item.generationAttempt}</strong> · {item.status.replaceAll("_"," ")} · {new Date(item.createdAt).toLocaleString()}</p>{item.regenerationFeedback && <p><strong>Feedback:</strong> {item.regenerationFeedback}</p>}{index > 0 && <details><summary>Compare with previous attempt</summary><p><strong>Previous:</strong> {lineage.data[index-1].questionText}</p><p><strong>Replacement:</strong> {item.questionText}</p></details>}</section>)}</details>}
+    {reject.error && <p role="alert" className="error">{reject.error.message}</p>}{regenerate.error && <p role="alert" className="error">{regenerate.error.message}</p>}{lineage.error && <p role="alert" className="error">{lineage.error.message}</p>}{accept.error && <p role="alert" className="error">{questionAcceptanceError(accept.error)}</p>}
   </article>;
 }

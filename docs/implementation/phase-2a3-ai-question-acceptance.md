@@ -16,7 +16,7 @@ An authorised `CONTENT_AUTHOR` or `ADMIN` requests acceptance with the proposal 
 8. stores immutable provenance and acceptance audit events;
 9. links the Question in AI Service and transitions the proposal to `ACCEPTED` using optimistic locking.
 
-Accepted and rejected proposals are read-only. The unique provenance constraints and AI proposal linkage prevent one proposal from creating more than one Question.
+Accepted proposals are read-only. Rejected proposals remain immutable but may be used as the predecessor of one regenerated proposal under the Phase 2A.4 lineage rules. The unique provenance constraints and AI proposal linkage prevent one proposal from creating more than one Question.
 
 ## Canonical data
 

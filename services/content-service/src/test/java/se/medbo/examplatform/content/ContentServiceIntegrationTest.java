@@ -117,6 +117,25 @@ class ContentServiceIntegrationTest {
     }
 
     @Test
+    void malformedBatchScopeIdentifierReturnsControlledValidationError() throws Exception {
+        mvc.perform(post("/api/v1/admin/ai/question-generation-batches/preview")
+                        .headers(author()).contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "scope":{"type":"TOPIC","id":"ai1","knowledgeFactIds":[]},
+                                  "language":"sv",
+                                  "questionsPerKnowledgeFact":2,
+                                  "questionTypes":["SINGLE_CHOICE"],
+                                  "difficultyDistribution":{"EASY":30,"MEDIUM":50,"HARD":20},
+                                  "bloomDistribution":{"REMEMBER":20,"UNDERSTAND":40,"APPLY":40}
+                                }
+                                """))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.message").value("Request body contains an invalid value"));
+    }
+
+    @Test
     void questionGenerationEligibilityUsesTheLinkedSourceInsteadOfAListPage() throws Exception {
         var now=java.time.OffsetDateTime.now(java.time.ZoneOffset.UTC);var exam=java.util.UUID.randomUUID();var examVersion=java.util.UUID.randomUUID();var subject=java.util.UUID.randomUUID();var topic=java.util.UUID.randomUUID();var objective=java.util.UUID.randomUUID();var fact=java.util.UUID.randomUUID();var factVersion=java.util.UUID.randomUUID();var source=java.util.UUID.randomUUID();
         jdbc.sql("INSERT INTO exam(id,code,name,country_code,status,created_at,updated_at) VALUES(:id,:code,'Eligibility','SE','ACTIVE',:now,:now)").param("id",exam).param("code","ELIG_"+exam).param("now",now).update();

@@ -1,6 +1,7 @@
 import { client } from './generated/client.gen';
 import { createMockExam, createPracticeSession, deleteMyLearnerAccount, flagMockExamQuestion, getMockExam, getMockExamConfiguration, getMockExamHistory,
-  getMockExamQuestion, getMockExamResults, getNextPracticeQuestion, getSubjects, getTopicProgress,
+  getMockExamQuestion, getMockExamResults, getNextPracticeQuestion, getSubjects, getTopicProgress, getStudySubjects,
+  getStudyTopics, getTopicLesson, getContinueLearning, updateLessonProgress,
   getMyLearnerProfile, getMyLearnerSettings, submitMockExam, submitMockExamResponse, submitPracticeResponse, updateMyLearnerProfile, updateMyLearnerSettings } from './generated/sdk.gen';
 import type { CreatePracticeSessionRequest, SubmitAnswerRequest, UpdateLearnerProfile, UpdateLearnerSettings } from './generated/types.gen';
 import { appConfig } from './config';
@@ -32,6 +33,11 @@ export const learningApi = {
   updateSettings: async (identity: string, body: UpdateLearnerSettings) => (await updateMyLearnerSettings({ body, headers: headers(identity), throwOnError: true })).data,
   deleteAccount: async (identity: string) => (await deleteMyLearnerAccount({ headers: headers(identity), throwOnError: true })).data,
   subjects: async (identity: string) => (await getSubjects({ query: { examId: appConfig.examId }, headers: headers(identity), throwOnError: true })).data,
+  studySubjects: async (identity: string) => (await getStudySubjects({ path: { examId: appConfig.examId }, headers: headers(identity), throwOnError: true })).data,
+  studyTopics: async (identity: string, subjectId: string) => (await getStudyTopics({ path: { subjectId }, query: { examId: appConfig.examId }, headers: headers(identity), throwOnError: true })).data,
+  lesson: async (identity: string, topicId: string) => (await getTopicLesson({ path: { topicId }, query: { examId: appConfig.examId }, headers: headers(identity), throwOnError: true })).data,
+  continueLearning: async (identity: string) => (await getContinueLearning({ query: { examId: appConfig.examId }, headers: headers(identity), throwOnError: true })).data,
+  updateLessonProgress: async (identity: string, topicId: string, sectionId: string, completed: boolean) => (await updateLessonProgress({ path: { topicId }, query: { examId: appConfig.examId }, body: { sectionId, completed }, headers: headers(identity), throwOnError: true })).data,
   createSession: async (identity: string, body: CreatePracticeSessionRequest) => (await createPracticeSession({ body, headers: headers(identity), throwOnError: true })).data,
   nextQuestion: async (identity: string, sessionId: string) => (await getNextPracticeQuestion({ path: { sessionId }, headers: headers(identity), throwOnError: true })).data,
   submitAnswer: async (identity: string, sessionId: string, body: SubmitAnswerRequest) => (await submitPracticeResponse({ path: { sessionId }, body, headers: headers(identity), throwOnError: true })).data,

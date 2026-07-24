@@ -11,6 +11,9 @@ export type RootStackParamList = {
   Onboarding: undefined;
   Home: undefined;
   Topics: undefined;
+  StudySubjects: undefined;
+  StudyTopics: { subjectId: string; subjectTitle: string };
+  TopicLesson: { topicId: string; topicTitle: string; sectionId?: string };
   PracticeSetup: { mode: Extract<PracticeMode, 'TOPIC' | 'MIXED'>; topicId?: string; topicName?: string };
   Question: { sessionId: string };
   SessionComplete: { total: number };

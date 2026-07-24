@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ActivateImportedContentReleaseData, ActivateImportedContentReleaseErrors, ActivateImportedContentReleaseResponses, CreateMockExamData, CreateMockExamErrors, CreateMockExamResponses, CreatePracticeSessionData, CreatePracticeSessionErrors, CreatePracticeSessionResponses, DeleteMyLearnerAccountData, DeleteMyLearnerAccountErrors, DeleteMyLearnerAccountResponses, FlagMockExamQuestionData, FlagMockExamQuestionErrors, FlagMockExamQuestionResponses, GetInternalLearnerHealthData, GetInternalLearnerHealthErrors, GetInternalLearnerHealthResponses, GetMockExamConfigurationData, GetMockExamConfigurationErrors, GetMockExamConfigurationResponses, GetMockExamData, GetMockExamErrors, GetMockExamHistoryData, GetMockExamHistoryErrors, GetMockExamHistoryResponses, GetMockExamQuestionData, GetMockExamQuestionErrors, GetMockExamQuestionResponses, GetMockExamResponses, GetMockExamResultsData, GetMockExamResultsErrors, GetMockExamResultsResponses, GetMyLearnerProfileData, GetMyLearnerProfileErrors, GetMyLearnerProfileResponses, GetMyLearnerSettingsData, GetMyLearnerSettingsErrors, GetMyLearnerSettingsResponses, GetNextPracticeQuestionData, GetNextPracticeQuestionErrors, GetNextPracticeQuestionResponses, GetPracticeSessionData, GetPracticeSessionErrors, GetPracticeSessionResponses, GetSubjectsData, GetSubjectsErrors, GetSubjectsResponses, GetTopicProgressData, GetTopicProgressErrors, GetTopicProgressResponses, ImportContentReleaseData, ImportContentReleaseErrors, ImportContentReleaseResponses, SubmitMockExamData, SubmitMockExamErrors, SubmitMockExamResponseData, SubmitMockExamResponseErrors, SubmitMockExamResponseResponses, SubmitMockExamResponses, SubmitPracticeResponseData, SubmitPracticeResponseErrors, SubmitPracticeResponseResponses, UpdateMyLearnerProfileData, UpdateMyLearnerProfileErrors, UpdateMyLearnerProfileResponses, UpdateMyLearnerSettingsData, UpdateMyLearnerSettingsErrors, UpdateMyLearnerSettingsResponses } from './types.gen';
+import type { ActivateImportedContentReleaseData, ActivateImportedContentReleaseErrors, ActivateImportedContentReleaseResponses, CreateMockExamData, CreateMockExamErrors, CreateMockExamResponses, CreatePracticeSessionData, CreatePracticeSessionErrors, CreatePracticeSessionResponses, DeleteMyLearnerAccountData, DeleteMyLearnerAccountErrors, DeleteMyLearnerAccountResponses, FlagMockExamQuestionData, FlagMockExamQuestionErrors, FlagMockExamQuestionResponses, GetContinueLearningData, GetContinueLearningErrors, GetContinueLearningResponses, GetInternalLearnerHealthData, GetInternalLearnerHealthErrors, GetInternalLearnerHealthResponses, GetMockExamConfigurationData, GetMockExamConfigurationErrors, GetMockExamConfigurationResponses, GetMockExamData, GetMockExamErrors, GetMockExamHistoryData, GetMockExamHistoryErrors, GetMockExamHistoryResponses, GetMockExamQuestionData, GetMockExamQuestionErrors, GetMockExamQuestionResponses, GetMockExamResponses, GetMockExamResultsData, GetMockExamResultsErrors, GetMockExamResultsResponses, GetMyLearnerProfileData, GetMyLearnerProfileErrors, GetMyLearnerProfileResponses, GetMyLearnerSettingsData, GetMyLearnerSettingsErrors, GetMyLearnerSettingsResponses, GetNextPracticeQuestionData, GetNextPracticeQuestionErrors, GetNextPracticeQuestionResponses, GetPracticeSessionData, GetPracticeSessionErrors, GetPracticeSessionResponses, GetStudySubjectsData, GetStudySubjectsErrors, GetStudySubjectsResponses, GetStudyTopicsData, GetStudyTopicsErrors, GetStudyTopicsResponses, GetSubjectsData, GetSubjectsErrors, GetSubjectsResponses, GetTopicLessonData, GetTopicLessonErrors, GetTopicLessonResponses, GetTopicProgressData, GetTopicProgressErrors, GetTopicProgressResponses, ImportContentReleaseData, ImportContentReleaseErrors, ImportContentReleaseResponses, SubmitMockExamData, SubmitMockExamErrors, SubmitMockExamResponseData, SubmitMockExamResponseErrors, SubmitMockExamResponseResponses, SubmitMockExamResponses, SubmitPracticeResponseData, SubmitPracticeResponseErrors, SubmitPracticeResponseResponses, UpdateLessonProgressData, UpdateLessonProgressErrors, UpdateLessonProgressResponses, UpdateMyLearnerProfileData, UpdateMyLearnerProfileErrors, UpdateMyLearnerProfileResponses, UpdateMyLearnerSettingsData, UpdateMyLearnerSettingsErrors, UpdateMyLearnerSettingsResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -86,6 +86,55 @@ export const getInternalLearnerHealth = <ThrowOnError extends boolean = false>(o
 export const getSubjects = <ThrowOnError extends boolean = false>(options: Options<GetSubjectsData, ThrowOnError>): RequestResult<GetSubjectsResponses, GetSubjectsErrors, ThrowOnError> => (options.client ?? client).get<GetSubjectsResponses, GetSubjectsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/content/subjects',
+    ...options
+});
+
+/**
+ * List subjects with lesson progress from the active content release
+ */
+export const getStudySubjects = <ThrowOnError extends boolean = false>(options: Options<GetStudySubjectsData, ThrowOnError>): RequestResult<GetStudySubjectsResponses, GetStudySubjectsErrors, ThrowOnError> => (options.client ?? client).get<GetStudySubjectsResponses, GetStudySubjectsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/learning/exams/{examId}/subjects',
+    ...options
+});
+
+/**
+ * List learner-facing topics for a subject
+ */
+export const getStudyTopics = <ThrowOnError extends boolean = false>(options: Options<GetStudyTopicsData, ThrowOnError>): RequestResult<GetStudyTopicsResponses, GetStudyTopicsErrors, ThrowOnError> => (options.client ?? client).get<GetStudyTopicsResponses, GetStudyTopicsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/learning/subjects/{subjectId}/topics',
+    ...options
+});
+
+/**
+ * Get the published lesson and release-scoped learner progress
+ */
+export const getTopicLesson = <ThrowOnError extends boolean = false>(options: Options<GetTopicLessonData, ThrowOnError>): RequestResult<GetTopicLessonResponses, GetTopicLessonErrors, ThrowOnError> => (options.client ?? client).get<GetTopicLessonResponses, GetTopicLessonErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/learning/topics/{topicId}/lesson',
+    ...options
+});
+
+/**
+ * Idempotently record the current or completed lesson section
+ */
+export const updateLessonProgress = <ThrowOnError extends boolean = false>(options: Options<UpdateLessonProgressData, ThrowOnError>): RequestResult<UpdateLessonProgressResponses, UpdateLessonProgressErrors, ThrowOnError> => (options.client ?? client).put<UpdateLessonProgressResponses, UpdateLessonProgressErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/learning/topics/{topicId}/progress',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get the learner's most recently accessed incomplete lesson
+ */
+export const getContinueLearning = <ThrowOnError extends boolean = false>(options: Options<GetContinueLearningData, ThrowOnError>): RequestResult<GetContinueLearningResponses, GetContinueLearningErrors, ThrowOnError> => (options.client ?? client).get<GetContinueLearningResponses, GetContinueLearningErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/learning/continue',
     ...options
 });
 

@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcceptAiEditorialProposalData, AcceptAiEditorialProposalErrors, AcceptAiEditorialProposalResponses, AcceptAiEditorialSplitData, AcceptAiEditorialSplitErrors, AcceptAiEditorialSplitResponses, AcceptAiKnowledgeFactProposalData, AcceptAiKnowledgeFactProposalErrors, AcceptAiKnowledgeFactProposalResponses, AcceptAiQuestionProposalData, AcceptAiQuestionProposalErrors, AcceptAiQuestionProposalResponses, AcknowledgeAiProviderAlertData, AcknowledgeAiProviderAlertErrors, AcknowledgeAiProviderAlertResponses, ActivateReleaseData, ActivateReleaseErrors, ActivateReleaseResponses, AddReviewCommentData, AddReviewCommentErrors, AddReviewCommentResponses, ApproveKnowledgeFactData, ApproveKnowledgeFactErrors, ApproveKnowledgeFactResponses, ApproveQuestionData, ApproveQuestionErrors, ApproveQuestionResponses, ArchiveExamData, ArchiveExamErrors, ArchiveExamResponses, ArchiveExamVersionData, ArchiveExamVersionResponses, ArchiveLearningObjectiveData, ArchiveLearningObjectiveErrors, ArchiveLearningObjectiveResponses, ArchiveSubjectData, ArchiveSubjectResponses, ArchiveTopicData, ArchiveTopicResponses, AssignReviewData, AssignReviewErrors, AssignReviewResponses, CancelAiEditorialJobData, CancelAiEditorialJobErrors, CancelAiEditorialJobResponses, CancelAiKnowledgeFactJobData, CancelAiKnowledgeFactJobErrors, CancelAiKnowledgeFactJobResponses, CancelAiQuestionGenerationJobData, CancelAiQuestionGenerationJobErrors, CancelAiQuestionGenerationJobResponses, ChangeReviewPriorityData, ChangeReviewPriorityErrors, ChangeReviewPriorityResponses, ClaimReviewData, ClaimReviewErrors, ClaimReviewResponses, CreateAiEditorialJobData, CreateAiEditorialJobErrors, CreateAiEditorialJobResponses, CreateAiKnowledgeFactJobData, CreateAiKnowledgeFactJobErrors, CreateAiKnowledgeFactJobResponses, CreateAiQuestionGenerationJobData, CreateAiQuestionGenerationJobErrors, CreateAiQuestionGenerationJobResponses, CreateExamData, CreateExamErrors, CreateExamResponses, CreateExamVersionData, CreateExamVersionErrors, CreateExamVersionResponses, CreateKnowledgeFactData, CreateKnowledgeFactErrors, CreateKnowledgeFactResponses, CreateLearningObjectiveData, CreateLearningObjectiveErrors, CreateLearningObjectiveResponses, CreateQuestionData, CreateQuestionErrors, CreateQuestionResponses, CreateReleaseData, CreateReleaseErrors, CreateReleaseResponses, CreateSourceData, CreateSourceErrors, CreateSourceResponses, CreateSubjectData, CreateSubjectResponses, CreateTopicData, CreateTopicResponses, DeleteExamData, DeleteExamErrors, DeleteExamResponses, DeleteExamVersionData, DeleteExamVersionErrors, DeleteExamVersionResponses, DeleteKnowledgeFactData, DeleteKnowledgeFactErrors, DeleteKnowledgeFactResponses, DeleteLearningObjectiveData, DeleteLearningObjectiveErrors, DeleteLearningObjectiveResponses, DeleteQuestionData, DeleteQuestionErrors, DeleteQuestionResponses, DeleteReleaseData, DeleteReleaseErrors, DeleteReleaseResponses, DeleteSourceData, DeleteSourceErrors, DeleteSourceResponses, DeleteSubjectData, DeleteSubjectErrors, DeleteSubjectResponses, DeleteTopicData, DeleteTopicErrors, DeleteTopicResponses, DeliverReleaseData, DeliverReleaseErrors, DeliverReleaseResponses, DisableAiProviderData, DisableAiProviderErrors, DisableAiProviderResponses, DismissAiEditorialFindingData, DismissAiEditorialFindingErrors, DismissAiEditorialFindingResponses, EditAiEditorialProposalData, EditAiEditorialProposalErrors, EditAiEditorialProposalResponses, EditAiKnowledgeFactProposalData, EditAiKnowledgeFactProposalErrors, EditAiKnowledgeFactProposalResponses, GetAiEditorialJobData, GetAiEditorialJobErrors, GetAiEditorialJobResponses, GetAiKnowledgeFactJobData, GetAiKnowledgeFactJobErrors, GetAiKnowledgeFactJobResponses, GetAiProviderStatusData, GetAiProviderStatusErrors, GetAiProviderStatusResponses, GetAiQuestionGenerationEligibilityData, GetAiQuestionGenerationEligibilityErrors, GetAiQuestionGenerationEligibilityResponses, GetAiQuestionGenerationJobData, GetAiQuestionGenerationJobErrors, GetAiQuestionGenerationJobResponses, GetContentHealthReportData, GetContentHealthReportErrors, GetContentHealthReportResponses, GetContentServiceStatusData, GetContentServiceStatusErrors, GetContentServiceStatusResponses, GetExamData, GetExamErrors, GetExamResponses, GetExamVersionData, GetExamVersionErrors, GetExamVersionResponses, GetKnowledgeFactAiProvenanceData, GetKnowledgeFactAiProvenanceErrors, GetKnowledgeFactAiProvenanceResponses, GetKnowledgeFactData, GetKnowledgeFactErrors, GetKnowledgeFactResponses, GetLearnerHealthReportData, GetLearnerHealthReportErrors, GetLearnerHealthReportResponses, GetLearningObjectiveData, GetLearningObjectiveErrors, GetLearningObjectiveResponses, GetPublishedReleaseSnapshotData, GetPublishedReleaseSnapshotResponses, GetQuestionData, GetQuestionErrors, GetQuestionResponses, GetReleaseData, GetReleaseDiffData, GetReleaseDiffResponses, GetReleaseHealthReportData, GetReleaseHealthReportErrors, GetReleaseHealthReportResponses, GetReleaseResponses, GetReviewData, GetReviewErrors, GetReviewHealthReportData, GetReviewHealthReportErrors, GetReviewHealthReportResponses, GetReviewResponses, GetReviewSummaryData, GetReviewSummaryResponses, GetSourceData, GetSourceErrors, GetSourceHealthReportData, GetSourceHealthReportErrors, GetSourceHealthReportResponses, GetSourceResponses, GetSubjectData, GetSubjectResponses, GetTopicData, GetTopicResponses, ListAiEditorialFindingsData, ListAiEditorialFindingsErrors, ListAiEditorialFindingsResponses, ListAiEditorialProposalsData, ListAiEditorialProposalsResponses, ListAiKnowledgeFactProposalsData, ListAiKnowledgeFactProposalsResponses, ListAiProviderAlertsData, ListAiProviderAlertsErrors, ListAiProviderAlertsResponses, ListAiQuestionGenerationJobsData, ListAiQuestionGenerationJobsErrors, ListAiQuestionGenerationJobsResponses, ListAiQuestionProposalsData, ListAiQuestionProposalsErrors, ListAiQuestionProposalsResponses, ListEligibleReleaseFactsData, ListEligibleReleaseFactsResponses, ListEligibleReleaseQuestionsData, ListEligibleReleaseQuestionsResponses, ListExamsData, ListExamsErrors, ListExamsResponses, ListExamVersionsData, ListExamVersionsResponses, ListKnowledgeFactsData, ListKnowledgeFactsErrors, ListKnowledgeFactsResponses, ListKnowledgeFactVersionsData, ListKnowledgeFactVersionsErrors, ListKnowledgeFactVersionsResponses, ListLearningObjectivesData, ListLearningObjectivesErrors, ListLearningObjectivesResponses, ListQuestionsData, ListQuestionsResponses, ListQuestionVersionsData, ListQuestionVersionsResponses, ListReleaseDeliveryAttemptsData, ListReleaseDeliveryAttemptsResponses, ListReleasesData, ListReleasesResponses, ListReviewCommentsData, ListReviewCommentsResponses, ListReviewHistoryData, ListReviewHistoryResponses, ListReviewsData, ListReviewsResponses, ListSourcesData, ListSourcesResponses, ListSubjectsData, ListSubjectsResponses, ListTopicsData, ListTopicsResponses, PreviewReleaseData, PreviewReleaseResponses, PublishReleaseData, PublishReleaseErrors, PublishReleaseResponses, RecheckAiProviderData, RecheckAiProviderErrors, RecheckAiProviderResponses, RejectAiEditorialProposalData, RejectAiEditorialProposalErrors, RejectAiEditorialProposalResponses, RejectAiKnowledgeFactProposalData, RejectAiKnowledgeFactProposalErrors, RejectAiKnowledgeFactProposalResponses, RejectAiQuestionProposalData, RejectAiQuestionProposalErrors, RejectAiQuestionProposalResponses, RejectKnowledgeFactData, RejectKnowledgeFactErrors, RejectKnowledgeFactResponses, RejectQuestionData, RejectQuestionResponses, ReorderSubjectsData, ReorderSubjectsErrors, ReorderSubjectsResponses, ReorderTopicsData, ReorderTopicsErrors, ReorderTopicsResponses, ReplaceReleaseSelectionData, ReplaceReleaseSelectionErrors, ReplaceReleaseSelectionResponses, RequireKnowledgeFactUpdateData, RequireKnowledgeFactUpdateErrors, RequireKnowledgeFactUpdateResponses, RequireQuestionUpdateData, RequireQuestionUpdateResponses, RequireSourceUpdateData, RequireSourceUpdateResponses, RetireKnowledgeFactData, RetireKnowledgeFactErrors, RetireKnowledgeFactResponses, RetireQuestionData, RetireQuestionResponses, RetireReleaseData, RetireReleaseResponses, RetireSourceData, RetireSourceErrors, RetireSourceResponses, RetryReleaseDeliveryData, RetryReleaseDeliveryResponses, ReviewSourceData, ReviewSourceResponses, SearchAuditEventsData, SearchAuditEventsErrors, SearchAuditEventsResponses, SearchQuestionsData, SearchQuestionsResponses, SubmitKnowledgeFactData, SubmitKnowledgeFactErrors, SubmitKnowledgeFactResponses, SubmitQuestionData, SubmitQuestionResponses, UnclaimReviewData, UnclaimReviewErrors, UnclaimReviewResponses, UpdateExamData, UpdateExamErrors, UpdateExamResponses, UpdateExamVersionData, UpdateExamVersionErrors, UpdateExamVersionResponses, UpdateKnowledgeFactData, UpdateKnowledgeFactErrors, UpdateKnowledgeFactResponses, UpdateLearningObjectiveData, UpdateLearningObjectiveErrors, UpdateLearningObjectiveResponses, UpdateQuestionData, UpdateQuestionErrors, UpdateQuestionResponses, UpdateReleaseData, UpdateReleaseErrors, UpdateReleaseResponses, UpdateSourceData, UpdateSourceErrors, UpdateSourceResponses, UpdateSubjectData, UpdateSubjectErrors, UpdateSubjectResponses, UpdateTopicData, UpdateTopicErrors, UpdateTopicResponses, ValidateReleaseData, ValidateReleaseResponses } from './types.gen';
+import type { AcceptAiEditorialProposalData, AcceptAiEditorialProposalErrors, AcceptAiEditorialProposalResponses, AcceptAiEditorialSplitData, AcceptAiEditorialSplitErrors, AcceptAiEditorialSplitResponses, AcceptAiKnowledgeFactProposalData, AcceptAiKnowledgeFactProposalErrors, AcceptAiKnowledgeFactProposalResponses, AcceptAiQuestionProposalData, AcceptAiQuestionProposalErrors, AcceptAiQuestionProposalResponses, AcknowledgeAiProviderAlertData, AcknowledgeAiProviderAlertErrors, AcknowledgeAiProviderAlertResponses, ActivateReleaseData, ActivateReleaseErrors, ActivateReleaseResponses, AddReviewCommentData, AddReviewCommentErrors, AddReviewCommentResponses, ApproveKnowledgeFactData, ApproveKnowledgeFactErrors, ApproveKnowledgeFactResponses, ApproveQuestionData, ApproveQuestionErrors, ApproveQuestionResponses, ArchiveExamData, ArchiveExamErrors, ArchiveExamResponses, ArchiveExamVersionData, ArchiveExamVersionResponses, ArchiveLearningObjectiveData, ArchiveLearningObjectiveErrors, ArchiveLearningObjectiveResponses, ArchiveSubjectData, ArchiveSubjectResponses, ArchiveTopicData, ArchiveTopicResponses, AssignAiQuestionProposalReviewerData, AssignAiQuestionProposalReviewerResponses, AssignReviewData, AssignReviewErrors, AssignReviewResponses, BulkAcceptAiQuestionProposalsData, BulkAcceptAiQuestionProposalsResponses, BulkRegenerateAiQuestionProposalsData, BulkRegenerateAiQuestionProposalsResponses, BulkRejectAiQuestionProposalsData, BulkRejectAiQuestionProposalsResponses, CancelAiEditorialJobData, CancelAiEditorialJobErrors, CancelAiEditorialJobResponses, CancelAiKnowledgeFactJobData, CancelAiKnowledgeFactJobErrors, CancelAiKnowledgeFactJobResponses, CancelAiQuestionGenerationBatchData, CancelAiQuestionGenerationBatchErrors, CancelAiQuestionGenerationBatchResponses, CancelAiQuestionGenerationJobData, CancelAiQuestionGenerationJobErrors, CancelAiQuestionGenerationJobResponses, ChangeReviewPriorityData, ChangeReviewPriorityErrors, ChangeReviewPriorityResponses, ClaimReviewData, ClaimReviewErrors, ClaimReviewResponses, CreateAiEditorialJobData, CreateAiEditorialJobErrors, CreateAiEditorialJobResponses, CreateAiKnowledgeFactJobData, CreateAiKnowledgeFactJobErrors, CreateAiKnowledgeFactJobResponses, CreateAiQuestionGenerationBatchData, CreateAiQuestionGenerationBatchErrors, CreateAiQuestionGenerationBatchResponses, CreateAiQuestionGenerationJobData, CreateAiQuestionGenerationJobErrors, CreateAiQuestionGenerationJobResponses, CreateExamData, CreateExamErrors, CreateExamResponses, CreateExamVersionData, CreateExamVersionErrors, CreateExamVersionResponses, CreateKnowledgeFactData, CreateKnowledgeFactErrors, CreateKnowledgeFactResponses, CreateLearningObjectiveData, CreateLearningObjectiveErrors, CreateLearningObjectiveResponses, CreateQuestionData, CreateQuestionErrors, CreateQuestionResponses, CreateReleaseData, CreateReleaseErrors, CreateReleaseResponses, CreateSourceData, CreateSourceErrors, CreateSourceResponses, CreateSubjectData, CreateSubjectResponses, CreateTopicData, CreateTopicResponses, DeleteExamData, DeleteExamErrors, DeleteExamResponses, DeleteExamVersionData, DeleteExamVersionErrors, DeleteExamVersionResponses, DeleteKnowledgeFactData, DeleteKnowledgeFactErrors, DeleteKnowledgeFactResponses, DeleteLearningObjectiveData, DeleteLearningObjectiveErrors, DeleteLearningObjectiveResponses, DeleteQuestionData, DeleteQuestionErrors, DeleteQuestionResponses, DeleteReleaseData, DeleteReleaseErrors, DeleteReleaseResponses, DeleteSourceData, DeleteSourceErrors, DeleteSourceResponses, DeleteSubjectData, DeleteSubjectErrors, DeleteSubjectResponses, DeleteTopicData, DeleteTopicErrors, DeleteTopicResponses, DeliverReleaseData, DeliverReleaseErrors, DeliverReleaseResponses, DisableAiProviderData, DisableAiProviderErrors, DisableAiProviderResponses, DismissAiEditorialFindingData, DismissAiEditorialFindingErrors, DismissAiEditorialFindingResponses, EditAiEditorialProposalData, EditAiEditorialProposalErrors, EditAiEditorialProposalResponses, EditAiKnowledgeFactProposalData, EditAiKnowledgeFactProposalErrors, EditAiKnowledgeFactProposalResponses, ExportAiQuestionGenerationBatchData, ExportAiQuestionGenerationBatchResponses, GetAiEditorialJobData, GetAiEditorialJobErrors, GetAiEditorialJobResponses, GetAiKnowledgeFactJobData, GetAiKnowledgeFactJobErrors, GetAiKnowledgeFactJobResponses, GetAiProviderStatusData, GetAiProviderStatusErrors, GetAiProviderStatusResponses, GetAiQuestionGenerationBatchData, GetAiQuestionGenerationBatchErrors, GetAiQuestionGenerationBatchResponses, GetAiQuestionGenerationEligibilityData, GetAiQuestionGenerationEligibilityErrors, GetAiQuestionGenerationEligibilityResponses, GetAiQuestionGenerationJobData, GetAiQuestionGenerationJobErrors, GetAiQuestionGenerationJobResponses, GetAiQuestionProposalLineageData, GetAiQuestionProposalLineageErrors, GetAiQuestionProposalLineageResponses, GetContentHealthReportData, GetContentHealthReportErrors, GetContentHealthReportResponses, GetContentServiceStatusData, GetContentServiceStatusErrors, GetContentServiceStatusResponses, GetExamData, GetExamErrors, GetExamResponses, GetExamVersionData, GetExamVersionErrors, GetExamVersionResponses, GetKnowledgeFactAiProvenanceData, GetKnowledgeFactAiProvenanceErrors, GetKnowledgeFactAiProvenanceResponses, GetKnowledgeFactData, GetKnowledgeFactErrors, GetKnowledgeFactResponses, GetLearnerHealthReportData, GetLearnerHealthReportErrors, GetLearnerHealthReportResponses, GetLearningObjectiveData, GetLearningObjectiveErrors, GetLearningObjectiveResponses, GetPublishedReleaseSnapshotData, GetPublishedReleaseSnapshotResponses, GetQuestionData, GetQuestionErrors, GetQuestionResponses, GetReleaseData, GetReleaseDiffData, GetReleaseDiffResponses, GetReleaseHealthReportData, GetReleaseHealthReportErrors, GetReleaseHealthReportResponses, GetReleaseResponses, GetReviewData, GetReviewErrors, GetReviewHealthReportData, GetReviewHealthReportErrors, GetReviewHealthReportResponses, GetReviewResponses, GetReviewSummaryData, GetReviewSummaryResponses, GetSourceData, GetSourceErrors, GetSourceHealthReportData, GetSourceHealthReportErrors, GetSourceHealthReportResponses, GetSourceResponses, GetSubjectData, GetSubjectResponses, GetTopicData, GetTopicResponses, ListAiEditorialFindingsData, ListAiEditorialFindingsErrors, ListAiEditorialFindingsResponses, ListAiEditorialProposalsData, ListAiEditorialProposalsResponses, ListAiKnowledgeFactProposalsData, ListAiKnowledgeFactProposalsResponses, ListAiProviderAlertsData, ListAiProviderAlertsErrors, ListAiProviderAlertsResponses, ListAiQuestionGenerationBatchesData, ListAiQuestionGenerationBatchesResponses, ListAiQuestionGenerationBatchItemsData, ListAiQuestionGenerationBatchItemsResponses, ListAiQuestionGenerationBatchProposalsData, ListAiQuestionGenerationBatchProposalsResponses, ListAiQuestionGenerationJobsData, ListAiQuestionGenerationJobsErrors, ListAiQuestionGenerationJobsResponses, ListAiQuestionProposalsData, ListAiQuestionProposalsErrors, ListAiQuestionProposalsResponses, ListEligibleReleaseFactsData, ListEligibleReleaseFactsResponses, ListEligibleReleaseQuestionsData, ListEligibleReleaseQuestionsResponses, ListExamsData, ListExamsErrors, ListExamsResponses, ListExamVersionsData, ListExamVersionsResponses, ListKnowledgeFactsData, ListKnowledgeFactsErrors, ListKnowledgeFactsResponses, ListKnowledgeFactVersionsData, ListKnowledgeFactVersionsErrors, ListKnowledgeFactVersionsResponses, ListLearningObjectivesData, ListLearningObjectivesErrors, ListLearningObjectivesResponses, ListQuestionsData, ListQuestionsResponses, ListQuestionVersionsData, ListQuestionVersionsResponses, ListReleaseDeliveryAttemptsData, ListReleaseDeliveryAttemptsResponses, ListReleasesData, ListReleasesResponses, ListReviewCommentsData, ListReviewCommentsResponses, ListReviewHistoryData, ListReviewHistoryResponses, ListReviewsData, ListReviewsResponses, ListSourcesData, ListSourcesResponses, ListSubjectsData, ListSubjectsResponses, ListTopicsData, ListTopicsResponses, PreviewAiQuestionGenerationBatchData, PreviewAiQuestionGenerationBatchErrors, PreviewAiQuestionGenerationBatchResponses, PreviewReleaseData, PreviewReleaseResponses, PublishReleaseData, PublishReleaseErrors, PublishReleaseResponses, RecheckAiProviderData, RecheckAiProviderErrors, RecheckAiProviderResponses, RegenerateAiQuestionProposalData, RegenerateAiQuestionProposalErrors, RegenerateAiQuestionProposalResponses, RejectAiEditorialProposalData, RejectAiEditorialProposalErrors, RejectAiEditorialProposalResponses, RejectAiKnowledgeFactProposalData, RejectAiKnowledgeFactProposalErrors, RejectAiKnowledgeFactProposalResponses, RejectAiQuestionProposalData, RejectAiQuestionProposalErrors, RejectAiQuestionProposalResponses, RejectKnowledgeFactData, RejectKnowledgeFactErrors, RejectKnowledgeFactResponses, RejectQuestionData, RejectQuestionResponses, ReorderSubjectsData, ReorderSubjectsErrors, ReorderSubjectsResponses, ReorderTopicsData, ReorderTopicsErrors, ReorderTopicsResponses, ReplaceReleaseSelectionData, ReplaceReleaseSelectionErrors, ReplaceReleaseSelectionResponses, RequireKnowledgeFactUpdateData, RequireKnowledgeFactUpdateErrors, RequireKnowledgeFactUpdateResponses, RequireQuestionUpdateData, RequireQuestionUpdateResponses, RequireSourceUpdateData, RequireSourceUpdateResponses, RetireKnowledgeFactData, RetireKnowledgeFactErrors, RetireKnowledgeFactResponses, RetireQuestionData, RetireQuestionResponses, RetireReleaseData, RetireReleaseResponses, RetireSourceData, RetireSourceErrors, RetireSourceResponses, RetryFailedAiQuestionGenerationBatchItemsData, RetryFailedAiQuestionGenerationBatchItemsResponses, RetryReleaseDeliveryData, RetryReleaseDeliveryResponses, ReviewSourceData, ReviewSourceResponses, SearchAuditEventsData, SearchAuditEventsErrors, SearchAuditEventsResponses, SearchQuestionsData, SearchQuestionsResponses, SubmitKnowledgeFactData, SubmitKnowledgeFactErrors, SubmitKnowledgeFactResponses, SubmitQuestionData, SubmitQuestionResponses, UnassignAiQuestionProposalReviewerData, UnassignAiQuestionProposalReviewerResponses, UnclaimReviewData, UnclaimReviewErrors, UnclaimReviewResponses, UpdateExamData, UpdateExamErrors, UpdateExamResponses, UpdateExamVersionData, UpdateExamVersionErrors, UpdateExamVersionResponses, UpdateKnowledgeFactData, UpdateKnowledgeFactErrors, UpdateKnowledgeFactResponses, UpdateLearningObjectiveData, UpdateLearningObjectiveErrors, UpdateLearningObjectiveResponses, UpdateQuestionData, UpdateQuestionErrors, UpdateQuestionResponses, UpdateReleaseData, UpdateReleaseErrors, UpdateReleaseResponses, UpdateSourceData, UpdateSourceErrors, UpdateSourceResponses, UpdateSubjectData, UpdateSubjectErrors, UpdateSubjectResponses, UpdateTopicData, UpdateTopicErrors, UpdateTopicResponses, ValidateReleaseData, ValidateReleaseResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -577,6 +577,28 @@ export const rejectAiQuestionProposal = <ThrowOnError extends boolean = false>(o
 });
 
 /**
+ * Queue one immutable successor proposal using reviewer feedback
+ */
+export const regenerateAiQuestionProposal = <ThrowOnError extends boolean = false>(options: Options<RegenerateAiQuestionProposalData, ThrowOnError>) => (options.client ?? client).post<RegenerateAiQuestionProposalResponses, RegenerateAiQuestionProposalErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/question-proposals/{proposalId}/regenerate',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get ordered immutable proposal lineage
+ */
+export const getAiQuestionProposalLineage = <ThrowOnError extends boolean = false>(options: Options<GetAiQuestionProposalLineageData, ThrowOnError>) => (options.client ?? client).get<GetAiQuestionProposalLineageResponses, GetAiQuestionProposalLineageErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/question-proposals/{proposalId}/lineage',
+    ...options
+});
+
+/**
  * Revalidate an AI proposal and create one canonical draft Question
  *
  * Human-only acceptance. The Question remains DRAFT and UNREVIEWED; no approval
@@ -584,6 +606,131 @@ export const rejectAiQuestionProposal = <ThrowOnError extends boolean = false>(o
 export const acceptAiQuestionProposal = <ThrowOnError extends boolean = false>(options: Options<AcceptAiQuestionProposalData, ThrowOnError>) => (options.client ?? client).post<AcceptAiQuestionProposalResponses, AcceptAiQuestionProposalErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/ai/question-proposals/{proposalId}/accept',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Resolve scope and deterministically preview a batch without persistence
+ */
+export const previewAiQuestionGenerationBatch = <ThrowOnError extends boolean = false>(options: Options<PreviewAiQuestionGenerationBatchData, ThrowOnError>) => (options.client ?? client).post<PreviewAiQuestionGenerationBatchResponses, PreviewAiQuestionGenerationBatchErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/question-generation-batches/preview',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List authorized generation batches
+ */
+export const listAiQuestionGenerationBatches = <ThrowOnError extends boolean = false>(options?: Options<ListAiQuestionGenerationBatchesData, ThrowOnError>) => (options?.client ?? client).get<ListAiQuestionGenerationBatchesResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/question-generation-batches',
+    ...options
+});
+
+/**
+ * Create an immutable asynchronous generation batch
+ */
+export const createAiQuestionGenerationBatch = <ThrowOnError extends boolean = false>(options: Options<CreateAiQuestionGenerationBatchData, ThrowOnError>) => (options.client ?? client).post<CreateAiQuestionGenerationBatchResponses, CreateAiQuestionGenerationBatchErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/question-generation-batches',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const getAiQuestionGenerationBatch = <ThrowOnError extends boolean = false>(options: Options<GetAiQuestionGenerationBatchData, ThrowOnError>) => (options.client ?? client).get<GetAiQuestionGenerationBatchResponses, GetAiQuestionGenerationBatchErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/question-generation-batches/{batchId}',
+    ...options
+});
+
+export const listAiQuestionGenerationBatchItems = <ThrowOnError extends boolean = false>(options: Options<ListAiQuestionGenerationBatchItemsData, ThrowOnError>) => (options.client ?? client).get<ListAiQuestionGenerationBatchItemsResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/question-generation-batches/{batchId}/items',
+    ...options
+});
+
+export const listAiQuestionGenerationBatchProposals = <ThrowOnError extends boolean = false>(options: Options<ListAiQuestionGenerationBatchProposalsData, ThrowOnError>) => (options.client ?? client).get<ListAiQuestionGenerationBatchProposalsResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/question-generation-batches/{batchId}/proposals',
+    ...options
+});
+
+export const cancelAiQuestionGenerationBatch = <ThrowOnError extends boolean = false>(options: Options<CancelAiQuestionGenerationBatchData, ThrowOnError>) => (options.client ?? client).post<CancelAiQuestionGenerationBatchResponses, CancelAiQuestionGenerationBatchErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/question-generation-batches/{batchId}/cancel',
+    ...options
+});
+
+export const retryFailedAiQuestionGenerationBatchItems = <ThrowOnError extends boolean = false>(options: Options<RetryFailedAiQuestionGenerationBatchItemsData, ThrowOnError>) => (options.client ?? client).post<RetryFailedAiQuestionGenerationBatchItemsResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/question-generation-batches/{batchId}/retry-failed',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const exportAiQuestionGenerationBatch = <ThrowOnError extends boolean = false>(options: Options<ExportAiQuestionGenerationBatchData, ThrowOnError>) => (options.client ?? client).get<ExportAiQuestionGenerationBatchResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/question-generation-batches/{batchId}/export',
+    ...options
+});
+
+export const assignAiQuestionProposalReviewer = <ThrowOnError extends boolean = false>(options: Options<AssignAiQuestionProposalReviewerData, ThrowOnError>) => (options.client ?? client).post<AssignAiQuestionProposalReviewerResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/question-generation-batches/proposals/assign',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const unassignAiQuestionProposalReviewer = <ThrowOnError extends boolean = false>(options: Options<UnassignAiQuestionProposalReviewerData, ThrowOnError>) => (options.client ?? client).post<UnassignAiQuestionProposalReviewerResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/question-generation-batches/proposals/unassign',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const bulkRejectAiQuestionProposals = <ThrowOnError extends boolean = false>(options: Options<BulkRejectAiQuestionProposalsData, ThrowOnError>) => (options.client ?? client).post<BulkRejectAiQuestionProposalsResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/question-generation-batches/proposals/reject',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const bulkRegenerateAiQuestionProposals = <ThrowOnError extends boolean = false>(options: Options<BulkRegenerateAiQuestionProposalsData, ThrowOnError>) => (options.client ?? client).post<BulkRegenerateAiQuestionProposalsResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/question-generation-batches/proposals/regenerate',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const bulkAcceptAiQuestionProposals = <ThrowOnError extends boolean = false>(options: Options<BulkAcceptAiQuestionProposalsData, ThrowOnError>) => (options.client ?? client).post<BulkAcceptAiQuestionProposalsResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/admin/ai/question-generation-batches/proposals/accept',
     ...options,
     headers: {
         'Content-Type': 'application/json',

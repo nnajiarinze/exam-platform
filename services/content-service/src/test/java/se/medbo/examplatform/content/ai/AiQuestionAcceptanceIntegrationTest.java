@@ -38,13 +38,13 @@ import se.medbo.examplatform.content.shared.DomainException;
 class AiQuestionAcceptanceIntegrationTest {
   @Container @ServiceConnection static final PostgreSQLContainer<?> POSTGRES=new PostgreSQLContainer<>("postgres:16-alpine");
   static final ObjectMapper JSON=new ObjectMapper().findAndRegisterModules();
-  static HttpServer ai;static volatile Fixture fixture;static volatile String revalidationError;
-  @Autowired AiQuestionGenerationService service;@Autowired JdbcClient jdbc;
+  static HttpServer ai;static volatile Fixture fixture;static volatile String revalidationError;static volatile Map<String,Object> lastDecision;
+  @Autowired AiQuestionGenerationService service;@Autowired AiQuestionBatchService batches;@Autowired JdbcClient jdbc;
 
   @BeforeAll static void start()throws Exception{ai=HttpServer.create(new InetSocketAddress(0),0);ai.createContext("/",AiQuestionAcceptanceIntegrationTest::respond);ai.start();}
   @AfterAll static void stop(){ai.stop(0);}
   @DynamicPropertySource static void properties(DynamicPropertyRegistry registry){registry.add("content.ai-service.base-url",()->"http://localhost:"+ai.getAddress().getPort());registry.add("content.ai-service.internal-api-key",()->"test-key");}
-  @BeforeEach void setup(){SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken("question-author","n/a",List.of(new SimpleGrantedAuthority("ROLE_CONTENT_AUTHOR"))));fixture=seed();revalidationError=null;}
+  @BeforeEach void setup(){SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken("question-author","n/a",List.of(new SimpleGrantedAuthority("ROLE_CONTENT_AUTHOR"))));fixture=seed();revalidationError=null;lastDecision=null;}
 
   @Test void humanAcceptanceCreatesOneUnreviewedDraftWithImmutableProvenanceAndAudit(){
     UUID proposal=UUID.randomUUID();var result=service.accept(proposal,0);UUID question=(UUID)result.get("questionId");
@@ -82,6 +82,25 @@ class AiQuestionAcceptanceIntegrationTest {
     assertThat(jdbc.sql("SELECT count(*) FROM question").query(Long.class).single()).isEqualTo(before);
   }
 
+  @Test void reviewerCanRejectRegenerateAndReadLineageWithoutSupplyingAnActor(){
+    SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken("reviewer-1","n/a",List.of(new SimpleGrantedAuthority("ROLE_CONTENT_REVIEWER"))));
+    UUID proposalId=UUID.randomUUID();
+    assertThat(service.reject(proposalId,"AMBIGUOUS","Use direct wording.",0)).containsEntry("status","REJECTED");
+    assertThat(lastDecision).containsEntry("actor","reviewer-1").containsEntry("reasonCode","AMBIGUOUS").containsEntry("comment","Use direct wording.");
+    assertThat(service.regenerate(proposalId,"Ask which institution makes laws.",1,"regeneration-integration")).containsEntry("parentProposalId",proposalId.toString());
+    assertThat(lastDecision).containsEntry("actor","reviewer-1").containsEntry("reviewerFeedback","Ask which institution makes laws.").containsEntry("idempotencyKey","regeneration-integration");
+    assertThat(service.lineage(proposalId)).hasSize(2);
+  }
+
+  @Test void batchPreviewResolvesRealHierarchyAndPlansDeterministicDistributionsWithoutPersistence(){
+    var request=new AiQuestionBatchService.Request(new AiQuestionBatchService.Scope("TOPIC",jdbc.sql("SELECT topic_id FROM learning_objective WHERE id=:id").param("id",fixture.objective).query(UUID.class).single(),List.of()),"sv",3,List.of("SINGLE_CHOICE"),Map.of("EASY",34,"MEDIUM",33,"HARD",33),Map.of("REMEMBER",34,"UNDERSTAND",33,"APPLY",33),null);
+    var preview=batches.preview(request);
+    assertThat(preview).containsEntry("resolvedKnowledgeFactCount",1).containsEntry("estimatedProposalCount",3).containsEntry("estimatedProviderCalls",3).containsEntry("withinLimit",true);
+    assertThat(preview.get("difficultyDistribution")).isEqualTo(Map.of("EASY",1,"MEDIUM",1,"HARD",1));
+    assertThatThrownBy(()->batches.preview(new AiQuestionBatchService.Request(request.scope(),"sv",1,List.of("SINGLE_CHOICE"),Map.of("EASY",50,"MEDIUM",40),request.bloomDistribution(),null)))
+        .isInstanceOf(DomainException.class).extracting(e->((DomainException)e).code()).isEqualTo("BATCH_INVALID_DISTRIBUTION");
+  }
+
   private Fixture seed(){
     UUID exam=UUID.randomUUID(),examVersion=UUID.randomUUID(),subject=UUID.randomUUID(),topic=UUID.randomUUID(),objective=UUID.randomUUID(),source=UUID.randomUUID(),fact=UUID.randomUUID(),factVersion=UUID.randomUUID();var now=OffsetDateTime.now(ZoneOffset.UTC);
     String factText="Riksdagen beslutar om Sveriges lagar.";String sourceText="Riksdagen beslutar om Sveriges lagar och statens budget.";
@@ -102,6 +121,9 @@ class AiQuestionAcceptanceIntegrationTest {
     try{String path=exchange.getRequestURI().getPath();Object body;
       if(path.endsWith("/revalidate")&&revalidationError!=null){body=Map.of("code",revalidationError,"message","Fresh validation failed","timestamp",OffsetDateTime.now().toString(),"errors",List.of());byte[] bytes=JSON.writeValueAsBytes(body);exchange.getResponseHeaders().add("Content-Type","application/json");exchange.sendResponseHeaders(409,bytes.length);exchange.getResponseBody().write(bytes);exchange.close();return;}
       else if(path.endsWith("/revalidate"))body=Map.of("valid",true,"proposalChecksum","b".repeat(64),"validationChecksum","a".repeat(64),"intelligenceEngineVersion","question-intelligence-v1","evaluatedAt",OffsetDateTime.now().toString(),"sourceChecksums",List.of(Map.of("sourceId",fixture.source,"checksum",checksum(fixture.sourceText))));
+      else if(path.endsWith("/reject")){lastDecision=JSON.readValue(exchange.getRequestBody(),Map.class);UUID proposalId=UUID.fromString(path.split("/")[5]);var rejected=new java.util.LinkedHashMap<>(proposal(proposalId));rejected.put("status","REJECTED");body=rejected;}
+      else if(path.endsWith("/regenerate")){lastDecision=JSON.readValue(exchange.getRequestBody(),Map.class);UUID proposalId=UUID.fromString(path.split("/")[5]);body=Map.of("jobId",UUID.randomUUID().toString(),"parentProposalId",proposalId.toString(),"status","QUEUED","location","/jobs/new");}
+      else if(path.endsWith("/lineage")){UUID proposalId=UUID.fromString(path.split("/")[5]);var successor=new java.util.LinkedHashMap<>(proposal(UUID.randomUUID()));successor.put("parentProposalId",proposalId);successor.put("generationAttempt",2);body=List.of(proposal(proposalId),successor);}
       else if(path.endsWith("/accept"))body=Map.of("status","ACCEPTED");
       else {UUID proposal=UUID.fromString(path.substring(path.lastIndexOf('/')+1));body=proposal(proposal);}
       byte[] bytes=JSON.writeValueAsBytes(body);exchange.getResponseHeaders().add("Content-Type","application/json");exchange.sendResponseHeaders(200,bytes.length);exchange.getResponseBody().write(bytes);exchange.close();
