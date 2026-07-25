@@ -15,6 +15,8 @@ spring:
       max-lifetime: ${AI_DB_MAX_LIFETIME_MS:1200000}
   flyway:
     url: ${AI_MIGRATION_DATABASE_URL:${AI_DATABASE_URL}}
+    user: ${AI_DATABASE_USERNAME}
+    password: ${AI_DATABASE_PASSWORD}
   lifecycle:
     timeout-per-shutdown-phase: 30s
 server:

@@ -15,6 +15,8 @@ spring:
       max-lifetime: ${CONTENT_DB_MAX_LIFETIME_MS:1200000}
   flyway:
     url: ${CONTENT_MIGRATION_DATABASE_URL:${CONTENT_DATABASE_URL}}
+    user: ${CONTENT_DATABASE_USERNAME}
+    password: ${CONTENT_DATABASE_PASSWORD}
   lifecycle:
     timeout-per-shutdown-phase: 30s
   security:

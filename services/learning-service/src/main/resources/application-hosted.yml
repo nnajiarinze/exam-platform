@@ -15,6 +15,8 @@ spring:
       max-lifetime: ${LEARNING_DB_MAX_LIFETIME_MS:1200000}
   flyway:
     url: ${LEARNING_MIGRATION_DATABASE_URL:${LEARNING_DATABASE_URL}}
+    user: ${LEARNING_DATABASE_USERNAME}
+    password: ${LEARNING_DATABASE_PASSWORD}
   lifecycle:
     timeout-per-shutdown-phase: 30s
   security:
