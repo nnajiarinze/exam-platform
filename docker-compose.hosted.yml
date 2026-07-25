@@ -27,7 +27,7 @@ services:
     restart: unless-stopped
     read_only: true
     tmpfs:
-      - /etc/nginx/conf.d:size=4m,mode=0755
+      - /etc/nginx/conf.d:size=4m,uid=101,gid=101,mode=0755
       - /var/cache/nginx:size=32m
       - /var/run:size=4m
       - /tmp:size=16m
