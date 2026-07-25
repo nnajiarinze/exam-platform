@@ -1,0 +1,39 @@
+name: Deploy hosted environment
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: Full tested commit SHA whose images exist in GHCR
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: hosted
+    steps:
+      - name: Validate deployment input
+        env:
+          COMMIT_SHA: ${{ inputs.commit_sha }}
+        run: '[[ "${COMMIT_SHA}" =~ ^[0-9a-f]{40}$ ]]'
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.HOSTED_SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ secrets.HOSTED_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "${SSH_PRIVATE_KEY}" >~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "${KNOWN_HOSTS}" >~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+      - name: Deploy immutable images
+        env:
+          COMMIT_SHA: ${{ inputs.commit_sha }}
+          HOSTED_HOST: ${{ secrets.HOSTED_HOST }}
+          HOSTED_USER: ${{ secrets.HOSTED_USER }}
+        run: |
+          ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" \
+            "cd /opt/citizenship-platform/repo && git fetch --quiet origin '${COMMIT_SHA}' && git checkout --detach '${COMMIT_SHA}' && ./infrastructure/hetzner/deploy.sh '${COMMIT_SHA}'"

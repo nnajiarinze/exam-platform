@@ -13,11 +13,10 @@ services:
       - key: PORT
         value: 8080
       - key: NGINX_ENVSUBST_FILTER
-        value: ^(PORT|CONTENT_UPSTREAM|LEARNING_UPSTREAM|IDENTITY_UPSTREAM|AI_UPSTREAM)$
+        value: ^(PORT|CONTENT_UPSTREAM|LEARNING_UPSTREAM|IDENTITY_UPSTREAM)$
       - { key: CONTENT_UPSTREAM, value: https://citizenship-content-service.onrender.com }
       - { key: LEARNING_UPSTREAM, value: https://citizenship-learning-service.onrender.com }
       - { key: IDENTITY_UPSTREAM, value: https://citizenship-identity.onrender.com }
-      - { key: AI_UPSTREAM, value: https://citizenship-ai-service.onrender.com }
 
   - type: web
     name: citizenship-content-service

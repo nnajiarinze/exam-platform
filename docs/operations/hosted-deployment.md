@@ -1,6 +1,11 @@
-# Hosted deployment
+# Legacy Render hosted deployment
 
-## Architecture and providers
+This document describes the rollback Render environment. New hosted deployments
+follow [the Hetzner and Neon EU runbook](../infrastructure/hetzner-neon-deployment.md).
+Do not delete the Render services until that runbook's cutover and rollback
+checks have passed.
+
+## Legacy architecture and providers
 
 The temporary development deployment uses Render free web services in Frankfurt with Neon PostgreSQL. `render.yaml` creates one Nginx gateway, three Spring services, Keycloak, and the Admin static site. Free Render services are publicly addressable and may sleep when idle; application authorization and internal service keys remain mandatory. Upgrade Content, Learning, AI, and Keycloak to private services before production. The intended public routes are:
 
@@ -47,7 +52,13 @@ docker build -f infrastructure/gateway/Dockerfile -t citizenship-gateway .
 
 ## Flyway and database validation
 
-Each service owns only its database and Flyway history. Current migration heads are Content V11, Learning V11, and AI V8. Never edit an applied migration or manually create application tables. For a clean validation, point one service at its empty non-production database and start it with `SPRING_PROFILES_ACTIVE=hosted`; then query `flyway_schema_history` using a database administrator connection. Do not run multiple services against the same database URL.
+Each service owns only its database and Flyway history. Current migration heads
+are Content V12, Learning V12, and AI V12. Never edit an applied migration or
+manually create application tables. For a clean validation, point one service at
+its empty non-production database and start it with
+`SPRING_PROFILES_ACTIVE=hosted`; then query `flyway_schema_history` using a
+database administrator connection. Do not run multiple services against the same
+database URL.
 
 Rollback application code by redeploying the previous Render artifact. Database migrations are forward-only; use a new corrective migration. Take a Neon backup or branch before a schema-changing production deploy and follow `backup-and-recovery.md`.
 

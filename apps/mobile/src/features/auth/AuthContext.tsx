@@ -8,7 +8,6 @@ import { appConfig } from '../../api/config';
 import { useAppStore } from '../../app/store';
 import { clearAccessToken, configureAuthTokens, updateAccessToken } from './authTokenStore';
 import { cancelStudyReminder } from '../settings/reminders';
-import { wakeHostedServices } from '../../api/serviceWarmup';
 
 WebBrowser.maybeCompleteAuthSession();
 const REFRESH_KEY = `svea-study.oidc.refresh-token.${appConfig.environment.toLowerCase()}`;
@@ -30,25 +29,19 @@ function oidcDiscovery(issuer: string): AuthSession.DiscoveryDocument {
 }
 
 async function waitForIdentity(issuer: string): Promise<boolean> {
-  void wakeHostedServices();
   const discoveryUrl = `${issuer.replace(/\/+$/, '')}/.well-known/openid-configuration`;
-  const deadline = Date.now() + 180_000;
-  let firstAttempt = true;
+  const deadline = Date.now() + 30_000;
   while (Date.now() < deadline) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8_000);
     try {
       if ((await fetch(discoveryUrl, { signal: controller.signal })).ok) return true;
     } catch {
-      // A free hosted identity service can be unavailable while its instance wakes.
+      // Brief network and deployment interruptions are retried.
     } finally {
       clearTimeout(timeout);
     }
-    if (firstAttempt) {
-      firstAttempt = false;
-      Alert.alert('Starting secure sign-in','The hosted services are waking up. The sign-in page will open automatically when they are ready.');
-    }
-    await new Promise(resolve => setTimeout(resolve, 5_000));
+    await new Promise(resolve => setTimeout(resolve, 2_000));
   }
   return false;
 }

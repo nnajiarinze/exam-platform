@@ -1,0 +1,223 @@
+name: citizenship-platform
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+x-java-security: &java-security
+  read_only: true
+  tmpfs:
+    - /tmp:size=128m,mode=1777
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+  restart: unless-stopped
+  stop_grace_period: 40s
+  logging: *default-logging
+
+services:
+  api-gateway:
+    image: ${IMAGE_REGISTRY:?Set IMAGE_REGISTRY}/citizenship-api-gateway:${IMAGE_TAG:?Set immutable IMAGE_TAG}
+    build:
+      context: .
+      dockerfile: infrastructure/gateway/Dockerfile
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx:size=32m
+      - /var/run:size=4m
+      - /tmp:size=16m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "80:8080"
+      - "443:8443"
+    environment:
+      API_DOMAIN: ${API_DOMAIN:?Set API_DOMAIN}
+      NGINX_ENVSUBST_FILTER: ^(API_DOMAIN)$
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/www/certbot:/var/www/certbot:ro
+      - ./infrastructure/gateway/hosted.conf.template:/etc/nginx/templates/default.conf.template:ro
+    depends_on:
+      content-service:
+        condition: service_healthy
+      learning-service:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    networks:
+      - backend
+    mem_limit: 256m
+    cpus: 0.25
+    logging: *default-logging
+
+  content-service:
+    <<: *java-security
+    image: ${IMAGE_REGISTRY:?Set IMAGE_REGISTRY}/citizenship-content-service:${IMAGE_TAG:?Set immutable IMAGE_TAG}
+    build:
+      context: .
+      dockerfile: services/content-service/Dockerfile
+    environment:
+      SPRING_PROFILES_ACTIVE: hosted
+      PORT: 8080
+      JAVA_TOOL_OPTIONS: >-
+        -XX:InitialRAMPercentage=20
+        -XX:MaxRAMPercentage=65
+        -XX:+ExitOnOutOfMemoryError
+        -Djava.security.egd=file:/dev/urandom
+      CONTENT_DATABASE_URL: ${CONTENT_DATABASE_URL:?Set CONTENT_DATABASE_URL}
+      CONTENT_DATABASE_USERNAME: ${CONTENT_DATABASE_USERNAME:?Set CONTENT_DATABASE_USERNAME}
+      CONTENT_DATABASE_PASSWORD: ${CONTENT_DATABASE_PASSWORD:?Set CONTENT_DATABASE_PASSWORD}
+      CONTENT_DB_MAX_POOL_SIZE: 5
+      CONTENT_DB_MIN_IDLE: 1
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?Set exact CORS_ALLOWED_ORIGINS}
+      OIDC_ISSUER_URI: https://${API_DOMAIN}/auth/realms/exam-platform
+      OIDC_JWK_SET_URI: http://keycloak:8080/auth/realms/exam-platform/protocol/openid-connect/certs
+      OIDC_INTERNAL_HOSTPORT: keycloak:8080
+      CONTENT_OIDC_AUDIENCE: content-api
+      LEARNING_SERVICE_BASE_URL: http://learning-service:8080
+      LEARNING_INTERNAL_API_KEY: ${LEARNING_INTERNAL_API_KEY:?Set LEARNING_INTERNAL_API_KEY}
+      AI_SERVICE_BASE_URL: http://ai-service:8080
+      AI_INTERNAL_API_KEY: ${AI_INTERNAL_API_KEY:?Set AI_INTERNAL_API_KEY}
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      learning-service:
+        condition: service_healthy
+      ai-service:
+        condition: service_healthy
+    networks:
+      - backend
+    mem_limit: 1536m
+    cpus: 0.75
+
+  learning-service:
+    <<: *java-security
+    image: ${IMAGE_REGISTRY:?Set IMAGE_REGISTRY}/citizenship-learning-service:${IMAGE_TAG:?Set immutable IMAGE_TAG}
+    build:
+      context: .
+      dockerfile: services/learning-service/Dockerfile
+    environment:
+      SPRING_PROFILES_ACTIVE: hosted
+      PORT: 8080
+      JAVA_TOOL_OPTIONS: >-
+        -XX:InitialRAMPercentage=20
+        -XX:MaxRAMPercentage=65
+        -XX:+ExitOnOutOfMemoryError
+        -Djava.security.egd=file:/dev/urandom
+      LEARNING_DATABASE_URL: ${LEARNING_DATABASE_URL:?Set LEARNING_DATABASE_URL}
+      LEARNING_DATABASE_USERNAME: ${LEARNING_DATABASE_USERNAME:?Set LEARNING_DATABASE_USERNAME}
+      LEARNING_DATABASE_PASSWORD: ${LEARNING_DATABASE_PASSWORD:?Set LEARNING_DATABASE_PASSWORD}
+      LEARNING_DB_MAX_POOL_SIZE: 5
+      LEARNING_DB_MIN_IDLE: 1
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?Set exact CORS_ALLOWED_ORIGINS}
+      OIDC_ISSUER_URI: https://${API_DOMAIN}/auth/realms/exam-platform
+      OIDC_JWK_SET_URI: http://keycloak:8080/auth/realms/exam-platform/protocol/openid-connect/certs
+      OIDC_INTERNAL_HOSTPORT: keycloak:8080
+      LEARNING_OIDC_AUDIENCE: learning-api
+      LEARNING_INTERNAL_API_KEY: ${LEARNING_INTERNAL_API_KEY:?Set LEARNING_INTERNAL_API_KEY}
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-resend}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-}
+      RESEND_FROM_NAME: ${RESEND_FROM_NAME:-Svea Study}
+      RESEND_REPLY_TO_EMAIL: ${RESEND_REPLY_TO_EMAIL:-}
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    networks:
+      - backend
+    mem_limit: 1280m
+    cpus: 0.75
+
+  ai-service:
+    <<: *java-security
+    image: ${IMAGE_REGISTRY:?Set IMAGE_REGISTRY}/citizenship-ai-service:${IMAGE_TAG:?Set immutable IMAGE_TAG}
+    build:
+      context: .
+      dockerfile: services/ai-service/Dockerfile
+    environment:
+      SPRING_PROFILES_ACTIVE: hosted
+      PORT: 8080
+      JAVA_TOOL_OPTIONS: >-
+        -XX:InitialRAMPercentage=20
+        -XX:MaxRAMPercentage=65
+        -XX:+ExitOnOutOfMemoryError
+        -Djava.security.egd=file:/dev/urandom
+      AI_DATABASE_URL: ${AI_DATABASE_URL:?Set AI_DATABASE_URL}
+      AI_DATABASE_USERNAME: ${AI_DATABASE_USERNAME:?Set AI_DATABASE_USERNAME}
+      AI_DATABASE_PASSWORD: ${AI_DATABASE_PASSWORD:?Set AI_DATABASE_PASSWORD}
+      AI_DB_MAX_POOL_SIZE: 4
+      AI_DB_MIN_IDLE: 1
+      AI_INTERNAL_API_KEY: ${AI_INTERNAL_API_KEY:?Set AI_INTERNAL_API_KEY}
+      AI_EDITORIAL_ASSISTANT_ENABLED: "true"
+      AI_PROVIDER: ${AI_PROVIDER:-GEMINI}
+      AI_GEMINI_API_KEY: ${AI_GEMINI_API_KEY:-}
+      AI_GEMINI_MODEL: ${AI_GEMINI_MODEL:-gemini-3.1-flash-lite}
+      AI_USAGE_MODE: ${AI_USAGE_MODE:-FREE_ONLY}
+      AI_PAID_USAGE_ENABLED: ${AI_PAID_USAGE_ENABLED:-false}
+      AI_MONTHLY_SPEND_LIMIT_USD: ${AI_MONTHLY_SPEND_LIMIT_USD:-0}
+      AI_CONCURRENCY: ${AI_CONCURRENCY:-2}
+      AI_GEMINI_MAX_CONCURRENT_REQUESTS: ${AI_GEMINI_MAX_CONCURRENT_REQUESTS:-1}
+    networks:
+      - backend
+    mem_limit: 1280m
+    cpus: 0.75
+
+  keycloak:
+    image: ${IMAGE_REGISTRY:?Set IMAGE_REGISTRY}/citizenship-keycloak:${IMAGE_TAG:?Set immutable IMAGE_TAG}
+    build:
+      context: .
+      dockerfile: infrastructure/keycloak/Dockerfile
+    command:
+      - start
+      - --optimized
+      - --cache=local
+      - --http-enabled=true
+      - --http-host=0.0.0.0
+      - --proxy-headers=xforwarded
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      JAVA_OPTS_KC_HEAP: -XX:InitialRAMPercentage=20 -XX:MaxRAMPercentage=65 -XX:+ExitOnOutOfMemoryError
+      KC_DB: postgres
+      KC_DB_URL: ${KEYCLOAK_DATABASE_URL:?Set KEYCLOAK_DATABASE_URL}
+      KC_DB_USERNAME: ${KEYCLOAK_DATABASE_USERNAME:?Set KEYCLOAK_DATABASE_USERNAME}
+      KC_DB_PASSWORD: ${KEYCLOAK_DATABASE_PASSWORD:?Set KEYCLOAK_DATABASE_PASSWORD}
+      KC_DB_POOL_INITIAL_SIZE: 1
+      KC_DB_POOL_MIN_SIZE: 1
+      KC_DB_POOL_MAX_SIZE: 5
+      KC_CACHE: local
+      KC_HEALTH_ENABLED: "true"
+      KC_HTTP_RELATIVE_PATH: /auth
+      KC_HOSTNAME: https://${API_DOMAIN}/auth
+      KC_HOSTNAME_STRICT: "true"
+      KC_PROXY_HEADERS: xforwarded
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME:?Set KC_BOOTSTRAP_ADMIN_USERNAME}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD:?Set KC_BOOTSTRAP_ADMIN_PASSWORD}
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "exec 3<>/dev/tcp/127.0.0.1/9000; printf 'GET /auth/health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3; grep -q '200 OK' <&3"
+      interval: 15s
+      timeout: 5s
+      start_period: 60s
+      retries: 8
+    networks:
+      - backend
+    mem_limit: 1536m
+    cpus: 0.75
+    stop_grace_period: 45s
+    logging: *default-logging
+
+networks:
+  backend:
+    driver: bridge

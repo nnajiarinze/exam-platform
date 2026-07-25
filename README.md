@@ -22,7 +22,13 @@ for the first learner flow.
 
 ## Hosted deployment
 
-The production-capable path uses Render with one public gateway and separately owned Neon PostgreSQL databases for Content, Learning, AI, and Keycloak. See [hosted deployment](docs/operations/hosted-deployment.md) and the secret-free [environment template](.env.example). Local Docker Compose remains the development workflow.
+The current migration target runs the five backend containers on one always-on
+Hetzner VM and keeps four separately owned PostgreSQL databases in Neon EU.
+Admin remains a Render static site. See the
+[Hetzner/Neon deployment runbook](docs/infrastructure/hetzner-neon-deployment.md)
+and secret-free [hosted environment template](.env.hosted.example). The previous
+Render backend remains a rollback path until cutover is explicitly validated;
+local Docker Compose remains the development workflow.
 
 ## Local demonstration data
 

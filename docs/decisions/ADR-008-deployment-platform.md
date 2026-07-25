@@ -2,13 +2,13 @@
 
 ## Status
 
-Accepted (concrete provider selected 2026-07-21)
+Superseded by [ADR-011](ADR-011-hetzner-neon-eu-deployment.md)
 
 ## Context
 
 The initial team needs reliable container deployment without operating an orchestration control plane.
 
-## Decision
+## Historical decision
 
 Package services as independent containers and deploy them on Render in Frankfurt. A small Nginx gateway is the only public backend entry point; Content, Learning, AI, and Keycloak use Render private networking. Admin is a Render static site. Keep development and production environments separate and use Docker Compose locally. Do not use Kubernetes.
 

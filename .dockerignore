@@ -2,6 +2,9 @@
 .gradle
 **/build
 **/node_modules
+**/dist
+apps/mobile/android
+apps/mobile/ios
 .env
 .env.*
 **/.env

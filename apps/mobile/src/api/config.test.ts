@@ -1,6 +1,7 @@
 describe('mobile API configuration',()=>{
   const previous={...process.env};
   afterEach(()=>{process.env={...previous};jest.resetModules()});
+  beforeEach(()=>{process.env.EXPO_PUBLIC_API_BASE_URL='https://api.example.test'});
   it('uses the centralized canonical Swedish citizenship identifier',()=>{
     delete process.env.EXPO_PUBLIC_EXAM_ID;jest.resetModules();
     const {appConfig}=require('./config') as typeof import('./config');
@@ -30,6 +31,10 @@ describe('mobile API configuration',()=>{
     const {assertSafeEnvironment,Environment}=require('../config/environment') as typeof import('../config/environment');
     expect(()=>assertSafeEnvironment(Environment.LOCAL,'production')).toThrow(/Production mobile builds/);
     expect(()=>assertSafeEnvironment(Environment.REMOTE,'production')).not.toThrow();
+  });
+  it('requires an explicit remote URL and never falls back to a hosted vendor',()=>{
+    const {Environment,resolveEnvironment}=require('../config/environment') as typeof import('../config/environment');
+    expect(()=>resolveEnvironment(Environment.REMOTE,'')).toThrow(/EXPO_PUBLIC_API_BASE_URL/);
   });
   it('joins endpoint paths without duplicate slashes',()=>{
     const {environmentConfig,joinBaseUrl}=require('../config/environment') as typeof import('../config/environment');

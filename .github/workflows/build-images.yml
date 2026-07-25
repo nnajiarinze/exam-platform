@@ -1,0 +1,71 @@
+name: Build immutable hosted images
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: Full tested commit SHA to build
+        required: true
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: citizenship-content-service
+            dockerfile: services/content-service/Dockerfile
+          - image: citizenship-learning-service
+            dockerfile: services/learning-service/Dockerfile
+          - image: citizenship-ai-service
+            dockerfile: services/ai-service/Dockerfile
+          - image: citizenship-api-gateway
+            dockerfile: infrastructure/gateway/Dockerfile
+          - image: citizenship-keycloak
+            dockerfile: infrastructure/keycloak/Dockerfile
+    steps:
+      - name: Resolve immutable commit
+        id: ref
+        env:
+          DISPATCH_SHA: ${{ inputs.commit_sha }}
+          WORKFLOW_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          sha="${DISPATCH_SHA:-${WORKFLOW_SHA}}"
+          [[ "${sha}" =~ ^[0-9a-f]{40}$ ]] || { echo "A full commit SHA is required" >&2; exit 1; }
+          echo "sha=${sha}" >>"${GITHUB_OUTPUT}"
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.ref.outputs.sha }}
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:${{ steps.ref.outputs.sha }}
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+
+  manifest:
+    needs: publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Record publication
+        run: echo "All immutable service images were published."

@@ -19,15 +19,12 @@ export const LocalIdentity = {
   androidEmulator: 'http://10.0.2.2:8090',
 } as const;
 
-const RemoteGateway = 'https://citizenship-api-gateway.onrender.com';
-
 type EnvironmentConfig = {
   environment: Environment;
   apiBaseUrl: string;
   learningBaseUrl: string;
   authBaseUrl: string;
   oidcIssuer: string;
-  warmupUrls: readonly string[];
 };
 
 export function normalizeBaseUrl(value: string): string {
@@ -41,9 +38,16 @@ export function joinBaseUrl(baseUrl: string, path: string): string {
   return `${normalizeBaseUrl(baseUrl)}/${path.replace(/^\/+/, '')}`;
 }
 
-export function resolveEnvironment(environment: Environment): EnvironmentConfig {
+export function resolveEnvironment(
+  environment: Environment,
+  configuredRemoteGateway = process.env.EXPO_PUBLIC_API_BASE_URL,
+): EnvironmentConfig {
+  const remoteGateway = configuredRemoteGateway?.trim();
+  if (environment === Environment.REMOTE && !remoteGateway) {
+    throw new Error('REMOTE mobile mode requires EXPO_PUBLIC_API_BASE_URL');
+  }
   const apiBaseUrl = normalizeBaseUrl(
-    environment === Environment.REMOTE ? RemoteGateway : LocalGateway.physicalDevice,
+    environment === Environment.REMOTE ? remoteGateway! : LocalGateway.physicalDevice,
   );
 
   if (environment === Environment.LOCAL) {
@@ -54,7 +58,6 @@ export function resolveEnvironment(environment: Environment): EnvironmentConfig 
       learningBaseUrl: apiBaseUrl,
       authBaseUrl,
       oidcIssuer: joinBaseUrl(authBaseUrl, 'realms/exam-platform'),
-      warmupUrls: [],
     };
   }
 
@@ -64,20 +67,15 @@ export function resolveEnvironment(environment: Environment): EnvironmentConfig 
     learningBaseUrl: joinBaseUrl(apiBaseUrl, 'learning'),
     authBaseUrl: joinBaseUrl(apiBaseUrl, 'auth'),
     oidcIssuer: joinBaseUrl(apiBaseUrl, 'auth/realms/exam-platform'),
-    warmupUrls: [
-      joinBaseUrl(apiBaseUrl, 'auth/realms/exam-platform/.well-known/openid-configuration'),
-      'https://citizenship-learning-service.onrender.com/actuator/health/readiness',
-      'https://citizenship-content-service.onrender.com/actuator/health/readiness',
-      'https://citizenship-ai-service.onrender.com/actuator/health/readiness',
-    ],
   };
 }
 
 export const environmentConfig = resolveEnvironment(CurrentEnvironment);
 
 export function assertSafeEnvironment(environment: Environment, nodeEnvironment = process.env.NODE_ENV): void {
-  if (nodeEnvironment !== 'production' || environment !== Environment.LOCAL) return;
-  throw new Error('Production mobile builds cannot use the LOCAL backend environment.');
+  if (nodeEnvironment !== 'production') return;
+  if (environment === Environment.LOCAL) throw new Error('Production mobile builds cannot use the LOCAL backend environment.');
+  if (environmentConfig.apiBaseUrl.startsWith('http://')) throw new Error('Production mobile builds require an HTTPS API base URL.');
 }
 
 assertSafeEnvironment(CurrentEnvironment);
