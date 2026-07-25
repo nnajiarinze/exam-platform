@@ -185,6 +185,7 @@ services:
       - --http-enabled=true
       - --http-host=0.0.0.0
       - --proxy-headers=xforwarded
+      - --import-realm
     restart: unless-stopped
     cap_drop:
       - ALL
