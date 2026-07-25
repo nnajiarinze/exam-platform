@@ -419,6 +419,21 @@ The app derives `/learning` and `/auth`. It contains no Render fallback and no
 service-warming calls. Do not build a production binary against a temporary
 HTTP IP.
 
+During the pre-DNS testing migration completed on 2026-07-25, local Expo
+testing may temporarily use:
+
+```text
+EXPO_PUBLIC_APP_ENV=REMOTE
+EXPO_PUBLIC_API_BASE_URL=http://46.224.221.7
+EXPO_PUBLIC_OIDC_CLIENT_ID=mobile-app
+```
+
+This temporary HTTP origin is for local Expo/testing only. It must not be used
+for an App Store, Play Store, or production binary. Switch back to `LOCAL` for
+the laptop-hosted Compose stack. The hosted Admin Portal cannot safely call
+this HTTP origin from its HTTPS Render page because browsers block mixed
+content; Admin remote cutover therefore remains blocked on DNS and TLS.
+
 After cutover validate login, refresh, logout, topics, study, practice, progress,
 and mock exams with the laptop off and the device on mobile data.
 
