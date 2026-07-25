@@ -13,6 +13,8 @@ spring:
       validation-timeout: ${AI_DB_VALIDATION_TIMEOUT_MS:5000}
       idle-timeout: ${AI_DB_IDLE_TIMEOUT_MS:300000}
       max-lifetime: ${AI_DB_MAX_LIFETIME_MS:1200000}
+  flyway:
+    url: ${AI_MIGRATION_DATABASE_URL:${AI_DATABASE_URL}}
   lifecycle:
     timeout-per-shutdown-phase: 30s
 server:

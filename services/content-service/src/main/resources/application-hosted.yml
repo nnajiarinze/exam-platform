@@ -13,6 +13,8 @@ spring:
       validation-timeout: ${CONTENT_DB_VALIDATION_TIMEOUT_MS:5000}
       idle-timeout: ${CONTENT_DB_IDLE_TIMEOUT_MS:300000}
       max-lifetime: ${CONTENT_DB_MAX_LIFETIME_MS:1200000}
+  flyway:
+    url: ${CONTENT_MIGRATION_DATABASE_URL:${CONTENT_DATABASE_URL}}
   lifecycle:
     timeout-per-shutdown-phase: 30s
   security:

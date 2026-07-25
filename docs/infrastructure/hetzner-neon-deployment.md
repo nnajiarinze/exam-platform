@@ -66,9 +66,13 @@ In Neon:
    `scripts/provision-neon-databases.sql`.
 6. Generate separate passwords for the four service roles.
 7. Record pooled and direct endpoints.
-8. Use pooled endpoints in the four JDBC application URLs.
-9. Use direct endpoints only for provisioning, dumps, restores, and validation.
-10. Test `sslmode=verify-full`; never disable certificate verification.
+8. Use pooled endpoints in the four runtime JDBC application URLs.
+9. Configure the three Spring services' `*_MIGRATION_DATABASE_URL` values with
+   their direct endpoints so Flyway does not run through PgBouncer.
+10. Use direct endpoints for Keycloak's first database initialization and for
+    provisioning, dumps, restores, and validation. Switch Keycloak to its
+    generated pooled endpoint after initialization.
+11. Test `sslmode=verify-full`; never disable certificate verification.
 
 Invoke the provisioning SQL from a secure shell without adding passwords to
 history:
@@ -136,12 +140,19 @@ sudo API_DOMAIN=api.example.com TLS_EMAIL=operator@example.com \
   ./infrastructure/hetzner/provision-tls.sh
 ```
 
-The hosted gateway requires an issued certificate before first startup.
+The production hosted gateway requires an issued certificate before startup.
 Certificate renewal runs twice daily through systemd and reloads Nginx.
 
 HTTP redirects to HTTPS. TLS 1.2 and 1.3 are enabled. HSTS is intentionally not
 enabled during initial migration; add it only after HTTPS and rollback DNS have
 been stable.
+
+For an explicitly non-production, pre-DNS empty-stack check, set
+`PUBLIC_SCHEME=http` and bind
+`GATEWAY_CONFIG_TEMPLATE=./infrastructure/gateway/bootstrap-http.conf.template`.
+This bootstrap configuration listens only for plain HTTP application
+validation. Never use it for production traffic, credentials, mobile releases,
+or the final cutover.
 
 ## 7. Hosted secrets
 
