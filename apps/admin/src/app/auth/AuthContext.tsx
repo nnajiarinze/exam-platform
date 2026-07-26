@@ -1,12 +1,12 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { environment } from '../config/environment';
+import { environment, persistEnvironment, type AppEnvironment } from '../config/environment';
 import { isAdminRole, type AdminIdentity } from '../permissions/permissions';
 import { clearDevelopmentAdmin, readDevelopmentAdmin, storeDevelopmentAdmin } from './authSession';
 import { identityFromUser, setOidcUser, userManager } from './oidc';
 import { useQueryClient } from '@tanstack/react-query';
 
 export type DevelopmentProfile = 'administrator' | 'reviewer';
-interface AuthState { admin: AdminIdentity | null; loading:boolean; signIn: (profile: DevelopmentProfile) => void; login:()=>Promise<void>; completeCallback:()=>Promise<void>; signOut: () => void }
+interface AuthState { admin: AdminIdentity | null; loading:boolean; signIn: (profile: DevelopmentProfile) => void; login:()=>Promise<void>; completeCallback:()=>Promise<void>; signOut: () => void; switchEnvironment:(next:AppEnvironment)=>Promise<void> }
 const AuthContext = createContext<AuthState | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -25,7 +25,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     login:()=>userManager.signinRedirect({state:{returnTo:window.location.pathname}}),
     completeCallback:async()=>{const user=await userManager.signinRedirectCallback();setOidcUser(user);setAdmin(identityFromUser(user));setLoading(false);},
-    signOut: () => { clearDevelopmentAdmin(); setOidcUser();setAdmin(null);queryClient.clear();if(!environment.developmentAuthEnabled)void userManager.signoutRedirect(); },
+    signOut: () => {
+      clearDevelopmentAdmin(); setOidcUser(); setAdmin(null); queryClient.clear();
+      if (!environment.developmentAuthEnabled) {
+        void userManager.removeUser().finally(() => window.location.assign('/login'));
+      }
+    },
+    switchEnvironment: async(next) => {
+      if (!environment.environmentSwitcherEnabled || next === environment.appEnvironment) return;
+      await userManager.removeUser();
+      clearDevelopmentAdmin(); setOidcUser(); queryClient.clear();
+      persistEnvironment(next);
+      window.location.reload();
+    },
   }), [admin,loading,queryClient]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

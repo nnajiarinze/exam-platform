@@ -1,4 +1,11 @@
+export type AppEnvironment = 'LOCAL' | 'HOSTED';
+export const environmentStorageKey = 'exam-platform.admin.environment';
+
 export interface AdminEnvironment {
+  appEnvironment: AppEnvironment;
+  displayLabel: string;
+  warning?: string;
+  environmentSwitcherEnabled: boolean;
   contentServiceBaseUrl?: string;
   developmentAuthEnabled: boolean;
   developmentAdminId?: string;
@@ -11,28 +18,55 @@ export interface AdminEnvironment {
   oidcClientId: string;
 }
 
-export function readEnvironment(source: Record<string, string | boolean | undefined>): AdminEnvironment {
-  const publicApiBaseUrl = typeof source.VITE_API_BASE_URL === 'string' ? source.VITE_API_BASE_URL.trim().replace(/\/+$/, '') : '';
-  const legacyBaseUrl = typeof source.VITE_CONTENT_SERVICE_BASE_URL === 'string' ? source.VITE_CONTENT_SERVICE_BASE_URL.trim().replace(/\/+$/, '') : '';
-  const baseUrl = publicApiBaseUrl ? `${publicApiBaseUrl}/content` : legacyBaseUrl;
-  if (baseUrl) {
+function value(source: Record<string, string | boolean | undefined>, key: string): string {
+  return typeof source[key] === 'string' ? source[key].trim().replace(/\/+$/, '') : '';
+}
+function bool(source: Record<string, string | boolean | undefined>, key: string): boolean {
+  return source[key] === true || source[key] === 'true';
+}
+function validEnvironment(candidate?: string | null): candidate is AppEnvironment {
+  return candidate === 'LOCAL' || candidate === 'HOSTED';
+}
+
+export function readEnvironment(
+  source: Record<string, string | boolean | undefined>,
+  storedSelection?: string | null,
+): AdminEnvironment {
+  const switcherEnabled = bool(source, 'VITE_ENABLE_ENVIRONMENT_SWITCHER');
+  const configuredDefault = value(source, 'VITE_DEFAULT_APP_ENV') || (source.DEV === true ? 'LOCAL' : 'HOSTED');
+  if (!validEnvironment(configuredDefault)) throw new Error('VITE_DEFAULT_APP_ENV must be LOCAL or HOSTED');
+  const appEnvironment = switcherEnabled && validEnvironment(storedSelection) ? storedSelection : configuredDefault;
+  const legacyGateway = value(source, 'VITE_API_BASE_URL');
+  const gateway = appEnvironment === 'LOCAL'
+    ? value(source, 'VITE_LOCAL_API_BASE_URL') || legacyGateway || 'http://localhost:8088'
+    : value(source, 'VITE_HOSTED_API_BASE_URL') || legacyGateway || 'http://46.224.221.7';
+  const directLegacy = value(source, 'VITE_CONTENT_SERVICE_BASE_URL');
+  const contentServiceBaseUrl = appEnvironment === 'LOCAL' && directLegacy
+    ? directLegacy
+    : `${gateway}/content`;
+  const explicitIssuer = appEnvironment === 'LOCAL'
+    ? value(source, 'VITE_LOCAL_OIDC_ISSUER') || value(source, 'VITE_OIDC_AUTHORITY')
+    : value(source, 'VITE_HOSTED_OIDC_ISSUER');
+  const oidcAuthority = explicitIssuer || `${gateway}/auth/realms/exam-platform`;
+  for (const url of [contentServiceBaseUrl, oidcAuthority]) {
     try {
-      const parsed = new URL(baseUrl);
-      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') throw new Error('unsupported protocol');
-    } catch { throw new Error('VITE_API_BASE_URL must be an absolute URL using HTTP(S)'); }
+      const parsed = new URL(url);
+      if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error();
+    } catch { throw new Error('Admin API and OIDC endpoints must be absolute HTTP(S) URLs'); }
   }
-  if (source.PROD === true && (!publicApiBaseUrl || /localhost|127\.0\.0\.1/i.test(publicApiBaseUrl))) throw new Error('Production requires a non-local VITE_API_BASE_URL');
-  const enabled = source.VITE_DEV_ADMIN_AUTH_ENABLED === true || source.VITE_DEV_ADMIN_AUTH_ENABLED === 'true';
-  const roles = typeof source.VITE_DEV_ADMIN_ROLES === 'string' ? source.VITE_DEV_ADMIN_ROLES.split(',').map((role) => role.trim()).filter(Boolean) : [];
-  const reviewerRoles = typeof source.VITE_DEV_REVIEWER_ROLES === 'string' ? source.VITE_DEV_REVIEWER_ROLES.split(',').map((role) => role.trim()).filter(Boolean) : [];
-  if (enabled && (!source.VITE_DEV_ADMIN_ID || !source.VITE_DEV_ADMIN_NAME || roles.length === 0)) {
-    throw new Error('Development authentication requires an admin id, name, and at least one role');
-  }
-  if (enabled && (!source.VITE_DEV_REVIEWER_ID || !source.VITE_DEV_REVIEWER_NAME || reviewerRoles.length === 0)) {
-    throw new Error('Development authentication requires a reviewer id, name, and at least one role');
-  }
+  if (source.PROD === true && appEnvironment === 'LOCAL') throw new Error('Production requires the HOSTED environment');
+
+  const enabled = bool(source, 'VITE_DEV_ADMIN_AUTH_ENABLED');
+  const roles = value(source, 'VITE_DEV_ADMIN_ROLES').split(',').map((role) => role.trim()).filter(Boolean);
+  const reviewerRoles = value(source, 'VITE_DEV_REVIEWER_ROLES').split(',').map((role) => role.trim()).filter(Boolean);
+  if (enabled && (!source.VITE_DEV_ADMIN_ID || !source.VITE_DEV_ADMIN_NAME || roles.length === 0)) throw new Error('Development authentication requires an admin id, name, and at least one role');
+  if (enabled && (!source.VITE_DEV_REVIEWER_ID || !source.VITE_DEV_REVIEWER_NAME || reviewerRoles.length === 0)) throw new Error('Development authentication requires a reviewer id, name, and at least one role');
   return {
-    contentServiceBaseUrl: baseUrl || undefined,
+    appEnvironment,
+    displayLabel: appEnvironment === 'LOCAL' ? 'Local' : 'Hosted',
+    warning: appEnvironment === 'HOSTED' && gateway.startsWith('http://') ? 'Hosted testing — insecure HTTP' : undefined,
+    environmentSwitcherEnabled: switcherEnabled,
+    contentServiceBaseUrl,
     developmentAuthEnabled: enabled,
     developmentAdminId: typeof source.VITE_DEV_ADMIN_ID === 'string' ? source.VITE_DEV_ADMIN_ID : undefined,
     developmentAdminName: typeof source.VITE_DEV_ADMIN_NAME === 'string' ? source.VITE_DEV_ADMIN_NAME : undefined,
@@ -40,9 +74,14 @@ export function readEnvironment(source: Record<string, string | boolean | undefi
     developmentReviewerId: typeof source.VITE_DEV_REVIEWER_ID === 'string' ? source.VITE_DEV_REVIEWER_ID : undefined,
     developmentReviewerName: typeof source.VITE_DEV_REVIEWER_NAME === 'string' ? source.VITE_DEV_REVIEWER_NAME : undefined,
     developmentReviewerRoles: reviewerRoles,
-    oidcAuthority: typeof source.VITE_OIDC_AUTHORITY === 'string' ? source.VITE_OIDC_AUTHORITY.replace(/\/$/,'') : publicApiBaseUrl ? `${publicApiBaseUrl}/auth/realms/exam-platform` : '',
-    oidcClientId: typeof source.VITE_OIDC_CLIENT_ID === 'string' ? source.VITE_OIDC_CLIENT_ID : 'admin-portal',
+    oidcAuthority,
+    oidcClientId: value(source, 'VITE_OIDC_CLIENT_ID') || 'admin-portal',
   };
 }
 
-export const environment = readEnvironment(import.meta.env);
+const storedSelection = typeof localStorage?.getItem === 'function' ? localStorage.getItem(environmentStorageKey) : null;
+export const environment = readEnvironment(import.meta.env, storedSelection);
+
+export function persistEnvironment(selection: AppEnvironment): void {
+  if (typeof localStorage?.setItem === 'function') localStorage.setItem(environmentStorageKey, selection);
+}

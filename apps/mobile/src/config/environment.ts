@@ -1,11 +1,9 @@
 export enum Environment {
   LOCAL = 'LOCAL',
-  REMOTE = 'REMOTE',
+  HOSTED = 'HOSTED',
 }
 
-/** Set EXPO_PUBLIC_APP_ENV=LOCAL for Expo/LAN development; packaged builds default remote. */
-export const CurrentEnvironment: Environment =
-  process.env.EXPO_PUBLIC_APP_ENV === Environment.LOCAL ? Environment.LOCAL : Environment.REMOTE;
+export const HOSTED_GATEWAY = 'http://46.224.221.7';
 
 export const LocalGateway = {
   physicalDevice: 'http://192.168.1.213:8080',
@@ -19,13 +17,24 @@ export const LocalIdentity = {
   androidEmulator: 'http://10.0.2.2:8090',
 } as const;
 
-type EnvironmentConfig = {
+export type MobileEnvironmentConfig = {
   environment: Environment;
+  displayLabel: string;
   apiBaseUrl: string;
   learningBaseUrl: string;
   authBaseUrl: string;
   oidcIssuer: string;
+  cleartextAllowed: boolean;
+  warning?: string;
 };
+
+export function parseEnvironment(value?: string): Environment {
+  if (!value) return Environment.LOCAL;
+  if (value === Environment.LOCAL || value === Environment.HOSTED) return value;
+  throw new Error(`Unknown EXPO_PUBLIC_APP_ENV "${value}". Expected LOCAL or HOSTED.`);
+}
+
+export const CurrentEnvironment = parseEnvironment(process.env.EXPO_PUBLIC_APP_ENV);
 
 export function normalizeBaseUrl(value: string): string {
   const normalized = value.trim().replace(/\/+$/, '');
@@ -40,45 +49,49 @@ export function joinBaseUrl(baseUrl: string, path: string): string {
 
 export function resolveEnvironment(
   environment: Environment,
-  configuredRemoteGateway = process.env.EXPO_PUBLIC_API_BASE_URL,
-): EnvironmentConfig {
-  const remoteGateway = configuredRemoteGateway?.trim();
-  if (environment === Environment.REMOTE && !remoteGateway) {
-    throw new Error('REMOTE mobile mode requires EXPO_PUBLIC_API_BASE_URL');
-  }
-  const apiBaseUrl = normalizeBaseUrl(
-    environment === Environment.REMOTE ? remoteGateway! : LocalGateway.physicalDevice,
-  );
-
+  configuredGateway = process.env.EXPO_PUBLIC_API_BASE_URL,
+): MobileEnvironmentConfig {
   if (environment === Environment.LOCAL) {
-    const authBaseUrl = normalizeBaseUrl(LocalIdentity.physicalDevice);
+    const apiBaseUrl = normalizeBaseUrl(configuredGateway || LocalGateway.physicalDevice);
+    const authBaseUrl = normalizeBaseUrl(process.env.EXPO_PUBLIC_LOCAL_IDENTITY_URL || LocalIdentity.physicalDevice);
     return {
       environment,
+      displayLabel: 'Local',
       apiBaseUrl,
       learningBaseUrl: apiBaseUrl,
       authBaseUrl,
       oidcIssuer: joinBaseUrl(authBaseUrl, 'realms/exam-platform'),
+      cleartextAllowed: true,
     };
   }
-
+  const apiBaseUrl = normalizeBaseUrl(configuredGateway || HOSTED_GATEWAY);
   return {
     environment,
+    displayLabel: 'Hosted',
     apiBaseUrl,
     learningBaseUrl: joinBaseUrl(apiBaseUrl, 'learning'),
     authBaseUrl: joinBaseUrl(apiBaseUrl, 'auth'),
     oidcIssuer: joinBaseUrl(apiBaseUrl, 'auth/realms/exam-platform'),
+    cleartextAllowed: apiBaseUrl.startsWith('http://'),
+    warning: apiBaseUrl.startsWith('http://') ? 'Hosted testing — insecure HTTP' : undefined,
   };
 }
 
-export const environmentConfig = resolveEnvironment(CurrentEnvironment);
-
-export function assertSafeEnvironment(environment: Environment, nodeEnvironment = process.env.NODE_ENV): void {
-  if (nodeEnvironment !== 'production') return;
-  if (environment === Environment.LOCAL) throw new Error('Production mobile builds cannot use the LOCAL backend environment.');
-  if (environmentConfig.apiBaseUrl.startsWith('http://')) throw new Error('Production mobile builds require an HTTPS API base URL.');
+export function assertSafeEnvironment(
+  config: MobileEnvironmentConfig,
+  buildKind = process.env.EXPO_PUBLIC_BUILD_KIND || 'development',
+): void {
+  if (buildKind !== 'production') return;
+  if (config.environment === Environment.LOCAL) {
+    throw new Error('Production mobile builds cannot use the LOCAL backend environment.');
+  }
+  if (!config.apiBaseUrl.startsWith('https://')) {
+    throw new Error('Production mobile builds require an HTTPS hosted API base URL.');
+  }
 }
 
-assertSafeEnvironment(CurrentEnvironment);
+export const environmentConfig = resolveEnvironment(CurrentEnvironment);
+assertSafeEnvironment(environmentConfig);
 
 if (process.env.NODE_ENV !== 'test') {
   console.info(`[Environment] Environment: ${environmentConfig.environment}`);

@@ -9,13 +9,25 @@ export const userManager = new UserManager({
   post_logout_redirect_uri: `${window.location.origin}/login`,
   response_type: 'code', scope: 'openid profile email',
   automaticSilentRenew: true,
-  userStore: new WebStorageStateStore({ store: sessionStorage }),
+  userStore: new WebStorageStateStore({ store: sessionStorage, prefix: `oidc.${environment.appEnvironment}.` }),
 });
 
 export function identityFromUser(user: User): AdminIdentity {
-  const access=user.profile.realm_access as {roles?:string[]}|undefined;
+  const access = (user.profile.realm_access as {roles?:string[]}|undefined) ?? accessTokenRealmAccess(user.access_token);
   const roles=(access?.roles??[]).filter(isAdminRole);
   return {id:user.profile.sub,displayName:String(user.profile.name??user.profile.preferred_username??'Administrator'),roles};
+}
+
+function accessTokenRealmAccess(token: string): { roles?: string[] } | undefined {
+  try {
+    const encodedPayload = token.split('.')[1];
+    if (!encodedPayload) return undefined;
+    const normalized = encodedPayload.replaceAll('-', '+').replaceAll('_', '/');
+    const payload = JSON.parse(atob(normalized)) as { realm_access?: { roles?: string[] } };
+    return payload.realm_access;
+  } catch {
+    return undefined;
+  }
 }
 let currentUser:User|undefined;
 export function setOidcUser(user?:User){currentUser=user;}

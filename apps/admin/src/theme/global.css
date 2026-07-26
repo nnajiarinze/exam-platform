@@ -276,6 +276,20 @@ button.secondary,
   gap: 0.6rem;
   font-weight: 600;
 }
+.environment-selector {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+}
+.environment-selector select {
+  min-height: 2.25rem;
+  padding: 0.35rem 2rem 0.35rem 0.65rem;
+}
+.environment-selector small {
+  color: var(--danger);
+  max-width: 9rem;
+}
 .mobile-menu,
 .mobile-close {
   display: none;

@@ -4,14 +4,41 @@
     "appVersionSource": "remote"
   },
   "build": {
-    "preview": {
+    "development-local": {
+      "developmentClient": true,
       "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "LOCAL",
+        "EXPO_PUBLIC_BUILD_KIND": "development"
+      }
+    },
+    "development-hosted": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "HOSTED",
+        "EXPO_PUBLIC_API_BASE_URL": "http://46.224.221.7",
+        "EXPO_PUBLIC_BUILD_KIND": "internal"
+      }
+    },
+    "preview-hosted": {
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "HOSTED",
+        "EXPO_PUBLIC_API_BASE_URL": "http://46.224.221.7",
+        "EXPO_PUBLIC_BUILD_KIND": "internal"
+      },
       "ios": {
         "buildConfiguration": "Release"
       }
     },
     "production": {
       "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "HOSTED",
+        "EXPO_PUBLIC_API_BASE_URL": "http://46.224.221.7",
+        "EXPO_PUBLIC_BUILD_KIND": "production"
+      },
       "ios": {
         "buildConfiguration": "Release"
       }
