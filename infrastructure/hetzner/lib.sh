@@ -39,8 +39,13 @@ postgres_tool() {
 }
 
 env_file_value() {
-  local key="$1" file="$2"
-  sed -n "s/^${key}=//p" "${file}" | tail -n 1
+  local key="$1" file="$2" value
+  value="$(sed -n "s/^${key}=//p" "${file}" | tail -n 1)"
+  if [[ "${value}" == \"*\" && "${value}" == *\" ]] ||
+     [[ "${value}" == \'*\' && "${value}" == *\' ]]; then
+    value="${value:1:${#value}-2}"
+  fi
+  printf '%s\n' "${value}"
 }
 
 compose() {

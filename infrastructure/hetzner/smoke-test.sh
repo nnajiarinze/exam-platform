@@ -9,7 +9,11 @@ require_command curl
 INTERNAL=false
 [[ "${1:-}" == "--internal" ]] && INTERNAL=true
 require_var API_DOMAIN
-PUBLIC_BASE="https://${API_DOMAIN}"
+PUBLIC_SCHEME="${PUBLIC_SCHEME:-$(env_file_value PUBLIC_SCHEME "${PLATFORM_ENV_FILE}")}"
+PUBLIC_SCHEME="${PUBLIC_SCHEME:-https}"
+[[ "${PUBLIC_SCHEME}" == "http" || "${PUBLIC_SCHEME}" == "https" ]] ||
+  die "PUBLIC_SCHEME must be http or https"
+PUBLIC_BASE="${PUBLIC_SCHEME}://${API_DOMAIN}"
 
 curl --fail --silent --show-error "${PUBLIC_BASE}/healthz" >/dev/null
 curl --fail --silent --show-error \
