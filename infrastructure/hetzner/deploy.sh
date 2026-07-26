@@ -14,9 +14,13 @@ require_file "${PLATFORM_COMPOSE_FILE}"
 
 mkdir -p "${PLATFORM_STATE_DIR}"
 PREVIOUS_TAG=""
+PREVIOUS_REGISTRY=""
 if [[ -f "${PLATFORM_RELEASE_ENV_FILE}" ]]; then
   PREVIOUS_TAG="$(sed -n 's/^IMAGE_TAG=//p' "${PLATFORM_RELEASE_ENV_FILE}" | tail -n 1)"
+  PREVIOUS_REGISTRY="$(sed -n 's/^IMAGE_REGISTRY=//p' "${PLATFORM_RELEASE_ENV_FILE}" | tail -n 1)"
 fi
+RELEASE_REGISTRY="${IMAGE_REGISTRY:-${PREVIOUS_REGISTRY}}"
+require_var RELEASE_REGISTRY
 
 if [[ -n "${GHCR_TOKEN_FILE:-}" ]]; then
   require_file "${GHCR_TOKEN_FILE}"
@@ -26,9 +30,7 @@ fi
 
 umask 077
 printf 'IMAGE_TAG=%s\n' "${NEW_TAG}" >"${PLATFORM_RELEASE_ENV_FILE}.new"
-if [[ -n "${IMAGE_REGISTRY:-}" ]]; then
-  printf 'IMAGE_REGISTRY=%s\n' "${IMAGE_REGISTRY}" >>"${PLATFORM_RELEASE_ENV_FILE}.new"
-fi
+printf 'IMAGE_REGISTRY=%s\n' "${RELEASE_REGISTRY}" >>"${PLATFORM_RELEASE_ENV_FILE}.new"
 mv "${PLATFORM_RELEASE_ENV_FILE}.new" "${PLATFORM_RELEASE_ENV_FILE}"
 
 compose config --quiet
@@ -39,7 +41,8 @@ compose pull
 if ! compose up -d --remove-orphans --wait --wait-timeout 240; then
   printf 'Deployment health validation failed for %s.\n' "${NEW_TAG}" >&2
   if [[ -n "${PREVIOUS_TAG}" ]]; then
-    printf 'IMAGE_TAG=%s\n' "${PREVIOUS_TAG}" >"${PLATFORM_RELEASE_ENV_FILE}"
+    printf 'IMAGE_TAG=%s\nIMAGE_REGISTRY=%s\n' \
+      "${PREVIOUS_TAG}" "${RELEASE_REGISTRY}" >"${PLATFORM_RELEASE_ENV_FILE}"
     compose up -d --remove-orphans --wait --wait-timeout 240 || true
     printf 'Rollback to %s was attempted; inspect all services.\n' "${PREVIOUS_TAG}" >&2
   fi
