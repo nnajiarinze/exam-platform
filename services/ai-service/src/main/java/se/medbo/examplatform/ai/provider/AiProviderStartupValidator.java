@@ -11,5 +11,5 @@ import org.springframework.stereotype.Component;
 final class AiProviderStartupValidator implements ApplicationRunner {
   private final Environment environment;private final String provider;private final boolean allowFake;
   AiProviderStartupValidator(Environment environment,@Value("${ai.editorial.provider:GEMINI}") String provider,@Value("${ai.editorial.allow-fake-in-production:false}") boolean allowFake){this.environment=environment;this.provider=provider;this.allowFake=allowFake;}
-  @Override public void run(ApplicationArguments args){boolean production=Arrays.stream(environment.getActiveProfiles()).anyMatch(profile->profile.equalsIgnoreCase("prod")||profile.equalsIgnoreCase("production"));if(production&&provider.equalsIgnoreCase("FAKE")&&!allowFake)throw new IllegalStateException("FAKE AI provider is forbidden in production unless AI_ALLOW_FAKE_IN_PRODUCTION is explicitly enabled");}
+  @Override public void run(ApplicationArguments args){boolean production=Arrays.stream(environment.getActiveProfiles()).anyMatch(profile->profile.equalsIgnoreCase("prod")||profile.equalsIgnoreCase("production")||profile.equalsIgnoreCase("hosted"));if(production&&provider.equalsIgnoreCase("FAKE")&&!allowFake)throw new IllegalStateException("FAKE AI provider is forbidden in hosted or production environments unless AI_ALLOW_FAKE_IN_PRODUCTION is explicitly enabled");}
 }

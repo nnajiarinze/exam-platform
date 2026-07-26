@@ -1,0 +1,7 @@
+services:
+  ai-service:
+    environment:
+      AI_PROVIDER: FAKE
+      AI_GEMINI_MODEL: deterministic-v1
+      AI_USAGE_MODE: DISABLED
+      AI_ALLOW_FAKE_IN_PRODUCTION: "true"

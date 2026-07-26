@@ -22,6 +22,22 @@ require_sha() {
   [[ "$1" =~ ^[0-9a-f]{40}$ ]] || die "Image tag must be a full lowercase Git commit SHA"
 }
 
+postgres_tool() {
+  local tool="$1" candidate major
+  if [[ -n "${POSTGRES_TOOL_DIR:-}" ]]; then
+    candidate="${POSTGRES_TOOL_DIR}/${tool}"
+  elif [[ -x "/opt/homebrew/opt/postgresql@18/bin/${tool}" ]]; then
+    candidate="/opt/homebrew/opt/postgresql@18/bin/${tool}"
+  else
+    candidate="$(command -v "${tool}" || true)"
+  fi
+  [[ -x "${candidate}" ]] || die "PostgreSQL 18 ${tool} is required; set POSTGRES_TOOL_DIR to its bin directory"
+  major="$("${candidate}" --version | sed -E 's/.* ([0-9]+)(\..*)?$/\1/')"
+  [[ "${major}" =~ ^[0-9]+$ && "${major}" -ge 18 ]] || \
+    die "${candidate} is PostgreSQL ${major:-unknown}; PostgreSQL 18 or newer is required"
+  printf '%s\n' "${candidate}"
+}
+
 env_file_value() {
   local key="$1" file="$2"
   sed -n "s/^${key}=//p" "${file}" | tail -n 1

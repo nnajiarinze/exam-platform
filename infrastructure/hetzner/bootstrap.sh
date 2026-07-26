@@ -20,6 +20,13 @@ usermod -aG docker "${DEPLOY_USER}"
 install -d -m 0750 -o "${DEPLOY_USER}" -g "${DEPLOY_USER}" \
   "${PLATFORM_ROOT}" "${PLATFORM_ROOT}/repo" "${PLATFORM_ROOT}/state" \
   "${PLATFORM_ROOT}/backups" /var/www/certbot
+install -m 0755 -o root -g root \
+  "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/inspect-host-firewall.sh" \
+  /usr/local/sbin/citizenship-inspect-firewall
+printf '%s ALL=(root) NOPASSWD: /usr/local/sbin/citizenship-inspect-firewall\n' \
+  "${DEPLOY_USER}" >/etc/sudoers.d/citizenship-firewall-inspection
+chmod 0440 /etc/sudoers.d/citizenship-firewall-inspection
+visudo -cf /etc/sudoers.d/citizenship-firewall-inspection
 
 ufw default deny incoming
 ufw default allow outgoing

@@ -6,7 +6,8 @@ source "${SCRIPT_DIR}/lib.sh"
 
 [[ "${CONFIRM_RESTORE:-}" == "RESTORE_TO_EMPTY_EU_DATABASES" ]] || \
   die "Set CONFIRM_RESTORE=RESTORE_TO_EMPTY_EU_DATABASES after verifying backups and targets"
-for command in pg_restore age; do require_command "${command}"; done
+require_command age
+PG_RESTORE="$(postgres_tool pg_restore)"
 for variable in RESTORE_AGE_IDENTITY RESTORE_DATABASE_HOST RESTORE_DATABASE_PORT RESTORE_BACKUP_DIR; do require_var "${variable}"; done
 
 restore_one() {
@@ -22,8 +23,8 @@ restore_one() {
   dump_file="$(mktemp)"
   trap 'rm -f -- "${dump_file}"' RETURN
   age --decrypt --identity "${RESTORE_AGE_IDENTITY}" --output "${dump_file}" "${encrypted}"
-  pg_restore --list "${dump_file}" >/dev/null
-  PGPASSWORD="${password}" pg_restore \
+  "${PG_RESTORE}" --list "${dump_file}" >/dev/null
+  PGPASSWORD="${password}" "${PG_RESTORE}" \
     --host="${RESTORE_DATABASE_HOST}" --port="${RESTORE_DATABASE_PORT}" \
     --username="${username}" --dbname="${database}" \
     --exit-on-error --no-owner --no-privileges "${dump_file}"

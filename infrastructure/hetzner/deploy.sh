@@ -46,6 +46,7 @@ if ! compose up -d --remove-orphans --wait --wait-timeout 240; then
   exit 1
 fi
 
+"${SCRIPT_DIR}/harden-keycloak.sh"
 API_DOMAIN="$(env_file_value API_DOMAIN "${PLATFORM_ENV_FILE}")"
 require_var API_DOMAIN
 API_DOMAIN="${API_DOMAIN}" "${SCRIPT_DIR}/smoke-test.sh" --internal

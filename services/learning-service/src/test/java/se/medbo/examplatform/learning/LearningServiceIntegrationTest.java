@@ -242,6 +242,14 @@ class LearningServiceIntegrationTest {
     }
 
     @Test
+    void legacySubjectRouteRejectsMissingExamIdentifierAsClientError() throws Exception {
+        mockMvc.perform(get("/api/v1/content/subjects")
+                        .header("X-Learner-Identity", "developer-learner"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+    }
+
+    @Test
     void importsAndScoresMultipleChoiceUsingTheExactOptionSet() {
         var multiple = new ContentSnapshot.Question("multi-1", "multi-1-v1", "fact-multi",
                 "MULTIPLE_CHOICE", "Select both correct answers", "Both are required", "sv", null, true,
@@ -575,7 +583,8 @@ class LearningServiceIntegrationTest {
         var result = mockExamService.submit(learnerId, attempt.attemptId());
         assertThat(result.status()).isEqualTo("SUBMITTED");
         assertThat(result.correctAnswers()).isEqualTo(1);
-        assertThat(result.incorrectAnswers()).isEqualTo(2);
+        assertThat(result.incorrectAnswers()).isEqualTo(1);
+        assertThat(result.unansweredAnswers()).isEqualTo(1);
         assertThat(result.percentage()).isEqualByComparingTo("33.33");
         assertThat(result.passed()).isFalse();
         assertThat(result.topics()).hasSize(2);

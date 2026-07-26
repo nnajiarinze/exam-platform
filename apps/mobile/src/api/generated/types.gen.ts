@@ -317,7 +317,13 @@ export type MockExamSubjectResult = {
     subjectName: string;
     total: number;
     correct: number;
+    /**
+     * Questions answered with an incorrect option set; excludes unanswered questions.
+     */
     incorrect: number;
+    /**
+     * Questions for which no answer was submitted.
+     */
     unanswered: number;
     percentage: number;
 };
@@ -347,7 +353,13 @@ export type MockExamResult = {
     completedAt: string;
     durationSeconds: number;
     correctAnswers: number;
+    /**
+     * Questions answered with an incorrect option set; excludes unanswered questions.
+     */
     incorrectAnswers: number;
+    /**
+     * Questions for which no answer was submitted.
+     */
     unansweredAnswers: number;
     percentage: number;
     passPercentage: number;

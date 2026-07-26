@@ -397,7 +397,8 @@ public class MockExamService {
                     UPDATE mock_exam_attempt SET status = :status, submitted_at = :submittedAt,
                     completed_at = :completedAt, duration_seconds = :duration, score = :score,
                     percentage = :percentage, passed = :passed, auto_submitted = :autoSubmitted,
-                    incorrect_count = total_questions - :score,
+                    incorrect_count = (SELECT count(*) FROM mock_exam_response r
+                        WHERE r.attempt_id = :id AND NOT r.correct),
                     unanswered_count = (SELECT count(*) FROM mock_exam_question q
                         LEFT JOIN mock_exam_response r ON r.attempt_question_id = q.id
                         WHERE q.attempt_id = :id AND r.id IS NULL),
@@ -482,7 +483,9 @@ public class MockExamService {
         var attempt = jdbc.sql("""
                 SELECT id, blueprint_name, status, started_at, completed_at, duration_seconds,
                        score, percentage, passed, total_questions, passing_percentage,
-                       incorrect_count, unanswered_count, auto_submitted
+                       (SELECT count(*) FROM mock_exam_response response
+                        WHERE response.attempt_id = mock_exam_attempt.id AND NOT response.correct) AS incorrect_count,
+                       unanswered_count, auto_submitted
                 FROM mock_exam_attempt WHERE id = :id
                 """).param("id", attemptId).query((rs, row) -> new ResultRow(rs.getObject("id", UUID.class),
                         rs.getString("blueprint_name"), rs.getString("status"),

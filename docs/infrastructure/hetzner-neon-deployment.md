@@ -278,21 +278,50 @@ are meaningful only while source writes are frozen.
 - validates every archive with `pg_restore --list`
 - encrypts each archive with an age recipient
 - uploads to external S3-compatible storage
+- uploads a checksum manifest and a JSON metadata manifest containing the
+  backup timestamp, database names, immutable application SHA, and Flyway heads
+- downloads and byte-compares both manifests after upload
+- verifies every remote archive's size, SHA-256 checksum, and age header
 - refuses to run unless bucket lifecycle retention exists
 - removes local temporary plaintext and encrypted copies
+
+The script requires PostgreSQL 18-or-newer client tools and does not use an
+arbitrary `pg_dump` or `pg_restore` from `PATH`. Set `POSTGRES_TOOL_DIR` to the
+versioned client `bin` directory when it is not installed at the Homebrew
+PostgreSQL 18 location. It fails before touching a database if the tools are
+older. This prevents PostgreSQL 14 clients from attempting to read PostgreSQL
+18 custom archives.
 
 By default it reads only its named backup variables from the protected hosted
 environment file; it never evaluates that file as shell code. S3 credentials
 must be limited to the backup prefix/bucket. When validating another environment,
 set `BACKUP_ENV_FILE` to a different mode-600 file.
 
-Recommended staging bucket lifecycle:
+Preferred low-volume provider configuration is Cloudflare R2 Standard:
 
-- expire daily backup objects after 7 days
-- retain separately tagged weekly copies for 28 days
+```text
+BACKUP_S3_URI=s3://BUCKET/citizenship-platform
+BACKUP_S3_ENDPOINT_URL=https://ACCOUNT_ID.r2.cloudflarestorage.com
+BACKUP_S3_REGION=auto
+BACKUP_S3_ACCESS_KEY_ID=<prefix-limited credential>
+BACKUP_S3_SECRET_ACCESS_KEY=<managed secret>
+BACKUP_AGE_RECIPIENT=<age public recipient>
+```
 
-Production retention should be 14–30 days plus longer monthly copies according
-to recovery and legal requirements.
+Run `infrastructure/hetzner/backup.sh`; a non-zero exit means the backup must
+be treated as failed. To restore, download one timestamp directory, verify each
+archive against `backup-manifest.tsv`, then run `restore.sh` against verified
+empty disposable databases with the matching age identity.
+
+Recommended pre-production lifecycle:
+
+- daily copies for 35 days
+- weekly copies for 12 weeks
+- monthly copies for 12 months once production usage begins
+
+Do not enable deletion until the bucket lifecycle has been reviewed and a
+restore rehearsal from that bucket has succeeded. The script checks that a
+lifecycle exists but does not create or modify one.
 
 Run backup manually before migration and schedule it afterward with a systemd
 timer or external scheduler. Alert on non-zero exit. Do not store the only backup
@@ -328,6 +357,18 @@ After restoration verify:
 - Admin callback and exact web origin
 - realm roles and audience mappers
 - secure cookies
+
+`KEYCLOAK_SECURITY_MODE=BOOTSTRAP_HTTP` is the explicit temporary mode for the
+IP-based HTTP test endpoint. It retains `sslRequired=none` but still enables
+brute-force detection and the password policy. After DNS and TLS are working,
+set `KEYCLOAK_SECURITY_MODE=HTTPS_HOSTED` and deploy. The deploy script then
+sets `sslRequired=external`, removes development callback URLs, preserves only
+exact mobile/Admin callbacks and origins, and verifies the realm settings.
+
+The initial password policy applies when a password is next created or changed:
+minimum 10 characters, uppercase, lowercase, digit, not username, and five-item
+history. It does not rewrite existing password hashes. Existing test passwords
+should be rotated deliberately if they do not meet the policy.
 - registration, login, refresh, and logout
 - existing user login
 
@@ -522,6 +563,22 @@ Before cutover verify:
 - Neon TLS verification succeeds
 - dependency, secret, and image checks pass
 - backup and restore have been tested
+
+For host-firewall evidence, bootstrap installs the root-owned, read-only
+`/usr/local/sbin/citizenship-inspect-firewall` command and grants the deployment
+user passwordless sudo for that exact command only:
+
+```bash
+sudo /usr/local/sbin/citizenship-inspect-firewall
+```
+
+No general passwordless sudo is granted.
+
+The CX33 currently has ample memory headroom and no OOM history, so swap is not
+enabled during pre-TLS hardening. Unencrypted swap can retain sensitive JVM
+pages and may hide sustained memory pressure. Reassess a 1–2 GiB protected swap
+file only if measurements show transient pressure; keep `vm.swappiness`
+conservative and continue treating OOM/restart alerts as incidents.
 
 ## 22. Cost estimate
 

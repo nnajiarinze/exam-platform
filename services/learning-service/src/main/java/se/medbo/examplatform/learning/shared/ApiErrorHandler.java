@@ -7,6 +7,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -38,7 +39,7 @@ public class ApiErrorHandler {
     }
 
     @ExceptionHandler({ConstraintViolationException.class, HandlerMethodValidationException.class,
-            MethodArgumentTypeMismatchException.class})
+            MethodArgumentTypeMismatchException.class, MissingServletRequestParameterException.class})
     ResponseEntity<ErrorResponse> requestValidation(Exception exception) {
         return ResponseEntity.badRequest()
                 .body(new ErrorResponse("VALIDATION_ERROR", "Request validation failed", Instant.now(), List.of()));

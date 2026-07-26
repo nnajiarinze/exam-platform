@@ -872,8 +872,8 @@ components:
         subjectName: { type: string }
         total: { type: integer, minimum: 1 }
         correct: { type: integer, minimum: 0 }
-        incorrect: { type: integer, minimum: 0 }
-        unanswered: { type: integer, minimum: 0 }
+        incorrect: { type: integer, minimum: 0, description: Questions answered with an incorrect option set; excludes unanswered questions. }
+        unanswered: { type: integer, minimum: 0, description: Questions for which no answer was submitted. }
         percentage: { type: number, minimum: 0, maximum: 100 }
     MockExamIncorrectQuestion:
       type: object
@@ -910,8 +910,8 @@ components:
         completedAt: { type: string, format: date-time }
         durationSeconds: { type: integer, minimum: 0 }
         correctAnswers: { type: integer, minimum: 0 }
-        incorrectAnswers: { type: integer, minimum: 0 }
-        unansweredAnswers: { type: integer, minimum: 0 }
+        incorrectAnswers: { type: integer, minimum: 0, description: Questions answered with an incorrect option set; excludes unanswered questions. }
+        unansweredAnswers: { type: integer, minimum: 0, description: Questions for which no answer was submitted. }
         percentage: { type: number, minimum: 0, maximum: 100 }
         passPercentage: { type: number, minimum: 0, maximum: 100 }
         passed: { type: boolean }
