@@ -1,55 +1,328 @@
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useQuery } from '@tanstack/react-query';
-import { StyleSheet, Text, View } from 'react-native';
-import { learningApi } from '../../api/learningApi';
-import { useAppStore } from '../../app/store';
-import { AppHeader } from '../../components/AppHeader';
-import { BottomTabBar } from '../../components/BottomTabBar';
-import { Screen } from '../../components/Screen';
-import { Button, Card, Icon, ProgressBar } from '../../components/ui';
-import type { RootStackParamList } from '../../navigation/types';
-import { theme } from '../../theme';
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useQuery } from "@tanstack/react-query";
+import { StyleSheet, Text, View } from "react-native";
+import { learningApi } from "../../api/learningApi";
+import { useAppStore } from "../../app/store";
+import { AppHeader } from "../../components/AppHeader";
+import { BottomTabBar, type Tab } from "../../components/BottomTabBar";
+import {
+  ActionCard,
+  Eyebrow,
+  ReadinessRing,
+  SectionHeader,
+  StatTile,
+} from "../../components/design";
+import { Screen } from "../../components/Screen";
+import { Button, Card, ProgressBar } from "../../components/ui";
+import type { RootStackParamList } from "../../navigation/types";
+import { theme } from "../../theme";
+import { learningReadinessScore, rankedTopics } from "../progress/analytics";
 
-export function HomeScreen({ navigation }: NativeStackScreenProps<RootStackParamList, 'Home'>) {
-  const sessionId = useAppStore((s) => s.currentSessionId);
-  const identity = useAppStore((s) => s.learnerIdentity);
-  const progress = useQuery({ queryKey: ['progress'], queryFn: () => learningApi.progress(identity), enabled: Boolean(identity) });
-  const learning = useQuery({ queryKey: ['continue-learning', identity], queryFn: () => learningApi.continueLearning(identity), enabled: Boolean(identity) });
-  const answered = progress.data?.reduce((sum, item) => sum + item.questionsAnswered, 0) ?? 0;
-  const correct = progress.data?.reduce((sum, item) => sum + item.correctAnswers, 0) ?? 0;
-  const accuracy = answered > 0 ? Math.round((correct / answered) * 100) : 0;
-  const navigateTab = (tab: 'home' | 'topics' | 'exam' | 'progress' | 'settings') => { if (tab === 'topics') navigation.navigate('StudySubjects'); else if (tab === 'exam') navigation.navigate('MockExam'); else if (tab === 'progress') navigation.navigate('Progress'); else if(tab==='settings')navigation.navigate('Settings'); };
+function greeting(name?: string) {
+  const hour = new Date().getHours();
+  const salutation =
+    hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  return `${salutation}${name ? `, ${name.split(/\s+/)[0]}` : ""} 👋`;
+}
 
-  return <View style={styles.page}><Screen bottomInset>
-    <AppHeader action="profile" onAction={() => navigation.navigate('Profile')} />
-    <View style={styles.hero}><View style={styles.heroOrb} /><Text style={styles.heroTitle}>Welcome to Svea Study</Text><Text style={styles.heroBody}>Your path to Swedish citizenship starts here.</Text></View>
-    <Text style={styles.sectionLabel}>STUDY NOW</Text>
-    {learning.data && <Card><Text style={styles.resumeTitle}>Continue learning</Text><Text style={styles.cardTitle}>{learning.data.topicTitle}</Text><Text style={styles.muted}>{learning.data.subjectTitle} · {learning.data.completedSectionCount} of {learning.data.totalSectionCount} key facts complete</Text><Button label="Continue lesson" onPress={() => navigation.navigate('TopicLesson', { topicId: learning.data!.topicId, topicTitle: learning.data!.topicTitle, sectionId: learning.data!.lastSectionId })} /></Card>}
-    {sessionId && <Card><Text style={styles.resumeTitle}>Continue studying</Text><Text style={styles.muted}>Your current practice session is ready.</Text><Button label="Continue" icon={<Icon name="play" color={theme.colors.onPrimary} size={18} />} onPress={() => navigation.navigate('Question', { sessionId })} /></Card>}
-    <Button label="Study key topics" variant="secondary" icon={<Icon name="topics" size={20} />} onPress={() => navigation.navigate('StudySubjects')} />
-    <Button label="Start practice" icon={<Icon name="play" color={theme.colors.onPrimary} size={18} />} onPress={() => navigation.navigate('Topics')} />
-    <Button label="Mixed practice" variant="secondary" icon={<Icon name="shuffle" size={20} />} onPress={() => navigation.navigate('PracticeSetup', { mode: 'MIXED' })} />
-    <Text style={styles.sectionLabel}>YOUR PROFILE</Text>
-    <View style={styles.profileRow}>
-      <View style={styles.profileCard}><Card><View style={[styles.iconCircle, styles.yellow]}><Icon name="progress" size={22} /></View><Text style={styles.cardTitle}>Your progress</Text><Text style={styles.muted}>View your statistics</Text><Button label="View" variant="secondary" onPress={() => navigation.navigate('Progress')} /></Card></View>
-      <View style={styles.profileCard}><Card><View style={[styles.iconCircle, styles.blue]}><Icon name="settings" size={24} /></View><Text style={styles.cardTitle}>Settings</Text><Text style={styles.muted}>Personalise the app</Text><Button label="Open" variant="secondary" onPress={() => navigation.navigate('Settings')} /></Card></View>
+export function HomeScreen({
+  navigation,
+}: NativeStackScreenProps<RootStackParamList, "Home">) {
+  const sessionId = useAppStore((state) => state.currentSessionId);
+  const identity = useAppStore((state) => state.learnerIdentity);
+  const progress = useQuery({
+    queryKey: ["progress"],
+    queryFn: () => learningApi.progress(identity),
+    enabled: Boolean(identity),
+  });
+  const learning = useQuery({
+    queryKey: ["continue-learning", identity],
+    queryFn: () => learningApi.continueLearning(identity),
+    enabled: Boolean(identity),
+    retry: 1,
+  });
+  const profile = useQuery({
+    queryKey: ["learner-profile", identity],
+    queryFn: () => learningApi.profile(identity),
+    enabled: Boolean(identity),
+  });
+  const settings = useQuery({
+    queryKey: ["learner-settings", identity],
+    queryFn: () => learningApi.settings(identity),
+    enabled: Boolean(identity),
+  });
+  const subjects = useQuery({
+    queryKey: ["study-subjects", identity],
+    queryFn: () => learningApi.studySubjects(identity),
+    enabled: Boolean(identity),
+  });
+  const taxonomy = useQuery({
+    queryKey: ["subjects"],
+    queryFn: () => learningApi.subjects(identity),
+    enabled: Boolean(identity),
+  });
+  const history = useQuery({
+    queryKey: ["mock-history"],
+    queryFn: () => learningApi.mockHistory(identity),
+    enabled: Boolean(identity),
+  });
+  const answered =
+    progress.data?.reduce((sum, item) => sum + item.questionsAnswered, 0) ?? 0;
+  const correct =
+    progress.data?.reduce((sum, item) => sum + item.correctAnswers, 0) ?? 0;
+  const accuracy = answered
+    ? Math.round((correct * 100) / answered)
+    : undefined;
+  const readiness = learningReadinessScore({
+    subjects: subjects.data ?? [],
+    topicProgress: progress.data ?? [],
+    mockHistory: history.data ?? [],
+  });
+  const weakest = rankedTopics(progress.data ?? []).at(-1);
+  const topicNames = Object.fromEntries(
+    (taxonomy.data ?? []).flatMap((subject) =>
+      subject.topics.map((topic) => [topic.id, topic.name]),
+    ),
+  );
+  const dailyGoal = settings.data?.dailyQuestionGoal;
+  const today = settings.data?.questionsAnsweredToday ?? 0;
+  const dailyPercent = dailyGoal
+    ? Math.min(100, Math.round((today * 100) / dailyGoal))
+    : 0;
+  const refresh = () =>
+    void Promise.all([
+      progress.refetch(),
+      learning.refetch(),
+      profile.refetch(),
+      settings.refetch(),
+      subjects.refetch(),
+      taxonomy.refetch(),
+      history.refetch(),
+    ]);
+  const navigateTab = (tab: Tab) => {
+    if (tab === "topics") navigation.navigate("StudySubjects");
+    else if (tab === "exam") navigation.navigate("MockExam");
+    else if (tab === "progress") navigation.navigate("Progress");
+    else if (tab === "settings") navigation.navigate("Settings");
+  };
+  const continueLearning = () =>
+    learning.data
+      ? navigation.navigate("TopicLesson", {
+          topicId: learning.data.topicId,
+          topicTitle: learning.data.topicTitle,
+          sectionId: learning.data.lastSectionId,
+        })
+      : navigation.navigate("StudySubjects");
+
+  return (
+    <View style={styles.page}>
+      <Screen
+        bottomInset
+        refreshing={[
+          progress,
+          learning,
+          profile,
+          settings,
+          subjects,
+          taxonomy,
+          history,
+        ].some((query) => query.isRefetching)}
+        onRefresh={refresh}
+      >
+        <AppHeader
+          action="profile"
+          onAction={() => navigation.navigate("Profile")}
+        />
+        <View style={styles.greeting}>
+          <Text accessibilityRole="header" style={styles.greetingTitle}>
+            {greeting(profile.data?.displayName)}
+          </Text>
+          <Text style={styles.greetingBody}>
+            {answered
+              ? `You have answered ${answered} questions with ${accuracy}% accuracy.`
+              : "Build confidence one focused lesson at a time."}
+          </Text>
+        </View>
+        <Card style={styles.readinessCard}>
+          <View style={styles.readinessCopy}>
+            <Eyebrow>LEARNING READINESS</Eyebrow>
+            <Text style={styles.readinessTitle}>
+              {readiness == null
+                ? "Start building your baseline"
+                : readiness >= 80
+                  ? "Strong momentum"
+                  : readiness >= 60
+                    ? "Solid progress"
+                    : "Keep building"}
+            </Text>
+            <Text style={styles.muted}>
+              {readiness == null
+                ? "Complete lessons and answer at least five practice questions to unlock your score."
+                : "Based on curriculum completion, sampled practice accuracy, and recent mock results."}
+            </Text>
+            <Button
+              label={learning.data ? "Continue learning" : "Start learning"}
+              onPress={continueLearning}
+            />
+          </View>
+          <ReadinessRing value={readiness} size={118} />
+        </Card>
+        {dailyGoal ? (
+          <Card>
+            <View style={styles.goalHeader}>
+              <View>
+                <Text style={styles.cardTitle}>Today&apos;s goal</Text>
+                <Text style={styles.muted}>Daily question challenge</Text>
+              </View>
+              <Text style={styles.goalValue}>
+                {today}/{dailyGoal}
+              </Text>
+            </View>
+            <ProgressBar
+              value={dailyPercent}
+              accessibilityLabel={`Daily goal, ${today} of ${dailyGoal} questions`}
+            />
+            <Text style={styles.goalHint}>
+              {today >= dailyGoal
+                ? "Daily goal complete."
+                : `${dailyGoal - today} ${dailyGoal - today === 1 ? "question" : "questions"} to reach today’s goal.`}
+            </Text>
+          </Card>
+        ) : null}
+        {sessionId ? (
+          <ActionCard
+            icon="play"
+            title="Continue practice"
+            description="Your active practice session is ready."
+            onPress={() => navigation.navigate("Question", { sessionId })}
+          />
+        ) : null}
+        <View style={styles.actionGrid}>
+          <ActionCard
+            icon="progress"
+            title="Practice weak topics"
+            description={
+              weakest
+                ? `${topicNames[weakest.topicId] ?? "Your lowest sampled topic"} · ${Math.round(weakest.accuracyPercentage)}% accuracy`
+                : "Build enough practice history to identify focus areas"
+            }
+            onPress={() =>
+              weakest
+                ? navigation.navigate("PracticeSetup", {
+                    mode: "TOPIC",
+                    topicId: weakest.topicId,
+                    topicName: topicNames[weakest.topicId],
+                  })
+                : navigation.navigate("Topics")
+            }
+          />
+          <ActionCard
+            icon="exam"
+            title="Mock exam"
+            description="Practice under timed exam conditions"
+            accent
+            onPress={() => navigation.navigate("MockExam")}
+          />
+        </View>
+        <SectionHeader title="Recommended for you" />
+        {learning.data ? (
+          <Card>
+            <Eyebrow>{learning.data.subjectTitle.toUpperCase()}</Eyebrow>
+            <Text style={styles.recommendationTitle}>
+              {learning.data.topicTitle}
+            </Text>
+            <Text style={styles.muted}>
+              {learning.data.completedSectionCount} of{" "}
+              {learning.data.totalSectionCount} key facts complete
+            </Text>
+            <ProgressBar
+              value={
+                learning.data.totalSectionCount
+                  ? (learning.data.completedSectionCount * 100) /
+                    learning.data.totalSectionCount
+                  : 0
+              }
+              accessibilityLabel={`${learning.data.completedSectionCount} of ${learning.data.totalSectionCount} key facts complete`}
+            />
+            <Button
+              label="Continue lesson"
+              variant="text"
+              onPress={continueLearning}
+            />
+          </Card>
+        ) : (
+          <Card tone="soft">
+            <Text style={styles.recommendationTitle}>
+              Choose your first lesson
+            </Text>
+            <Text style={styles.muted}>
+              Browse the published curriculum and start with any available
+              topic.
+            </Text>
+            <Button
+              label="Browse study topics"
+              variant="text"
+              onPress={() => navigation.navigate("StudySubjects")}
+            />
+          </Card>
+        )}
+        <SectionHeader title="Your progress" />
+        <View style={styles.stats}>
+          <View style={styles.stat}>
+            <StatTile icon="progress" label="QUESTIONS" value={`${answered}`} />
+          </View>
+          <View style={styles.stat}>
+            <StatTile
+              icon="check"
+              label="ACCURACY"
+              value={accuracy == null ? "—" : `${accuracy}%`}
+              tone="green"
+            />
+          </View>
+        </View>
+      </Screen>
+      <BottomTabBar active="home" onNavigate={navigateTab} />
     </View>
-    {answered > 0 && <View style={styles.insight}><View style={styles.insightCopy}><Text style={styles.insightTitle}>You are making progress</Text><Text style={styles.insightText}>{accuracy}% accuracy across {answered} answered {answered === 1 ? 'question' : 'questions'}.</Text><ProgressBar value={accuracy} accessibilityLabel="Overall accuracy" /></View><View style={styles.sparkle}><Icon name="trophy" size={24} color={theme.colors.success} /></View></View>}
-  </Screen><BottomTabBar active="home" onNavigate={navigateTab} /></View>;
+  );
 }
 
 const styles = StyleSheet.create({
   page: { backgroundColor: theme.colors.background, flex: 1 },
-  hero: { backgroundColor: theme.colors.primary, borderRadius: theme.radii.xl, minHeight: 190, overflow: 'hidden', padding: theme.spacing.md, justifyContent: 'flex-end' },
-  heroOrb: { backgroundColor: theme.colors.primaryContainer, borderRadius: 160, height: 260, opacity: 0.55, position: 'absolute', right: -80, top: -100, width: 260 },
-  heroTitle: { color: theme.colors.onPrimary, ...theme.typography.heading, maxWidth: 360 }, heroBody: { color: '#EAF1FF', ...theme.typography.bodyLarge, marginTop: 4 },
-  sectionLabel: { color: theme.colors.text, ...theme.typography.label, letterSpacing: 1.2, marginTop: theme.spacing.sm },
-  resumeTitle: { color: theme.colors.primary, ...theme.typography.label }, muted: { color: theme.colors.muted, ...theme.typography.caption },
-  profileRow: { flexDirection: 'row', gap: theme.spacing.sm },
-  profileCard: { flex: 1 },
-  iconCircle: { alignItems: 'center', borderRadius: theme.radii.full, height: 48, justifyContent: 'center', width: 48 }, yellow: { backgroundColor: theme.colors.accent }, blue: { backgroundColor: theme.colors.surfaceHigh },
-  cardTitle: { color: theme.colors.text, ...theme.typography.label, marginTop: 4 },
-  insight: { alignItems: 'center', backgroundColor: theme.colors.surface, borderColor: theme.colors.divider, borderRadius: theme.radii.xl, borderWidth: 1, flexDirection: 'row', gap: theme.spacing.sm, padding: theme.spacing.md },
-  insightCopy: { flex: 1, gap: 6 }, insightTitle: { color: theme.colors.success, ...theme.typography.label }, insightText: { color: theme.colors.success, ...theme.typography.body },
-  sparkle: { alignItems: 'center', backgroundColor: theme.colors.surface, borderRadius: theme.radii.full, height: 52, justifyContent: 'center', width: 52, ...theme.shadows.card },
+  greeting: { gap: 4, marginBottom: theme.spacing.xs },
+  greetingTitle: { color: theme.colors.text, ...theme.typography.heading },
+  greetingBody: { color: theme.colors.muted, ...theme.typography.body },
+  readinessCard: {
+    alignItems: "center",
+    flexDirection: "row",
+    padding: theme.spacing.md,
+  },
+  readinessCopy: { flex: 1, gap: 10 },
+  readinessTitle: {
+    color: theme.colors.text,
+    fontSize: 22,
+    fontWeight: "700",
+    lineHeight: 28,
+  },
+  muted: { color: theme.colors.muted, ...theme.typography.body },
+  goalHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  cardTitle: { color: theme.colors.text, ...theme.typography.subheading },
+  goalValue: { color: theme.colors.primary, ...theme.typography.label },
+  goalHint: {
+    color: theme.colors.muted,
+    ...theme.typography.caption,
+    fontStyle: "italic",
+  },
+  actionGrid: { gap: theme.spacing.xs },
+  recommendationTitle: {
+    color: theme.colors.text,
+    fontSize: 20,
+    fontWeight: "700",
+    lineHeight: 27,
+  },
+  stats: { flexDirection: "row", gap: theme.spacing.xs },
+  stat: { flex: 1 },
 });
