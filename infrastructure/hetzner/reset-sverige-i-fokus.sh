@@ -9,7 +9,7 @@ ACTION="${1:-inspect}"
 EXPECTED_HOST_SHA256="${2:-}"
 [[ "${ACTION}" == inspect || "${ACTION}" == execute ]] || die "Action must be inspect or execute"
 require_file "${PLATFORM_ENV_FILE}"
-for command in age age-keygen docker python3 sha256sum; do require_command "${command}"; done
+for command in docker python3 sha256sum; do require_command "${command}"; done
 if ! command -v psql >/dev/null 2>&1 || [[ "$(psql --version 2>/dev/null | sed -E 's/.* ([0-9]+)(\\..*)?$/\\1/')" -lt 18 ]]; then
   POSTGRES_TOOL_DIR="${PLATFORM_STATE_DIR}/postgres18-client"
   install -d -m 700 "${POSTGRES_TOOL_DIR}"
@@ -86,14 +86,14 @@ printf '{"event":"hosted_target_inspected","region":"eu-central-1","hostSha256":
 [[ "${ACTION}" == inspect ]] && exit 0
 
 cd "${PLATFORM_REPOSITORY}"
+require_command openssl
 BACKUP_ROOT="${PLATFORM_ROOT}/backups/sverige-i-fokus-$(date -u +'%Y%m%dT%H%M%SZ')"
 install -d -m 700 "${BACKUP_ROOT}"
-AGE_IDENTITY="${PLATFORM_ROOT}/backups/sverige-i-fokus-age-identity.txt"
-if [[ ! -f "${AGE_IDENTITY}" ]]; then
-  age-keygen -o "${AGE_IDENTITY}"
-  chmod 600 "${AGE_IDENTITY}"
+BACKUP_KEY="${PLATFORM_ROOT}/backups/sverige-i-fokus-backup.key"
+if [[ ! -f "${BACKUP_KEY}" ]]; then
+  openssl rand -hex 32 >"${BACKUP_KEY}"
+  chmod 600 "${BACKUP_KEY}"
 fi
-AGE_RECIPIENT="$(age-keygen -y "${AGE_IDENTITY}")"
 printf 'database\tarchive\tbytes\tsha256\tvalidated\n' >"${BACKUP_ROOT}/manifest.tsv"
 for prefix in CONTENT LEARNING AI; do
   database="${prefix,,}"
@@ -101,11 +101,12 @@ for prefix in CONTENT LEARNING AI; do
   password_var="${prefix}_CORPUS_PASSWORD"
   url_var="${prefix}_CORPUS_URL"
   clear_archive="${BACKUP_ROOT}/${database}.dump"
-  encrypted_archive="${clear_archive}.age"
+  encrypted_archive="${clear_archive}.aes256"
   PGPASSWORD="${!password_var}" "${PG_DUMP}" --format=custom --compress=9 \
     --no-owner --no-acl --username="${!username_var}" --dbname="${!url_var}" --file="${clear_archive}"
   "${PG_RESTORE}" --list "${clear_archive}" >/dev/null
-  age -r "${AGE_RECIPIENT}" -o "${encrypted_archive}" "${clear_archive}"
+  openssl enc -aes-256-cbc -pbkdf2 -salt -pass "file:${BACKUP_KEY}" \
+    -in "${clear_archive}" -out "${encrypted_archive}"
   rm -f -- "${clear_archive}"
   chmod 600 "${encrypted_archive}"
   printf '%s\t%s\t%s\t%s\ttrue\n' "${database}" "${encrypted_archive}" \

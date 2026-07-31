@@ -43,3 +43,12 @@ Reset retention:
 - Content keeps schema, Flyway history, and immutable `audit_event` records.
 - Learning keeps schema, Flyway history, learner profiles, and learner settings; curriculum-bound progress and attempts are cleared.
 - AI keeps schema, Flyway history, immutable audit, quota profiles, price profiles, and provider-circuit configuration; content jobs, proposals, findings, evidence, lineage, token reservations, and results are cleared.
+
+The guarded Hetzner workflow uses PostgreSQL 18 in an isolated container when the host client is older. If the general offsite backup configuration is unavailable, it writes validated custom archives under `/opt/citizenship-platform/backups`, encrypts them with AES-256-CBC/PBKDF2, and protects both the backup set and separately reusable restore key with mode `0600`. Restore to a recovery database with:
+
+```bash
+openssl enc -d -aes-256-cbc -pbkdf2 \
+  -pass file:/opt/citizenship-platform/backups/sverige-i-fokus-backup.key \
+  -in content.dump.aes256 |
+  pg_restore --exit-on-error --no-owner --no-acl --dbname 'postgresql://…/content_recovery'
+```
