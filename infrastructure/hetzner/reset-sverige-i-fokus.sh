@@ -127,13 +127,19 @@ if [[ ! -f "${BACKUP_KEY}" ]]; then
 fi
 printf 'database\tarchive\tbytes\tsha256\tvalidated\n' >"${BACKUP_ROOT}/manifest.tsv"
 clear_archive=""
-trap '[[ -z "${clear_archive}" ]] || rm -f -- "${clear_archive}"' EXIT
+clear_archive_dir=""
+trap '[[ -z "${clear_archive}" ]] || rm -f -- "${clear_archive}"; [[ -z "${clear_archive_dir}" ]] || rmdir -- "${clear_archive_dir}"' EXIT
 for prefix in CONTENT LEARNING AI; do
   database="${prefix,,}"
   username_var="${prefix}_CORPUS_USERNAME"
   password_var="${prefix}_CORPUS_PASSWORD"
   url_var="${prefix}_CORPUS_URL"
-  clear_archive="$(mktemp "/tmp/sverige-i-fokus-${database}.XXXXXX.dump")"
+  clear_archive_dir="$(mktemp -d "/tmp/sverige-i-fokus-${database}.XXXXXX")"
+  chmod 700 "${clear_archive_dir}"
+  clear_archive="${clear_archive_dir}/${database}.dump"
+  # The official PostgreSQL image runs as an unprivileged UID. Grant only its
+  # one-shot private directory the write/execute permission required for pg_dump.
+  chmod 733 "${clear_archive_dir}"
   encrypted_archive="${BACKUP_ROOT}/${database}.dump.aes256"
   PGPASSWORD="${!password_var}" "${PG_DUMP}" --format=custom --compress=9 \
     --no-owner --no-acl --username="${!username_var}" --dbname="${!url_var}" --file="${clear_archive}"
@@ -141,7 +147,9 @@ for prefix in CONTENT LEARNING AI; do
   openssl enc -aes-256-cbc -pbkdf2 -salt -pass "file:${BACKUP_KEY}" \
     -in "${clear_archive}" -out "${encrypted_archive}"
   rm -f -- "${clear_archive}"
+  rmdir -- "${clear_archive_dir}"
   clear_archive=""
+  clear_archive_dir=""
   chmod 600 "${encrypted_archive}"
   printf '%s\t%s\t%s\t%s\ttrue\n' "${database}" "${encrypted_archive}" \
     "$(wc -c <"${encrypted_archive}" | tr -d '[:space:]')" \
