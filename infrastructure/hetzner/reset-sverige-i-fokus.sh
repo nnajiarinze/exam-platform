@@ -73,12 +73,31 @@ db_value() {
 }
 
 counts_json() {
-  local database="$1" prefix="$2"
-  db_value "${database}" "${prefix}" \
-    "SELECT coalesce(json_object_agg(tablename,n),'{}')::text FROM (
-       SELECT tablename,(xpath('/row/c/text()',query_to_xml(format('SELECT count(*) c FROM %I',tablename),false,true,'')))[1]::text::bigint n
-       FROM pg_tables WHERE schemaname='public' AND tablename<>'flyway_schema_history' ORDER BY tablename
-     ) x;"
+  local database="$1" prefix="$2" query result
+  case "${database}" in
+    content) query="SELECT json_build_object(
+      'exam',(SELECT count(*) FROM exam),'examVersion',(SELECT count(*) FROM exam_version),
+      'subject',(SELECT count(*) FROM subject),'topic',(SELECT count(*) FROM topic),
+      'objective',(SELECT count(*) FROM learning_objective),'source',(SELECT count(*) FROM source_reference),
+      'fact',(SELECT count(*) FROM knowledge_fact),'question',(SELECT count(*) FROM question),
+      'release',(SELECT count(*) FROM content_release),'audit',(SELECT count(*) FROM audit_event))::text" ;;
+    learning) query="SELECT json_build_object(
+      'profile',(SELECT count(*) FROM learner_profile),'settings',(SELECT count(*) FROM learner_settings),
+      'release',(SELECT count(*) FROM imported_content_release),'subject',(SELECT count(*) FROM imported_subject),
+      'topic',(SELECT count(*) FROM imported_topic),'question',(SELECT count(*) FROM imported_question),
+      'practiceSession',(SELECT count(*) FROM practice_session),'practiceResponse',(SELECT count(*) FROM practice_response),
+      'topicProgress',(SELECT count(*) FROM topic_progress),'mockAttempt',(SELECT count(*) FROM mock_exam_attempt),
+      'mockResponse',(SELECT count(*) FROM mock_exam_response))::text" ;;
+    ai) query="SELECT json_build_object(
+      'job',(SELECT count(*) FROM ai_generation_job),'factProposal',(SELECT count(*) FROM ai_knowledge_fact_proposal),
+      'editorialProposal',(SELECT count(*) FROM ai_editorial_proposal),'finding',(SELECT count(*) FROM ai_editorial_finding),
+      'questionProposal',(SELECT count(*) FROM ai_question_proposal),
+      'questionFinding',(SELECT count(*) FROM ai_question_intelligence_finding),
+      'quotaReservation',(SELECT count(*) FROM ai_quota_reservation),'audit',(SELECT count(*) FROM ai_audit_event))::text" ;;
+  esac
+  result="$(db_value "${database}" "${prefix}" "${query}")"
+  [[ "${result}" == \{*\} ]] || die "Count inspection failed for ${database}"
+  printf '%s\n' "${result}"
 }
 
 printf '{"event":"hosted_target_inspected","region":"eu-central-1","hostSha256":"%s","counts":{"content":%s,"learning":%s,"ai":%s}}\n' \
