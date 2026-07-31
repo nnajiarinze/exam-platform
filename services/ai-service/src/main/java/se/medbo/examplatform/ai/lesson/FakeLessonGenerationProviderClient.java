@@ -19,4 +19,14 @@ final class FakeLessonGenerationProviderClient implements LessonGenerationProvid
         request.facts().stream().map(Fact::text).toList(),pages),
         new Usage(100,50,"fake-lesson-"+request.jobId(),"FAKE","deterministic-v1"));
   }
+  @Override public PageRepairResult repairPage(PageRepairRequest request){
+    var original=request.originalPage();String body=request.facts().stream()
+        .filter(f->original.knowledgeFactVersionIds().contains(f.versionId())).map(Fact::text)
+        .collect(java.util.stream.Collectors.joining(" "))
+        +" Underlaget beskriver detta inom det aktuella ämnet. Texten håller sig till den godkända uppgiften och den angivna källan. "
+        +"Avsnittet sammanfattar bara det som stöds direkt och lägger inte till orsaker, följder eller exempel.";
+    var page=new Page(original.pageType(),original.title(),body,original.knowledgeFactVersionIds(),
+        List.of(request.facts().getFirst().text()),original.keyTerms());
+    return new PageRepairResult(page,new Usage(80,40,"fake-page-repair-"+request.jobId(),"FAKE","deterministic-v1"));
+  }
 }
