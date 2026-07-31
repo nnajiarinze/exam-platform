@@ -32,7 +32,16 @@ for prefix in CONTENT LEARNING AI; do
   [[ -n "${url}" ]] || url="$(env_file_value "${prefix}_DATABASE_URL" "${PLATFORM_ENV_FILE}")"
   username="$(env_file_value "${prefix}_DATABASE_USERNAME" "${PLATFORM_ENV_FILE}")"
   password="$(env_file_value "${prefix}_DATABASE_PASSWORD" "${PLATFORM_ENV_FILE}")"
-  printf -v "${prefix}_CORPUS_URL" '%s' "${url#jdbc:}"
+  url="$(python3 -c '
+import sys,urllib.parse
+u=urllib.parse.urlsplit(sys.argv[1].removeprefix("jdbc:"))
+q=dict(urllib.parse.parse_qsl(u.query,keep_blank_values=True))
+q.pop("sslfactory",None)
+if q.pop("ssl",None)=="true" and "sslmode" not in q: q["sslmode"]="require"
+if "channelBinding" in q: q["channel_binding"]=q.pop("channelBinding")
+print(urllib.parse.urlunsplit((u.scheme,u.netloc,u.path,urllib.parse.urlencode(q),"")))
+' "${url}")"
+  printf -v "${prefix}_CORPUS_URL" '%s' "${url}"
   printf -v "${prefix}_CORPUS_USERNAME" '%s' "${username}"
   printf -v "${prefix}_CORPUS_PASSWORD" '%s' "${password}"
   export "${prefix}_CORPUS_URL" "${prefix}_CORPUS_USERNAME" "${prefix}_CORPUS_PASSWORD"
