@@ -125,6 +125,8 @@ public class EditorialWorkspaceService {
   }
 
   public Map<String,Object> providerStatus(){ return get("/internal/v1/provider/status"); }
+  public List<Map<String,Object>> providers(){return getList("/internal/v1/provider/providers");}
+  public Map<String,Object> providerOperations(){return get("/internal/v1/provider/operations");}
   public List<Map<String,Object>> providerAlerts(){ return getList("/internal/v1/provider/alerts"); }
   public Map<String,Object> disableProvider(){ return post("/internal/v1/provider/disable",Map.of("actor",actor())); }
   public Map<String,Object> recheckProvider(){ return post("/internal/v1/provider/recheck",Map.of("actor",actor())); }

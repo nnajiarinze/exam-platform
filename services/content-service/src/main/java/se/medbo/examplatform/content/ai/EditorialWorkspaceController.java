@@ -99,6 +99,12 @@ final class EditorialWorkspaceController {
   @GetMapping("/provider/status")
   Map<String,Object> providerStatus(){ return service.providerStatus(); }
 
+  @GetMapping("/providers")
+  List<Map<String,Object>> providers(){return service.providers();}
+
+  @GetMapping("/provider/operations")
+  Map<String,Object> providerOperations(){return service.providerOperations();}
+
   @GetMapping("/provider/alerts")
   List<Map<String,Object>> providerAlerts(){ return service.providerAlerts(); }
 

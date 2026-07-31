@@ -780,6 +780,42 @@ export type AiProviderStatus = {
     };
 };
 
+export type AiFreeProviderStatus = {
+    provider: string;
+    model: string;
+    enabled: boolean;
+    credentialConfigured: boolean;
+    billingPolicy: 'FREE_ONLY';
+    confirmedFree: boolean;
+    freeStatus: 'KNOWN' | 'ESTIMATED' | 'UNKNOWN';
+    status: string;
+    reason?: string | null;
+    circuitState?: string;
+    nextRetryAt?: string | null;
+    capacity: {
+        [key: string]: unknown;
+    };
+    capabilities?: {
+        [key: string]: unknown;
+    };
+    priority: number;
+};
+
+export type AiProviderOperations = {
+    billingPolicy: 'FREE_ONLY';
+    allowPaidFallback: false;
+    requireZeroCostProvider: true;
+    allowAutomaticBillingUpgrade: false;
+    priority: Array<string>;
+    providers: Array<AiFreeProviderStatus>;
+    recentAttempts: Array<{
+        [key: string]: unknown;
+    }>;
+    recentRouting: Array<{
+        [key: string]: unknown;
+    }>;
+};
+
 export type AiProviderAlert = {
     id: string;
     severity: 'WARNING' | 'CRITICAL';
@@ -3592,6 +3628,56 @@ export type GetAiProviderStatusResponses = {
 };
 
 export type GetAiProviderStatusResponse = GetAiProviderStatusResponses[keyof GetAiProviderStatusResponses];
+
+export type ListAiProvidersData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/ai/providers';
+};
+
+export type ListAiProvidersErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+};
+
+export type ListAiProvidersError = ListAiProvidersErrors[keyof ListAiProvidersErrors];
+
+export type ListAiProvidersResponses = {
+    /**
+     * Provider statuses
+     */
+    200: Array<AiFreeProviderStatus>;
+};
+
+export type ListAiProvidersResponse = ListAiProvidersResponses[keyof ListAiProvidersResponses];
+
+export type GetAiProviderOperationsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/ai/provider/operations';
+};
+
+export type GetAiProviderOperationsErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+};
+
+export type GetAiProviderOperationsError = GetAiProviderOperationsErrors[keyof GetAiProviderOperationsErrors];
+
+export type GetAiProviderOperationsResponses = {
+    /**
+     * Provider operations
+     */
+    200: AiProviderOperations;
+};
+
+export type GetAiProviderOperationsResponse = GetAiProviderOperationsResponses[keyof GetAiProviderOperationsResponses];
 
 export type ListAiProviderAlertsData = {
     body?: never;

@@ -24,6 +24,13 @@ management:
       exposure:
         include: health,info
 ai:
+  billing-policy: ${AI_BILLING_POLICY:FREE_ONLY}
+  allow-paid-fallback: ${AI_ALLOW_PAID_FALLBACK:false}
+  require-zero-cost-provider: ${AI_REQUIRE_ZERO_COST_PROVIDER:true}
+  allow-automatic-billing-upgrade: ${AI_ALLOW_AUTOMATIC_BILLING_UPGRADE:false}
+  routing:
+    priority: ${AI_PROVIDER_PRIORITY:GEMINI,GROQ,CLOUDFLARE_WORKERS_AI,OPENROUTER_FREE}
+    max-provider-attempts: ${AI_MAX_PROVIDER_ATTEMPTS:4}
   editorial:
     enabled: ${AI_EDITORIAL_ASSISTANT_ENABLED:false}
     provider: ${AI_PROVIDER:GEMINI}
@@ -40,6 +47,8 @@ ai:
   paid-usage-enabled: ${AI_PAID_USAGE_ENABLED:false}
   monthly-spend-limit-usd: ${AI_MONTHLY_SPEND_LIMIT_USD:0}
   gemini:
+    enabled: ${GEMINI_ENABLED:true}
+    free-only: ${GEMINI_FREE_ONLY:true}
     api-key: ${AI_GEMINI_API_KEY:}
     base-url: ${AI_GEMINI_BASE_URL:https://generativelanguage.googleapis.com}
     api-version: ${AI_GEMINI_API_VERSION:v1beta}
@@ -61,3 +70,31 @@ ai:
     critical-threshold-percent: ${AI_GEMINI_CRITICAL_THRESHOLD_PERCENT:85}
     stop-threshold-percent: ${AI_GEMINI_STOP_THRESHOLD_PERCENT:95}
     quota-timezone: ${AI_QUOTA_TIMEZONE:America/Los_Angeles}
+  groq:
+    enabled: ${GROQ_ENABLED:false}
+    free-only: ${GROQ_FREE_ONLY:true}
+    api-key: ${GROQ_API_KEY:}
+    base-url: ${GROQ_BASE_URL:https://api.groq.com/openai/v1}
+    model: ${GROQ_MODEL:}
+    free-request-limit: ${GROQ_FREE_REQUEST_LIMIT:0}
+    free-token-limit: ${GROQ_FREE_TOKEN_LIMIT:0}
+    timeout-seconds: ${GROQ_TIMEOUT_SECONDS:45}
+  cloudflare:
+    enabled: ${CLOUDFLARE_WORKERS_AI_ENABLED:false}
+    free-only: ${CLOUDFLARE_WORKERS_AI_FREE_ONLY:true}
+    account-id: ${CLOUDFLARE_ACCOUNT_ID:}
+    api-token: ${CLOUDFLARE_WORKERS_AI_API_TOKEN:}
+    base-url: ${CLOUDFLARE_WORKERS_AI_BASE_URL:https://api.cloudflare.com/client/v4}
+    model: ${CLOUDFLARE_WORKERS_AI_MODEL:}
+    daily-neuron-limit: ${CLOUDFLARE_DAILY_NEURON_LIMIT:10000}
+    timeout-seconds: ${CLOUDFLARE_WORKERS_AI_TIMEOUT_SECONDS:45}
+  openrouter:
+    enabled: ${OPENROUTER_ENABLED:false}
+    free-only: ${OPENROUTER_FREE_ONLY:true}
+    api-key: ${OPENROUTER_API_KEY:}
+    base-url: ${OPENROUTER_BASE_URL:https://openrouter.ai/api/v1}
+    model: ${OPENROUTER_MODEL:}
+    allow-free-router: ${OPENROUTER_ALLOW_FREE_ROUTER:false}
+    http-referer: ${OPENROUTER_HTTP_REFERER:}
+    app-title: ${OPENROUTER_APP_TITLE:Svea Study}
+    timeout-seconds: ${OPENROUTER_TIMEOUT_SECONDS:45}

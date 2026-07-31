@@ -5,7 +5,7 @@ import { AdminIcon } from './AdminIcon';
 import { environment, type AppEnvironment } from '../app/config/environment';
 
 const links = [
-  ['/dashboard', 'Dashboard', 'dashboard'], ['/exam-structure', 'Exam Structure', 'exams'], ['/sources', 'Sources', 'source'], ['/knowledge', 'Knowledge Base', 'knowledge'], ['/questions', 'Questions', 'content'], ['/ai/question-batches', 'AI Question Batches', 'knowledge'], ['/reviews', 'Review Queue', 'review'], ['/releases', 'Releases', 'releases'], ['/reports', 'Reports', 'reports'], ['/audit', 'Audit Log', 'audit'], ['/help/content-system', 'How the Content System Works', 'help'],
+  ['/dashboard', 'Dashboard', 'dashboard'], ['/exam-structure', 'Exam Structure', 'exams'], ['/sources', 'Sources', 'source'], ['/knowledge', 'Knowledge Base', 'knowledge'], ['/questions', 'Questions', 'content'], ['/ai/question-batches', 'AI Question Batches', 'knowledge'], ['/ai/providers', 'AI Providers', 'reports'], ['/reviews', 'Review Queue', 'review'], ['/releases', 'Releases', 'releases'], ['/reports', 'Reports', 'reports'], ['/audit', 'Audit Log', 'audit'], ['/help/content-system', 'How the Content System Works', 'help'],
 ] as const;
 
 export function AdminLayout() {

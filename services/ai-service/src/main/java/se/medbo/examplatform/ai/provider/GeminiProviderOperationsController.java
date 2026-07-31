@@ -18,8 +18,10 @@ import org.springframework.http.HttpStatus;
 @RequestMapping("/internal/v1/provider")
 final class GeminiProviderOperationsController {
   record Actor(@NotBlank String actor) {}
-  private final GeminiQuotaService quota;
-  GeminiProviderOperationsController(GeminiQuotaService quota){this.quota=quota;}
+  private final GeminiQuotaService quota;private final FreeOnlyProviderRouter router;
+  GeminiProviderOperationsController(GeminiQuotaService quota,FreeOnlyProviderRouter router){this.quota=quota;this.router=router;}
+  @GetMapping("/operations") Map<String,Object> operations(){return router.operations();}
+  @GetMapping("/providers") List<Map<String,Object>> providers(){return router.statuses();}
   @GetMapping("/status") Map<String,Object> status(){return quota.status();}
   @GetMapping("/alerts") List<Map<String,Object>> alerts(){return quota.alerts();}
   @PostMapping("/disable") Map<String,Object> disable(@Valid @RequestBody Actor body){quota.disable(body.actor());return quota.status();}

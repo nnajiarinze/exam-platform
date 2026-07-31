@@ -85,8 +85,23 @@ services:
       - { key: AI_DATABASE_PASSWORD, sync: false }
       - { key: AI_INTERNAL_API_KEY, sync: false }
       - { key: AI_PROVIDER, value: GEMINI }
+      - { key: AI_BILLING_POLICY, value: FREE_ONLY }
+      - { key: AI_ALLOW_PAID_FALLBACK, value: "false" }
+      - { key: AI_REQUIRE_ZERO_COST_PROVIDER, value: "true" }
+      - { key: AI_ALLOW_AUTOMATIC_BILLING_UPGRADE, value: "false" }
+      - { key: AI_PROVIDER_PRIORITY, value: GEMINI,GROQ,CLOUDFLARE_WORKERS_AI,OPENROUTER_FREE }
+      - { key: GEMINI_ENABLED, value: "true" }
+      - { key: GEMINI_FREE_ONLY, value: "true" }
       - { key: AI_GEMINI_API_KEY, sync: false }
       - { key: AI_GEMINI_MODEL, sync: false }
+      - { key: GROQ_ENABLED, value: "false" }
+      - { key: GROQ_FREE_ONLY, value: "true" }
+      - { key: CLOUDFLARE_WORKERS_AI_ENABLED, value: "false" }
+      - { key: CLOUDFLARE_WORKERS_AI_FREE_ONLY, value: "true" }
+      - { key: CLOUDFLARE_DAILY_NEURON_LIMIT, value: "10000" }
+      - { key: OPENROUTER_ENABLED, value: "false" }
+      - { key: OPENROUTER_FREE_ONLY, value: "true" }
+      - { key: OPENROUTER_ALLOW_FREE_ROUTER, value: "false" }
 
   - type: web
     name: citizenship-identity

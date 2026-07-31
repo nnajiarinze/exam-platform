@@ -184,6 +184,7 @@ public class LessonGenerationService {
   }
 
   private void failOrRetry(UUID id,int retries,AiProviderException error){
+    if("AI_ALL_FREE_PROVIDERS_UNAVAILABLE".equals(error.code())){pause(id,error);return;}
     if(error.transientFailure()&&retries<maxRetries)jdbc.sql("""
         UPDATE ai_lesson_generation_job SET status='QUEUED',retry_count=retry_count+1,
           next_attempt_at=:next,error_code=:code,error_message=:message,version=version+1 WHERE id=:id
@@ -194,6 +195,12 @@ public class LessonGenerationService {
           error_message=:message,version=version+1 WHERE id=:id
         """).param("now",now()).param("code",error.code()).param("message",sanitize(error.getMessage()))
         .param("id",id).update();
+  }
+
+  private void pause(UUID id,AiProviderException error){
+    var next=jdbc.sql("SELECT coalesce(max(next_retry_at),now()+interval '1 hour') FROM ai_provider_routing_decision WHERE job_id=:id AND outcome='PAUSED'").param("id",id).query(OffsetDateTime.class).single();
+    jdbc.sql("UPDATE ai_lesson_generation_job SET status='QUEUED',next_attempt_at=:next,error_code=:code,error_message=:message,version=version+1 WHERE id=:id")
+        .param("next",next).param("code",error.code()).param("message",sanitize(error.getMessage())).param("id",id).update();
   }
 
   private void parse(Map<String,Object> row,String key,Class<?> type){try{row.put(key,mapper.readValue((String)row.get(key),type));}catch(Exception e){throw new IllegalStateException(e);}}

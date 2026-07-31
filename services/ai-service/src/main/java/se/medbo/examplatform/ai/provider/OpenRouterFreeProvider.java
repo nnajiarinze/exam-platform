@@ -1,0 +1,33 @@
+package se.medbo.examplatform.ai.provider;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.OffsetDateTime;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.stereotype.Component;
+
+@Component
+final class OpenRouterFreeProvider extends OpenAiCompatibleFreeProvider {
+  private static final List<String> PRICES=List.of("prompt","completion","request","internal_reasoning","input_cache_read","input_cache_write");
+  private final boolean allowRouter;private final String referer,title;private final JdbcClient jdbc;private final java.util.concurrent.atomic.AtomicLong requestsUsed=new java.util.concurrent.atomic.AtomicLong();private volatile boolean loaded;private volatile Verification verification;
+  private record Verification(boolean free,boolean structured,long context,OffsetDateTime checked,String reason){}
+  OpenRouterFreeProvider(ObjectMapper mapper,JdbcClient jdbc,@Value("${ai.openrouter.api-key:}")String key,@Value("${ai.openrouter.model:}")String model,@Value("${ai.openrouter.base-url:https://openrouter.ai/api/v1}")String base,@Value("${ai.openrouter.enabled:false}")boolean enabled,@Value("${ai.openrouter.free-only:true}")boolean freeOnly,@Value("${ai.openrouter.allow-free-router:false}")boolean allowRouter,@Value("${ai.openrouter.http-referer:}")String referer,@Value("${ai.openrouter.app-title:Svea Study}")String title,@Value("${ai.openrouter.timeout-seconds:45}")long timeout){super(mapper,key,model,base,"openrouter.ai",enabled,freeOnly,timeout);this.jdbc=jdbc;this.allowRouter=allowRouter;this.referer=referer;this.title=title;}
+  public String provider(){return "OPENROUTER_FREE";}public int priority(){return 4;}
+  public Availability availability(Request r){load();if(!enabled)return no("DISABLED",FreeStatus.UNKNOWN);if(!credentialsConfigured())return no("MISSING_CREDENTIALS",FreeStatus.UNKNOWN);if(!freeOnly)return no("FREE_STATUS_UNVERIFIED",FreeStatus.UNKNOWN);long remaining=Math.max(0,50-requestsUsed.get());if(remaining==0)return new Availability(false,"FREE_QUOTA_EXHAUSTED",FreeStatus.KNOWN,CapacityAuthority.LOCAL_ESTIMATE,"QUOTA_PAUSED",reset(),Map.of("requestLimit",50,"requestsUsed",requestsUsed.get(),"requestsRemaining",remaining));if("openrouter/free".equals(model)){if(!allowRouter)return no("DISABLED",FreeStatus.UNKNOWN);return new Availability(true,"READY",FreeStatus.KNOWN,CapacityAuthority.PROVIDER_API,"CLOSED",null,Map.of("requestLimit",50,"requestsUsed",requestsUsed.get(),"requestsRemaining",remaining));}Verification v=verify();if(v==null||!v.free)return no(v==null?"FREE_STATUS_UNVERIFIED":v.reason,FreeStatus.UNKNOWN);if(!v.structured)return no("CAPABILITY_UNSUPPORTED",FreeStatus.KNOWN);return new Availability(true,"READY",FreeStatus.KNOWN,CapacityAuthority.PROVIDER_API,"CLOSED",null,Map.of("contextLimit",v.context,"requestLimit",50,"requestsUsed",requestsUsed.get(),"requestsRemaining",remaining));}
+  @Override void extraHeaders(HttpRequest.Builder b){if(!referer.isBlank())b.header("HTTP-Referer",referer);if(!title.isBlank())b.header("X-Title",title);}
+  @Override boolean responseConfirmedFree(JsonNode root,String actual){if(root.path("usage").has("cost")&&!zero(root.path("usage").path("cost").asText()))return false;if("openrouter/free".equals(model))return allowRouter&&!actual.isBlank();Verification v=verification;return v!=null&&v.free;}
+  Map<String,Object> rateLimits(HttpResponse<?> r){var m=new LinkedHashMap<String,Object>();r.headers().firstValue("x-ratelimit-limit").ifPresent(v->m.put("requestLimit",number(v,0)));r.headers().firstValue("x-ratelimit-remaining").ifPresent(v->m.put("requestsRemaining",number(v,0)));r.headers().firstValue("retry-after").ifPresent(v->m.put("retryAfterSeconds",number(v,0)));return m;}
+  @Override void observed(Map<String,Object> limits,JsonNode usage){requestsUsed.incrementAndGet();Object remaining=limits.get("requestsRemaining");if(remaining instanceof Number n)requestsUsed.set(Math.max(requestsUsed.get(),50-n.longValue()));}
+  private synchronized void load(){if(loaded)return;loaded=true;var rows=jdbc.sql("SELECT requests_used FROM ai_provider_capacity_snapshot WHERE provider='OPENROUTER_FREE' AND model=:model AND refreshed_at>=date_trunc('day',now() AT TIME ZONE 'UTC') ORDER BY refreshed_at DESC LIMIT 1").param("model",model).query().listOfRows();if(!rows.isEmpty()&&rows.getFirst().get("requests_used") instanceof Number n)requestsUsed.set(n.longValue());}private OffsetDateTime reset(){return OffsetDateTime.now(java.time.ZoneOffset.UTC).toLocalDate().plusDays(1).atStartOfDay().atOffset(java.time.ZoneOffset.UTC);}
+  private synchronized Verification verify(){if(verification!=null&&verification.checked().isAfter(OffsetDateTime.now().minusMinutes(15)))return verification;try{String encoded=java.util.Arrays.stream(model.split("/",2)).map(v->URLEncoder.encode(v,StandardCharsets.UTF_8)).collect(java.util.stream.Collectors.joining("/"));var request=HttpRequest.newBuilder(URI.create(base+"/model/"+encoded)).timeout(timeout).header("Authorization","Bearer "+key).GET().build();var response=http.send(request,HttpResponse.BodyHandlers.ofString());if(response.statusCode()/100!=2)return verification=new Verification(false,false,0,OffsetDateTime.now(),"MODEL_UNAVAILABLE");JsonNode data=mapper.readTree(response.body()).path("data");boolean zero=zeroPricing(data.path("pricing"));boolean structured=data.path("supported_parameters").isArray()&&java.util.stream.StreamSupport.stream(data.path("supported_parameters").spliterator(),false).map(JsonNode::asText).anyMatch(v->v.equals("structured_outputs")||v.equals("response_format"));return verification=new Verification(zero,structured,data.path("context_length").asLong(),OffsetDateTime.now(),zero?"READY":"FREE_STATUS_UNVERIFIED");}catch(Exception e){return verification=new Verification(false,false,0,OffsetDateTime.now(),"PROVIDER_UNHEALTHY");}}
+  boolean zeroPricing(JsonNode pricing){for(String field:PRICES)if(!pricing.has(field)||!zero(pricing.get(field).asText()))return false;return true;}private boolean zero(String v){try{return new java.math.BigDecimal(v).signum()==0;}catch(Exception e){return false;}}private Availability no(String r,FreeStatus s){return new Availability(false,r,s,CapacityAuthority.PROVIDER_API,"UNKNOWN",null,Map.of());}
+}
