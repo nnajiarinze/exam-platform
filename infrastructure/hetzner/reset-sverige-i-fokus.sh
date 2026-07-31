@@ -9,7 +9,7 @@ ACTION="${1:-inspect}"
 EXPECTED_HOST_SHA256="${2:-}"
 [[ "${ACTION}" == inspect || "${ACTION}" == execute ]] || die "Action must be inspect or execute"
 require_file "${PLATFORM_ENV_FILE}"
-for command in docker python3 sha256sum; do require_command "${command}"; done
+for command in age age-keygen docker python3 sha256sum; do require_command "${command}"; done
 if ! command -v psql >/dev/null 2>&1 || [[ "$(psql --version 2>/dev/null | sed -E 's/.* ([0-9]+)(\\..*)?$/\\1/')" -lt 18 ]]; then
   POSTGRES_TOOL_DIR="${PLATFORM_STATE_DIR}/postgres18-client"
   install -d -m 700 "${POSTGRES_TOOL_DIR}"
@@ -24,22 +24,38 @@ if ! command -v psql >/dev/null 2>&1 || [[ "$(psql --version 2>/dev/null | sed -
   export POSTGRES_TOOL_DIR
 fi
 PSQL="$(postgres_tool psql)"
+PG_DUMP="$(postgres_tool pg_dump)"
+PG_RESTORE="$(postgres_tool pg_restore)"
 
-for variable in BACKUP_DATABASE_HOST BACKUP_DATABASE_PORT \
-  BACKUP_CONTENT_USERNAME BACKUP_CONTENT_PASSWORD \
-  BACKUP_LEARNING_USERNAME BACKUP_LEARNING_PASSWORD \
-  BACKUP_AI_USERNAME BACKUP_AI_PASSWORD; do
-  printf -v "${variable}" '%s' "$(env_file_value "${variable}" "${PLATFORM_ENV_FILE}")"
-  declare -gx "${variable}=${!variable}"
-  require_var "${variable}"
+for prefix in CONTENT LEARNING AI; do
+  url="$(env_file_value "${prefix}_MIGRATION_DATABASE_URL" "${PLATFORM_ENV_FILE}")"
+  [[ -n "${url}" ]] || url="$(env_file_value "${prefix}_DATABASE_URL" "${PLATFORM_ENV_FILE}")"
+  username="$(env_file_value "${prefix}_DATABASE_USERNAME" "${PLATFORM_ENV_FILE}")"
+  password="$(env_file_value "${prefix}_DATABASE_PASSWORD" "${PLATFORM_ENV_FILE}")"
+  printf -v "${prefix}_CORPUS_URL" '%s' "${url#jdbc:}"
+  printf -v "${prefix}_CORPUS_USERNAME" '%s' "${username}"
+  printf -v "${prefix}_CORPUS_PASSWORD" '%s' "${password}"
+  export "${prefix}_CORPUS_URL" "${prefix}_CORPUS_USERNAME" "${prefix}_CORPUS_PASSWORD"
+  require_var "${prefix}_CORPUS_URL"
+  require_var "${prefix}_CORPUS_USERNAME"
+  require_var "${prefix}_CORPUS_PASSWORD"
 done
 
-HOST="${BACKUP_DATABASE_HOST,,}"
-[[ "${HOST}" == *.eu-central-1.aws.neon.tech ]] ||
-  die "Hosted database is not a verified Neon eu-central-1 endpoint"
-[[ "${HOST}" != *us-east* && "${HOST}" != *useast* ]] ||
-  die "Retired US-East target is forbidden"
-HOST_SHA256="$(printf '%s' "${HOST}" | sha256sum | awk '{print $1}')"
+hosts=()
+for prefix in CONTENT LEARNING AI; do
+  url_var="${prefix}_CORPUS_URL"
+  read -r host database < <(python3 -c 'import sys,urllib.parse; u=urllib.parse.urlparse(sys.argv[1]); print(u.hostname or "",u.path.lstrip("/"))' "${!url_var}")
+  host="${host,,}"
+  [[ "${database}" == "${prefix,,}" ]] || die "${prefix} URL targets unexpected database ${database}"
+  [[ "${host}" == *.eu-central-1.aws.neon.tech ]] ||
+    die "${prefix} database is not a verified Neon eu-central-1 endpoint"
+  [[ "${host}" != *us-east* && "${host}" != *useast* ]] ||
+    die "Retired US-East target is forbidden"
+  hosts+=("${host}")
+done
+[[ "${hosts[0]}" == "${hosts[1]}" && "${hosts[0]}" == "${hosts[2]}" ]] ||
+  die "Content, Learning, and AI do not resolve to the same verified direct endpoint"
+HOST_SHA256="$(printf '%s' "${hosts[0]}" | sha256sum | awk '{print $1}')"
 if [[ "${ACTION}" == execute ]]; then
   [[ "${EXPECTED_HOST_SHA256}" =~ ^[a-f0-9]{64}$ ]] ||
     die "Execute requires the fingerprint emitted by a separate inspect run"
@@ -48,12 +64,12 @@ if [[ "${ACTION}" == execute ]]; then
 fi
 
 db_value() {
-  local database="$1" prefix="${2^^}" query="$3" username_var password_var
-  username_var="BACKUP_${prefix}_USERNAME"
-  password_var="BACKUP_${prefix}_PASSWORD"
+  local database="$1" prefix="${2^^}" query="$3" username_var password_var url_var
+  username_var="${prefix}_CORPUS_USERNAME"
+  password_var="${prefix}_CORPUS_PASSWORD"
+  url_var="${prefix}_CORPUS_URL"
   PGPASSWORD="${!password_var}" "${PSQL}" -XAt -v ON_ERROR_STOP=1 \
-    --host="${BACKUP_DATABASE_HOST}" --port="${BACKUP_DATABASE_PORT}" \
-    --username="${!username_var}" --dbname="${database}" --command="${query}"
+    --username="${!username_var}" --dbname="${!url_var}" --command="${query}"
 }
 
 counts_json() {
@@ -70,7 +86,33 @@ printf '{"event":"hosted_target_inspected","region":"eu-central-1","hostSha256":
 [[ "${ACTION}" == inspect ]] && exit 0
 
 cd "${PLATFORM_REPOSITORY}"
-"${SCRIPT_DIR}/backup.sh"
+BACKUP_ROOT="${PLATFORM_ROOT}/backups/sverige-i-fokus-$(date -u +'%Y%m%dT%H%M%SZ')"
+install -d -m 700 "${BACKUP_ROOT}"
+AGE_IDENTITY="${PLATFORM_ROOT}/backups/sverige-i-fokus-age-identity.txt"
+if [[ ! -f "${AGE_IDENTITY}" ]]; then
+  age-keygen -o "${AGE_IDENTITY}"
+  chmod 600 "${AGE_IDENTITY}"
+fi
+AGE_RECIPIENT="$(age-keygen -y "${AGE_IDENTITY}")"
+printf 'database\tarchive\tbytes\tsha256\tvalidated\n' >"${BACKUP_ROOT}/manifest.tsv"
+for prefix in CONTENT LEARNING AI; do
+  database="${prefix,,}"
+  username_var="${prefix}_CORPUS_USERNAME"
+  password_var="${prefix}_CORPUS_PASSWORD"
+  url_var="${prefix}_CORPUS_URL"
+  clear_archive="${BACKUP_ROOT}/${database}.dump"
+  encrypted_archive="${clear_archive}.age"
+  PGPASSWORD="${!password_var}" "${PG_DUMP}" --format=custom --compress=9 \
+    --no-owner --no-acl --username="${!username_var}" --dbname="${!url_var}" --file="${clear_archive}"
+  "${PG_RESTORE}" --list "${clear_archive}" >/dev/null
+  age -r "${AGE_RECIPIENT}" -o "${encrypted_archive}" "${clear_archive}"
+  rm -f -- "${clear_archive}"
+  chmod 600 "${encrypted_archive}"
+  printf '%s\t%s\t%s\t%s\ttrue\n' "${database}" "${encrypted_archive}" \
+    "$(wc -c <"${encrypted_archive}" | tr -d '[:space:]')" \
+    "$(sha256sum "${encrypted_archive}" | awk '{print $1}')" >>"${BACKUP_ROOT}/manifest.tsv"
+done
+chmod 600 "${BACKUP_ROOT}/manifest.tsv"
 BACKUP_COMPLETED_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
 
 mkdir -p "${PLATFORM_STATE_DIR}"
@@ -110,9 +152,8 @@ reset_database ai ai "'flyway_schema_history','ai_audit_event','ai_quota_profile
 IMPORT_SQL="$(mktemp)"
 trap 'rm -f -- "${IMPORT_SQL}"; restart_writers' EXIT
 python3 scripts/sverige_i_fokus_sql.py >"${IMPORT_SQL}"
-PGPASSWORD="${BACKUP_CONTENT_PASSWORD}" "${PSQL}" -X -v ON_ERROR_STOP=1 \
-  --host="${BACKUP_DATABASE_HOST}" --port="${BACKUP_DATABASE_PORT}" \
-  --username="${BACKUP_CONTENT_USERNAME}" --dbname=content --file="${IMPORT_SQL}"
+PGPASSWORD="${CONTENT_CORPUS_PASSWORD}" "${PSQL}" -X -v ON_ERROR_STOP=1 \
+  --username="${CONTENT_CORPUS_USERNAME}" --dbname="${CONTENT_CORPUS_URL}" --file="${IMPORT_SQL}"
 rm -f -- "${IMPORT_SQL}"
 
 compose up -d content-service learning-service ai-service --wait --wait-timeout 240
