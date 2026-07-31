@@ -177,16 +177,16 @@ writers_stopped=true
 
 reset_database() {
   local database="$1" prefix="$2" preserve="$3"
-  db_value "${database}" "${prefix}" "DO \\\$\\\$
+  db_value "${database}" "${prefix}" "DO \$\$
     DECLARE names text;
     BEGIN
       SELECT string_agg(format('%I.%I',schemaname,tablename),',') INTO names
       FROM pg_tables WHERE schemaname='public' AND tablename NOT IN (${preserve});
       IF names IS NOT NULL THEN EXECUTE 'TRUNCATE TABLE ' || names || ' CASCADE'; END IF;
-    END \\\$\\\$;
-    DO \\\$\\\$ BEGIN
+    END \$\$;
+    DO \$\$ BEGIN
       IF (SELECT count(*) FROM flyway_schema_history)=0 THEN RAISE EXCEPTION 'Flyway history was cleared'; END IF;
-    END \\\$\\\$;"
+    END \$\$;"
 }
 
 reset_database content content "'flyway_schema_history','audit_event'"
