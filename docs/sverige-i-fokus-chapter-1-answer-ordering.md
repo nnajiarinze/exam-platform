@@ -65,4 +65,8 @@ The learner API returned the persisted order for all 11 questions. Correct submi
 
 ## Hosted validation
 
-To be completed after commit, deployment, authenticated promotion, and activation. No mobile source or contract changed, so no mobile rebuild is required.
+Implementation commit `25946c3c9d3d596515d14ba0fc27e7754b1e356b` passed CI run `30642116981`, including backend, admin, mobile, Gitleaks, hosted Compose, image builds, and vulnerability scans. Immutable image run `30642329947` and hosted deployment run `30642529197` succeeded.
+
+The v2.2 snapshot was transferred as a temporary encrypted GitHub hosted-environment secret and promoted through Learning Service's authenticated internal import and activation APIs in run `30643095790`. No raw database rows were copied. The temporary runner/host files and environment secret were removed. The importer validated external Content release `6d6d22c9-62dc-48c4-b947-78536518ab37` and checksum `07aa8cd8c76d9a2a0939aca6c210830beab29b17ac1ad1207683464febf35daf`; idempotent retries returned the same projection and activation remained `ACTIVE`. The internal hosted projection UUID was deliberately not copied out through a database query and is not exposed by the activation DTO.
+
+The existing hosted iOS build was relaunched on the connected physical iPhone. Physical Chapter 1 Practice validation confirmed correct answers appear in different A/B/C/D positions under the active v2.2 release. The user completed the requested submission/feedback/reload check and reported success. Existing multi-page Study lessons remain unchanged by semantic hash. No mobile source or API contract changed, so no mobile rebuild was required.
