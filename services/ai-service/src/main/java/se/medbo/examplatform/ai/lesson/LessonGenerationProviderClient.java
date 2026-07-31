@@ -16,9 +16,10 @@ public interface LessonGenerationProviderClient {
       List<Page> pages){}
   record Usage(Integer inputTokens,Integer outputTokens,String requestId,String provider,String model){}
   record Result(Proposal proposal,Usage usage){}
+  record FailedClaim(String text,String failureCode,String diagnostic){}
   record PageRepairRequest(String topicTitle,String learningObjectiveTitle,UUID sourceSectionId,
       String sourceSectionChecksum,String exactSourceText,List<Fact> facts,Page originalPage,
-      List<String> surroundingPageTitles,List<String> failureCodes,UUID jobId,String requester,int retryAttempt){}
+      List<String> surroundingPageTitles,List<FailedClaim> failedClaims,UUID jobId,String requester,int retryAttempt){}
   record PageRepairResult(Page page,Usage usage){}
   Result generateLesson(Request request);
   PageRepairResult repairPage(PageRepairRequest request);

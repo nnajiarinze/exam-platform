@@ -16,6 +16,7 @@ import se.medbo.examplatform.ai.provider.AiProviderClient;
 import se.medbo.examplatform.ai.provider.FreeOnlyProviderRouter;
 import se.medbo.examplatform.ai.provider.StructuredAiProvider;
 import se.medbo.examplatform.ai.question.QuestionGenerationProviderClient;
+import se.medbo.examplatform.ai.lesson.LessonGenerationProviderClient;
 
 class GeminiAiProviderClientTest {
   private final ObjectMapper mapper=new ObjectMapper();
@@ -50,5 +51,22 @@ class GeminiAiProviderClientTest {
     assertThat(seen.get().prompt()).contains(quote,"\"topic\":\"Demokrati\"","\"objective\":\"Lagar\"")
         .doesNotContain("Orelaterad sektionskontext","unused description","unused subject","unused corpus","unused purpose","contentChecksum","examVersionId");
     assertThat(mapper.writeValueAsString(seen.get().jsonSchema())).doesNotContain("factEvidence","sourceEvidence","confidence","warnings","language");
+  }
+
+  @Test void lessonRepairPromptCarriesExactRejectedClaimsAndStrictSentenceContract()throws Exception{
+    var seen=new AtomicReference<StructuredAiProvider.Request>();var router=mock(FreeOnlyProviderRouter.class);
+    UUID section=UUID.randomUUID(),fact=UUID.randomUUID(),version=UUID.randomUUID(),job=UUID.randomUUID();
+    when(router.execute(any())).thenAnswer(invocation->{seen.set(invocation.getArgument(0));return new StructuredAiProvider.Response(
+        mapper.readTree("{\"pageType\":\"INTRO\",\"title\":\"Rubrik\",\"body\":\"Sverige är indelat i 21 regioner.\",\"knowledgeFactVersionIds\":[\""+version+"\"],\"evidenceQuotes\":[\"Sverige är indelat i 21 regioner.\"],\"keyTerms\":[]}"),
+        "GROQ","test-free","test-free","request-44",300,80,8L,"stop",Map.of(),Map.of(),null,"HTTP_200",true);});
+    var request=new LessonGenerationProviderClient.PageRepairRequest("Nivåer","Förstå nivåerna",section,
+        "a".repeat(64),"Sverige är indelat i 21 regioner.",
+        List.of(new LessonGenerationProviderClient.Fact(fact,version,"Sverige är indelat i 21 regioner.",section)),
+        new LessonGenerationProviderClient.Page("INTRO","Rubrik","Utöver den nationella nivån är Sverige indelat i 21 regioner.",List.of(version),List.of(),List.of()),
+        List.of("Rubrik","Sammanfattning"),List.of(new LessonGenerationProviderClient.FailedClaim(
+            "Utöver den nationella nivån är Sverige indelat i 21 regioner.","UNSUPPORTED_CLAIM","Insufficient direct lexical support")),job,"reviewer",2);
+    new GeminiAiProviderClient(mapper,router).repairPage(request);
+    assertThat(seen.get().prompt()).contains("failedClaims","Utöver den nationella nivån","UNSUPPORTED_CLAIM","Insufficient direct lexical support");
+    assertThat(seen.get().systemInstruction()).contains("copied as a complete sentence from SOURCE","Do not pad to a word target");
   }
 }
