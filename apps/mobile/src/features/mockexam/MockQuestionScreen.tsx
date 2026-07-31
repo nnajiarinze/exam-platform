@@ -29,6 +29,7 @@ export function MockQuestionScreen({
     queryKey: ["mock-question", attemptId, sequenceNumber],
     queryFn: () =>
       learningApi.mockQuestion(identity, attemptId, sequenceNumber),
+    placeholderData: (previousQuestion) => previousQuestion,
   });
   const [selected, setSelected] = useState<string[]>([]);
   useEffect(
@@ -91,7 +92,7 @@ export function MockQuestionScreen({
     if (question.data && remaining === 0 && !submit.isPending) submit.mutate();
   }, [remaining, question.data]);
   const go = (sequence: number) =>
-    navigation.replace("MockQuestion", { attemptId, sequenceNumber: sequence });
+    navigation.setParams({ attemptId, sequenceNumber: sequence });
   const confirmSubmit = () => {
     const answered = attempt.data?.answered ?? 0;
     const flagged =
@@ -129,6 +130,7 @@ export function MockQuestionScreen({
       </Screen>
     );
   const displayedRemaining = Math.max(0, remaining);
+  const changingQuestion = question.isPlaceholderData || question.isFetching;
   return (
     <Screen>
       <View style={styles.header}>
@@ -158,7 +160,7 @@ export function MockQuestionScreen({
       <View style={styles.options}>
         {question.data.answerOptions.map((option, index) => (
           <AnswerOption
-            disabled={answer.isPending}
+            disabled={answer.isPending || changingQuestion}
             index={index}
             key={option.id}
             multiple={question.data.questionType === "MULTIPLE_CHOICE"}
@@ -177,8 +179,14 @@ export function MockQuestionScreen({
         ))}
       </View>
       <Button
-        label={answer.isPending ? "Saving answer…" : "Save answer"}
-        disabled={!selected.length || answer.isPending}
+        label={
+          changingQuestion
+            ? "Loading question…"
+            : answer.isPending
+              ? "Saving answer…"
+              : "Save answer"
+        }
+        disabled={!selected.length || answer.isPending || changingQuestion}
         onPress={() => answer.mutate(selected)}
       />
       {(answer.isError || flag.isError || submit.isError) && (
@@ -194,12 +202,14 @@ export function MockQuestionScreen({
       <View style={styles.actions}>
         <Button
           label="Previous"
-          disabled={sequenceNumber <= 1}
+          disabled={sequenceNumber <= 1 || changingQuestion}
           onPress={() => go(sequenceNumber - 1)}
         />
         <Button
           label="Next"
-          disabled={sequenceNumber >= question.data.totalQuestions}
+          disabled={
+            sequenceNumber >= question.data.totalQuestions || changingQuestion
+          }
           onPress={() => go(sequenceNumber + 1)}
         />
       </View>

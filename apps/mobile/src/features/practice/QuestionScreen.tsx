@@ -103,19 +103,15 @@ export function QuestionScreen({
         />
       </Screen>
     );
-  if (advancing)
-    return (
-      <Screen scroll={false}>
-        <Loading label="Loading next question…" />
-      </Screen>
-    );
-  const actionLabel = !result
-    ? mutation.isPending
-      ? "Checking answer…"
-      : "Submit answer"
-    : result.sessionProgress.answered >= result.sessionProgress.total
-      ? "View results"
-      : "Continue";
+  const actionLabel = advancing
+    ? "Loading next question…"
+    : !result
+      ? mutation.isPending
+        ? "Checking answer…"
+        : "Submit answer"
+      : result.sessionProgress.answered >= result.sessionProgress.total
+        ? "View results"
+        : "Continue";
   return (
     <View style={styles.page}>
       <Screen bottomInset>
@@ -160,7 +156,10 @@ export function QuestionScreen({
       <SafeAreaView edges={["bottom"]} style={styles.footer}>
         <Button
           label={actionLabel}
-          disabled={!result && (!selectedIds.length || mutation.isPending)}
+          disabled={
+            advancing ||
+            (!result && (!selectedIds.length || mutation.isPending))
+          }
           onPress={() =>
             result
               ? void next()

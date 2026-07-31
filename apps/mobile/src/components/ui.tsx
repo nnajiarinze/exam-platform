@@ -112,8 +112,12 @@ export function Button({
         variant === "accent" && styles.accentButton,
         variant === "text" && styles.textButton,
         variant === "destructive" && styles.destructiveButton,
+        pressed && styles.pressedButton,
+        pressed && variant === "secondary" && styles.pressedSecondaryButton,
+        pressed && variant === "accent" && styles.pressedAccentButton,
+        pressed && variant === "text" && styles.pressedTextButton,
+        pressed && variant === "destructive" && styles.pressedDestructiveButton,
         disabled && styles.disabled,
-        pressed && styles.pressed,
       ]}
     >
       {icon}
@@ -262,6 +266,26 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     borderColor: theme.colors.error,
   },
+  pressedButton: {
+    backgroundColor: theme.colors.primaryContainer,
+    borderColor: theme.colors.primaryContainer,
+  },
+  pressedSecondaryButton: {
+    backgroundColor: theme.colors.surfaceLow,
+    borderColor: theme.colors.primary,
+  },
+  pressedAccentButton: {
+    backgroundColor: theme.colors.accent,
+    borderColor: theme.colors.accentStrong,
+  },
+  pressedTextButton: {
+    backgroundColor: theme.colors.surfaceLow,
+    borderColor: "transparent",
+  },
+  pressedDestructiveButton: {
+    backgroundColor: theme.colors.errorBackground,
+    borderColor: theme.colors.error,
+  },
   buttonText: {
     color: theme.colors.onPrimary,
     fontSize: 17,
@@ -277,7 +301,6 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.disabled,
     opacity: 1,
   },
-  pressed: { opacity: 0.82 },
   center: {
     alignItems: "center",
     flex: 1,
