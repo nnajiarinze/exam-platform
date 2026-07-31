@@ -22,8 +22,8 @@ public class SnapshotValidator {
 
     public void validate(ContentSnapshot snapshot) {
         ExternalExamIdentifier.normalize(snapshot.examId());
-        if (!java.util.Set.of("1.0", "1.1", "1.2").contains(snapshot.schemaVersion()) || !"PUBLISHED".equals(snapshot.releaseStatus())) {
-            invalid("Only published content snapshot schemas 1.0, 1.1, and 1.2 are accepted");
+        if (!java.util.Set.of("1.0", "1.1", "1.2", "1.3").contains(snapshot.schemaVersion()) || !"PUBLISHED".equals(snapshot.releaseStatus())) {
+            invalid("Only published content snapshot schemas 1.0 through 1.3 are accepted");
         }
         var subjectIds = new HashSet<String>();
         var topicIds = new HashSet<String>();
@@ -77,10 +77,16 @@ public class SnapshotValidator {
 
     public String checksum(ContentSnapshot snapshot) {
         try {
-            var material = new SnapshotWithoutChecksum(snapshot.schemaVersion(), snapshot.externalReleaseId(),
-                    snapshot.examId(), snapshot.examVersionId(), snapshot.releaseVersion(), snapshot.releaseStatus(),
-                    snapshot.publishedAt(), snapshot.subjects());
-            var tree = objectMapper.valueToTree(material);
+            var tree = "1.3".equals(snapshot.schemaVersion())
+                    ? objectMapper.valueToTree(new SnapshotWithoutChecksumV13(snapshot.schemaVersion(),
+                            snapshot.externalReleaseId(), snapshot.examId(), snapshot.examVersionId(),
+                            snapshot.releaseVersion(), snapshot.releaseStatus(), snapshot.publishedAt(),
+                            snapshot.releaseType(), snapshot.approvalStrategy(), snapshot.disclaimer(),
+                            snapshot.attribution(), snapshot.subjects()))
+                    : objectMapper.valueToTree(new SnapshotWithoutChecksum(snapshot.schemaVersion(),
+                            snapshot.externalReleaseId(), snapshot.examId(), snapshot.examVersionId(),
+                            snapshot.releaseVersion(), snapshot.releaseStatus(), snapshot.publishedAt(),
+                            snapshot.subjects()));
             if ("1.0".equals(snapshot.schemaVersion())) {
                 tree.findParents("correctOptionIds").forEach(node -> ((com.fasterxml.jackson.databind.node.ObjectNode) node)
                         .remove("correctOptionIds"));
@@ -100,5 +106,10 @@ public class SnapshotValidator {
 
     private record SnapshotWithoutChecksum(String schemaVersion, String externalReleaseId, String examId,
             String examVersionId, String releaseVersion, String releaseStatus, java.time.Instant publishedAt,
+            java.util.List<ContentSnapshot.Subject> subjects) {}
+
+    private record SnapshotWithoutChecksumV13(String schemaVersion, String externalReleaseId, String examId,
+            String examVersionId, String releaseVersion, String releaseStatus, java.time.Instant publishedAt,
+            String releaseType, String approvalStrategy, String disclaimer, String attribution,
             java.util.List<ContentSnapshot.Subject> subjects) {}
 }

@@ -55,16 +55,11 @@ public class ContentImportTransaction {
         jdbc.sql("""
                 INSERT INTO imported_content_release
                   (id, external_release_id, exam_id, exam_version_id, release_version, checksum, status,
-                   published_at, imported_at)
+                   published_at, imported_at, release_type, approval_strategy, disclaimer, attribution)
                 VALUES (:id, :externalId, :examId, :examVersionId, :version, :checksum, :status,
-                        :publishedAt, :importedAt)
+                        :publishedAt, :importedAt, :releaseType, :approvalStrategy, :disclaimer, :attribution)
                 """)
-                .params(Map.of("id", releaseId, "externalId", snapshot.externalReleaseId(),
-                        "examId", canonicalExamId, "examVersionId", snapshot.examVersionId(),
-                        "version", snapshot.releaseVersion(), "checksum", snapshot.checksum(),
-                        "status", "IMPORTED",
-                        "publishedAt", OffsetDateTime.ofInstant(snapshot.publishedAt(), ZoneOffset.UTC),
-                        "importedAt", OffsetDateTime.ofInstant(importedAt, ZoneOffset.UTC)))
+                .params(releaseParameters(snapshot, releaseId, canonicalExamId, importedAt))
                 .update();
 
         for (var subject : snapshot.subjects()) {
@@ -153,6 +148,8 @@ public class ContentImportTransaction {
         }
         return new ImportResult(releaseId, true, "IMPORTED");
     }
+
+    private Map<String,Object> releaseParameters(ContentSnapshot snapshot,UUID releaseId,String canonicalExamId,Instant importedAt){var values=new java.util.HashMap<String,Object>();values.put("id",releaseId);values.put("externalId",snapshot.externalReleaseId());values.put("examId",canonicalExamId);values.put("examVersionId",snapshot.examVersionId());values.put("version",snapshot.releaseVersion());values.put("checksum",snapshot.checksum());values.put("status","IMPORTED");values.put("publishedAt",OffsetDateTime.ofInstant(snapshot.publishedAt(),ZoneOffset.UTC));values.put("importedAt",OffsetDateTime.ofInstant(importedAt,ZoneOffset.UTC));values.put("releaseType",snapshot.releaseType()==null?"PUBLIC":snapshot.releaseType());values.put("approvalStrategy",snapshot.approvalStrategy()==null?"MANUAL_REVIEW":snapshot.approvalStrategy());values.put("disclaimer",snapshot.disclaimer());values.put("attribution",snapshot.attribution());return values;}
 
     public record ImportResult(UUID releaseId, boolean imported, String status) {}
     private record ExistingRelease(UUID id, String checksum, String status) {}

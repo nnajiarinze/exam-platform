@@ -1153,11 +1153,19 @@ export type ReviewCommentRequest = {
 
 export type ReleaseStatus = 'DRAFT' | 'VALIDATED' | 'PUBLISHED' | 'DELIVERY_FAILED' | 'DELIVERED' | 'ACTIVE' | 'RETIRED';
 
+export type ReleaseType = 'PUBLIC' | 'INTERNAL';
+
+export type ReleaseApprovalStrategy = 'MANUAL_REVIEW' | 'AUTO_APPROVED';
+
 export type ReleaseRequest = {
     examVersionId: string;
     releaseNumber: string;
     displayName: string;
     description?: string | null;
+    releaseType?: ReleaseType;
+    approvalStrategy?: ReleaseApprovalStrategy;
+    disclaimer?: string | null;
+    attribution?: string | null;
     version?: number;
 };
 
@@ -1173,6 +1181,10 @@ export type ReleaseSummary = AuditFields & {
     releaseNumber: string;
     displayName: string;
     description?: string | null;
+    releaseType: ReleaseType;
+    approvalStrategy: ReleaseApprovalStrategy;
+    disclaimer?: string | null;
+    attribution?: string | null;
     status: ReleaseStatus;
     createdBy: string;
     validatedAt?: string | null;

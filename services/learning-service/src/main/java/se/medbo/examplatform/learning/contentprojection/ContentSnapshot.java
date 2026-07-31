@@ -19,7 +19,15 @@ public record ContentSnapshot(
         @NotBlank @Size(max = 20) String releaseStatus,
         @NotNull Instant publishedAt,
         @NotBlank @Pattern(regexp = "^[a-f0-9]{64}$") String checksum,
+        String releaseType, String approvalStrategy, String disclaimer, String attribution,
         @NotEmpty List<@Valid Subject> subjects) {
+
+    public ContentSnapshot(String schemaVersion, String externalReleaseId, String examId, String examVersionId,
+                           String releaseVersion, String releaseStatus, Instant publishedAt, String checksum,
+                           List<Subject> subjects) {
+        this(schemaVersion, externalReleaseId, examId, examVersionId, releaseVersion, releaseStatus, publishedAt,
+                checksum, "PUBLIC", "MANUAL_REVIEW", null, null, subjects);
+    }
 
     public record Subject(@NotBlank @Size(max = 200) String id,
                           @NotBlank @Size(max = 500) String name, @PositiveOrZero int sortOrder,
