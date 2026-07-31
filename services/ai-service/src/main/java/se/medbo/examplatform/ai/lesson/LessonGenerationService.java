@@ -150,6 +150,13 @@ public class LessonGenerationService {
       boolean evidence=repairedPages.stream().allMatch(p->!p.evidenceQuotes().isEmpty());
       Map<String,Boolean> gates=mapper.readValue((String)row.getFirst().get("validation_gates"),new TypeReference<>(){});
       gates.put("sourceEvidencePassed",evidence);
+      boolean nonEmpty=repairedPages.stream().allMatch(p->!blank(p.title())&&!blank(p.body()));
+      boolean terms=repairedPages.stream().allMatch(p->p.keyTerms()!=null&&p.keyTerms().stream()
+          .allMatch(v->v!=null&&!v.isBlank()&&v.length()<=80));
+      boolean wordBounds=repairedPages.stream().allMatch(p->{int words=p.body().trim().split("\\s+").length;return words>=40&&words<=240;});
+      gates.put("learnerUsabilityPassed",nonEmpty&&terms&&wordBounds);
+      gates.put("placeholderCheckPassed",nonEmpty&&!containsPlaceholder(repairedPages));
+      gates.put("duplicateSectionCheckPassed",repairedPages.stream().map(p->normalize(p.body())).distinct().count()==repairedPages.size());
       String classification=gates.values().stream().allMatch(Boolean.TRUE::equals)?"GOOD":"NEEDS_REWRITE";
       jdbc.sql("UPDATE ai_lesson_proposal SET pages=CAST(:pages AS jsonb),validation_gates=CAST(:gates AS jsonb),automated_classification=:classification,updated_at=:now,version=version+1 WHERE id=:id")
           .param("pages",json(repairedPages)).param("gates",json(gates)).param("classification",classification).param("now",now()).param("id",id).update();
