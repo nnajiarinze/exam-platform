@@ -126,24 +126,28 @@ if [[ ! -f "${BACKUP_KEY}" ]]; then
   chmod 600 "${BACKUP_KEY}"
 fi
 printf 'database\tarchive\tbytes\tsha256\tvalidated\n' >"${BACKUP_ROOT}/manifest.tsv"
+clear_archive=""
+trap '[[ -z "${clear_archive}" ]] || rm -f -- "${clear_archive}"' EXIT
 for prefix in CONTENT LEARNING AI; do
   database="${prefix,,}"
   username_var="${prefix}_CORPUS_USERNAME"
   password_var="${prefix}_CORPUS_PASSWORD"
   url_var="${prefix}_CORPUS_URL"
-  clear_archive="${BACKUP_ROOT}/${database}.dump"
-  encrypted_archive="${clear_archive}.aes256"
+  clear_archive="$(mktemp "/tmp/sverige-i-fokus-${database}.XXXXXX.dump")"
+  encrypted_archive="${BACKUP_ROOT}/${database}.dump.aes256"
   PGPASSWORD="${!password_var}" "${PG_DUMP}" --format=custom --compress=9 \
     --no-owner --no-acl --username="${!username_var}" --dbname="${!url_var}" --file="${clear_archive}"
   "${PG_RESTORE}" --list "${clear_archive}" >/dev/null
   openssl enc -aes-256-cbc -pbkdf2 -salt -pass "file:${BACKUP_KEY}" \
     -in "${clear_archive}" -out "${encrypted_archive}"
   rm -f -- "${clear_archive}"
+  clear_archive=""
   chmod 600 "${encrypted_archive}"
   printf '%s\t%s\t%s\t%s\ttrue\n' "${database}" "${encrypted_archive}" \
     "$(wc -c <"${encrypted_archive}" | tr -d '[:space:]')" \
     "$(sha256sum "${encrypted_archive}" | awk '{print $1}')" >>"${BACKUP_ROOT}/manifest.tsv"
 done
+trap - EXIT
 chmod 600 "${BACKUP_ROOT}/manifest.tsv"
 BACKUP_COMPLETED_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
 
