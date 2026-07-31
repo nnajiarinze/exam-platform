@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface QuestionGenerationProviderClient {
+  String CURRENT_PROMPT_VERSION="question-generation-compact-v2";
   Result generate(Request request);
 
   record Target(UUID knowledgeFactId, UUID knowledgeFactVersionId, long version, String text,
