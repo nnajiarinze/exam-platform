@@ -54,6 +54,18 @@ class GeminiAiProviderClientTest {
       .contains("Copy PDF extraction artifacts exactly")
       .doesNotContain("google_search","tools");
   }
+  @Test void v3PromptRequiresOnePropositionAndSilentSplitCheck(){
+    respond(200,"{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"{\\\"proposals\\\":[{\\\"text\\\":\\\"Riksdagen stiftar lagar.\\\",\\\"sourceEvidence\\\":[{\\\"quote\\\":\\\"Riksdagen stiftar lagar.\\\"}]}],\\\"warnings\\\":[]}\"}]}}]}",null);
+    client().generate(new AiProviderClient.GenerationRequest(
+      "Riksdagen stiftar lagar.","Riksdagen","Förstå lagstiftning","sv",3,"",
+      PromptTemplateRegistry.KNOWLEDGE_FACT_V3,null,"test",0));
+    assertThat(requestBody.get())
+      .contains("exactly one independently testable proposition")
+      .contains("one subject and one predicate")
+      .contains("could reasonably become two exam questions")
+      .contains("Do not reveal that internal check")
+      .doesNotContain("google_search","tools");
+  }
   @Test void rejectsMalformedStructuredJson(){respond(200,"{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"not-json\"}]}}]}",null);assertThatThrownBy(()->client().generate(request())).isInstanceOf(AiProviderException.class).hasMessageContaining("invalid structured JSON");}
   @Test void classifiesMinuteRateLimitAsRetryable(){respond(429,"{\"error\":{\"status\":\"RESOURCE_EXHAUSTED\",\"message\":\"RPM per minute exceeded\"}}",null);assertThatThrownBy(()->client().generate(request())).isInstanceOfSatisfying(AiProviderException.class,e->{assertThat(e.code()).isEqualTo("AI_PROVIDER_TEMPORARILY_RATE_LIMITED");assertThat(e.transientFailure()).isTrue();});verify(quota).rateLimited(any(),org.mockito.ArgumentMatchers.eq("AI_PROVIDER_TEMPORARILY_RATE_LIMITED"),org.mockito.ArgumentMatchers.eq(false));}
   @Test void classifiesDailyAndAuthenticationFailuresWithoutRetry(){respond(429,"{\"error\":{\"message\":\"requests per day quota exceeded\"}}",null);assertThatThrownBy(()->client().generate(request())).isInstanceOfSatisfying(AiProviderException.class,e->{assertThat(e.code()).isEqualTo("AI_PROVIDER_DAILY_QUOTA_EXHAUSTED");assertThat(e.transientFailure()).isFalse();});}

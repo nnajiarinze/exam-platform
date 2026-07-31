@@ -34,7 +34,12 @@ public final class KnowledgeFactTextQualityValidator {
   private static final Pattern PLACEHOLDER = Pattern.compile("(?i)\\b(lorem ipsum|todo|fixme|placeholder|sample text|dummy|temp(?:orary)?|test fact|random (text|shit)|abc123|xxx)\\b");
   private static final Pattern KEYBOARD = Pattern.compile("(?i)(asdf|qwerty|hjkl|zxcv|sdfg|dfgh|fghj|jkl;)");
   private static final Pattern REPEATED_CHARS = Pattern.compile("(?i)([a-zåäö])\\1{4,}");
-  private static final Pattern DECLARATIVE_VERB = Pattern.compile("(?iuU)\\b(är|har|gör|får|ansvarar|beslutar|stiftar|består|innebär|gäller|finns|ska|kan|måste|ger|skyddar|betalar|väljer|utser|granskar|styr|provides?|decides?|is|are|has|have|does?|receives?|protects?|elects?|governs?|includes?|means?)\\b");
+  private static final Pattern DECLARATIVE_VERB = Pattern.compile(
+      "(?iuU)\\b(är|har|gör|får|ansvarar|beslutar|stiftar|består|innebär|gäller|finns|"
+          + "ska|kan|måste|ger|skyddar|betalar|väljer|utser|granskar|styr|omfattar|"
+          + "använder|producerar|orsakar|leder|bidrar|smälter|höjs|blir|bor|täcks|"
+          + "delas|transporterar|utgör|sker|medför|provides?|decides?|is|are|has|have|"
+          + "does?|receives?|protects?|elects?|governs?|includes?|means?)\\b");
   private static final Pattern VAGUE = Pattern.compile("(?i)^(municipalities|kommuner|they|de) (do|gör|are|är|har) (many|många|things|saker|responsible|ansvariga)(?: for services| för tjänster)?[.!]?$\s*");
 
   public Result validate(String raw) {

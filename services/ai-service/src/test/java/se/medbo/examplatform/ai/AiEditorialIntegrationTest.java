@@ -59,7 +59,7 @@ class AiEditorialIntegrationTest {
         .header("X-Internal-Api-Key","test-internal-key")
         .contentType(MediaType.APPLICATION_JSON).content(body))
       .andExpect(status().isAccepted())
-      .andExpect(jsonPath("$.promptVersion").value("knowledge-fact-generation-v2"))
+      .andExpect(jsonPath("$.promptVersion").value("knowledge-fact-generation-v3"))
       .andReturn().getResponse().getContentAsString();
     String second = mvc.perform(post("/internal/v1/knowledge-fact-generation/jobs")
         .header("X-Internal-Api-Key","test-internal-key")
@@ -80,10 +80,10 @@ class AiEditorialIntegrationTest {
       .andExpect(status().isAccepted()).andReturn().getResponse().getContentAsString();
     UUID duplicateJob = UUID.fromString(mapper.readTree(duplicateResponse).get("id").asText());
     awaitTerminal(duplicateJob);
-    assertThat(jdbc.sql("SELECT count(*) FROM ai_knowledge_fact_proposal WHERE generation_job_id=:id")
-      .param("id",duplicateJob).query(Long.class).single()).isZero();
+    assertThat(jdbc.sql("SELECT count(*) FROM ai_knowledge_fact_proposal WHERE generation_job_id=:id AND status='REJECTED' AND automated_classification='DUPLICATE'")
+      .param("id",duplicateJob).query(Long.class).single()).isEqualTo(2);
     assertThat(jdbc.sql("SELECT status FROM ai_generation_job WHERE id=:id")
-      .param("id",duplicateJob).query(String.class).single()).isEqualTo("PARTIALLY_COMPLETED");
+      .param("id",duplicateJob).query(String.class).single()).isEqualTo("COMPLETED");
   }
 
   @Test
@@ -145,7 +145,7 @@ class AiEditorialIntegrationTest {
   @Test
   void migrationsCreateThePersistentEditorialWorkspace() {
     assertThat(jdbc.sql("SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank")
-        .query(String.class).list()).containsExactly("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13");
+        .query(String.class).list()).containsExactly("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14");
     assertThat(jdbc.sql("SELECT to_regclass('public.ai_editorial_target') IS NOT NULL AND to_regclass('public.ai_editorial_proposal') IS NOT NULL AND to_regclass('public.ai_editorial_finding') IS NOT NULL AND to_regclass('public.ai_editorial_validation_metric') IS NOT NULL AND to_regclass('public.ai_quota_profile') IS NOT NULL AND to_regclass('public.ai_quota_reservation') IS NOT NULL AND to_regclass('public.ai_provider_circuit') IS NOT NULL AND to_regclass('public.ai_provider_alert') IS NOT NULL AND to_regclass('public.ai_question_proposal') IS NOT NULL AND to_regclass('public.ai_question_proposal_option') IS NOT NULL")
         .query(Boolean.class).single()).isTrue();
   }

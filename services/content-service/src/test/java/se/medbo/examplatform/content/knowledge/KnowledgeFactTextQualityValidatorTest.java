@@ -28,7 +28,10 @@ class KnowledgeFactTextQualityValidatorTest {
   static Stream<String> validText() { return Stream.of("Riksdagen beslutar om Sveriges lagar.",
       "Kommuner ansvarar för grundskolan.", "Sverige är en parlamentarisk demokrati.",
       "The Riksdag decides on Swedish laws.", "Kommunfullmäktige beslutar om kommunens budget",
-      "Riksdagen har 349 ledamöter."); }
+      "Riksdagen har 349 ledamöter.",
+      "Ungefär 85 procent av Sveriges befolkning bor i städer.",
+      "Norrland utgör mer än hälften av Sveriges yta.",
+      "En varmare jord medför en ökad frekvens av extremt väder."); }
 
   @Test void distinguishesVagueButMeaningfulText() {
     assertThat(validator.validate("Municipalities do many things.").quality())

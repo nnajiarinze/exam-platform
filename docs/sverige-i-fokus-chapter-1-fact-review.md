@@ -1,6 +1,7 @@
 # Sverige i fokus — Chapter 1 Knowledge Fact review
 
-Generated for corpus `sverige-i-fokus-v1`. This is an internal human-review package. No proposal in this report is approved, canonical, released, or an official UHR question.
+Generated for corpus `sverige-i-fokus-v1`. This is an internal calibration record; approved
+Knowledge Facts remain product content rather than official UHR questions.
 
 Source: *Sverige i fokus*, “Landet Sverige”, PDF pages 5–10. Evidence excerpts below are deliberately short; reviewers should use the full immutable Source Section in Admin.
 
@@ -71,16 +72,106 @@ The first v2 pass persisted ten candidates. “Sveriges indelning” initially f
 
 V2 assessment: 10 GOOD and 3 NEEDS_SPLIT. There are no exact duplicates within v2. Nine proposals intentionally overlap semantically with preserved v1 proposals because this is a comparison regeneration; reviewers should choose one wording and reject/supersede the alternative.
 
-## Human review actions
+## Final prompt v3 calibration
 
-1. Review the 13 v2 proposals in the existing Admin Knowledge Fact proposal queue.
-2. Prefer the v2 Gulf-current, population-distribution, and atomic hydropower wording over their v1 counterparts.
-3. Split or rewrite `a87d692a`, `5b5d9058`, and `89d27f36`.
-4. Reject or supersede semantic v1/v2 duplicates only after human comparison.
-5. Approve selected facts through the normal Admin acceptance flow; do not create lessons or questions until that review is complete.
+Prompt: `knowledge-fact-generation-v3`; provider: `GEMINI`; model:
+`gemini-3.1-flash-lite`; usage mode: `FREE_ONLY`. The prompt retains the v2 grounding
+and exact-evidence rules and strengthens atomicity: exactly one independently testable
+proposition, one subject, one predicate, no unrelated comma lists, combined facts,
+multiple consequences, duties, rights, or compressed historical sequences. It directs
+the provider to split a candidate whenever it could reasonably become two exam
+questions and to prefer fewer excellent facts.
+
+The final run used one persistent job per Chapter 1 Source Section and requested the
+maximum three candidates per section. No Chapter 2–13 content, Lessons, Questions, or
+learner release was created.
+
+| Section | Job | Requested | Generated | Result | Retries | Input / output tokens |
+|---|---|---:|---:|---|---:|---:|
+| Geografi, klimat och natur | `f1e56801` | 3 | 3 | COMPLETED | 0 | 1,120 / 271 |
+| Sveriges indelning | `c8187692` | 3 | 3 | COMPLETED | 0 | 542 / 267 |
+| Befolkning | `ba9352ae` | 3 | 3 | COMPLETED | 0 | 423 / 269 |
+| Naturresurser | `68235703` | 3 | 3 | COMPLETED | 0 | 761 / 268 |
+| Klimatförändringar | `046d6125` | 3 | 3 | COMPLETED | 0 | 984 / 369 |
+| **Total** |  | **15** | **15** | **5/5 completed** | **0** | **3,830 / 1,444** |
+
+Total token usage was 5,274. There were no failed or partially completed jobs and no
+provider retries.
+
+### Candidate disposition
+
+Every candidate passed schema parsing and exact-evidence validation. The automated
+review stored the outcome of all eight mandatory gates on each proposal. `GOOD`
+proposals were accepted into normal Knowledge Facts, submitted by
+`automated-fact-author`, and approved by the distinct
+`automated-fact-reviewer`. The normal review records contain 11 `SUBMITTED` and 11
+`APPROVED` actions. All approved facts are active and preserve proposal lineage,
+source evidence, generation metadata, timestamps, provenance, and review history.
+
+| Proposal | Section | Generated fact | Classification | Final disposition |
+|---|---|---|---|---|
+| `130badbd` | Geografi | Kebnekaise är Sveriges högsta berg. | GOOD | APPROVED |
+| `42a6d40b` | Geografi | Sverige har cirka 250 000 öar. | DUPLICATE | REJECTED |
+| `5c318640` | Geografi | Sverige är det största landet i Norden. | DUPLICATE | REJECTED |
+| `9b4f2d06` | Indelning | Sverige är indelat i de tre landsdelarna Götaland, Svealand och Norrland. | GOOD | APPROVED |
+| `a2d6875c` | Indelning | Sverige är indelat i 21 län och 290 kommuner. | GOOD | APPROVED |
+| `ad62c56e` | Indelning | Norrland utgör mer än hälften av Sveriges yta. | GOOD | APPROVED |
+| `565d41c6` | Befolkning | Stockholm, Göteborg och Malmö är Sveriges tre största städer. | DUPLICATE | REJECTED |
+| `60426208` | Befolkning | Ungefär 85 procent av Sveriges befolkning bor i städer. | GOOD | APPROVED |
+| `6f947d3c` | Befolkning | Ungefär fyra miljoner människor bor i och runt städerna Stockholm, Göteborg och Malmö. | GOOD | APPROVED |
+| `32ea9c24` | Naturresurser | Sveriges största gruvor finns i Norrbottens län. | GOOD | APPROVED |
+| `7a5b28e0` | Naturresurser | Vattenkraft utgör en stor del av Sveriges elproduktion. | GOOD | APPROVED |
+| `dc5db52c` | Naturresurser | Det mesta av det svenska jordbruket finns i södra Sverige. | GOOD | APPROVED |
+| `08782c37` | Klimat | Människors utsläpp av växthusgaser från transporter, industrier och jordbruk är den största orsaken till den snabba uppvärmningen av jordens klimat. | GOOD | APPROVED |
+| `2ca4d77d` | Klimat | Smältande isar vid polerna bidrar till att havsnivån höjs. | NEEDS_SPLIT | PROPOSED |
+| `884f307d` | Klimat | En varmare jord medför en ökad frekvens av extremt väder som värmeböljor, kraftiga regn och torka. | GOOD | APPROVED |
+
+Summary:
+
+- GOOD and automatically approved: 11/15 (73.3%)
+- Automatically rejected exact duplicates: 3/15 (20.0%)
+- Remaining proposal-only `NEEDS_SPLIT`: 1/15 (6.7%)
+- `NEEDS_REWRITE`, `TOO_BROAD`, `AMBIGUOUS`, and `UNSUPPORTED`: 0
+- Compound-fact frequency: 1/15 (6.7%)
+- Grounding/evidence failures: 0
+
+The duplicate gate correctly detected three exact facts already retained from the v1
+sample and rejected them with persisted diagnostics. The only compound candidate
+contains two independently testable predicates: polar ice melts and sea level rises.
+It remains in Proposal state as required. This is isolated rather than a systematic
+compound pattern.
+
+During the final audit, the deterministic Swedish predicate checks were corrected to
+use Unicode word boundaries. This prevents the `är` suffix in “Ungefär” from being
+counted as another predicate and allows concrete noun phrases such as “Det mesta av
+det svenska jordbruket” without treating them as vague pronouns. The Content service's
+independent declarative-claim vocabulary was aligned with the same supported Swedish
+predicates. Regression tests cover both cases.
+
+## Verification
+
+- `./gradlew test --no-daemon` — passed
+- `./gradlew build --no-daemon` — passed
+- Focused prompt, evidence/grounding, atomicity, and Content text-quality tests — passed
+- Approval policy and resumable workflow script unit tests — passed
+- Corpus checksum — matched
+  `39a93261cc64af0122e186b7d67f57dffad573576570956a4754d22ce776aada`
+- Gitleaks repository scan — no leaks found
+- `git diff --check` — passed
+
+The full Gradle test run includes the repository's corpus, evidence validator,
+duplicate, retry, prompt, and fake-provider coverage.
 
 ## Decision
 
-**NEEDS_ONE_MORE_SAMPLE**
+**NEEDS_PROMPT_ADJUSTMENT**
 
-Evidence validation is now strict and explainable, all five sections produced persisted grounded proposals, and quota behavior is bounded. One additional Chapter 1 rerun should confirm that partial-candidate rejection works against the real provider without requiring a section-level rerun, and prompt guidance should be tightened once more to reduce compound list facts before scaling Chapters 2–13.
+All five sections succeeded, exact evidence and duplicate detection passed, retries and
+failed jobs were zero, `NEEDS_SPLIT` is below 15%, and there is no systematic compound
+pattern. However, only 73.3% of all generated proposals became automatically approved,
+below the required 85% threshold. The shortfall is caused by three exact duplicates
+against preserved v1 calibration proposals, not by grounding failures. Under the
+stated success formula those duplicates remain in the generated denominator, so this
+run cannot be marked `READY_TO_SCALE`. Chapters 2–13 must not be generated until the
+scale criterion or its duplicate-denominator policy is explicitly adjusted and
+revalidated.
