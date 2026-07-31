@@ -2456,6 +2456,45 @@ export type GetKnowledgeFactAiProvenanceResponses = {
 
 export type GetKnowledgeFactAiProvenanceResponse = GetKnowledgeFactAiProvenanceResponses[keyof GetKnowledgeFactAiProvenanceResponses];
 
+export type RepairKnowledgeFactSourceSectionProvenanceData = {
+    body?: never;
+    path: {
+        knowledgeFactId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/ai/knowledge-facts/{knowledgeFactId}/repair-source-section-provenance';
+};
+
+export type RepairKnowledgeFactSourceSectionProvenanceErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Resource not found
+     */
+    404: ApiError;
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+    /**
+     * Request validation failed
+     */
+    422: ApiError;
+};
+
+export type RepairKnowledgeFactSourceSectionProvenanceError = RepairKnowledgeFactSourceSectionProvenanceErrors[keyof RepairKnowledgeFactSourceSectionProvenanceErrors];
+
+export type RepairKnowledgeFactSourceSectionProvenanceResponses = {
+    /**
+     * Repaired provenance
+     */
+    200: KnowledgeFactAiProvenance;
+};
+
+export type RepairKnowledgeFactSourceSectionProvenanceResponse = RepairKnowledgeFactSourceSectionProvenanceResponses[keyof RepairKnowledgeFactSourceSectionProvenanceResponses];
+
 export type ListLessonDraftsData = {
     body?: never;
     path?: never;

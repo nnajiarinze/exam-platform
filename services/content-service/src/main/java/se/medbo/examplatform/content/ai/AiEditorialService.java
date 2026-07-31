@@ -22,9 +22,46 @@ public class AiEditorialService {
    post("/internal/v1/knowledge-fact-generation/proposals/"+proposalId+"/accepted",Map.of("knowledgeFactId",factId,"acceptedBy",actor,"version",version));return fact(factId);
  }
  public Map<String,Object> provenance(UUID factId){var rows=jdbc.sql("SELECT p.knowledge_fact_version_id AS \"knowledgeFactVersionId\",p.generation_job_id AS \"generationJobId\",p.proposal_id AS \"proposalId\",p.provider,p.model,p.prompt_version AS \"promptVersion\",p.generated_at AS \"generatedAt\",p.source_reference_id AS \"sourceId\",p.source_section_id AS \"sourceSectionId\",s.title AS \"sourceTitle\",p.source_content_checksum AS \"sourceContentChecksum\",p.learning_objective_id AS \"learningObjectiveId\",p.requesting_user_id AS \"requestingUserId\",p.original_proposed_text AS \"originalProposedText\",p.final_accepted_text AS \"finalAcceptedText\",p.accepting_user_id AS \"acceptingUserId\",p.accepted_at AS \"acceptedAt\",p.confidence,p.source_evidence::text AS \"sourceEvidence\",p.provider_request_id AS \"providerRequestId\",p.input_tokens AS \"inputTokens\",p.output_tokens AS \"outputTokens\" FROM knowledge_fact_ai_provenance p JOIN knowledge_fact_version v ON v.id=p.knowledge_fact_version_id JOIN source_reference s ON s.id=p.source_reference_id WHERE v.knowledge_fact_id=:id ORDER BY v.version_number DESC LIMIT 1").param("id",factId).query().listOfRows();if(rows.isEmpty())throw new DomainException(HttpStatus.NOT_FOUND,"AI_PROVENANCE_NOT_FOUND","This Knowledge Fact has no AI provenance");var result=rows.getFirst();try{result.put("sourceEvidence",mapper.readValue((String)result.get("sourceEvidence"),List.class));}catch(Exception e){throw new IllegalStateException("Stored provenance evidence is invalid",e);}return result;}
+ @Transactional public Map<String,Object> repairProvenanceSection(UUID factId){
+   requireAuthor();var current=provenance(factId);if(current.get("sourceSectionId")!=null)return current;
+   UUID proposalId=uuid(current.get("proposalId"));var proposal=get("/internal/v1/knowledge-fact-generation/proposals/"+proposalId);
+   if(!"ACCEPTED".equals(proposal.get("status"))||!factId.equals(uuid(proposal.get("resulting_knowledge_fact_id"))))
+     throw conflict("AI_PROVENANCE_REPAIR_UNSUPPORTED","Accepted proposal lineage does not match the Knowledge Fact");
+   Object sectionValue=proposal.get("source_section_id");if(sectionValue==null)
+     throw conflict("AI_PROVENANCE_REPAIR_UNSUPPORTED","The immutable AI proposal has no Source Section mapping");
+   UUID sectionId=uuid(sectionValue),objectiveId=uuid(current.get("learningObjectiveId")),sourceId=uuid(current.get("sourceId"));
+   var sections=jdbc.sql("""
+       SELECT ss.exact_text
+       FROM source_section ss
+       JOIN learning_objective_source_section map ON map.source_section_id=ss.id
+       WHERE ss.id=:section AND ss.source_reference_id=:source
+         AND map.learning_objective_id=:objective
+       """).param("section",sectionId).param("source",sourceId).param("objective",objectiveId)
+       .query(String.class).list();
+   if(sections.size()!=1)throw conflict("AI_PROVENANCE_REPAIR_UNSUPPORTED","Source Section is not mapped to the fact's Source and Learning Objective");
+   @SuppressWarnings("unchecked") List<Map<String,Object>> evidence=(List<Map<String,Object>>)current.get("sourceEvidence");
+   if(evidence.isEmpty()||evidence.stream().anyMatch(item->{
+     Object quote=item.get("quote");return quote==null||!sections.getFirst().contains(String.valueOf(quote));
+   }))throw conflict("AI_PROVENANCE_REPAIR_UNSUPPORTED","Stored evidence does not occur in the authoritative Source Section");
+   int changed=jdbc.sql("""
+       UPDATE knowledge_fact_ai_provenance SET source_section_id=:section
+       WHERE knowledge_fact_version_id=:version AND source_section_id IS NULL
+       """).param("section",sectionId).param("version",current.get("knowledgeFactVersionId")).update();
+   if(changed!=1)throw conflict("AI_PROVENANCE_REPAIR_STALE","Knowledge Fact provenance changed during repair");
+   String actor=actor();jdbc.sql("""
+       INSERT INTO audit_event(id,occurred_at,actor_id,actor_name,actor_role,action,entity_type,
+         entity_id,entity_version,metadata,request_id)
+       VALUES(:id,:now,:actor,:actor,'ADMIN','CONFIG_CHANGE','KnowledgeFact',:fact,
+         (SELECT version FROM knowledge_fact WHERE id=:fact),CAST(:metadata AS jsonb),:request)
+       """).param("id",UUID.randomUUID()).param("now",OffsetDateTime.now(ZoneOffset.UTC))
+       .param("actor",actor).param("fact",factId)
+       .param("metadata",json(Map.of("repair","SOURCE_SECTION_PROVENANCE","proposalId",proposalId.toString(),"sourceSectionId",sectionId.toString())))
+       .param("request","provenance-repair-"+UUID.randomUUID()).update();
+   return provenance(factId);
+ }
  private Map<String,Object> authorizeProposal(UUID id){var proposal=get("/internal/v1/knowledge-fact-generation/proposals/"+id);var job=get("/internal/v1/knowledge-fact-generation/jobs/"+proposal.get("generation_job_id"));authorizeJob(job);return proposal;}private void authorizeJob(Map<String,Object> job){if(!isAdmin()&&!actor().equals(job.get("requestedBy")))throw forbidden();}
  private Map<String,Object> fact(UUID id){var row=one("SELECT id,learning_objective_id AS \"learningObjectiveId\",current_version_id AS \"currentVersionId\",canonical_statement AS \"canonicalStatement\",review_status AS \"reviewStatus\",status,created_at AS \"createdAt\",updated_at AS \"updatedAt\",version FROM knowledge_fact WHERE id=:id",id,"Knowledge fact");row.put("generatedByAi",true);return row;}
- private Map<String,Object> one(String sql,UUID id,String label){var rows=jdbc.sql(sql).param("id",id).query().listOfRows();if(rows.isEmpty())throw DomainException.notFound(label);return rows.getFirst();}private UUID uuid(Object value){return value instanceof UUID u?u:UUID.fromString(String.valueOf(value));}
+ private Map<String,Object> one(String sql,UUID id,String label){var rows=jdbc.sql(sql).param("id",id).query().listOfRows();if(rows.isEmpty())throw DomainException.notFound(label);return rows.getFirst();}private UUID uuid(Object value){return value instanceof UUID u?u:UUID.fromString(String.valueOf(value));}private String json(Object value){try{return mapper.writeValueAsString(value);}catch(Exception e){throw new IllegalStateException(e);}}
  private Map<String,Object> get(String path){return send("GET",path,null,new TypeReference<>(){});}private List<Map<String,Object>> getList(String path){return send("GET",path,null,new TypeReference<>(){});}private Map<String,Object> post(String path,Object body){return send("POST",path,body,new TypeReference<>(){});}private Map<String,Object> patch(String path,Object body){return send("PATCH",path,body,new TypeReference<>(){});}
  private <T>T send(String method,String path,Object body,TypeReference<T> type){try{var builder=HttpRequest.newBuilder(URI.create(baseUrl+path)).timeout(java.time.Duration.ofSeconds(10)).header("X-Internal-Api-Key",apiKey).header("Content-Type","application/json");String json=body==null?"":mapper.writeValueAsString(body);builder.method(method,body==null?HttpRequest.BodyPublishers.noBody():HttpRequest.BodyPublishers.ofString(json));var response=http.send(builder.build(),HttpResponse.BodyHandlers.ofString());if(response.statusCode()>=200&&response.statusCode()<300)return mapper.readValue(response.body(),type);JsonNode error=mapper.readTree(response.body());throw new DomainException(HttpStatus.valueOf(response.statusCode()),error.path("code").asText("AI_PROVIDER_UNAVAILABLE"),error.path("message").asText("AI Service rejected the request"));}catch(DomainException e){throw e;}catch(Exception e){throw unavailable("AI_PROVIDER_UNAVAILABLE","AI Service could not be reached");}}
  private void requireAuthor(){if(!has("ROLE_CONTENT_AUTHOR")&&!has("ROLE_ADMIN"))throw forbidden();}private boolean isAdmin(){return has("ROLE_ADMIN");}private boolean has(String role){return SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream().anyMatch(a->role.equals(a.getAuthority()));}private String actor(){return SecurityContextHolder.getContext().getAuthentication().getName();}private DomainException forbidden(){return new DomainException(HttpStatus.FORBIDDEN,"FORBIDDEN","Content author permission is required");}private DomainException unavailable(String c,String m){return new DomainException(HttpStatus.SERVICE_UNAVAILABLE,c,m);}private DomainException validation(String m){return new DomainException(HttpStatus.UNPROCESSABLE_ENTITY,"AI_INVALID_GENERATION_REQUEST",m);}private DomainException conflict(String c,String m){return new DomainException(HttpStatus.CONFLICT,c,m);}

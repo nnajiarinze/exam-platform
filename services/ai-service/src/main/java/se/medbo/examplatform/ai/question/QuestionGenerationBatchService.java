@@ -40,7 +40,10 @@ final class QuestionGenerationBatchService {
   }
 
   Map<String,Object> create(Definition definition){
-    validate(definition);String checksum=sha(json(Map.of("scopeType",definition.scopeType(),"scopeId",definition.scopeId(),"language",definition.language(),"configuration",definition.configuration(),"items",definition.items())));
+    validate(definition);var checksumInput=new LinkedHashMap<String,Object>();
+    checksumInput.put("scopeType",definition.scopeType());checksumInput.put("scopeId",definition.scopeId());
+    checksumInput.put("language",definition.language());checksumInput.put("configuration",definition.configuration());
+    checksumInput.put("items",definition.items());String checksum=sha(json(checksumInput));
     var existing=jdbc.sql("SELECT id,definition_checksum FROM ai_question_generation_batch WHERE requested_by=:actor AND idempotency_key=:key")
         .param("actor",definition.requestedBy()).param("key",definition.idempotencyKey()).query().listOfRows();
     if(!existing.isEmpty()){if(!checksum.equals(existing.getFirst().get("definition_checksum")))throw error(HttpStatus.CONFLICT,"BATCH_IDEMPOTENCY_CONFLICT","The idempotency key was already used with a different batch definition");return batch((UUID)existing.getFirst().get("id"));}
