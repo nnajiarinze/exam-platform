@@ -5,6 +5,7 @@ export type ApiErrorKind =
   | "NOT_FOUND"
   | "CONFLICT"
   | "NETWORK"
+  | "TIMEOUT"
   | "SERVER"
   | "CONFIGURATION";
 export interface FieldError {
@@ -34,6 +35,8 @@ export class ApiError extends Error {
 
 export async function normalizeApiError(error: unknown): Promise<ApiError> {
   if (error instanceof ApiError) return error;
+  if (error instanceof DOMException && error.name === "AbortError")
+    return new ApiError("TIMEOUT", "The request timed out. Try again.");
   if (!isResponse(error))
     return new ApiError("NETWORK", "The Content Service could not be reached.");
   let body: { code?: string; message?: string; errors?: FieldError[] } = {};
@@ -45,7 +48,7 @@ export async function normalizeApiError(error: unknown): Promise<ApiError> {
   return normalizeApiPayload(
     body,
     error.status,
-    error.headers.get("x-correlation-id") ?? undefined,
+    error.headers.get("x-correlation-id") ?? error.headers.get("x-request-id") ?? undefined,
   );
 }
 
@@ -73,6 +76,7 @@ export function normalizeApiPayload(
     NOT_FOUND: "The requested resource was not found.",
     CONFLICT: "The request conflicts with the current resource state.",
     NETWORK: "The service could not be reached.",
+    TIMEOUT: "The request timed out. Try again.",
     SERVER: "The service encountered an unexpected error.",
     CONFIGURATION: "The service is not configured.",
   };

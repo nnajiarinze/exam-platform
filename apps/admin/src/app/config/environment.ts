@@ -56,7 +56,9 @@ export function readEnvironment(
   }
   if (source.PROD === true && appEnvironment === 'LOCAL') throw new Error('Production requires the HOSTED environment');
 
-  const enabled = bool(source, 'VITE_DEV_ADMIN_AUTH_ENABLED');
+  // Development headers are a LOCAL-only authentication mechanism. Keeping them enabled after
+  // selecting HOSTED prevents OIDC initialization and sends unauthenticated hosted requests.
+  const enabled = appEnvironment === 'LOCAL' && bool(source, 'VITE_DEV_ADMIN_AUTH_ENABLED');
   const roles = value(source, 'VITE_DEV_ADMIN_ROLES').split(',').map((role) => role.trim()).filter(Boolean);
   const reviewerRoles = value(source, 'VITE_DEV_REVIEWER_ROLES').split(',').map((role) => role.trim()).filter(Boolean);
   if (enabled && (!source.VITE_DEV_ADMIN_ID || !source.VITE_DEV_ADMIN_NAME || roles.length === 0)) throw new Error('Development authentication requires an admin id, name, and at least one role');

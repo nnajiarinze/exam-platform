@@ -4,10 +4,10 @@ import { createContentServiceClient } from './contentServiceClient';
 
 const readyResponse = () => new Response(JSON.stringify({ service: 'content-service', status: 'READY', timestamp: '2026-07-20T08:00:00Z' }), { status: 200, headers: { 'content-type': 'application/json' } });
 
-async function requestWith(options: { enabled: boolean; admin: AdminIdentity | null }) {
+async function requestWith(options: { enabled: boolean; admin: AdminIdentity | null; token?: string }) {
   let captured: Request | undefined;
   const fetchMock: typeof fetch = async (request) => { captured = request as Request; return readyResponse(); };
-  const client = createContentServiceClient({ baseUrl: 'http://content.test', developmentAuthEnabled: options.enabled, currentAdmin: () => options.admin, fetch: fetchMock });
+  const client = createContentServiceClient({ baseUrl: 'http://content.test', developmentAuthEnabled: options.enabled, currentAdmin: () => options.admin, accessToken:()=>options.token, fetch: fetchMock });
   await getContentServiceStatus({ client });
   return captured!;
 }
@@ -28,6 +28,13 @@ describe('Content Service shared client interceptor', () => {
 
   it('does not attach development headers when development authentication is disabled', async () => {
     const request = await requestWith({ enabled: false, admin: { id: 'admin-7', displayName: 'Admin Seven', roles: [AdminRole.Admin] } });
+    expect(request.headers.has('X-Admin-Identity')).toBe(false);
+    expect(request.headers.has('X-Admin-Roles')).toBe(false);
+  });
+
+  it('attaches the hosted OIDC token and never reuses development headers', async () => {
+    const request = await requestWith({ enabled:false, admin:{ id:'local-admin',displayName:'Local',roles:[AdminRole.Admin] },token:'hosted-token' });
+    expect(request.headers.get('Authorization')).toBe('Bearer hosted-token');
     expect(request.headers.has('X-Admin-Identity')).toBe(false);
     expect(request.headers.has('X-Admin-Roles')).toBe(false);
   });

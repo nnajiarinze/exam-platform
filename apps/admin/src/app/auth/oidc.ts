@@ -12,6 +12,13 @@ export const userManager = new UserManager({
   userStore: new WebStorageStateStore({ store: sessionStorage, prefix: `oidc.${environment.appEnvironment}.` }),
 });
 
+export function clearEnvironmentOidcStorage(): void {
+  for (let index = sessionStorage.length - 1; index >= 0; index -= 1) {
+    const key = sessionStorage.key(index);
+    if (key?.startsWith('oidc.LOCAL.') || key?.startsWith('oidc.HOSTED.')) sessionStorage.removeItem(key);
+  }
+}
+
 export function identityFromUser(user: User): AdminIdentity {
   const access = (user.profile.realm_access as {roles?:string[]}|undefined) ?? accessTokenRealmAccess(user.access_token);
   const roles=(access?.roles??[]).filter(isAdminRole);

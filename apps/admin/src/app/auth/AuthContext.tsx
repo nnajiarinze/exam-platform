@@ -1,9 +1,10 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { environment, persistEnvironment, type AppEnvironment } from '../config/environment';
+import { environment, type AppEnvironment } from '../config/environment';
 import { isAdminRole, type AdminIdentity } from '../permissions/permissions';
 import { clearDevelopmentAdmin, readDevelopmentAdmin, storeDevelopmentAdmin } from './authSession';
 import { identityFromUser, setOidcUser, userManager } from './oidc';
 import { useQueryClient } from '@tanstack/react-query';
+import { switchAdminEnvironment } from './environmentSwitch';
 
 export type DevelopmentProfile = 'administrator' | 'reviewer';
 interface AuthState { admin: AdminIdentity | null; loading:boolean; signIn: (profile: DevelopmentProfile) => void; login:()=>Promise<void>; completeCallback:()=>Promise<void>; signOut: () => void; switchEnvironment:(next:AppEnvironment)=>Promise<void> }
@@ -33,10 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     switchEnvironment: async(next) => {
       if (!environment.environmentSwitcherEnabled || next === environment.appEnvironment) return;
-      await userManager.removeUser();
-      clearDevelopmentAdmin(); setOidcUser(); queryClient.clear();
-      persistEnvironment(next);
-      window.location.reload();
+      await switchAdminEnvironment(next, queryClient);
     },
   }), [admin,loading,queryClient]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

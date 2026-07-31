@@ -8,6 +8,7 @@ interface ContentServiceClientOptions {
   baseUrl?: string;
   developmentAuthEnabled: boolean;
   currentAdmin: () => AdminIdentity | null;
+  accessToken?: () => string | undefined;
   fetch: typeof globalThis.fetch;
 }
 
@@ -15,7 +16,7 @@ export function createContentServiceClient(options: ContentServiceClientOptions)
   const client = createClient({ baseUrl: options.baseUrl, fetch: options.fetch });
   client.interceptors.request.use((request) => {
     if (!options.developmentAuthEnabled) {
-      const token=currentAccessToken();if(!token)return request;const headers=new Headers(request.headers);headers.set('Authorization',`Bearer ${token}`);return new Request(request,{headers});
+      const token=(options.accessToken??currentAccessToken)();if(!token)return request;const headers=new Headers(request.headers);headers.set('Authorization',`Bearer ${token}`);return new Request(request,{headers});
     }
     const admin = options.currentAdmin();
     if (!admin) return request;

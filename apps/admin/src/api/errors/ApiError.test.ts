@@ -16,4 +16,10 @@ describe('API error normalization', () => {
     await expect(normalizeApiError(new TypeError('secret request details'))).resolves.toEqual(expect.objectContaining({ kind: 'NETWORK' }));
     expect(await normalizeApiError(new ApiError('FORBIDDEN', 'No access', 403))).toMatchObject({ kind: 'FORBIDDEN' });
   });
+
+  it('distinguishes timeouts and accepts the gateway request ID', async () => {
+    await expect(normalizeApiError(new DOMException('aborted','AbortError'))).resolves.toMatchObject({kind:'TIMEOUT'});
+    const response=new Response(JSON.stringify({code:'FAIL'}),{status:500,headers:{'content-type':'application/json','x-request-id':'request-7'}});
+    await expect(normalizeApiError(response)).resolves.toMatchObject({kind:'SERVER',correlationId:'request-7'});
+  });
 });
