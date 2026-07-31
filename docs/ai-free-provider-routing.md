@@ -17,7 +17,11 @@ Provider output still passes through the existing grounding, validation, proposa
 
 ## Provider configuration
 
-Gemini reuses the existing free-only quota reservation, usage reconciliation, and circuit implementation. Groq additionally requires explicit non-zero `GROQ_FREE_REQUEST_LIMIT` and `GROQ_FREE_TOKEN_LIMIT`; without locally enforced limits its free status remains unverified. Cloudflare enforces `CLOUDFLARE_DAILY_NEURON_LIMIT` and resets its local ledger at 00:00 UTC. OpenRouter verifies every relevant pricing field from official model metadata and rejects missing or non-zero prices; `openrouter/free` is allowed only when `OPENROUTER_ALLOW_FREE_ROUTER=true`.
+Gemini reuses the existing free-only quota reservation, usage reconciliation, and circuit implementation. Groq uses the explicit `openai/gpt-oss-120b` model through Groq's API and provider metadata; it is selected because it is account-available, multilingual, production-class, and supports Groq JSON Schema structured output. Groq requires `GROQ_ENABLED=true`, `GROQ_MODEL=openai/gpt-oss-120b`, `GROQ_FREE_REQUEST_LIMIT=1000`, and `GROQ_FREE_TOKEN_LIMIT=8000`. Without locally enforced limits its free status remains unverified. The local secret is `GROQ_API_KEY` in the ignored repository `.env`; hosted uses the same secret name in the mode-600 `/opt/citizenship-platform/.env` used by Gemini and other hosted secrets.
+
+A bounded synthetic verification returned `{"country":"Sweden","capital":"Stockholm"}` with 148 input tokens, 48 completion tokens, and 23 of those completion tokens reported as reasoning tokens (196 total). Groq confirmed the configured 1,000-request and 8,000-token limits in response headers. Router tests verify that Gemini remains first when ready and Groq is selected when Gemini is simulated unavailable. No learner or Sverige i fokus content was used or persisted.
+
+Cloudflare enforces `CLOUDFLARE_DAILY_NEURON_LIMIT` and resets its local ledger at 00:00 UTC. OpenRouter verifies every relevant pricing field from official model metadata and rejects missing or non-zero prices; `openrouter/free` is allowed only when `OPENROUTER_ALLOW_FREE_ROUTER=true`.
 
 All provider base URLs are restricted to their official HTTPS hosts. Secrets are read only from environment variables and are never stored or returned by Admin APIs.
 

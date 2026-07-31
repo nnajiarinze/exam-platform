@@ -792,6 +792,9 @@ export type AiFreeProviderStatus = {
     reason?: string | null;
     circuitState?: string;
     nextRetryAt?: string | null;
+    lastSuccessfulRequest?: string | null;
+    lastFailure?: string | null;
+    averageLatencyMs?: number | null;
     capacity: {
         [key: string]: unknown;
     };

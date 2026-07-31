@@ -29,6 +29,52 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           printf '%s\n' "${KNOWN_HOSTS}" >~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
+      - name: Install optional Groq secret in the existing hosted environment file
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          HOSTED_HOST: ${{ secrets.HOSTED_HOST }}
+          HOSTED_USER: ${{ secrets.HOSTED_USER }}
+        run: |
+          if [[ -z "${GROQ_API_KEY}" ]]; then
+            echo "Groq secret was not supplied; preserving the hosted provider configuration."
+            exit 0
+          fi
+          umask 077
+          local_secret_file="$(mktemp)"
+          remote_secret_file="$(ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" 'mktemp /tmp/groq-secret.XXXXXX')"
+          cleanup() {
+            rm -f "${local_secret_file}"
+            ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" "rm -f '${remote_secret_file}'" || true
+          }
+          trap cleanup EXIT
+          printf '%s' "${GROQ_API_KEY}" >"${local_secret_file}"
+          scp -q -o BatchMode=yes "${local_secret_file}" "${HOSTED_USER}@${HOSTED_HOST}:${remote_secret_file}"
+          ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" "bash -s '${remote_secret_file}'" <<'REMOTE_SCRIPT'
+          set -Eeuo pipefail
+          secret_file="$1"
+          groq_key="$(cat "${secret_file}")"
+          rm -f "${secret_file}"
+          env_file=/opt/citizenship-platform/.env
+          [[ -f "${env_file}" && "$(stat -c '%a' "${env_file}")" == 600 ]]
+          update_env() {
+            local key="$1" value="$2" temporary
+            temporary="$(mktemp "${env_file}.XXXXXX")"
+            awk -F= -v key="${key}" -v value="${value}" '
+              BEGIN { replaced=0 }
+              $1==key { if (!replaced) print key "=" value; replaced=1; next }
+              { print }
+              END { if (!replaced) print key "=" value }
+            ' "${env_file}" >"${temporary}"
+            chmod 600 "${temporary}"
+            mv "${temporary}" "${env_file}"
+          }
+          update_env GROQ_API_KEY "${groq_key}"
+          update_env GROQ_ENABLED true
+          update_env GROQ_MODEL openai/gpt-oss-120b
+          update_env GROQ_FREE_ONLY true
+          update_env GROQ_FREE_REQUEST_LIMIT 1000
+          update_env GROQ_FREE_TOKEN_LIMIT 8000
+          REMOTE_SCRIPT
       - name: Deploy immutable images
         env:
           COMMIT_SHA: ${{ inputs.commit_sha }}

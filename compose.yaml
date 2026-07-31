@@ -82,7 +82,8 @@ services:
 
   ai-service:
     build:
-      context: services/ai-service
+      context: .
+      dockerfile: services/ai-service/Dockerfile
     environment:
       AI_DATABASE_URL: jdbc:postgresql://ai-database:5432/ai
       AI_DATABASE_USERNAME: ai
