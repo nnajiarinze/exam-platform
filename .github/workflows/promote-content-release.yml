@@ -1,0 +1,95 @@
+name: Promote immutable content release to hosted Learning
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: Full deployed and tested commit SHA
+        required: true
+      external_release_id:
+        description: Immutable Content release identifier embedded in the snapshot
+        required: true
+      expected_checksum:
+        description: SHA-256 checksum embedded in the snapshot
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    environment: hosted
+    steps:
+      - name: Validate inputs and snapshot envelope
+        env:
+          COMMIT_SHA: ${{ inputs.commit_sha }}
+          EXTERNAL_RELEASE_ID: ${{ inputs.external_release_id }}
+          EXPECTED_CHECKSUM: ${{ inputs.expected_checksum }}
+          SNAPSHOT_JSON: ${{ secrets.CONTENT_RELEASE_SNAPSHOT_JSON }}
+        run: |
+          set -Eeuo pipefail
+          [[ "${COMMIT_SHA}" =~ ^[0-9a-f]{40}$ ]]
+          [[ "${EXTERNAL_RELEASE_ID}" =~ ^[0-9a-f-]{36}$ ]]
+          [[ "${EXPECTED_CHECKSUM}" =~ ^[0-9a-f]{64}$ ]]
+          [[ -n "${SNAPSHOT_JSON}" ]]
+          [[ "$(jq -r .externalReleaseId <<<"${SNAPSHOT_JSON}")" == "${EXTERNAL_RELEASE_ID}" ]]
+          [[ "$(jq -r .checksum <<<"${SNAPSHOT_JSON}")" == "${EXPECTED_CHECKSUM}" ]]
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.HOSTED_SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ secrets.HOSTED_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "${SSH_PRIVATE_KEY}" >~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "${KNOWN_HOSTS}" >~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+      - name: Import and activate through the authenticated Learning domain API
+        env:
+          COMMIT_SHA: ${{ inputs.commit_sha }}
+          EXTERNAL_RELEASE_ID: ${{ inputs.external_release_id }}
+          EXPECTED_CHECKSUM: ${{ inputs.expected_checksum }}
+          HOSTED_HOST: ${{ secrets.HOSTED_HOST }}
+          HOSTED_USER: ${{ secrets.HOSTED_USER }}
+          SNAPSHOT_JSON: ${{ secrets.CONTENT_RELEASE_SNAPSHOT_JSON }}
+        run: |
+          set -Eeuo pipefail
+          umask 077
+          local_snapshot="$(mktemp)"
+          remote_snapshot="$(ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" 'mktemp /tmp/content-release.XXXXXX.json')"
+          cleanup() {
+            rm -f "${local_snapshot}"
+            ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" "rm -f '${remote_snapshot}'" || true
+          }
+          trap cleanup EXIT
+          printf '%s' "${SNAPSHOT_JSON}" >"${local_snapshot}"
+          scp -q -o BatchMode=yes "${local_snapshot}" "${HOSTED_USER}@${HOSTED_HOST}:${remote_snapshot}"
+          ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" \
+            "bash -s '${COMMIT_SHA}' '${EXTERNAL_RELEASE_ID}' '${EXPECTED_CHECKSUM}' '${remote_snapshot}'" <<'REMOTE_SCRIPT'
+          set -Eeuo pipefail
+          commit_sha="$1"
+          external_release_id="$2"
+          expected_checksum="$3"
+          snapshot_file="$4"
+          cd /opt/citizenship-platform/repo
+          [[ "$(git rev-parse HEAD)" == "${commit_sha}" ]]
+          source infrastructure/hetzner/lib.sh
+          load_platform_paths
+          import_result="$(compose exec -T learning-service sh -c \
+            'curl --fail --silent --show-error -H "Content-Type: application/json" -H "X-Internal-Api-Key: ${LEARNING_INTERNAL_API_KEY}" --data-binary @- http://localhost:8080/internal/v1/content-releases/import' \
+            <"${snapshot_file}")"
+          projection_id="$(jq -r .releaseId <<<"${import_result}")"
+          [[ "${projection_id}" =~ ^[0-9a-f-]{36}$ ]]
+          activation_result="$(compose exec -T learning-service sh -c \
+            'curl --fail --silent --show-error -X POST -H "X-Internal-Api-Key: ${LEARNING_INTERNAL_API_KEY}" "http://localhost:8080/internal/v1/content-releases/'"${projection_id}"'/activate"')"
+          [[ "$(jq -r .externalReleaseId <<<"${activation_result}")" == "${external_release_id}" ]]
+          [[ "$(jq -r .checksum <<<"${activation_result}")" == "${expected_checksum}" ]]
+          [[ "$(jq -r .status <<<"${activation_result}")" == "ACTIVE" ]]
+          jq -n --arg projectionId "${projection_id}" \
+            --argjson imported "$(jq .imported <<<"${import_result}")" \
+            --arg status "$(jq -r .status <<<"${activation_result}")" \
+            --arg checksum "${expected_checksum}" \
+            '{projectionId:$projectionId,imported:$imported,status:$status,checksum:$checksum}'
+          rm -f "${snapshot_file}"
+          REMOTE_SCRIPT
