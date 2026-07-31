@@ -10,6 +10,19 @@ EXPECTED_HOST_SHA256="${2:-}"
 [[ "${ACTION}" == inspect || "${ACTION}" == execute ]] || die "Action must be inspect or execute"
 require_file "${PLATFORM_ENV_FILE}"
 for command in docker python3 sha256sum; do require_command "${command}"; done
+if ! command -v psql >/dev/null 2>&1 || [[ "$(psql --version 2>/dev/null | sed -E 's/.* ([0-9]+)(\\..*)?$/\\1/')" -lt 18 ]]; then
+  POSTGRES_TOOL_DIR="${PLATFORM_STATE_DIR}/postgres18-client"
+  install -d -m 700 "${POSTGRES_TOOL_DIR}"
+  for postgres_command in psql pg_dump pg_restore; do
+    wrapper="${POSTGRES_TOOL_DIR}/${postgres_command}"
+    printf '%s\n' \
+      '#!/usr/bin/env bash' \
+      "exec docker run --rm --network host -e PGPASSWORD -v /tmp:/tmp postgres:18-alpine ${postgres_command} \"\$@\"" \
+      >"${wrapper}"
+    chmod 700 "${wrapper}"
+  done
+  export POSTGRES_TOOL_DIR
+fi
 PSQL="$(postgres_tool psql)"
 
 for variable in BACKUP_DATABASE_HOST BACKUP_DATABASE_PORT \
