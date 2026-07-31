@@ -65,7 +65,7 @@ jobs:
           trap cleanup EXIT
           printf '%s' "${SNAPSHOT_JSON}" >"${local_snapshot}"
           scp -q -o BatchMode=yes "${local_snapshot}" "${HOSTED_USER}@${HOSTED_HOST}:${remote_snapshot}"
-          promotion_result="$(ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" \
+          ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" \
             "bash -s '${COMMIT_SHA}' '${EXTERNAL_RELEASE_ID}' '${EXPECTED_CHECKSUM}' '${remote_snapshot}'" <<'REMOTE_SCRIPT'
           set -Eeuo pipefail
           commit_sha="$1"
@@ -85,20 +85,10 @@ jobs:
             'curl --fail --silent --show-error -X POST -H "X-Internal-Api-Key: ${LEARNING_INTERNAL_API_KEY}" "http://localhost:8080/internal/v1/content-releases/'"${external_release_id}"'/activate"')"
           [[ "$(jq -r .releaseId <<<"${activation_result}")" == "${projection_id}" ]]
           [[ "$(jq -r .status <<<"${activation_result}")" == "ACTIVE" ]]
-          jq -cn --arg projectionId "${projection_id}" \
+          jq -n --arg projectionId "${projection_id}" \
             --argjson imported "$(jq .imported <<<"${import_result}")" \
             --arg status "$(jq -r .status <<<"${activation_result}")" \
             --arg checksum "${expected_checksum}" \
             '{projectionId:$projectionId,imported:$imported,status:$status,checksum:$checksum}'
           rm -f "${snapshot_file}"
           REMOTE_SCRIPT
-          )"
-          promotion_result="$(tail -n 1 <<<"${promotion_result}")"
-          [[ "$(jq -r .status <<<"${promotion_result}")" == "ACTIVE" ]]
-          {
-            echo '### Hosted content promotion'
-            echo
-            echo '```json'
-            jq . <<<"${promotion_result}"
-            echo '```'
-          } >>"${GITHUB_STEP_SUMMARY}"
