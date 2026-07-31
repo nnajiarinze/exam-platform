@@ -1,6 +1,7 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Controller, useForm } from 'react-hook-form';
+import { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { appConfig } from '../../api/config';
 import { friendlyError } from '../../api/errors';
@@ -14,10 +15,20 @@ import { theme } from '../../theme/theme';
 type Values = { questionCount: number };
 export function PracticeSetupScreen({ navigation, route }: NativeStackScreenProps<RootStackParamList, 'PracticeSetup'>) {
   const identity = useAppStore((s) => s.learnerIdentity); const setSession = useAppStore((s) => s.setSession);
-  const { control, handleSubmit } = useForm<Values>({ defaultValues: { questionCount: 3 } });
+  const { control, handleSubmit, setValue } = useForm<Values>({ defaultValues: { questionCount: 3 } });
+  const topic = useQuery({
+    queryKey: ['practice-topic', identity, route.params.topicId],
+    queryFn: () => learningApi.lesson(identity, route.params.topicId!),
+    enabled: route.params.mode === 'TOPIC' && Boolean(identity && route.params.topicId),
+  });
+  const available = topic.data?.relatedQuestionCount;
+  const choices = available === undefined ? [3, 5, 10] : [1, 2, 3, 5, 10].filter((count) => count <= available);
+  useEffect(() => {
+    if (available !== undefined && available > 0) setValue('questionCount', Math.min(3, available));
+  }, [available, setValue]);
   const mutation = useMutation({ mutationFn: (values: Values) => learningApi.createSession(identity, { examId: appConfig.examId, mode: route.params.mode, topicId: route.params.topicId, questionCount: values.questionCount }), onSuccess: (session) => { setSession(session.sessionId, route.params.topicName ?? (route.params.mode === 'MIXED' ? 'Mixed practice' : undefined)); navigation.replace('Question', { sessionId: session.sessionId }); } });
   return <Screen><Title>{route.params.mode === 'TOPIC' ? route.params.topicName ?? 'Topic practice' : 'Mixed practice'}</Title><Body>Select the number of questions.</Body>
-    <Controller control={control} name="questionCount" render={({ field }) => <View style={styles.row}>{[3, 5, 10].map((count) => <Pressable accessibilityRole="radio" accessibilityState={{ checked: field.value === count }} key={count} onPress={() => field.onChange(count)} style={[styles.choice, field.value === count && styles.selected]}><Text>{count}</Text></Pressable>)}</View>} />
+    <Controller control={control} name="questionCount" render={({ field }) => <View style={styles.row}>{choices.map((count) => <Pressable accessibilityRole="radio" accessibilityState={{ checked: field.value === count }} key={count} onPress={() => field.onChange(count)} style={[styles.choice, field.value === count && styles.selected]}><Text>{count}</Text></Pressable>)}</View>} />
     {mutation.isError && <ErrorState message={friendlyError(mutation.error)} />}
     <Button label={mutation.isPending ? 'Starting…' : 'Start session'} disabled={mutation.isPending || !identity} onPress={handleSubmit((values) => mutation.mutate(values))} />
   </Screen>;

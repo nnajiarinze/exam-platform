@@ -1,13 +1,14 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { StyleSheet, Text, TextInput, View } from "react-native";
 import { learningApi } from "../../api/learningApi";
 import { friendlyError } from "../../api/errors";
 import { useAppStore } from "../../app/store";
 import { AppHeader } from "../../components/AppHeader";
 import { Screen } from "../../components/Screen";
 import {
+  Button,
   EmptyState,
   ErrorState,
   Icon,
@@ -16,6 +17,12 @@ import {
 } from "../../components/ui";
 import type { RootStackParamList } from "../../navigation/types";
 import { theme } from "../../theme";
+import {
+  lessonEntryOptions,
+  practiceLabel,
+  primaryLearningLabel,
+  topicLearningState,
+} from "./topicLearning";
 
 export function StudyTopicsScreen({
   navigation,
@@ -79,69 +86,91 @@ export function StudyTopicsScreen({
         />
       ) : (
         <View style={styles.list}>
-          {filtered.map((topic) => (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Open lesson ${topic.title}, ${topic.completionPercentage} percent complete`}
-              key={topic.topicId}
-              style={({ pressed }) => [styles.card, pressed && styles.pressed]}
-              onPress={() =>
-                navigation.navigate("TopicLesson", {
-                  topicId: topic.topicId,
-                  topicTitle: topic.title,
-                })
-              }
-            >
-              <View style={styles.row}>
-                <View style={styles.icon}>
-                  <Icon
-                    name={topic.completed ? "check" : "topics"}
-                    size={22}
-                    color={
-                      topic.completed
-                        ? theme.colors.success
-                        : theme.colors.primary
-                    }
-                  />
+          {filtered.map((topic) => {
+            const state = topicLearningState(topic);
+            const openLesson = () =>
+              navigation.navigate("TopicLesson", {
+                topicId: topic.topicId,
+                topicTitle: topic.title,
+                ...lessonEntryOptions(state),
+              });
+            return (
+              <View key={topic.topicId} style={styles.card}>
+                <View style={styles.row}>
+                  <View style={styles.icon}>
+                    <Icon
+                      name={topic.completed ? "check" : "topics"}
+                      size={22}
+                      color={
+                        topic.completed
+                          ? theme.colors.success
+                          : theme.colors.primary
+                      }
+                    />
+                  </View>
+                  <Text style={styles.last}>
+                    {topic.completed
+                      ? "Completed"
+                      : topic.completedSectionCount
+                        ? "In progress"
+                        : "New lesson"}
+                  </Text>
                 </View>
-                <Text style={styles.last}>
-                  {topic.completed
-                    ? "Completed"
-                    : topic.completedSectionCount
-                      ? "In progress"
-                      : "New lesson"}
+                <Text accessibilityRole="header" style={styles.cardTitle}>
+                  {topic.title}
                 </Text>
+                {topic.summary ? (
+                  <Text numberOfLines={3} style={styles.body}>
+                    {topic.summary}
+                  </Text>
+                ) : null}
+                <View style={styles.row}>
+                  <Text style={styles.meta}>Mastery</Text>
+                  <Text style={styles.percent}>
+                    {Math.round(topic.completionPercentage)}%
+                  </Text>
+                </View>
+                <ProgressBar
+                  value={topic.completionPercentage}
+                  accessibilityLabel={`${topic.completionPercentage} percent complete`}
+                />
+                <Text style={styles.meta}>
+                  ◷ {Math.max(1, Math.ceil(topic.readingTimeSeconds / 60))} min
+                  · {topic.keyFactCount} key facts
+                </Text>
+                <Button
+                  label={primaryLearningLabel(state)}
+                  onPress={openLesson}
+                />
+                {state === "in-progress" ? (
+                  <Button
+                    label="Study from beginning"
+                    onPress={() =>
+                      navigation.navigate("TopicLesson", {
+                        topicId: topic.topicId,
+                        topicTitle: topic.title,
+                        startAtBeginning: true,
+                      })
+                    }
+                    variant="secondary"
+                  />
+                ) : null}
+                {topic.relatedQuestionCount > 0 ? (
+                  <Button
+                    label={practiceLabel(state)}
+                    onPress={() =>
+                      navigation.navigate("PracticeSetup", {
+                        mode: "TOPIC",
+                        topicId: topic.topicId,
+                        topicName: topic.title,
+                      })
+                    }
+                    variant="secondary"
+                  />
+                ) : null}
               </View>
-              <Text accessibilityRole="header" style={styles.cardTitle}>
-                {topic.title}
-              </Text>
-              {topic.summary ? (
-                <Text numberOfLines={3} style={styles.body}>
-                  {topic.summary}
-                </Text>
-              ) : null}
-              <View style={styles.row}>
-                <Text style={styles.meta}>Mastery</Text>
-                <Text style={styles.percent}>
-                  {Math.round(topic.completionPercentage)}%
-                </Text>
-              </View>
-              <ProgressBar
-                value={topic.completionPercentage}
-                accessibilityLabel={`${topic.completionPercentage} percent complete`}
-              />
-              <Text style={styles.meta}>
-                ◷ {Math.max(1, Math.ceil(topic.readingTimeSeconds / 60))} min ·{" "}
-                {topic.keyFactCount} key facts
-              </Text>
-              <Text style={styles.action}>
-                {topic.completedSectionCount
-                  ? "Continue lesson"
-                  : "Start lesson"}{" "}
-                →
-              </Text>
-            </Pressable>
-          ))}
+            );
+          })}
         </View>
       )}
     </Screen>
@@ -176,7 +205,6 @@ const styles = StyleSheet.create({
     padding: theme.spacing.sm,
     ...theme.shadows.card,
   },
-  pressed: { opacity: 0.8 },
   row: {
     alignItems: "center",
     flexDirection: "row",
@@ -200,9 +228,4 @@ const styles = StyleSheet.create({
   body: { color: theme.colors.muted, ...theme.typography.body },
   meta: { color: theme.colors.muted, ...theme.typography.caption },
   percent: { color: theme.colors.primary, ...theme.typography.label },
-  action: {
-    color: theme.colors.primary,
-    ...theme.typography.label,
-    marginTop: 4,
-  },
 });

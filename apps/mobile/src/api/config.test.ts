@@ -5,7 +5,7 @@ describe('mobile API configuration',()=>{
   it('uses the centralized canonical Swedish citizenship identifier',()=>{
     delete process.env.EXPO_PUBLIC_EXAM_ID;jest.resetModules();
     const {appConfig}=require('./config') as typeof import('./config');
-    expect(appConfig.examId).toBe('swedish-citizenship');
+    expect(appConfig.examId).toBe('sverige-i-fokus-v1');
   });
   it('uses the configured hosted environment',()=>{
     const {appConfig}=require('./config') as typeof import('./config');

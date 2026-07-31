@@ -8,7 +8,7 @@ export const appConfig = {
   learningBaseUrl: environmentConfig.learningBaseUrl,
   authBaseUrl: environmentConfig.authBaseUrl,
   defaultLearnerIdentity: process.env.EXPO_PUBLIC_LEARNER_IDENTITY ?? '',
-  examId: process.env.EXPO_PUBLIC_EXAM_ID ?? 'swedish-citizenship',
+  examId: process.env.EXPO_PUBLIC_EXAM_ID ?? 'sverige-i-fokus-v1',
   oidcIssuer: environmentConfig.oidcIssuer,
   oidcClientId: process.env.EXPO_PUBLIC_OIDC_CLIENT_ID ?? 'mobile-app',
   privacyUrl: process.env.EXPO_PUBLIC_PRIVACY_URL ?? '',

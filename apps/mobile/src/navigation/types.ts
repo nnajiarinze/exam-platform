@@ -1,4 +1,4 @@
-import type { PracticeMode } from '../api/generated/types.gen';
+import type { PracticeMode } from "../api/generated/types.gen";
 
 export type RootStackParamList = {
   Welcome: undefined;
@@ -13,8 +13,18 @@ export type RootStackParamList = {
   Topics: undefined;
   StudySubjects: undefined;
   StudyTopics: { subjectId: string; subjectTitle: string };
-  TopicLesson: { topicId: string; topicTitle: string; sectionId?: string };
-  PracticeSetup: { mode: Extract<PracticeMode, 'TOPIC' | 'MIXED'>; topicId?: string; topicName?: string };
+  TopicLesson: {
+    topicId: string;
+    topicTitle: string;
+    sectionId?: string;
+    reviewMode?: boolean;
+    startAtBeginning?: boolean;
+  };
+  PracticeSetup: {
+    mode: Extract<PracticeMode, "TOPIC" | "MIXED">;
+    topicId?: string;
+    topicName?: string;
+  };
   Question: { sessionId: string };
   SessionComplete: { total: number };
   Progress: undefined;
@@ -33,8 +43,14 @@ export type RootStackParamList = {
   MockHistory: undefined;
 };
 
-export type InitialRouteInput = { hydrated: boolean; onboardingComplete: boolean };
-export function initialRouteFor({ hydrated, onboardingComplete }: InitialRouteInput): 'Splash' | 'Onboarding' | 'Home' {
-  if (!hydrated) return 'Splash';
-  return onboardingComplete ? 'Home' : 'Onboarding';
+export type InitialRouteInput = {
+  hydrated: boolean;
+  onboardingComplete: boolean;
+};
+export function initialRouteFor({
+  hydrated,
+  onboardingComplete,
+}: InitialRouteInput): "Splash" | "Onboarding" | "Home" {
+  if (!hydrated) return "Splash";
+  return onboardingComplete ? "Home" : "Onboarding";
 }

@@ -137,6 +137,41 @@ class LearningServiceIntegrationTest {
                         .header("X-Learner-Identity", "developer-learner"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.topicId").value("topic-a"));
+
+        for (String sectionId : List.of("fact-2", "fact-3")) {
+            mockMvc.perform(put("/api/v1/learning/topics/topic-a/progress")
+                            .queryParam("examId", "swedish-citizenship")
+                            .header("X-Learner-Identity", "developer-learner")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""
+                                    {"sectionId":"%s","completed":true}
+                                    """.formatted(sectionId)))
+                    .andExpect(status().isOk());
+        }
+        mockMvc.perform(get("/api/v1/learning/topics/topic-a/lesson")
+                        .queryParam("examId", "swedish-citizenship")
+                        .header("X-Learner-Identity", "developer-learner"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sections.length()").value(3))
+                .andExpect(jsonPath("$.progress.completed").value(true))
+                .andExpect(jsonPath("$.progress.completionPercentage").value(100));
+
+        mockMvc.perform(put("/api/v1/learning/topics/topic-a/progress")
+                        .queryParam("examId", "swedish-citizenship")
+                        .header("X-Learner-Identity", "developer-learner")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"sectionId":"fact-1","completed":false}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.lastSectionId").value("fact-1"))
+                .andExpect(jsonPath("$.completed").value(true))
+                .andExpect(jsonPath("$.completionPercentage").value(100));
+        assertThat(jdbc.sql("""
+                        SELECT count(*) FROM lesson_progress
+                        WHERE learner_id=:learner
+                        """).param("learner", learnerId).query(Integer.class).single())
+                .isOne();
     }
 
     @Test
