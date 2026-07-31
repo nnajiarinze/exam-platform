@@ -120,6 +120,12 @@ if [[ "${ACTION}" == verify ]]; then
   API_DOMAIN="$(env_file_value API_DOMAIN "${PLATFORM_ENV_FILE}")"
   export API_DOMAIN
   "${SCRIPT_DIR}/smoke-test.sh" --internal
+  latest_backup="$(find "${PLATFORM_ROOT}/backups" -mindepth 1 -maxdepth 1 \
+    -type d -name 'sverige-i-fokus-*' -print | sort | tail -n 1)"
+  [[ -n "${latest_backup}" && -f "${latest_backup}/manifest.tsv" ]] ||
+    die "No hosted Sverige i fokus backup manifest was found"
+  printf 'Hosted backup manifest: %s\n' "${latest_backup}/manifest.tsv"
+  cat "${latest_backup}/manifest.tsv"
   exit 0
 fi
 
