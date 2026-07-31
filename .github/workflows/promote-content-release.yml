@@ -65,7 +65,7 @@ jobs:
           trap cleanup EXIT
           printf '%s' "${SNAPSHOT_JSON}" >"${local_snapshot}"
           scp -q -o BatchMode=yes "${local_snapshot}" "${HOSTED_USER}@${HOSTED_HOST}:${remote_snapshot}"
-          ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" \
+          promotion_result="$(ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" \
             "bash -s '${COMMIT_SHA}' '${EXTERNAL_RELEASE_ID}' '${EXPECTED_CHECKSUM}' '${remote_snapshot}'" <<'REMOTE_SCRIPT'
           set -Eeuo pipefail
           commit_sha="$1"
@@ -92,3 +92,12 @@ jobs:
             '{projectionId:$projectionId,imported:$imported,status:$status,checksum:$checksum}'
           rm -f "${snapshot_file}"
           REMOTE_SCRIPT
+          )"
+          [[ "$(jq -r .status <<<"${promotion_result}")" == "ACTIVE" ]]
+          {
+            echo '### Hosted content promotion'
+            echo
+            echo '```json'
+            jq . <<<"${promotion_result}"
+            echo '```'
+          } >>"${GITHUB_STEP_SUMMARY}"
