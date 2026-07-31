@@ -10,7 +10,7 @@ on:
         description: Use inspect first; execute requires its host fingerprint
         required: true
         type: choice
-        options: [inspect, execute]
+        options: [inspect, verify, execute]
       expected_host_sha256:
         description: Fingerprint from a separate inspect run; required for execute
         required: false
@@ -30,7 +30,7 @@ jobs:
           EXPECTED: ${{ inputs.expected_host_sha256 }}
         run: |
           [[ "${COMMIT_SHA}" =~ ^[0-9a-f]{40}$ ]]
-          [[ "${ACTION}" == inspect || "${ACTION}" == execute ]]
+          [[ "${ACTION}" == inspect || "${ACTION}" == verify || "${ACTION}" == execute ]]
           if [[ "${ACTION}" == execute ]]; then [[ "${EXPECTED}" =~ ^[a-f0-9]{64}$ ]]; fi
       - name: Configure SSH
         env:

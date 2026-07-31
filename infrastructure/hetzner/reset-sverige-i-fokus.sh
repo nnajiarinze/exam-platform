@@ -7,7 +7,8 @@ load_platform_paths
 
 ACTION="${1:-inspect}"
 EXPECTED_HOST_SHA256="${2:-}"
-[[ "${ACTION}" == inspect || "${ACTION}" == execute ]] || die "Action must be inspect or execute"
+[[ "${ACTION}" == inspect || "${ACTION}" == verify || "${ACTION}" == execute ]] ||
+  die "Action must be inspect, verify, or execute"
 require_file "${PLATFORM_ENV_FILE}"
 for command in docker python3 sha256sum; do require_command "${command}"; done
 if ! command -v psql >/dev/null 2>&1 || [[ "$(psql --version 2>/dev/null | sed -E 's/.* ([0-9]+)(\\..*)?$/\\1/')" -lt 18 ]]; then
@@ -115,6 +116,12 @@ ai_counts="$(counts_json ai ai)"
 printf '{"event":"hosted_target_inspected","region":"eu-central-1","hostSha256":"%s","counts":{"content":%s,"learning":%s,"ai":%s}}\n' \
   "${HOST_SHA256}" "${content_counts}" "${learning_counts}" "${ai_counts}"
 [[ "${ACTION}" == inspect ]] && exit 0
+if [[ "${ACTION}" == verify ]]; then
+  API_DOMAIN="$(env_file_value API_DOMAIN "${PLATFORM_ENV_FILE}")"
+  export API_DOMAIN
+  "${SCRIPT_DIR}/smoke-test.sh" --internal
+  exit 0
+fi
 
 cd "${PLATFORM_REPOSITORY}"
 require_command openssl
@@ -202,6 +209,8 @@ rm -f -- "${IMPORT_SQL}"
 
 compose up -d content-service learning-service ai-service --wait --wait-timeout 240
 writers_stopped=false
+API_DOMAIN="$(env_file_value API_DOMAIN "${PLATFORM_ENV_FILE}")"
+export API_DOMAIN
 "${SCRIPT_DIR}/smoke-test.sh" --internal
 
 printf '"after":{"content":%s,"learning":%s,"ai":%s},"identityReset":false,"oldUsEastTouched":false}\n' \
