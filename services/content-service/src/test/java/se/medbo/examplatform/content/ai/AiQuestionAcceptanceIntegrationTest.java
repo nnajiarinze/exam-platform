@@ -70,8 +70,8 @@ class AiQuestionAcceptanceIntegrationTest {
     jdbc.sql("UPDATE knowledge_fact_version SET canonical_statement='Riksdagen antar lagar och beslutar om statens budget.' WHERE id=:id").param("id",fixture.factVersion).update();
     assertThatThrownBy(()->service.accept(UUID.randomUUID(),0)).isInstanceOf(DomainException.class).extracting(e->((DomainException)e).code()).isEqualTo("AI_QUESTION_GENERATION_INPUT_STALE");
     fixture=seed();String changed="Riksdagen beslutar om lagar men källan har ändrats.";
-    jdbc.sql("UPDATE source_reference SET content_text=:text,content_checksum=:checksum WHERE id=:id").param("text",changed).param("checksum",checksum(changed)).param("id",fixture.source).update();
-    assertThatThrownBy(()->service.accept(UUID.randomUUID(),0)).isInstanceOf(DomainException.class).extracting(e->((DomainException)e).code()).isEqualTo("AI_QUESTION_GENERATION_SOURCE_CHANGED");
+    jdbc.sql("UPDATE source_section SET normalized_text=:text,exact_text=:text,section_checksum=:checksum WHERE source_reference_id=:id").param("text",changed).param("checksum",checksum(changed)).param("id",fixture.source).update();
+    assertThatThrownBy(()->service.accept(UUID.randomUUID(),0)).isInstanceOf(DomainException.class).extracting(e->((DomainException)e).code()).isEqualTo("AI_QUESTION_GENERATION_SOURCE_EVIDENCE_INVALID");
   }
 
   @Test void freshGroundingAndQualityFailuresBlockCanonicalCreation(){
@@ -102,7 +102,7 @@ class AiQuestionAcceptanceIntegrationTest {
   }
 
   private Fixture seed(){
-    UUID exam=UUID.randomUUID(),examVersion=UUID.randomUUID(),subject=UUID.randomUUID(),topic=UUID.randomUUID(),objective=UUID.randomUUID(),source=UUID.randomUUID(),fact=UUID.randomUUID(),factVersion=UUID.randomUUID();var now=OffsetDateTime.now(ZoneOffset.UTC);
+    UUID exam=UUID.randomUUID(),examVersion=UUID.randomUUID(),subject=UUID.randomUUID(),topic=UUID.randomUUID(),objective=UUID.randomUUID(),source=UUID.randomUUID(),section=UUID.randomUUID(),fact=UUID.randomUUID(),factVersion=UUID.randomUUID();var now=OffsetDateTime.now(ZoneOffset.UTC);
     String factText="Riksdagen beslutar om Sveriges lagar.";String sourceText="Riksdagen beslutar om Sveriges lagar och statens budget.";
     jdbc.sql("INSERT INTO exam(id,code,name,country_code,status,created_at,updated_at) VALUES(:id,:code,'Test','SE','DRAFT',:now,:now)").param("id",exam).param("code","AIQ_"+exam).param("now",now).update();
     jdbc.sql("INSERT INTO exam_version(id,exam_id,version_code,display_name,status,created_at,updated_at) VALUES(:id,:exam,'V1','V1','DRAFT',:now,:now)").param("id",examVersion).param("exam",exam).param("now",now).update();
@@ -110,10 +110,13 @@ class AiQuestionAcceptanceIntegrationTest {
     jdbc.sql("INSERT INTO topic(id,subject_id,code,name,sort_order,status,created_at,updated_at) VALUES(:id,:subject,'TOP','Topic',0,'DRAFT',:now,:now)").param("id",topic).param("subject",subject).param("now",now).update();
     jdbc.sql("INSERT INTO learning_objective(id,topic_id,code,title,status,created_at,updated_at) VALUES(:id,:topic,'OBJ','Objective','DRAFT',:now,:now)").param("id",objective).param("topic",topic).param("now",now).update();
     jdbc.sql("INSERT INTO source_reference(id,publisher,title,source_type,accessed_at,content_text,content_checksum,review_status,status,created_at,updated_at) VALUES(:id,'Authority','Source','GOVERNMENT_WEBPAGE',CURRENT_DATE,:text,:checksum,'REVIEWED','ACTIVE',:now,:now)").param("id",source).param("text",sourceText).param("checksum",checksum(sourceText)).param("now",now).update();
+    jdbc.sql("INSERT INTO source_section(id,source_reference_id,code,chapter_title,subsection_title,structural_path,page_start,page_end,display_order,exact_text,normalized_text,section_checksum,created_at,updated_at) VALUES(:id,:source,'section-1','Chapter','Section','Chapter / Section',1,1,0,:text,:text,:checksum,:now,:now)").param("id",section).param("source",source).param("text",sourceText).param("checksum",checksum(sourceText)).param("now",now).update();
+    jdbc.sql("INSERT INTO learning_objective_source_section(learning_objective_id,source_section_id) VALUES(:objective,:section)").param("objective",objective).param("section",section).update();
     jdbc.sql("INSERT INTO knowledge_fact(id,learning_objective_id,canonical_statement,review_status,status,created_at,updated_at) VALUES(:id,:objective,:text,'APPROVED','ACTIVE',:now,:now)").param("id",fact).param("objective",objective).param("text",factText).param("now",now).update();
     jdbc.sql("INSERT INTO knowledge_fact_version(id,knowledge_fact_id,version_number,canonical_statement,review_status,author_id,created_at,updated_at) VALUES(:id,:fact,1,:text,'APPROVED','fact-author',:now,:now)").param("id",factVersion).param("fact",fact).param("text",factText).param("now",now).update();
     jdbc.sql("UPDATE knowledge_fact SET current_version_id=:version WHERE id=:fact").param("version",factVersion).param("fact",fact).update();
     jdbc.sql("INSERT INTO knowledge_fact_source(knowledge_fact_version_id,source_reference_id) VALUES(:version,:source)").param("version",factVersion).param("source",source).update();
+    jdbc.sql("INSERT INTO knowledge_fact_ai_provenance(knowledge_fact_version_id,generation_job_id,proposal_id,provider,model,prompt_version,generated_at,source_reference_id,source_content_checksum,learning_objective_id,requesting_user_id,original_proposed_text,final_accepted_text,accepting_user_id,accepted_at,confidence,source_evidence,source_section_id) VALUES(:version,:job,:proposal,'FAKE','deterministic-v1','fact-generation-v1',:now,:source,:checksum,:objective,'fact-author',:text,:text,'fact-reviewer',:now,'HIGH',CAST(:evidence AS jsonb),:section)").param("version",factVersion).param("job",UUID.randomUUID()).param("proposal",UUID.randomUUID()).param("now",now).param("source",source).param("checksum",checksum(sourceText)).param("objective",objective).param("text",factText).param("evidence","[{\"quote\":\""+sourceText+"\"}]").param("section",section).update();
     return new Fixture(UUID.randomUUID(),fact,factVersion,objective,source,factText,sourceText,now);
   }
 

@@ -10,8 +10,14 @@ public interface QuestionGenerationProviderClient {
                 String checksum, String language) {}
   record Context(UUID learningObjectiveId, String learningObjectiveTitle, String learningObjectiveDescription,
                  UUID topicId, String topicTitle, UUID subjectId, String subjectTitle,
-                 UUID examId, UUID examVersionId, List<Source> sources) {}
-  record Source(UUID sourceId, String title, String checksum, String contentExcerpt) {}
+                 UUID examId, UUID examVersionId, List<Source> sources, String corpusId, String generationPurpose) {
+    Context(UUID learningObjectiveId,String learningObjectiveTitle,String learningObjectiveDescription,UUID topicId,String topicTitle,UUID subjectId,String subjectTitle,UUID examId,UUID examVersionId,List<Source> sources){this(learningObjectiveId,learningObjectiveTitle,learningObjectiveDescription,topicId,topicTitle,subjectId,subjectTitle,examId,examVersionId,sources,null,null);}
+  }
+  record Source(UUID sourceId, UUID sourceSectionId, String title, String chapterTitle,
+                String subsectionTitle, Integer pageStart, Integer pageEnd, String checksum,
+                String contentChecksum, String contentExcerpt, List<String> exactEvidence) {
+    Source(UUID sourceId,String title,String checksum,String contentExcerpt){this(sourceId,null,title,null,null,null,null,checksum,checksum,contentExcerpt,List.of());}
+  }
   record Regeneration(UUID parentProposalId, String reasonCode, String reviewerFeedback,
                       String previousQuestionText, List<Option> previousOptions, int generationAttempt) {}
   record Request(Target target, Context context, int proposalCount, String questionType,
@@ -32,7 +38,9 @@ public interface QuestionGenerationProviderClient {
   record Option(String optionKey, String text, boolean correct, String rationale) {}
   record FactEvidence(UUID knowledgeFactId, long knowledgeFactVersion, String knowledgeFactChecksum,
                       String supportedClaim) {}
-  record SourceEvidence(UUID sourceId, String sourceTitle, String sourceChecksum, String quote) {}
+  record SourceEvidence(UUID sourceId, UUID sourceSectionId, String sourceTitle, String sourceChecksum, String quote) {
+    SourceEvidence(UUID sourceId,String sourceTitle,String sourceChecksum,String quote){this(sourceId,null,sourceTitle,sourceChecksum,quote);}
+  }
   record PedagogicalMetadata(String difficulty, String bloomsLevel, String complexity,
                              String intent, Integer estimatedReadingSeconds) {}
   record Proposal(String questionType, String questionText, String language, List<Option> answerOptions,

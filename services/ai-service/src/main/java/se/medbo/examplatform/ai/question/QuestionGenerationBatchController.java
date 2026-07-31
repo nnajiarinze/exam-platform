@@ -30,6 +30,8 @@ final class QuestionGenerationBatchController {
                 @NotNull Map<String,Object> configuration,@NotBlank String requestedBy,
                 @NotBlank@Size(max=200)String idempotencyKey,@NotEmpty@Size(max=200)List<@Valid Item> items){}
   record Retry(List<UUID> itemIds,@NotBlank String actor){}
+  record CorrectedItem(@NotNull UUID itemId,@NotNull QuestionGenerationProviderClient.Target target,@NotNull QuestionGenerationProviderClient.Context context){}
+  record CorrectedRetry(@NotEmpty@Size(max=3)List<@Valid CorrectedItem> items,@NotBlank String actor){}
   record Assignment(@NotEmpty List<UUID> proposalIds,@NotBlank String reviewerId,@NotBlank String actor,OffsetDateTime reviewDeadline){}
   record Unassignment(@NotEmpty List<UUID> proposalIds,@NotBlank String actor){}
   private final QuestionGenerationBatchService service;
@@ -41,6 +43,7 @@ final class QuestionGenerationBatchController {
   @GetMapping("/{id}/proposals")Map<String,Object>proposals(@PathVariable UUID id,@RequestParam(defaultValue="0")@Min(0)int page,@RequestParam(defaultValue="20")@Min(1)@Max(100)int size,@RequestParam(required=false)String status){return service.proposals(id,page,size,status);}
   @PostMapping("/{id}/cancel")Map<String,Object>cancel(@PathVariable UUID id,@RequestBody Map<String,String> body){return service.cancel(id,body.get("actor"));}
   @PostMapping("/{id}/retry-failed")Map<String,Object>retry(@PathVariable UUID id,@Valid@RequestBody Retry r){return service.retryFailed(id,r.itemIds(),r.actor());}
+  @PostMapping("/{id}/retry-corrected-grounding")Map<String,Object>retryCorrected(@PathVariable UUID id,@Valid@RequestBody CorrectedRetry r){return service.retryCorrected(id,r.items().stream().map(i->new QuestionGenerationBatchService.CorrectedItem(i.itemId(),i.target(),i.context())).toList(),r.actor());}
   @PostMapping("/proposals/assign")Map<String,Object>assign(@Valid@RequestBody Assignment r){return service.assign(r.proposalIds(),r.reviewerId(),r.actor(),r.reviewDeadline());}
   @PostMapping("/proposals/unassign")Map<String,Object>unassign(@Valid@RequestBody Unassignment r){return service.unassign(r.proposalIds(),r.actor());}
 }

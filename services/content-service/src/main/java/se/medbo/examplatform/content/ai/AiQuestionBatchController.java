@@ -30,6 +30,7 @@ final class AiQuestionBatchController {
       @NotEmpty List<String> questionTypes,@NotEmpty Map<String,Integer> difficultyDistribution,
       @NotEmpty Map<String,Integer> bloomDistribution,@Size(max=200)String idempotencyKey){}
   record Retry(List<UUID> itemIds){}
+  record CorrectedRetry(@NotEmpty@Size(max=3)List<UUID> itemIds){}
   record Assignment(@NotEmpty List<UUID> proposalIds,@NotBlank String reviewerId,OffsetDateTime reviewDeadline){}
   record Selection(@NotEmpty List<UUID> proposalIds){}
   record Rejection(@NotEmpty List<UUID> proposalIds,@NotBlank String reasonCode,String reviewerComment,@NotNull Map<UUID,Long> versions){}
@@ -46,6 +47,7 @@ final class AiQuestionBatchController {
   @GetMapping("/{id}/proposals")Map<String,Object>proposals(@PathVariable UUID id,@RequestParam(defaultValue="0")@Min(0)int page,@RequestParam(defaultValue="20")@Min(1)@Max(100)int size,@RequestParam(required=false)String status){return service.proposals(id,page,size,status);}
   @PostMapping("/{id}/cancel")Map<String,Object>cancel(@PathVariable UUID id){return service.cancel(id);}
   @PostMapping("/{id}/retry-failed")Map<String,Object>retry(@PathVariable UUID id,@RequestBody(required=false)Retry r){return service.retry(id,r==null?List.of():r.itemIds());}
+  @PostMapping("/{id}/retry-corrected-grounding")Map<String,Object>retryCorrected(@PathVariable UUID id,@Valid@RequestBody CorrectedRetry r){return service.retryCorrected(id,r.itemIds());}
   @PostMapping("/proposals/assign")Map<String,Object>assign(@Valid@RequestBody Assignment r){return service.assign(r.proposalIds(),r.reviewerId(),r.reviewDeadline());}
   @PostMapping("/proposals/unassign")Map<String,Object>unassign(@Valid@RequestBody Selection r){return service.unassign(r.proposalIds());}
   @PostMapping("/proposals/reject")Map<String,Object>reject(@Valid@RequestBody Rejection r){return service.bulkReject(r.proposalIds(),r.reasonCode(),r.reviewerComment(),r.versions());}

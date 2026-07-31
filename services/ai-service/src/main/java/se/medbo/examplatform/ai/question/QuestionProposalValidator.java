@@ -50,13 +50,15 @@ final class QuestionProposalValidator {
     if(sourceEvidence.isEmpty())fail("AI_QUESTION_GENERATION_SOURCE_EVIDENCE_MISSING","Proposal requires exact supporting Source evidence");
     for(var evidence:sourceEvidence){
       var source=request.context().sources().stream().filter(s->s.sourceId().equals(evidence.sourceId())).findFirst().orElseThrow(()->invalid("AI_QUESTION_GENERATION_SOURCE_MISMATCH","Evidence references another Source"));
-      if(!source.checksum().equals(evidence.sourceChecksum())||!source.contentExcerpt().contains(evidence.quote()))fail("AI_QUESTION_GENERATION_SOURCE_MISMATCH","Source evidence does not match the immutable snapshot");
+      if(source.sourceSectionId()==null||!source.sourceSectionId().equals(evidence.sourceSectionId())||!source.checksum().equals(evidence.sourceChecksum())||!evidenceOccurs(source.contentExcerpt(),evidence.quote())||source.exactEvidence()==null||source.exactEvidence().stream().noneMatch(q->normalizeEvidence(q).equals(normalizeEvidence(evidence.quote()))))fail("AI_QUESTION_GENERATION_SOURCE_MISMATCH","Source evidence does not match the immutable Source Section snapshot");
       if(!plausiblyRelated(evidence.quote(),request.target().text()))fail("AI_QUESTION_GENERATION_UNRELATED_EVIDENCE","Source evidence is unrelated to the target fact");
     }
   }
   private boolean plausiblyRelated(String a,String b){var left=tokens(a);var right=tokens(b);left.retainAll(right);return left.size()>=1;}
   private Set<String> tokens(String value){var set=new HashSet<String>();for(String token:normalize(value).split(" "))if(token.length()>3&&!Set.of("which","what","that","this","eller","vilken","vilka","detta","samt","fråga").contains(token))set.add(token);return set;}
   static String normalize(String value){return Normalizer.normalize(value==null?"":value,Normalizer.Form.NFC).toLowerCase(Locale.ROOT).replaceAll("[^\\p{L}\\p{N}]+"," ").trim();}
+  private boolean evidenceOccurs(String source,String quote){return normalizeEvidence(source).contains(normalizeEvidence(quote));}
+  private String normalizeEvidence(String value){return Normalizer.normalize(value==null?"":value,Normalizer.Form.NFC).replace('\u00a0',' ').replace("\u00ad","").trim().replaceAll("\\s+"," ");}
   private void required(String value,String field){if(value==null||value.isBlank())fail("AI_QUESTION_GENERATION_OUTPUT_INVALID","Missing "+field);}
   private AiProviderException invalid(String code,String message){return new AiProviderException(code,false,message);}
   private void fail(String code,String message){throw invalid(code,message);}
