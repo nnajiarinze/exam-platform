@@ -27,8 +27,12 @@ jobs:
           EXTERNAL_RELEASE_ID: ${{ inputs.external_release_id }}
           EXPECTED_CHECKSUM: ${{ inputs.expected_checksum }}
           SNAPSHOT_JSON: ${{ secrets.CONTENT_RELEASE_SNAPSHOT_JSON }}
+          SNAPSHOT_GZIP_BASE64: ${{ secrets.CONTENT_RELEASE_SNAPSHOT_GZIP_BASE64 }}
         run: |
           set -Eeuo pipefail
+          if [[ -n "${SNAPSHOT_GZIP_BASE64}" ]]; then
+            SNAPSHOT_JSON="$(printf '%s' "${SNAPSHOT_GZIP_BASE64}" | base64 --decode | gzip --decompress)"
+          fi
           [[ "${COMMIT_SHA}" =~ ^[0-9a-f]{40}$ ]]
           [[ "${EXTERNAL_RELEASE_ID}" =~ ^[0-9a-f-]{36}$ ]]
           [[ "${EXPECTED_CHECKSUM}" =~ ^[0-9a-f]{64}$ ]]
@@ -53,8 +57,12 @@ jobs:
           HOSTED_HOST: ${{ secrets.HOSTED_HOST }}
           HOSTED_USER: ${{ secrets.HOSTED_USER }}
           SNAPSHOT_JSON: ${{ secrets.CONTENT_RELEASE_SNAPSHOT_JSON }}
+          SNAPSHOT_GZIP_BASE64: ${{ secrets.CONTENT_RELEASE_SNAPSHOT_GZIP_BASE64 }}
         run: |
           set -Eeuo pipefail
+          if [[ -n "${SNAPSHOT_GZIP_BASE64}" ]]; then
+            SNAPSHOT_JSON="$(printf '%s' "${SNAPSHOT_GZIP_BASE64}" | base64 --decode | gzip --decompress)"
+          fi
           umask 077
           local_snapshot="$(mktemp)"
           remote_snapshot="$(ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" 'mktemp /tmp/content-release.XXXXXX.json')"
