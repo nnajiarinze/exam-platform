@@ -53,7 +53,7 @@ Final lesson IDs (version 2):
 The original active v1 release `835a50eb-6e45-4fac-a8ef-269c992311c7` and its five one-page lessons remain immutable and available for rollback. The first v2 snapshot `e9786b1f-0f09-4972-934f-6684ebe8a454` remains immutable with failed delivery diagnostics from the duplicate page-version defect. The corrected LOCAL release is:
 
 - Content release: `ee96d2e0-9539-47c8-8c71-fd55684d7d67`
-- Release key: `sverige-i-fokus-chapter-1-internal-v2.1`
+- Release identifier: `sverige-i-fokus-chapter-1-internal-v2.1`
 - Status: `ACTIVE`
 - Checksum: `1d42c244bcfe652e244b11cd1f73088c79db8ca675d021a75e1eec7023e44fbc`
 - Learning projection: `8858888c-1b7e-45b1-8615-48e79fc13dcf`
