@@ -46,7 +46,9 @@ final class QuestionProposalValidator {
     if("MULTIPLE_CHOICE".equals(p.questionType())&&(correct<1||correct>=options.size()))fail("AI_QUESTION_GENERATION_CORRECT_ANSWER_INVALID","Multiple choice requires at least one but not all options to be correct");
     String supported=options.stream().filter(QuestionGenerationProviderClient.Option::correct).map(QuestionGenerationProviderClient.Option::text).reduce("",(a,b)->a+" "+b)+" "+p.explanation();
     if(!plausiblyRelated(supported,request.target().text()))fail("AI_QUESTION_GENERATION_UNSUPPORTED_CORRECT_ANSWER","The correct answer and explanation are not grounded in the target fact");
-    for(var evidence:p.sourceEvidence()==null?List.<QuestionGenerationProviderClient.SourceEvidence>of():p.sourceEvidence()){
+    var sourceEvidence=p.sourceEvidence()==null?List.<QuestionGenerationProviderClient.SourceEvidence>of():p.sourceEvidence();
+    if(sourceEvidence.isEmpty())fail("AI_QUESTION_GENERATION_SOURCE_EVIDENCE_MISSING","Proposal requires exact supporting Source evidence");
+    for(var evidence:sourceEvidence){
       var source=request.context().sources().stream().filter(s->s.sourceId().equals(evidence.sourceId())).findFirst().orElseThrow(()->invalid("AI_QUESTION_GENERATION_SOURCE_MISMATCH","Evidence references another Source"));
       if(!source.checksum().equals(evidence.sourceChecksum())||!source.contentExcerpt().contains(evidence.quote()))fail("AI_QUESTION_GENERATION_SOURCE_MISMATCH","Source evidence does not match the immutable snapshot");
       if(!plausiblyRelated(evidence.quote(),request.target().text()))fail("AI_QUESTION_GENERATION_UNRELATED_EVIDENCE","Source evidence is unrelated to the target fact");

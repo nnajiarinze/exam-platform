@@ -22,6 +22,7 @@ final class GeminiProviderOperationsController {
   GeminiProviderOperationsController(GeminiQuotaService quota,FreeOnlyProviderRouter router){this.quota=quota;this.router=router;}
   @GetMapping("/operations") Map<String,Object> operations(){return router.operations();}
   @GetMapping("/providers") List<Map<String,Object>> providers(){return router.statuses();}
+  @PostMapping("/providers/recheck") Map<String,Object> recheckProviders(@Valid @RequestBody Actor body){return router.recheck();}
   @GetMapping("/status") Map<String,Object> status(){return quota.status();}
   @GetMapping("/alerts") List<Map<String,Object>> alerts(){return quota.alerts();}
   @PostMapping("/disable") Map<String,Object> disable(@Valid @RequestBody Actor body){quota.disable(body.actor());return quota.status();}

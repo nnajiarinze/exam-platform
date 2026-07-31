@@ -48,5 +48,10 @@ public interface QuestionGenerationProviderClient {
   }
   record Usage(Integer inputTokens, Integer outputTokens, String requestId) {}
   record Result(String resultType, List<Proposal> proposals, String reason, List<String> warnings,
-                Usage usage, String structuredOutputChecksum) {}
+                Usage usage, String structuredOutputChecksum, String provider, String model) {
+    Result(String resultType, List<Proposal> proposals, String reason, List<String> warnings,
+           Usage usage, String structuredOutputChecksum) {
+      this(resultType,proposals,reason,warnings,usage,structuredOutputChecksum,null,null);
+    }
+  }
 }
