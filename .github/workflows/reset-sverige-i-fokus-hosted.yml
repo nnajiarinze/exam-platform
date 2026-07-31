@@ -1,0 +1,57 @@
+name: Inspect or reset hosted Sverige i fokus corpus
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: Full deployed and tested commit SHA
+        required: true
+      action:
+        description: Use inspect first; execute requires its host fingerprint
+        required: true
+        type: choice
+        options: [inspect, execute]
+      expected_host_sha256:
+        description: Fingerprint from a separate inspect run; required for execute
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  corpus:
+    runs-on: ubuntu-latest
+    environment: hosted
+    steps:
+      - name: Validate inputs
+        env:
+          COMMIT_SHA: ${{ inputs.commit_sha }}
+          ACTION: ${{ inputs.action }}
+          EXPECTED: ${{ inputs.expected_host_sha256 }}
+        run: |
+          [[ "${COMMIT_SHA}" =~ ^[0-9a-f]{40}$ ]]
+          [[ "${ACTION}" == inspect || "${ACTION}" == execute ]]
+          if [[ "${ACTION}" == execute ]]; then [[ "${EXPECTED}" =~ ^[a-f0-9]{64}$ ]]; fi
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.HOSTED_SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ secrets.HOSTED_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "${SSH_PRIVATE_KEY}" >~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "${KNOWN_HOSTS}" >~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+      - name: Run guarded corpus operation
+        env:
+          COMMIT_SHA: ${{ inputs.commit_sha }}
+          ACTION: ${{ inputs.action }}
+          EXPECTED: ${{ inputs.expected_host_sha256 }}
+          HOSTED_HOST: ${{ secrets.HOSTED_HOST }}
+          HOSTED_USER: ${{ secrets.HOSTED_USER }}
+        run: |
+          ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" \
+            "cd /opt/citizenship-platform/repo &&
+             git fetch --quiet origin '${COMMIT_SHA}' &&
+             git checkout --detach '${COMMIT_SHA}' &&
+             ./infrastructure/hetzner/reset-sverige-i-fokus.sh '${ACTION}' '${EXPECTED}'"

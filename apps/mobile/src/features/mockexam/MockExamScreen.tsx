@@ -17,6 +17,7 @@ import { Button, Card, ErrorState, Loading } from "../../components/ui";
 import type { RootStackParamList } from "../../navigation/types";
 import { theme } from "../../theme";
 import { learningReadinessScore } from "../progress/analytics";
+import { officialStudyMaterialAttribution } from "../../contentDisclaimer";
 
 export function MockExamScreen({
   navigation,
@@ -94,6 +95,7 @@ export function MockExamScreen({
           {config?.description ??
             "Practice using the active published content under timed conditions."}
         </Text>
+        <Text style={styles.notice}>{officialStudyMaterialAttribution.en}</Text>
         <Card style={styles.readiness}>
           <ReadinessRing value={readiness} size={146} />
           <Text style={styles.readinessTitle}>

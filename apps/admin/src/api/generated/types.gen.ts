@@ -142,6 +142,13 @@ export type SourceRequest = {
 
 export type Source = AuditFields & SourceRequest & {
     contentChecksum?: string | null;
+    originalFilename?: string | null;
+    fileChecksum?: string | null;
+    languageCode?: string | null;
+    officialStudyMaterial?: boolean;
+    attribution?: string | null;
+    licensingReviewStatus?: 'PENDING' | 'APPROVED' | 'RESTRICTED' | 'REJECTED';
+    importedAt?: string | null;
     reviewStatus: ReviewStatus;
     status: SourceStatus;
 };
@@ -238,6 +245,7 @@ export type KnowledgeFactVersion = {
 
 export type AiGenerationRequest = {
     sourceId: string;
+    sourceSectionId?: string | null;
     learningObjectiveId: string;
     requestedCount: number;
     language: string;
@@ -250,6 +258,7 @@ export type AiJobStatus = 'QUEUED' | 'RUNNING' | 'COMPLETED' | 'PARTIALLY_COMPLE
 export type AiGenerationJob = {
     id: string;
     sourceId: string;
+    sourceSectionId?: string | null;
     sourceTitle: string;
     sourceContentChecksum: string;
     learningObjectiveId: string;
@@ -288,6 +297,7 @@ export type AiKnowledgeFactProposal = {
     id: string;
     generationJobId: string;
     sourceId: string;
+    sourceSectionId?: string | null;
     learningObjectiveId: string;
     proposedText: string;
     editedText: string;
@@ -327,6 +337,7 @@ export type KnowledgeFactAiProvenance = {
     promptVersion: string;
     generatedAt: string;
     sourceId: string;
+    sourceSectionId?: string | null;
     sourceTitle: string;
     sourceContentChecksum: string;
     learningObjectiveId: string;
@@ -340,6 +351,51 @@ export type KnowledgeFactAiProvenance = {
     providerRequestId?: string | null;
     inputTokens?: number | null;
     outputTokens?: number | null;
+};
+
+export type LessonDraftSectionRequest = {
+    sourceSectionId: string;
+    title: string;
+    explanation: string;
+    keyTerms?: Array<string>;
+    supportedExamples?: Array<string>;
+    knowledgeFactVersionIds: Array<string>;
+};
+
+export type LessonDraftRequest = {
+    topicId: string;
+    title: string;
+    introduction: string;
+    summary: string;
+    importantPoints?: Array<string>;
+    sections: Array<LessonDraftSectionRequest>;
+};
+
+export type LessonDraftDecision = {
+    version: number;
+    note?: string | null;
+};
+
+export type LessonDraft = {
+    id: string;
+    topicId: string;
+    versionNumber: number;
+    title: string;
+    introduction?: string;
+    summary?: string;
+    importantPoints?: Array<string>;
+    reviewStatus: 'DRAFT' | 'UNDER_REVIEW' | 'REVIEWED' | 'REQUIRES_UPDATE' | 'REJECTED';
+    sourceChecksum: string;
+    createdBy: string;
+    reviewedBy?: string | null;
+    reviewNote?: string | null;
+    createdAt: string;
+    updatedAt: string;
+    reviewedAt?: string | null;
+    version: number;
+    sections?: Array<{
+        [key: string]: unknown;
+    }>;
 };
 
 export type AiQuestionGenerationOperation = 'GENERATE_QUESTIONS_FROM_FACT';
@@ -2399,6 +2455,184 @@ export type GetKnowledgeFactAiProvenanceResponses = {
 };
 
 export type GetKnowledgeFactAiProvenanceResponse = GetKnowledgeFactAiProvenanceResponses[keyof GetKnowledgeFactAiProvenanceResponses];
+
+export type ListLessonDraftsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        reviewStatus?: string;
+    };
+    url: '/api/v1/admin/lesson-drafts';
+};
+
+export type ListLessonDraftsResponses = {
+    /**
+     * Lesson drafts
+     */
+    200: Array<LessonDraft>;
+};
+
+export type ListLessonDraftsResponse = ListLessonDraftsResponses[keyof ListLessonDraftsResponses];
+
+export type CreateLessonDraftData = {
+    body: LessonDraftRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/lesson-drafts';
+};
+
+export type CreateLessonDraftErrors = {
+    /**
+     * Request validation failed
+     */
+    422: ApiError;
+};
+
+export type CreateLessonDraftError = CreateLessonDraftErrors[keyof CreateLessonDraftErrors];
+
+export type CreateLessonDraftResponses = {
+    /**
+     * Draft created
+     */
+    201: LessonDraft;
+};
+
+export type CreateLessonDraftResponse = CreateLessonDraftResponses[keyof CreateLessonDraftResponses];
+
+export type GetLessonDraftData = {
+    body?: never;
+    path: {
+        lessonDraftId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/lesson-drafts/{lessonDraftId}';
+};
+
+export type GetLessonDraftErrors = {
+    /**
+     * Resource not found
+     */
+    404: ApiError;
+};
+
+export type GetLessonDraftError = GetLessonDraftErrors[keyof GetLessonDraftErrors];
+
+export type GetLessonDraftResponses = {
+    /**
+     * Lesson draft
+     */
+    200: LessonDraft;
+};
+
+export type GetLessonDraftResponse = GetLessonDraftResponses[keyof GetLessonDraftResponses];
+
+export type SubmitLessonDraftData = {
+    body: LessonDraftDecision;
+    path: {
+        lessonDraftId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/lesson-drafts/{lessonDraftId}/submit';
+};
+
+export type SubmitLessonDraftErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type SubmitLessonDraftError = SubmitLessonDraftErrors[keyof SubmitLessonDraftErrors];
+
+export type SubmitLessonDraftResponses = {
+    /**
+     * Submitted
+     */
+    200: LessonDraft;
+};
+
+export type SubmitLessonDraftResponse = SubmitLessonDraftResponses[keyof SubmitLessonDraftResponses];
+
+export type ReviewLessonDraftData = {
+    body: LessonDraftDecision;
+    path: {
+        lessonDraftId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/lesson-drafts/{lessonDraftId}/review';
+};
+
+export type ReviewLessonDraftErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type ReviewLessonDraftError = ReviewLessonDraftErrors[keyof ReviewLessonDraftErrors];
+
+export type ReviewLessonDraftResponses = {
+    /**
+     * Reviewed
+     */
+    200: LessonDraft;
+};
+
+export type ReviewLessonDraftResponse = ReviewLessonDraftResponses[keyof ReviewLessonDraftResponses];
+
+export type RequireLessonDraftUpdateData = {
+    body: LessonDraftDecision;
+    path: {
+        lessonDraftId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/lesson-drafts/{lessonDraftId}/require-update';
+};
+
+export type RequireLessonDraftUpdateErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type RequireLessonDraftUpdateError = RequireLessonDraftUpdateErrors[keyof RequireLessonDraftUpdateErrors];
+
+export type RequireLessonDraftUpdateResponses = {
+    /**
+     * Update required
+     */
+    200: LessonDraft;
+};
+
+export type RequireLessonDraftUpdateResponse = RequireLessonDraftUpdateResponses[keyof RequireLessonDraftUpdateResponses];
+
+export type RejectLessonDraftData = {
+    body: LessonDraftDecision;
+    path: {
+        lessonDraftId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/lesson-drafts/{lessonDraftId}/reject';
+};
+
+export type RejectLessonDraftErrors = {
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type RejectLessonDraftError = RejectLessonDraftErrors[keyof RejectLessonDraftErrors];
+
+export type RejectLessonDraftResponses = {
+    /**
+     * Rejected
+     */
+    200: LessonDraft;
+};
+
+export type RejectLessonDraftResponse = RejectLessonDraftResponses[keyof RejectLessonDraftResponses];
 
 export type ListAiQuestionGenerationJobsData = {
     body?: never;

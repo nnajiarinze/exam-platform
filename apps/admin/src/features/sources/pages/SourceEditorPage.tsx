@@ -97,6 +97,15 @@ export function SourceEditorPage() {
         Store source metadata and internal notes. Do not paste full copyrighted
         documents unless reuse rights are confirmed.
       </p>
+      {q.data?.title.includes("Sverige i fokus") && (
+        <aside className="warning card" aria-label="Independent practice disclaimer">
+          <strong>Independent practice material</strong>
+          <p>Study and practice content based on UHR’s official study material, Sverige i fokus. Practice questions are independently generated and reviewed and are not official UHR exam questions.</p>
+          <p>Attribution: {q.data.attribution ?? "Based on Sverige i fokus — independent practice material."}</p>
+          <p>Source file: {q.data.originalFilename ?? "sverige-i-fokus.pdf"} · SHA-256: <code>{q.data.fileChecksum ?? "not recorded"}</code></p>
+          <p>Licensing review status: {q.data.licensingReviewStatus ?? "PENDING"}. Do not publish substantial reproduced passages while review remains pending.</p>
+        </aside>
+      )}
       <AsyncState loading={edit && q.isPending} error={q.error}>
         <form className="form" onSubmit={f.handleSubmit((v) => save.mutate(v))}>
           <label>

@@ -1,0 +1,75 @@
+package se.medbo.examplatform.content.lesson;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.sql.Types;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.HexFormat;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import se.medbo.examplatform.content.shared.DomainException;
+
+@Service
+class LessonDraftService {
+  private final JdbcClient jdbc;private final ObjectMapper mapper;
+  LessonDraftService(JdbcClient jdbc,ObjectMapper mapper){this.jdbc=jdbc;this.mapper=mapper;}
+
+  @Transactional Map<String,Object> create(LessonDraftController.Create input){
+    requireAuthor();
+    exists("SELECT count(*) FROM topic WHERE id=:id AND status<>'ARCHIVED'",input.topicId(),"Topic");
+    var factChecksums=new ArrayList<String>();int order=0;
+    for(var section:input.sections()){
+      exists("SELECT count(*) FROM source_section ss JOIN learning_objective_source_section los ON los.source_section_id=ss.id JOIN learning_objective lo ON lo.id=los.learning_objective_id WHERE ss.id=:id AND lo.topic_id='"+input.topicId()+"'",section.sourceSectionId(),"Mapped source section");
+      for(var factVersion:section.knowledgeFactVersionIds()){
+        exists("SELECT count(*) FROM knowledge_fact_version fv JOIN knowledge_fact f ON f.current_version_id=fv.id JOIN learning_objective lo ON lo.id=f.learning_objective_id JOIN knowledge_fact_ai_provenance p ON p.knowledge_fact_version_id=fv.id WHERE fv.id=:id AND lo.topic_id='"+input.topicId()+"' AND f.review_status='APPROVED' AND fv.review_status='APPROVED' AND p.source_section_id='"+section.sourceSectionId()+"'",factVersion,"Approved grounded fact");
+        factChecksums.add(String.valueOf(factVersion));
+      }
+    }
+    var id=UUID.randomUUID();var now=OffsetDateTime.now(ZoneOffset.UTC);int versionNumber=jdbc.sql("SELECT coalesce(max(version_number),0)+1 FROM lesson_draft WHERE topic_id=:topic").param("topic",input.topicId()).query(Integer.class).single();
+    String sourceChecksum=checksum(String.join("|",factChecksums));
+    jdbc.sql("INSERT INTO lesson_draft(id,topic_id,version_number,title,introduction,summary,important_points,review_status,source_checksum,created_by,created_at,updated_at) VALUES(:id,:topic,:number,:title,:introduction,:summary,CAST(:points AS jsonb),'DRAFT',:checksum,:actor,:now,:now)")
+      .param("id",id).param("topic",input.topicId()).param("number",versionNumber).param("title",input.title().trim()).param("introduction",input.introduction().trim()).param("summary",input.summary().trim()).param("points",json(input.importantPoints()==null?List.of():input.importantPoints())).param("checksum",sourceChecksum).param("actor",actor()).param("now",now).update();
+    for(var section:input.sections()){
+      var sectionId=UUID.randomUUID();String sectionChecksum=checksum(section.title().trim()+"\n"+section.explanation().trim());
+      jdbc.sql("INSERT INTO lesson_draft_section(id,lesson_draft_id,source_section_id,title,explanation,key_terms,supported_examples,display_order,section_checksum) VALUES(:id,:lesson,:source,:title,:explanation,CAST(:terms AS jsonb),CAST(:examples AS jsonb),:display,:checksum)")
+        .param("id",sectionId).param("lesson",id).param("source",section.sourceSectionId()).param("title",section.title().trim()).param("explanation",section.explanation().trim()).param("terms",json(section.keyTerms()==null?List.of():section.keyTerms())).param("examples",json(section.supportedExamples()==null?List.of():section.supportedExamples())).param("display",order++).param("checksum",sectionChecksum).update();
+      for(var fact:section.knowledgeFactVersionIds())jdbc.sql("INSERT INTO lesson_draft_section_fact VALUES(:section,:fact)").param("section",sectionId).param("fact",fact).update();
+    }
+    return get(id);
+  }
+
+  List<Map<String,Object>> list(String status){if(!canInspect())throw forbidden();var statement=jdbc.sql("SELECT id,topic_id AS \"topicId\",version_number AS \"versionNumber\",title,review_status AS \"reviewStatus\",source_checksum AS \"sourceChecksum\",created_by AS \"createdBy\",reviewed_by AS \"reviewedBy\",created_at AS \"createdAt\",updated_at AS \"updatedAt\",reviewed_at AS \"reviewedAt\",version FROM lesson_draft WHERE (CAST(:status AS text) IS NULL OR review_status=:status) ORDER BY updated_at DESC,id").param("status",blank(status),Types.VARCHAR);return statement.query().listOfRows();}
+  Map<String,Object> get(UUID id){if(!canInspect())throw forbidden();var rows=jdbc.sql("SELECT id,topic_id AS \"topicId\",version_number AS \"versionNumber\",title,introduction,summary,important_points::text AS \"importantPoints\",review_status AS \"reviewStatus\",source_checksum AS \"sourceChecksum\",created_by AS \"createdBy\",reviewed_by AS \"reviewedBy\",review_note AS \"reviewNote\",created_at AS \"createdAt\",updated_at AS \"updatedAt\",reviewed_at AS \"reviewedAt\",version FROM lesson_draft WHERE id=:id").param("id",id).query().listOfRows();if(rows.isEmpty())throw DomainException.notFound("Lesson draft");var result=new LinkedHashMap<>(rows.getFirst());result.put("importantPoints",read(result.get("importantPoints")));result.put("sections",sections(id));return result;}
+
+  @Transactional Map<String,Object> transition(UUID id,long version,String next,String note){
+    if("UNDER_REVIEW".equals(next))requireAuthor();else requireReviewer();
+    String allowed="UNDER_REVIEW".equals(next)?"('DRAFT','REQUIRES_UPDATE')":"('UNDER_REVIEW')";
+    int changed=jdbc.sql("UPDATE lesson_draft SET review_status=:next,reviewed_by=CASE WHEN :next='UNDER_REVIEW' THEN reviewed_by ELSE :actor END,review_note=:note,reviewed_at=CASE WHEN :next='REVIEWED' THEN now() ELSE reviewed_at END,updated_at=now(),version=version+1 WHERE id=:id AND version=:version AND review_status IN "+allowed)
+      .param("next",next).param("actor",actor()).param("note",blank(note),Types.VARCHAR).param("id",id).param("version",version).update();
+    if(changed==0){get(id);throw new DomainException(HttpStatus.CONFLICT,"STALE_VERSION","Lesson draft changed or is not eligible for this transition");}
+    return get(id);
+  }
+
+  private List<Map<String,Object>> sections(UUID lesson){var rows=jdbc.sql("SELECT s.id,s.source_section_id AS \"sourceSectionId\",s.title,s.explanation,s.key_terms::text AS \"keyTerms\",s.supported_examples::text AS \"supportedExamples\",s.display_order AS \"displayOrder\",s.section_checksum AS \"sectionChecksum\",coalesce(array_agg(f.knowledge_fact_version_id) FILTER(WHERE f.knowledge_fact_version_id IS NOT NULL),'{}') AS \"knowledgeFactVersionIds\" FROM lesson_draft_section s LEFT JOIN lesson_draft_section_fact f ON f.lesson_draft_section_id=s.id WHERE s.lesson_draft_id=:id GROUP BY s.id ORDER BY s.display_order").param("id",lesson).query().listOfRows();rows.forEach(row->{row.put("keyTerms",read(row.get("keyTerms")));row.put("supportedExamples",read(row.get("supportedExamples")));});return rows;}
+  private void exists(String sql,UUID id,String label){if(jdbc.sql(sql).param("id",id).query(Integer.class).single()==0)throw new DomainException(HttpStatus.UNPROCESSABLE_ENTITY,"LESSON_GROUNDING_INVALID",label+" is missing or not eligible");}
+  private Object read(Object value){try{return mapper.readValue(String.valueOf(value),Object.class);}catch(Exception e){throw new IllegalStateException(e);}}
+  private String json(Object value){try{return mapper.writeValueAsString(value);}catch(Exception e){throw new IllegalStateException(e);}}
+  private String checksum(String value){try{return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8)));}catch(Exception e){throw new IllegalStateException(e);}}
+  private String blank(String value){return value==null||value.isBlank()?null:value.trim();}
+  private String actor(){return SecurityContextHolder.getContext().getAuthentication().getName();}
+  private boolean has(String role){return SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream().anyMatch(a->role.equals(a.getAuthority()));}
+  private boolean canInspect(){return has("ROLE_CONTENT_AUTHOR")||has("ROLE_CONTENT_REVIEWER")||has("ROLE_ADMIN");}
+  private void requireAuthor(){if(!has("ROLE_CONTENT_AUTHOR")&&!has("ROLE_ADMIN"))throw forbidden();}
+  private void requireReviewer(){if(!has("ROLE_CONTENT_REVIEWER")&&!has("ROLE_ADMIN"))throw forbidden();}
+  private DomainException forbidden(){return new DomainException(HttpStatus.FORBIDDEN,"FORBIDDEN","Lesson editorial permission is required");}
+}

@@ -20,7 +20,8 @@ public final class StructuredOutputValidator {
             if(p.text().contains("<")||p.text().contains(">"))fail("HTML is not allowed in proposals");
             String key=normalize(p.text());if(!normalized.add(key))fail("The provider returned duplicate proposals");
             if(p.sourceEvidence()==null||p.sourceEvidence().isEmpty())fail("Every proposal requires source evidence");
-            p.sourceEvidence().forEach(e->{if(e.quote()==null||e.quote().isBlank()||!source.contains(e.quote()))fail("Proposal evidence was not found in the supplied source");});
+            String normalizedSource=normalize(source);
+            p.sourceEvidence().forEach(e->{if(e.quote()==null||e.quote().isBlank()||!normalizedSource.contains(normalize(e.quote())))fail("Proposal evidence was not found in the supplied source");});
         });
     }
     public static String normalize(String s){return s.trim().replaceAll("\\s+"," ").toLowerCase();}

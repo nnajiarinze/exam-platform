@@ -1,0 +1,893 @@
+{
+  "corpusId": "sverige-i-fokus-v1",
+  "source": {
+    "id": "46ba681d-eb48-5e1b-8335-3e5f46ece535",
+    "title": "Sverige i fokus – Utbildningsmaterial till medborgarskapsprov: Grundläggande kunskaper om det svenska samhället",
+    "publisher": "Universitets- och högskolerådet (UHR)",
+    "production": "Skolverket",
+    "edition": "Första upplagan",
+    "publicationYear": 2026,
+    "language": "sv",
+    "originalFilename": "sverige-i-fokus.pdf",
+    "sha256": "39a93261cc64af0122e186b7d67f57dffad573576570956a4754d22ce776aada",
+    "pageCount": 48,
+    "officialStudyMaterial": true,
+    "licensingReviewStatus": "PENDING",
+    "attribution": "Baserat på Sverige i fokus — självständigt övningsmaterial."
+  },
+  "exam": {
+    "id": "82a39f96-80e5-5036-8927-00f4e7c119e2",
+    "code": "sverige-i-fokus-v1",
+    "name": "Sverige i fokus – självständigt studiematerial",
+    "versionId": "ee45d008-0200-5336-a880-154dbc720c8a",
+    "versionCode": "sverige-i-fokus-v1",
+    "releaseVersion": "sverige-i-fokus-v1",
+    "lifecycle": "SOURCE_IMPORTED"
+  },
+  "subjects": [
+    {
+      "id": "fac1171c-9d7c-58a2-a5da-5fb5056f5108",
+      "code": "01-landet-sverige",
+      "name": "Landet Sverige",
+      "displayOrder": 1,
+      "topics": [
+        {
+          "id": "80528354-8a60-5a63-acb8-3ad9ce5b5a37",
+          "code": "01-01-geografi-klimat-och-natur",
+          "name": "Geografi, klimat och natur",
+          "displayOrder": 1,
+          "learningObjectives": [
+            {
+              "id": "ce074f6c-ce2b-518e-8da7-ccb7071abd57",
+              "code": "LO-01-01",
+              "title": "Förstå huvuddragen i geografi, klimat och natur",
+              "sourceSectionIds": [
+                "2b1c8785-beb1-54ad-b268-c2004e45d76d"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "landet-sverige"
+            }
+          ]
+        },
+        {
+          "id": "74effdfc-6a9f-575f-a5d9-f21f07efc433",
+          "code": "01-02-sveriges-indelning",
+          "name": "Sveriges indelning",
+          "displayOrder": 2,
+          "learningObjectives": [
+            {
+              "id": "77f347cf-0ed6-5d35-b5b4-42a955736b57",
+              "code": "LO-01-02",
+              "title": "Förstå huvuddragen i sveriges indelning",
+              "sourceSectionIds": [
+                "94b7294f-2711-52c1-867b-585dfed77ee5"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "landet-sverige"
+            }
+          ]
+        },
+        {
+          "id": "0b9c2af0-ffd4-5045-89bc-31ce9bfded19",
+          "code": "01-03-befolkning",
+          "name": "Befolkning",
+          "displayOrder": 3,
+          "learningObjectives": [
+            {
+              "id": "b0464553-6401-5eeb-87c9-30d4602b3c17",
+              "code": "LO-01-03",
+              "title": "Förstå huvuddragen i befolkning",
+              "sourceSectionIds": [
+                "936fc9dd-e35a-5844-9287-d5e2ae7f2af9"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "landet-sverige"
+            }
+          ]
+        },
+        {
+          "id": "0f117b35-9b87-503d-a721-42e453cf4892",
+          "code": "01-04-naturresurser",
+          "name": "Naturresurser",
+          "displayOrder": 4,
+          "learningObjectives": [
+            {
+              "id": "0e09f301-e1a8-527a-b457-610c66db5256",
+              "code": "LO-01-04",
+              "title": "Förstå huvuddragen i naturresurser",
+              "sourceSectionIds": [
+                "2d97d182-7464-5a7a-83f6-b4c6115c93c3"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "landet-sverige"
+            }
+          ]
+        },
+        {
+          "id": "20baac8f-0cf1-5d61-aa9e-a28f8641596b",
+          "code": "01-05-klimatforandringar",
+          "name": "Klimatförändringar",
+          "displayOrder": 5,
+          "learningObjectives": [
+            {
+              "id": "ce9dbbbb-9777-5694-8456-a58714e1f8a0",
+              "code": "LO-01-05",
+              "title": "Förstå huvuddragen i klimatförändringar",
+              "sourceSectionIds": [
+                "77e35d6a-24af-51ae-924b-4d28e0d647a7"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "landet-sverige"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "67f4d221-8f72-5d5a-9acc-976fe1be18fc",
+      "code": "02-sveriges-demokratiska-system",
+      "name": "Sveriges demokratiska system",
+      "displayOrder": 2,
+      "topics": [
+        {
+          "id": "7e13caf7-4785-52e3-80cc-cb1e8a4fa1d7",
+          "code": "02-01-demokrati-betyder-folkstyre",
+          "name": "Demokrati betyder folkstyre",
+          "displayOrder": 1,
+          "learningObjectives": [
+            {
+              "id": "222c92e8-efa4-5f61-8fa7-414cb5811162",
+              "code": "LO-02-01",
+              "title": "Förstå huvuddragen i demokrati betyder folkstyre",
+              "sourceSectionIds": [
+                "b989bf51-c7e5-5bba-87a2-56b6e6ed6e21"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "sveriges-demokratiska-system"
+            }
+          ]
+        },
+        {
+          "id": "6fd4ee7e-4588-58b2-9770-637e990f6831",
+          "code": "02-02-hot-mot-demokratin",
+          "name": "Hot mot demokratin",
+          "displayOrder": 2,
+          "learningObjectives": [
+            {
+              "id": "02ea3a73-a850-56e0-9ae8-0bdee55a5c39",
+              "code": "LO-02-02",
+              "title": "Förstå huvuddragen i hot mot demokratin",
+              "sourceSectionIds": [
+                "928926e1-7518-508d-a802-cf8f33515162"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "sveriges-demokratiska-system"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bf65b07e-94ab-58c7-983b-30bebfe0661e",
+      "code": "03-sa-har-styrs-sverige",
+      "name": "Så här styrs Sverige",
+      "displayOrder": 3,
+      "topics": [
+        {
+          "id": "dc3f119b-7368-5244-bc74-76136e05260c",
+          "code": "03-01-landet-styrs-pa-olika-nivaer",
+          "name": "Landet styrs på olika nivåer",
+          "displayOrder": 1,
+          "learningObjectives": [
+            {
+              "id": "d0600ad2-a504-59fc-9dcc-fe78906a0816",
+              "code": "LO-03-01",
+              "title": "Förstå huvuddragen i landet styrs på olika nivåer",
+              "sourceSectionIds": [
+                "9b8e6e93-7131-5f78-adf8-cf2ac1968d34"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "sa-har-styrs-sverige"
+            }
+          ]
+        },
+        {
+          "id": "9a979693-e051-570e-bb61-c70f591b3ff1",
+          "code": "03-02-sveriges-statsskick",
+          "name": "Sveriges statsskick",
+          "displayOrder": 2,
+          "learningObjectives": [
+            {
+              "id": "dffab1ab-5cdb-52bb-8aa7-9fa37afa0e7a",
+              "code": "LO-03-02",
+              "title": "Förstå huvuddragen i sveriges statsskick",
+              "sourceSectionIds": [
+                "18b0d946-757b-5c7e-9c30-596d8a3113f6"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "sa-har-styrs-sverige"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "e3d83bd8-a5f7-5a2a-9ad4-3be18656a26c",
+      "code": "04-politiska-val-och-partier",
+      "name": "Politiska val och partier",
+      "displayOrder": 4,
+      "topics": [
+        {
+          "id": "0b6e615a-c19a-50f8-a037-b68139bac888",
+          "code": "04-01-val-och-rostning",
+          "name": "Val och röstning",
+          "displayOrder": 1,
+          "learningObjectives": [
+            {
+              "id": "9b61991d-36b2-5cb7-bed9-d068d8c0db0a",
+              "code": "LO-04-01",
+              "title": "Förstå huvuddragen i val och röstning",
+              "sourceSectionIds": [
+                "de5809ba-f1cb-5249-a756-def0b44329e0"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "politiska-val-och-partier"
+            }
+          ]
+        },
+        {
+          "id": "7d9fe2a2-e299-5317-b58f-b47596aa86df",
+          "code": "04-02-politiska-partier",
+          "name": "Politiska partier",
+          "displayOrder": 2,
+          "learningObjectives": [
+            {
+              "id": "55cd4009-7cf8-5f9b-900c-e01bed809595",
+              "code": "LO-04-02",
+              "title": "Förstå huvuddragen i politiska partier",
+              "sourceSectionIds": [
+                "5d7c67a4-a3a5-5c8b-bdd8-bb7720e229ee"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "politiska-val-och-partier"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "c12c5398-d66d-53c6-b1dc-d8e0364d28a6",
+      "code": "05-lag-och-ratt",
+      "name": "Lag och rätt",
+      "displayOrder": 5,
+      "topics": [
+        {
+          "id": "cf21eb17-2365-5da2-bb65-076db4c78848",
+          "code": "05-01-grundlagarna",
+          "name": "Grundlagarna",
+          "displayOrder": 1,
+          "learningObjectives": [
+            {
+              "id": "1fb7aef3-3884-5ee4-88eb-d8c09e034431",
+              "code": "LO-05-01",
+              "title": "Förstå huvuddragen i grundlagarna",
+              "sourceSectionIds": [
+                "a7dc72d4-b83d-53e1-b2d6-7479d3bf188f"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "lag-och-ratt"
+            }
+          ]
+        },
+        {
+          "id": "19a92c04-0784-5cd3-b65a-636fdb77c2f0",
+          "code": "05-02-rattsvasendet",
+          "name": "Rättsväsendet",
+          "displayOrder": 2,
+          "learningObjectives": [
+            {
+              "id": "3cb20c42-73e5-57ed-8020-39193b7f8d3f",
+              "code": "LO-05-02",
+              "title": "Förstå huvuddragen i rättsväsendet",
+              "sourceSectionIds": [
+                "2987ef7b-7080-5403-817f-a38c661ba683"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "lag-och-ratt"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cd1e1097-749b-5cbe-a558-0eb29ba9e8d1",
+      "code": "06-mediernas-roll",
+      "name": "Mediernas roll",
+      "displayOrder": 6,
+      "topics": [
+        {
+          "id": "35a5ee40-c465-59cb-ae49-521c14217aa9",
+          "code": "06-01-fria-medier",
+          "name": "Fria medier",
+          "displayOrder": 1,
+          "learningObjectives": [
+            {
+              "id": "374dbef8-3cb3-51fd-84ea-ccf35231d820",
+              "code": "LO-06-01",
+              "title": "Förstå huvuddragen i fria medier",
+              "sourceSectionIds": [
+                "2b8fabcc-2307-5121-ad9b-e25244f6cefe"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "mediernas-roll"
+            }
+          ]
+        },
+        {
+          "id": "ca2f8d9a-ec8a-5c2e-a547-7992e037bd8a",
+          "code": "06-02-olika-slags-medier",
+          "name": "Olika slags medier",
+          "displayOrder": 2,
+          "learningObjectives": [
+            {
+              "id": "0b55f58c-1dcd-51f4-a31b-a97957269275",
+              "code": "LO-06-02",
+              "title": "Förstå huvuddragen i olika slags medier",
+              "sourceSectionIds": [
+                "b1574112-146c-5ba5-a6a4-3632bcc9edc4"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "mediernas-roll"
+            }
+          ]
+        },
+        {
+          "id": "b596f3cf-6c1d-5576-82dc-10cb2e8e3d59",
+          "code": "06-03-kallkritik",
+          "name": "Källkritik",
+          "displayOrder": 3,
+          "learningObjectives": [
+            {
+              "id": "ffc66987-15d2-56f7-946b-9478750985dd",
+              "code": "LO-06-03",
+              "title": "Förstå huvuddragen i källkritik",
+              "sourceSectionIds": [
+                "32d49b63-dc24-5cfe-b5ca-b8781fa84be0"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "mediernas-roll"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "be654b45-ddc5-5726-bd76-b7e8b7bee458",
+      "code": "07-manskliga-rattigheter",
+      "name": "Mänskliga rättigheter",
+      "displayOrder": 7,
+      "topics": [
+        {
+          "id": "aa2f92ba-6ff0-5865-9319-4c044dd792e1",
+          "code": "07-01-manskliga-rattigheter-galler-alla",
+          "name": "Mänskliga rättigheter gäller alla",
+          "displayOrder": 1,
+          "learningObjectives": [
+            {
+              "id": "402f6f60-be85-5232-ac00-59a37d638aa4",
+              "code": "LO-07-01",
+              "title": "Förstå huvuddragen i mänskliga rättigheter gäller alla",
+              "sourceSectionIds": [
+                "e4b56f0c-e7c0-5ef6-a511-3178624d9bff"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "manskliga-rattigheter"
+            }
+          ]
+        },
+        {
+          "id": "8bd0594e-6a29-5a69-a1df-86b7f07eb6b7",
+          "code": "07-02-jamstalldhet-mellan-konen",
+          "name": "Jämställdhet mellan könen",
+          "displayOrder": 2,
+          "learningObjectives": [
+            {
+              "id": "8a7ec4c1-f533-5d3f-bd30-10c646b2e9b1",
+              "code": "LO-07-02",
+              "title": "Förstå huvuddragen i jämställdhet mellan könen",
+              "sourceSectionIds": [
+                "79e7f687-80a4-5ed4-8e18-de8b590f707a"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "manskliga-rattigheter"
+            }
+          ]
+        },
+        {
+          "id": "61d331da-ac89-5ddc-b8c1-7c26887d500b",
+          "code": "07-03-barns-rattigheter",
+          "name": "Barns rättigheter",
+          "displayOrder": 3,
+          "learningObjectives": [
+            {
+              "id": "ee902637-54a1-5ff8-8641-c20cec11e610",
+              "code": "LO-07-03",
+              "title": "Förstå huvuddragen i barns rättigheter",
+              "sourceSectionIds": [
+                "65423152-2e8d-5ab0-a71a-a1f815911585"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "manskliga-rattigheter"
+            }
+          ]
+        },
+        {
+          "id": "c642db94-d7d7-5fc2-a03c-8b805ce23b9c",
+          "code": "07-04-minoriteters-rattigheter",
+          "name": "Minoriteters rättigheter",
+          "displayOrder": 4,
+          "learningObjectives": [
+            {
+              "id": "88ed37e1-de8b-5fff-ab61-0a1455259bd1",
+              "code": "LO-07-04",
+              "title": "Förstå huvuddragen i minoriteters rättigheter",
+              "sourceSectionIds": [
+                "e9971a9f-a37b-5fc5-b1d2-1149da2c34d1"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "manskliga-rattigheter"
+            }
+          ]
+        },
+        {
+          "id": "16c435f5-db9a-5518-9619-70422784c522",
+          "code": "07-05-arbetet-mot-diskriminering",
+          "name": "Arbetet mot diskriminering",
+          "displayOrder": 5,
+          "learningObjectives": [
+            {
+              "id": "aa9073fb-93f2-52d8-889a-52f32a20cd34",
+              "code": "LO-07-05",
+              "title": "Förstå huvuddragen i arbetet mot diskriminering",
+              "sourceSectionIds": [
+                "11192ad4-2660-5cef-82d8-c27f4db3761d"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "manskliga-rattigheter"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2316f7f4-ebd2-58fa-a665-d32f464ebb55",
+      "code": "08-arbetsmarknad-och-privatekonomi",
+      "name": "Arbetsmarknad och privatekonomi",
+      "displayOrder": 8,
+      "topics": [
+        {
+          "id": "26747389-3ecd-5318-b01a-88e4e7c34b79",
+          "code": "08-01-sa-fungerar-arbetsmarknaden",
+          "name": "Så fungerar arbetsmarknaden",
+          "displayOrder": 1,
+          "learningObjectives": [
+            {
+              "id": "3de59910-e907-5cd3-bfd4-6b08f7e0d872",
+              "code": "LO-08-01",
+              "title": "Förstå huvuddragen i så fungerar arbetsmarknaden",
+              "sourceSectionIds": [
+                "0a7cb3bc-0b7e-5e6f-8807-73a4b4d81002"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "arbetsmarknad-och-privatekonomi"
+            }
+          ]
+        },
+        {
+          "id": "e3540c2c-4bca-52b6-92f4-6ead895430a3",
+          "code": "08-02-arbetsmarknadens-parter",
+          "name": "Arbetsmarknadens parter",
+          "displayOrder": 2,
+          "learningObjectives": [
+            {
+              "id": "996dec60-1960-5df4-a19d-61c003758071",
+              "code": "LO-08-02",
+              "title": "Förstå huvuddragen i arbetsmarknadens parter",
+              "sourceSectionIds": [
+                "cabff204-cf23-5ae8-ac23-e0b25d9e0374"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "arbetsmarknad-och-privatekonomi"
+            }
+          ]
+        },
+        {
+          "id": "4d5b7312-c2b6-52de-bafa-2461b5120a29",
+          "code": "08-03-lagar-och-regler-pa-arbetsmarknaden",
+          "name": "Lagar och regler på arbetsmarknaden",
+          "displayOrder": 3,
+          "learningObjectives": [
+            {
+              "id": "4336f315-8362-5657-998d-e8555bc60dfb",
+              "code": "LO-08-03",
+              "title": "Förstå huvuddragen i lagar och regler på arbetsmarknaden",
+              "sourceSectionIds": [
+                "4220373c-3639-58bd-acbd-770a4a0c1a9e"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "arbetsmarknad-och-privatekonomi"
+            }
+          ]
+        },
+        {
+          "id": "655e479a-6f85-5448-ba5b-b92648ec577e",
+          "code": "08-04-privatekonomi-i-sverige",
+          "name": "Privatekonomi i Sverige",
+          "displayOrder": 4,
+          "learningObjectives": [
+            {
+              "id": "59d22cdb-4c45-5304-a5c1-96e036913500",
+              "code": "LO-08-04",
+              "title": "Förstå huvuddragen i privatekonomi i sverige",
+              "sourceSectionIds": [
+                "0f20ad7a-4461-56c5-af18-2f48dc6d3a8f"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "arbetsmarknad-och-privatekonomi"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "589443db-011b-5e84-9981-51559b9afc8b",
+      "code": "09-valfardssamhallet",
+      "name": "Välfärdssamhället",
+      "displayOrder": 9,
+      "topics": [
+        {
+          "id": "9cc73b72-98bb-57df-9b34-c66f5739a02b",
+          "code": "09-01-skatter-for-sveriges-valfard",
+          "name": "Skatter för Sveriges välfärd",
+          "displayOrder": 1,
+          "learningObjectives": [
+            {
+              "id": "24ee2eb9-7b2e-5b83-b5e4-c3133d873309",
+              "code": "LO-09-01",
+              "title": "Förstå huvuddragen i skatter för sveriges välfärd",
+              "sourceSectionIds": [
+                "7cd4ceaa-7c74-5dd0-839c-175e62aaef75"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "valfardssamhallet"
+            }
+          ]
+        },
+        {
+          "id": "92949fd5-b4d9-58de-b93e-04a1ff52b77b",
+          "code": "09-02-stat-regioner-och-kommuner-har-olika-ansvar",
+          "name": "Stat, regioner och kommuner har olika ansvar",
+          "displayOrder": 2,
+          "learningObjectives": [
+            {
+              "id": "a03f0cc0-0bc2-56da-9bb8-f18301d867b3",
+              "code": "LO-09-02",
+              "title": "Förstå huvuddragen i stat, regioner och kommuner har olika ansvar",
+              "sourceSectionIds": [
+                "c9801a5e-40ab-5a5e-a61e-cccbbe445aa7"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "valfardssamhallet"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bcf5cb4b-2f97-5770-9eb3-5995fea3077c",
+      "code": "10-sveriges-moderna-historia",
+      "name": "Sveriges moderna historia",
+      "displayOrder": 10,
+      "topics": [
+        {
+          "id": "87ade674-0149-5a24-a06a-21f3a03d270e",
+          "code": "10-01-fran-jordbrukssamhalle-till-industrisamhalle",
+          "name": "Från jordbrukssamhälle till industrisamhälle",
+          "displayOrder": 1,
+          "learningObjectives": [
+            {
+              "id": "087a804b-5413-59db-8bd2-53e061338cdf",
+              "code": "LO-10-01",
+              "title": "Förstå huvuddragen i från jordbrukssamhälle till industrisamhälle",
+              "sourceSectionIds": [
+                "bfde84a2-8f3b-5cdf-b744-6c8d812a3fe7"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "sveriges-moderna-historia"
+            }
+          ]
+        },
+        {
+          "id": "00e8ba99-3fa3-5b2a-a4b8-a78ec178646d",
+          "code": "10-02-sveriges-vag-till-demokrati",
+          "name": "Sveriges väg till demokrati",
+          "displayOrder": 2,
+          "learningObjectives": [
+            {
+              "id": "35d08c4f-01cc-50c5-9046-43273e3b3679",
+              "code": "LO-10-02",
+              "title": "Förstå huvuddragen i sveriges väg till demokrati",
+              "sourceSectionIds": [
+                "8449b025-656a-5839-b165-b2a364caf86d"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "sveriges-moderna-historia"
+            }
+          ]
+        },
+        {
+          "id": "c2243e85-b3cb-5ae3-91bb-2d9091ef4fdd",
+          "code": "10-03-modernisering-och-folkhem",
+          "name": "Modernisering och folkhem",
+          "displayOrder": 3,
+          "learningObjectives": [
+            {
+              "id": "49e57859-6a17-5f07-98f1-818d431f474b",
+              "code": "LO-10-03",
+              "title": "Förstå huvuddragen i modernisering och folkhem",
+              "sourceSectionIds": [
+                "42253132-f2ca-556d-9932-c824872b1396"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "sveriges-moderna-historia"
+            }
+          ]
+        },
+        {
+          "id": "991636c3-0e96-5c11-a77d-610f8e0a54e3",
+          "code": "10-04-rekordaren",
+          "name": "Rekordåren",
+          "displayOrder": 4,
+          "learningObjectives": [
+            {
+              "id": "de716099-3faa-528f-9e5e-db4072f4aecd",
+              "code": "LO-10-04",
+              "title": "Förstå huvuddragen i rekordåren",
+              "sourceSectionIds": [
+                "5845064d-e6b6-5c07-8cfc-bafc734ba6c4"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "sveriges-moderna-historia"
+            }
+          ]
+        },
+        {
+          "id": "b52ada95-21a2-59cb-870b-60a16bcc63f2",
+          "code": "10-05-informationssamhallet-och-globalisering",
+          "name": "Informationssamhället och globalisering",
+          "displayOrder": 5,
+          "learningObjectives": [
+            {
+              "id": "e1a19ab9-4290-5364-afa5-2fbbdde94b2d",
+              "code": "LO-10-05",
+              "title": "Förstå huvuddragen i informationssamhället och globalisering",
+              "sourceSectionIds": [
+                "e7cb9ba3-c33b-585c-92d5-3c1536498b82"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "sveriges-moderna-historia"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "e6a952d3-c8f7-5489-ad3e-2f2a318a51da",
+      "code": "11-sverige-och-omvarlden",
+      "name": "Sverige och omvärlden",
+      "displayOrder": 11,
+      "topics": [
+        {
+          "id": "0b5d3120-d1ab-58dc-b0bb-704ac166c289",
+          "code": "11-01-nordiskt-och-europeiskt-samarbete",
+          "name": "Nordiskt och europeiskt samarbete",
+          "displayOrder": 1,
+          "learningObjectives": [
+            {
+              "id": "ce1f12fd-ed8e-56aa-9dd5-24b83ca45fbe",
+              "code": "LO-11-01",
+              "title": "Förstå huvuddragen i nordiskt och europeiskt samarbete",
+              "sourceSectionIds": [
+                "dbc71f1e-c30a-56da-8609-bb9ac95fd615"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "sverige-och-omvarlden"
+            }
+          ]
+        },
+        {
+          "id": "a4ef50a7-72a0-55ef-bd52-077b079d5f57",
+          "code": "11-02-globalt-samarbete",
+          "name": "Globalt samarbete",
+          "displayOrder": 2,
+          "learningObjectives": [
+            {
+              "id": "e5b9c1a4-7ed2-5cb6-a56d-bc33e521fa55",
+              "code": "LO-11-02",
+              "title": "Förstå huvuddragen i globalt samarbete",
+              "sourceSectionIds": [
+                "5bd9923a-f2e4-55dc-8a8a-a7ed462e0e98"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "sverige-och-omvarlden"
+            }
+          ]
+        },
+        {
+          "id": "1ccd5f25-7d48-54ab-9c99-be86fdd076c7",
+          "code": "11-03-forsvars-och-sakerhetspolitik",
+          "name": "Försvars- och säkerhetspolitik",
+          "displayOrder": 3,
+          "learningObjectives": [
+            {
+              "id": "24421dab-f8e7-5709-841d-1c357d184247",
+              "code": "LO-11-03",
+              "title": "Förstå huvuddragen i försvars- och säkerhetspolitik",
+              "sourceSectionIds": [
+                "ebe9006f-007c-5094-bb4d-ad3380dd14d6"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "sverige-och-omvarlden"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "85fa6bee-c070-5221-b502-d52fd3723a02",
+      "code": "12-en-sekular-stat-och-ett-mangreligiost-land",
+      "name": "En sekulär stat och ett mångreligiöst land",
+      "displayOrder": 12,
+      "topics": [
+        {
+          "id": "273b123a-b991-579b-a3b4-1bb50769205b",
+          "code": "12-01-religionsfrihet",
+          "name": "Religionsfrihet",
+          "displayOrder": 1,
+          "learningObjectives": [
+            {
+              "id": "0d6569fb-9a5e-510a-b90a-6e68dceacb21",
+              "code": "LO-12-01",
+              "title": "Förstå huvuddragen i religionsfrihet",
+              "sourceSectionIds": [
+                "d4962daf-c79d-5426-9c12-82fe5c2007f2"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "en-sekular-stat-och-ett-mangreligiost-land"
+            }
+          ]
+        },
+        {
+          "id": "1a4e31bc-fcc3-53f7-a037-0b94ae0475c4",
+          "code": "12-02-religionens-roll",
+          "name": "Religionens roll",
+          "displayOrder": 2,
+          "learningObjectives": [
+            {
+              "id": "a364ee1d-2c89-58f9-a9bf-f3155bc24c31",
+              "code": "LO-12-02",
+              "title": "Förstå huvuddragen i religionens roll",
+              "sourceSectionIds": [
+                "641c6d99-6d43-5583-b6ba-48e1836927a3"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "en-sekular-stat-och-ett-mangreligiost-land"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "952b9fd7-9b91-53a5-9ff1-6cc21f4c914d",
+      "code": "13-traditioner-och-hogtider",
+      "name": "Traditioner och högtider",
+      "displayOrder": 13,
+      "topics": [
+        {
+          "id": "6199ccd6-780f-53cb-8431-56adbe4f310c",
+          "code": "13-01-nagra-traditionella-hogtider-under-aret",
+          "name": "Några traditionella högtider under året",
+          "displayOrder": 1,
+          "learningObjectives": [
+            {
+              "id": "896f9c72-4b06-5f03-87c7-33d393a3f131",
+              "code": "LO-13-01",
+              "title": "Förstå huvuddragen i några traditionella högtider under året",
+              "sourceSectionIds": [
+                "74c81806-e664-591d-af91-33db56caa2fd"
+              ],
+              "factGenerationTarget": 8,
+              "lessonTarget": 1,
+              "questionTargetPerApprovedFact": 2,
+              "mockExamCoverageGroup": "traditioner-och-hogtider"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
