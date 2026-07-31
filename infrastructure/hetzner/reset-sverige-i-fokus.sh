@@ -100,8 +100,11 @@ counts_json() {
   printf '%s\n' "${result}"
 }
 
+content_counts="$(counts_json content content)"
+learning_counts="$(counts_json learning learning)"
+ai_counts="$(counts_json ai ai)"
 printf '{"event":"hosted_target_inspected","region":"eu-central-1","hostSha256":"%s","counts":{"content":%s,"learning":%s,"ai":%s}}\n' \
-  "${HOST_SHA256}" "$(counts_json content content)" "$(counts_json learning learning)" "$(counts_json ai ai)"
+  "${HOST_SHA256}" "${content_counts}" "${learning_counts}" "${ai_counts}"
 [[ "${ACTION}" == inspect ]] && exit 0
 
 cd "${PLATFORM_REPOSITORY}"
@@ -139,7 +142,7 @@ mkdir -p "${PLATFORM_STATE_DIR}"
 REPORT="${PLATFORM_STATE_DIR}/sverige-i-fokus-reset-$(date -u +'%Y%m%dT%H%M%SZ').json"
 umask 077
 printf '{"corpus":"sverige-i-fokus-v1","targetHostSha256":"%s","backupCompletedAt":"%s","before":{"content":%s,"learning":%s,"ai":%s},' \
-  "${HOST_SHA256}" "${BACKUP_COMPLETED_AT}" "$(counts_json content content)" "$(counts_json learning learning)" "$(counts_json ai ai)" >"${REPORT}"
+  "${HOST_SHA256}" "${BACKUP_COMPLETED_AT}" "${content_counts}" "${learning_counts}" "${ai_counts}" >"${REPORT}"
 
 writers_stopped=false
 restart_writers() {
