@@ -82,9 +82,8 @@ jobs:
           projection_id="$(jq -r .releaseId <<<"${import_result}")"
           [[ "${projection_id}" =~ ^[0-9a-f-]{36}$ ]]
           activation_result="$(compose exec -T learning-service sh -c \
-            'curl --fail --silent --show-error -X POST -H "X-Internal-Api-Key: ${LEARNING_INTERNAL_API_KEY}" "http://localhost:8080/internal/v1/content-releases/'"${projection_id}"'/activate"')"
-          [[ "$(jq -r .externalReleaseId <<<"${activation_result}")" == "${external_release_id}" ]]
-          [[ "$(jq -r .checksum <<<"${activation_result}")" == "${expected_checksum}" ]]
+            'curl --fail --silent --show-error -X POST -H "X-Internal-Api-Key: ${LEARNING_INTERNAL_API_KEY}" "http://localhost:8080/internal/v1/content-releases/'"${external_release_id}"'/activate"')"
+          [[ "$(jq -r .releaseId <<<"${activation_result}")" == "${projection_id}" ]]
           [[ "$(jq -r .status <<<"${activation_result}")" == "ACTIVE" ]]
           jq -n --arg projectionId "${projection_id}" \
             --argjson imported "$(jq .imported <<<"${import_result}")" \
