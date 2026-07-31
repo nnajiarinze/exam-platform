@@ -67,6 +67,6 @@ class GeminiAiProviderClientTest {
             "Utöver den nationella nivån är Sverige indelat i 21 regioner.","UNSUPPORTED_CLAIM","Insufficient direct lexical support")),job,"reviewer",2);
     new GeminiAiProviderClient(mapper,router).repairPage(request);
     assertThat(seen.get().prompt()).contains("failedClaims","Utöver den nationella nivån","UNSUPPORTED_CLAIM","Insufficient direct lexical support");
-    assertThat(seen.get().systemInstruction()).contains("copied as a complete sentence from SOURCE","Do not pad to a word target");
+    assertThat(seen.get().systemInstruction()).contains("copied as a complete sentence from SOURCE","På den här sidan sammanfattas innehållet.","Never output ellipses or placeholders","Do not pad to a word target");
   }
 }

@@ -46,7 +46,7 @@ class LessonPageRepairService {
 
   @Transactional Map<String,Object> reject(UUID proposal,int index,String actor,String reason){
     if(latest(proposal,index)==null)validate(proposal,index,actor);var revision=latest(proposal,index);
-    jdbc.sql("UPDATE ai_lesson_page_revision SET status='REJECTED',diagnostics=diagnostics||CAST(:reason AS jsonb),updated_at=:now WHERE id=:id AND status<>'VALIDATED'")
+    jdbc.sql("UPDATE ai_lesson_page_revision SET status='REJECTED',diagnostics=diagnostics||CAST(:reason AS jsonb),updated_at=:now WHERE id=:id")
         .param("reason",json(List.of(reason==null?"Rejected after claim validation":reason))).param("now",now()).param("id",revision.get("id")).update();
     audit(actor,"AI_LESSON_PAGE_REJECTED",(UUID)revision.get("id"),Map.of("proposalId",proposal,"pageIndex",index,"reason",reason==null?"claim validation":reason));return inspect(proposal);
   }
