@@ -58,7 +58,7 @@ class LessonPageRepairService {
     if(!"REJECTED".equals(previous.get("status")))throw error(HttpStatus.CONFLICT,"AI_LESSON_PAGE_NOT_REJECTED","Validate and reject the page before repair");
     var input=context.input();var request=new LessonGenerationProviderClient.PageRepairRequest(input.topicTitle(),input.learningObjectiveTitle(),
         input.sourceSectionId(),input.sourceSectionChecksum(),input.exactSourceText(),input.facts(),context.page(),context.surroundingTitles(),
-        failedClaims((UUID)previous.get("id")),context.jobId(),actor,(Integer)previous.get("revisionNumber"));var generated=provider.repairPage(request);var page=generated.page();
+        diagnostics(previous),failedClaims((UUID)previous.get("id")),context.jobId(),actor,(Integer)previous.get("revisionNumber"));var generated=provider.repairPage(request);var page=generated.page();
     if(!page.pageType().equals(context.page().pageType())||!page.title().equals(context.page().title())
         ||!new java.util.LinkedHashSet<>(page.knowledgeFactVersionIds()).equals(new java.util.LinkedHashSet<>(context.page().knowledgeFactVersionIds())))
       throw error(HttpStatus.UNPROCESSABLE_ENTITY,"AI_LESSON_PAGE_REPAIR_PLAN_MISMATCH","Replacement changed immutable page plan fields");

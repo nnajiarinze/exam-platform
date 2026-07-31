@@ -63,10 +63,10 @@ class GeminiAiProviderClientTest {
         "a".repeat(64),"Sverige är indelat i 21 regioner.",
         List.of(new LessonGenerationProviderClient.Fact(fact,version,"Sverige är indelat i 21 regioner.",section)),
         new LessonGenerationProviderClient.Page("INTRO","Rubrik","Utöver den nationella nivån är Sverige indelat i 21 regioner.",List.of(version),List.of(),List.of()),
-        List.of("Rubrik","Sammanfattning"),List.of(new LessonGenerationProviderClient.FailedClaim(
+        List.of("Rubrik","Sammanfattning"),List.of("LEARNER_USABILITY_MIN_40_WORDS"),List.of(new LessonGenerationProviderClient.FailedClaim(
             "Utöver den nationella nivån är Sverige indelat i 21 regioner.","UNSUPPORTED_CLAIM","Insufficient direct lexical support")),job,"reviewer",2);
     new GeminiAiProviderClient(mapper,router).repairPage(request);
-    assertThat(seen.get().prompt()).contains("failedClaims","Utöver den nationella nivån","UNSUPPORTED_CLAIM","Insufficient direct lexical support");
+    assertThat(seen.get().prompt()).contains("repairReasons","LEARNER_USABILITY_MIN_40_WORDS","failedClaims","Utöver den nationella nivån","UNSUPPORTED_CLAIM","Insufficient direct lexical support");
     assertThat(seen.get().systemInstruction()).contains("copied as a complete sentence from SOURCE","På den här sidan sammanfattas innehållet.","Never output ellipses or placeholders","Do not pad to a word target");
   }
 }
