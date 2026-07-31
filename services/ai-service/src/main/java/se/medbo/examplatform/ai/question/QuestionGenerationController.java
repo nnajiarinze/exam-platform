@@ -33,7 +33,7 @@ final class QuestionGenerationController {
   record Regenerate(@NotBlank@Size(max=1000)String reviewerFeedback,@NotBlank String actor,@PositiveOrZero long version,
                     @NotBlank@Size(max=200)String idempotencyKey){}
   record Accept(@NotNull UUID questionId,@NotBlank String actor,@PositiveOrZero long version,@NotBlank String validationChecksum){}
-  @PostMapping("/jobs")@ResponseStatus(HttpStatus.ACCEPTED)Map<String,Object>create(@Valid@RequestBody Create r){return service.create(new QuestionGenerationProviderClient.Request(r.target(),r.context(),r.proposalCount(),r.questionType(),"question-generation-intelligence-v1",null,null,0),r.requestedBy(),r.idempotencyKey(),provider,model);}
+  @PostMapping("/jobs")@ResponseStatus(HttpStatus.ACCEPTED)Map<String,Object>create(@Valid@RequestBody Create r){return service.create(new QuestionGenerationProviderClient.Request(r.target(),r.context(),r.proposalCount(),r.questionType(),"question-generation-compact-v2",null,null,0),r.requestedBy(),r.idempotencyKey(),provider,model);}
   @GetMapping("/jobs/{id}")Map<String,Object>job(@PathVariable UUID id){return service.get(id);}
   @GetMapping("/jobs")List<Map<String,Object>>jobs(@RequestParam UUID knowledgeFactId,@RequestParam(defaultValue="10")@Min(1)@Max(50)int limit){return service.history(knowledgeFactId,limit);}
   @GetMapping("/jobs/{id}/proposals")List<Map<String,Object>>proposals(@PathVariable UUID id){return service.proposals(id).stream().map(service::withIntelligence).toList();}
