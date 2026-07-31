@@ -145,7 +145,7 @@ class AiEditorialIntegrationTest {
   @Test
   void migrationsCreateThePersistentEditorialWorkspace() {
     assertThat(jdbc.sql("SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank")
-        .query(String.class).list()).containsExactly("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17");
+        .query(String.class).list()).containsExactly("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18");
     assertThat(jdbc.sql("SELECT to_regclass('public.ai_editorial_target') IS NOT NULL AND to_regclass('public.ai_editorial_proposal') IS NOT NULL AND to_regclass('public.ai_editorial_finding') IS NOT NULL AND to_regclass('public.ai_editorial_validation_metric') IS NOT NULL AND to_regclass('public.ai_quota_profile') IS NOT NULL AND to_regclass('public.ai_quota_reservation') IS NOT NULL AND to_regclass('public.ai_provider_circuit') IS NOT NULL AND to_regclass('public.ai_provider_alert') IS NOT NULL AND to_regclass('public.ai_question_proposal') IS NOT NULL AND to_regclass('public.ai_question_proposal_option') IS NOT NULL")
         .query(Boolean.class).single()).isTrue();
     assertThat(jdbc.sql("SELECT to_regclass('public.ai_provider_attempt') IS NOT NULL AND to_regclass('public.ai_provider_routing_decision') IS NOT NULL AND to_regclass('public.ai_provider_capacity_snapshot') IS NOT NULL")
@@ -161,6 +161,9 @@ class AiEditorialIntegrationTest {
          "learningObjectiveId":"22222222-2222-2222-2222-222222222222",
          "learningObjectiveTitle":"Förstå befolkning",
          "sourceSectionId":"33333333-3333-3333-3333-333333333333",
+         "sourceSectionTitle":"Befolkning",
+         "sourceSectionChecksum":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+         "exactSourceText":"Ungefär 85 procent av Sveriges befolkning bor i städer. Ungefär fyra miljoner människor bor i och runt de tre största städerna.",
          "facts":[
            {"id":"44444444-4444-4444-4444-444444444444",
             "versionId":"55555555-5555-5555-5555-555555555555",
@@ -170,10 +173,14 @@ class AiEditorialIntegrationTest {
             "versionId":"77777777-7777-7777-7777-777777777777",
             "text":"Ungefär fyra miljoner människor bor i och runt de tre största städerna.",
             "sourceSectionId":"33333333-3333-3333-3333-333333333333"}],
+         "plan":[
+           {"pageType":"INTRO","title":"Befolkningen i Sverige","knowledgeFactVersionIds":["55555555-5555-5555-5555-555555555555"]},
+           {"pageType":"CORE","title":"Många bor i städer","knowledgeFactVersionIds":["55555555-5555-5555-5555-555555555555","77777777-7777-7777-7777-777777777777"]},
+           {"pageType":"SUMMARY","title":"Det här ska du minnas","knowledgeFactVersionIds":["55555555-5555-5555-5555-555555555555","77777777-7777-7777-7777-777777777777"]}],
          "language":"sv","requestedBy":"lesson-integration",
          "idempotencyKey":"lesson-generation-integration"}
         """)).andExpect(status().isAccepted())
-        .andExpect(jsonPath("$.promptVersion").value("lesson-generation-v1"))
+        .andExpect(jsonPath("$.promptVersion").value("lesson-generation-v2-multi-page"))
         .andReturn().getResponse().getContentAsString();
     UUID job=UUID.fromString(mapper.readTree(response).get("id").asText());
     for(int attempt=0;attempt<50;attempt++){
@@ -186,7 +193,8 @@ class AiEditorialIntegrationTest {
       .andExpect(status().isOk())
       .andExpect(jsonPath("$[0].automatedClassification").value("GOOD"))
       .andExpect(jsonPath("$[0].validationGates.approvedFactCoveragePassed").value(true))
-      .andExpect(jsonPath("$[0].factStatements.length()").value(2));
+      .andExpect(jsonPath("$[0].factStatements.length()").value(2))
+      .andExpect(jsonPath("$[0].pages.length()").value(3));
   }
 
   @Test

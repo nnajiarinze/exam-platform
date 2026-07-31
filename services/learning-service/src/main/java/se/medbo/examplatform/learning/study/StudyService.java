@@ -26,7 +26,7 @@ public class StudyService {
         UUID releaseId = activeRelease(examId);
         return jdbc.sql("""
                 SELECT s.external_subject_id,s.name,count(DISTINCT t.id) AS topics,
-                  count(DISTINCT p.topic_id) FILTER (WHERE p.completed_at IS NOT NULL) AS completed
+                  count(DISTINCT p.topic_id) FILTER (WHERE COALESCE(p.completed_at,p.carried_completion_at) IS NOT NULL) AS completed
                 FROM imported_subject s
                 JOIN imported_topic t ON t.subject_id=s.id
                 JOIN imported_lesson_section ls ON ls.topic_id=t.id
@@ -46,7 +46,8 @@ public class StudyService {
         return jdbc.sql("""
                 SELECT t.external_topic_id,t.name,t.description,count(DISTINCT ls.id) AS sections,
                   count(DISTINCT q.id) FILTER (WHERE q.active) AS questions,
-                  COALESCE(p.completed_section_count,0) AS completed,p.completed_at
+                  COALESCE(p.completed_section_count,0) AS completed,
+                  COALESCE(p.completed_at,p.carried_completion_at) AS completed_at
                 FROM imported_subject s
                 JOIN imported_topic t ON t.subject_id=s.id
                 JOIN imported_lesson_section ls ON ls.topic_id=t.id
@@ -55,7 +56,7 @@ public class StudyService {
                   AND p.topic_id=t.id
                 WHERE s.content_release_id=:release AND s.external_subject_id=:subject
                 GROUP BY t.id,t.external_topic_id,t.name,t.description,t.sort_order,
-                  p.completed_section_count,p.completed_at
+                  p.completed_section_count,p.completed_at,p.carried_completion_at
                 ORDER BY t.sort_order,t.external_topic_id
                 """).param("learner", learnerId).param("release", releaseId).param("subject", subjectId)
                 .query((rs, row) -> {
@@ -166,14 +167,15 @@ public class StudyService {
 
     private Progress progress(UUID learnerId, UUID releaseId, UUID topicId, List<Section> sections) {
         return jdbc.sql("""
-                SELECT ls.external_section_id,p.completed_section_count,p.started_at,p.last_accessed_at,p.completed_at
+                SELECT ls.external_section_id,p.completed_section_count,p.started_at,p.last_accessed_at,
+                  COALESCE(p.completed_at,p.carried_completion_at) AS effective_completed_at
                 FROM lesson_progress p JOIN imported_lesson_section ls ON ls.id=p.last_section_id
                 WHERE p.learner_id=:learner AND p.content_release_id=:release AND p.topic_id=:topic
                 """).param("learner", learnerId).param("release", releaseId).param("topic", topicId)
                 .query((rs, row) -> new Progress(rs.getString(1), rs.getInt(2), sections.size(),
-                        percentage(rs.getInt(2), sections.size()), rs.getObject(5) != null,
+                        percentage(rs.getInt(2), sections.size()), rs.getObject("effective_completed_at") != null,
                         rs.getObject(3, OffsetDateTime.class), rs.getObject(4, OffsetDateTime.class),
-                        rs.getObject(5, OffsetDateTime.class))).optional()
+                        rs.getObject("effective_completed_at", OffsetDateTime.class))).optional()
                 .orElse(new Progress(sections.getFirst().sectionId(), 0, sections.size(), 0,
                         false, null, null, null));
     }

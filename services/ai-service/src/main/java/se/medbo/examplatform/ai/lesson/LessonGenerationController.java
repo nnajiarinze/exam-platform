@@ -24,16 +24,23 @@ final class LessonGenerationController {
   record Fact(@NotNull UUID id,@NotNull UUID versionId,@NotBlank String text,@NotNull UUID sourceSectionId){
     LessonGenerationProviderClient.Fact input(){return new LessonGenerationProviderClient.Fact(id,versionId,text,sourceSectionId);}
   }
+  record PlannedPage(@NotBlank String pageType,@NotBlank String title,@NotEmpty List<@NotNull UUID> knowledgeFactVersionIds){
+    LessonGenerationProviderClient.PlannedPage input(){return new LessonGenerationProviderClient.PlannedPage(pageType,title,knowledgeFactVersionIds);}
+  }
   record Create(@NotNull UUID topicId,@NotBlank String topicTitle,@NotNull UUID learningObjectiveId,
-      @NotBlank String learningObjectiveTitle,@NotNull UUID sourceSectionId,@NotEmpty List<@Valid Fact> facts,
+      @NotBlank String learningObjectiveTitle,@NotNull UUID sourceSectionId,@NotBlank String sourceSectionTitle,
+      @NotBlank String sourceSectionChecksum,@NotBlank String exactSourceText,@NotEmpty List<@Valid Fact> facts,
+      @NotEmpty List<@Valid PlannedPage> plan,
       @NotBlank String language,@NotBlank String requestedBy,@NotBlank String idempotencyKey){
     LessonGenerationService.Create input(){return new LessonGenerationService.Create(topicId,topicTitle,
-        learningObjectiveId,learningObjectiveTitle,sourceSectionId,facts.stream().map(Fact::input).toList(),
+        learningObjectiveId,learningObjectiveTitle,sourceSectionId,sourceSectionTitle,sourceSectionChecksum,
+        exactSourceText,facts.stream().map(Fact::input).toList(),plan.stream().map(PlannedPage::input).toList(),
         language,requestedBy,idempotencyKey);}
   }
   record Accept(@NotNull UUID lessonDraftId,@NotBlank String actor,long version){}
   @PostMapping("/jobs")@ResponseStatus(HttpStatus.ACCEPTED)Map<String,Object>create(@Valid@RequestBody Create request){return service.create(request.input());}
   @GetMapping("/jobs/{id}")Map<String,Object>get(@PathVariable UUID id){return service.get(id);}
   @GetMapping("/jobs/{id}/proposals")List<Map<String,Object>>proposals(@PathVariable UUID id){return service.proposals(id);}
+  @PostMapping("/proposals/{id}/revalidate")Map<String,Object>revalidate(@PathVariable UUID id){return service.revalidate(id);}
   @PostMapping("/proposals/{id}/accepted")Map<String,Object>accept(@PathVariable UUID id,@Valid@RequestBody Accept request){return service.markAccepted(id,request.lessonDraftId(),request.actor(),request.version());}
 }

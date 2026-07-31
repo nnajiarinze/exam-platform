@@ -75,7 +75,8 @@ public class ReleaseService {
         UUID lesson=lessons.getFirst();
         long sections=jdbc.sql("SELECT count(*) FROM lesson_draft_section WHERE lesson_draft_id=:lesson")
             .param("lesson",lesson).query(Long.class).single();
-        if(sections==0)issues.add(issue("LESSON_EMPTY","ERROR","Reviewed Lesson has no sections","TOPIC",topic));
+        if(sections<3)issues.add(issue("LESSON_PAGE_COUNT_INVALID","ERROR",
+            "Every Sverige i fokus Topic requires a reviewed Lesson with at least three pages","TOPIC",topic));
         var selectedFacts=new java.util.HashSet<>(jdbc.sql("""
             SELECT item.content_version_id FROM content_release_item item
             JOIN knowledge_fact_version version ON item.content_type='KNOWLEDGE_FACT'

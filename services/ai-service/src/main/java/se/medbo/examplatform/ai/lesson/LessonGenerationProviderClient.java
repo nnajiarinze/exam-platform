@@ -5,11 +5,16 @@ import java.util.UUID;
 
 public interface LessonGenerationProviderClient {
   record Fact(UUID id,UUID versionId,String text,UUID sourceSectionId){}
+  record PlannedPage(String pageType,String title,List<UUID> knowledgeFactVersionIds){}
   record Request(UUID topicId,String topicTitle,UUID learningObjectiveId,
-      String learningObjectiveTitle,UUID sourceSectionId,List<Fact> facts,String language,
+      String learningObjectiveTitle,UUID sourceSectionId,String sourceSectionTitle,
+      String sourceSectionChecksum,String exactSourceText,List<Fact> facts,List<PlannedPage> plan,String language,
       UUID jobId,String requester,int retryAttempt){}
-  record Proposal(String title,List<String> factStatements,List<String> keyTerms){}
-  record Usage(Integer inputTokens,Integer outputTokens,String requestId){}
+  record Page(String pageType,String title,String body,List<UUID> knowledgeFactVersionIds,
+      List<String> evidenceQuotes,List<String> keyTerms){}
+  record Proposal(String title,String introduction,String summary,List<String> importantPoints,
+      List<Page> pages){}
+  record Usage(Integer inputTokens,Integer outputTokens,String requestId,String provider,String model){}
   record Result(Proposal proposal,Usage usage){}
   Result generateLesson(Request request);
 }
