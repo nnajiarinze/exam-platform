@@ -14,10 +14,11 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.medbo.examplatform.ai.generation.AiApiException;
+import se.medbo.examplatform.ai.provider.AiProviderException;
 
 @Service
 class LessonPageRepairService {
-  static final String PROMPT_VERSION="lesson-page-repair-v2-exact-claim-contract";
+  static final String PROMPT_VERSION="lesson-page-repair-v3-content-only";
   private final JdbcClient jdbc;private final ObjectMapper mapper;private final LessonGenerationProviderClient provider;
   private final LessonPageClaimValidator validator;
   LessonPageRepairService(JdbcClient jdbc,ObjectMapper mapper,LessonGenerationProviderClient provider,LessonPageClaimValidator validator){this.jdbc=jdbc;this.mapper=mapper;this.provider=provider;this.validator=validator;}
@@ -30,7 +31,17 @@ class LessonPageRepairService {
       FROM ai_lesson_page_revision WHERE lesson_proposal_id=:id ORDER BY page_index,revision_number
       """).param("id",proposal).query().listOfRows();
     revisions.forEach(row->{parse(row,"page",Object.class);parse(row,"diagnostics",Object.class);row.put("claims",claims((UUID)row.get("id")));});
-    return Map.of("proposalId",proposal,"revisions",revisions);
+    var attempts=jdbc.sql("""
+      SELECT id,page_index AS "pageIndex",replaces_revision_id AS "replacesRevisionId",
+        contract_version AS "contractVersion",status,failure_code AS "failureCode",provider,model,
+        provider_request_id AS "providerRequestId",input_tokens AS "inputTokens",output_tokens AS "outputTokens",
+        reasoning_tokens AS "reasoningTokens",latency_millis AS "latencyMillis",free_only AS "freeOnly",
+        idempotency_key AS "idempotencyKey",mutable_response::text AS "mutableResponse",
+        created_by AS "createdBy",created_at AS "createdAt"
+      FROM ai_lesson_page_repair_attempt WHERE lesson_proposal_id=:id ORDER BY created_at
+      """).param("id",proposal).query().listOfRows();
+    attempts.forEach(row->{if(row.get("mutableResponse")!=null)parse(row,"mutableResponse",Object.class);});
+    return Map.of("proposalId",proposal,"revisions",revisions,"attempts",attempts);
   }
 
   @Transactional Map<String,Object> validate(UUID proposal,int index,String actor){
@@ -56,19 +67,69 @@ class LessonPageRepairService {
     if(previous==null)throw error(HttpStatus.CONFLICT,"AI_LESSON_PAGE_NOT_REJECTED","Validate and reject the page before repair");
     if(idempotencyKey!=null&&idempotencyKey.equals(previous.get("idempotencyKey")))return inspect(proposal);
     if(!"REJECTED".equals(previous.get("status")))throw error(HttpStatus.CONFLICT,"AI_LESSON_PAGE_NOT_REJECTED","Validate and reject the page before repair");
+    validatePlanSnapshot(context,index);
     var input=context.input();var request=new LessonGenerationProviderClient.PageRepairRequest(input.topicTitle(),input.learningObjectiveTitle(),
         input.sourceSectionId(),input.sourceSectionChecksum(),input.exactSourceText(),input.facts(),context.page(),context.surroundingTitles(),
-        diagnostics(previous),failedClaims((UUID)previous.get("id")),context.jobId(),actor,(Integer)previous.get("revisionNumber"));var generated=provider.repairPage(request);var page=generated.page();
-    if(!page.pageType().equals(context.page().pageType())||!page.title().equals(context.page().title())
-        ||!new java.util.LinkedHashSet<>(page.knowledgeFactVersionIds()).equals(new java.util.LinkedHashSet<>(context.page().knowledgeFactVersionIds())))
-      throw error(HttpStatus.UNPROCESSABLE_ENTITY,"AI_LESSON_PAGE_REPAIR_PLAN_MISMATCH","Replacement changed immutable page plan fields");
+        diagnostics(previous),failedClaims((UUID)previous.get("id")),context.jobId(),actor,(Integer)previous.get("revisionNumber"));
+    long started=System.nanoTime();LessonGenerationProviderClient.PageRepairResult generated;
+    try{generated=provider.repairPage(request);}catch(AiProviderException e){
+      persistAttempt(proposal,index,(UUID)previous.get("id"),"PROVIDER_REJECTED",e.code(),null,
+          elapsed(started),idempotencyKey,actor);throw e;
+    }
+    var content=generated.content();
+    if(!"REPAIRED".equals(content.status())){
+      persistAttempt(proposal,index,(UUID)previous.get("id"),"INSUFFICIENT_INFORMATION",
+          "AI_LESSON_PAGE_REPAIR_INSUFFICIENT_GROUNDED_INFORMATION",generated,elapsed(started),idempotencyKey,actor);
+      throw error(HttpStatus.UNPROCESSABLE_ENTITY,"AI_LESSON_PAGE_REPAIR_INSUFFICIENT_GROUNDED_INFORMATION","Provider found insufficient grounded information for this page");
+    }
+    if(content.body()==null||content.body().isBlank()){
+      persistAttempt(proposal,index,(UUID)previous.get("id"),"PROVIDER_REJECTED",
+          "AI_PROVIDER_RESPONSE_INVALID",generated,elapsed(started),idempotencyKey,actor);
+      throw error(HttpStatus.UNPROCESSABLE_ENTITY,"AI_PROVIDER_RESPONSE_INVALID","Repair response omitted mutable page content");
+    }
+    var immutable=context.page();
+    var page=new LessonGenerationProviderClient.Page(immutable.pageType(),immutable.title(),content.body(),
+        List.copyOf(immutable.knowledgeFactVersionIds()),List.copyOf(content.evidenceQuotes()),List.copyOf(content.keyTerms()));
     var result=validator.validate(page,input.exactSourceText(),context.factTexts());UUID revision=UUID.randomUUID();var usage=generated.usage();
     int revisionNumber=(Integer)previous.get("revisionNumber")+1;
     persistRevision(proposal,index,revisionNumber,(UUID)previous.get("id"),result.supported()?"VALIDATED":"REJECTED",page,result.failureCodes(),actor,idempotencyKey,usage);
     persistClaims(revisionId(proposal,index,revisionNumber),result);audit(actor,"AI_LESSON_PAGE_REPLACEMENT_CREATED",revisionId(proposal,index,revisionNumber),
         Map.of("proposalId",proposal,"pageIndex",index,"replacesRevisionId",previous.get("id"),"supported",result.supported(),"idempotencyKey",idempotencyKey==null?"":idempotencyKey));
+    persistAttempt(proposal,index,(UUID)previous.get("id"),result.supported()?"SUCCEEDED":"CLAIM_REJECTED",
+        result.supported()?null:String.join(",",result.failureCodes()),generated,elapsed(started),idempotencyKey,actor);
     if(result.supported())applyReplacement(proposal,index,page);
     return inspect(proposal);
+  }
+
+  private void validatePlanSnapshot(Context context,int index){
+    var input=context.input();if(index>=input.plan().size())throw error(HttpStatus.CONFLICT,"PAGE_PLAN_NOT_FOUND","Page is absent from the deterministic plan snapshot");
+    var planned=input.plan().get(index);var page=context.page();
+    if(!planned.pageType().equals(page.pageType())||!planned.title().equals(page.title())
+        ||!planned.knowledgeFactVersionIds().equals(page.knowledgeFactVersionIds()))
+      throw error(HttpStatus.CONFLICT,"AI_LESSON_PAGE_REPAIR_PLAN_MISMATCH","Persisted page no longer matches its deterministic plan snapshot");
+    var assigned=new java.util.LinkedHashSet<>(page.knowledgeFactVersionIds());
+    var available=input.facts().stream().filter(f->f.sourceSectionId().equals(input.sourceSectionId()))
+        .map(LessonGenerationProviderClient.Fact::versionId).collect(java.util.stream.Collectors.toSet());
+    if(!available.containsAll(assigned))throw error(HttpStatus.CONFLICT,"SOURCE_CONTEXT_MISMATCH","Assigned Facts do not belong to the bounded Source context");
+  }
+
+  private long elapsed(long started){return Math.max(0,(System.nanoTime()-started)/1_000_000);}
+  private void persistAttempt(UUID proposal,int index,UUID replaces,String status,String failure,
+      LessonGenerationProviderClient.PageRepairResult generated,long latency,String key,String actor){
+    var usage=generated==null?null:generated.usage();var content=generated==null?null:generated.content();
+    jdbc.sql("""
+      INSERT INTO ai_lesson_page_repair_attempt(id,lesson_proposal_id,page_index,replaces_revision_id,
+        contract_version,status,failure_code,provider,model,provider_request_id,input_tokens,output_tokens,
+        reasoning_tokens,latency_millis,free_only,idempotency_key,mutable_response,created_by,created_at)
+      VALUES(:id,:proposal,:page,:replaces,:contract,:status,:failure,:provider,:model,:request,:input,:output,
+        NULL,:latency,true,:key,CAST(:response AS jsonb),:actor,:now)
+      ON CONFLICT(lesson_proposal_id,page_index,idempotency_key) DO NOTHING
+      """).param("id",UUID.randomUUID()).param("proposal",proposal).param("page",index).param("replaces",replaces)
+        .param("contract",PROMPT_VERSION).param("status",status).param("failure",failure,java.sql.Types.VARCHAR)
+        .param("provider",usage==null?null:usage.provider(),java.sql.Types.VARCHAR).param("model",usage==null?null:usage.model(),java.sql.Types.VARCHAR)
+        .param("request",usage==null?null:usage.requestId(),java.sql.Types.VARCHAR).param("input",usage==null?null:usage.inputTokens(),java.sql.Types.INTEGER)
+        .param("output",usage==null?null:usage.outputTokens(),java.sql.Types.INTEGER).param("latency",latency).param("key",key,java.sql.Types.VARCHAR)
+        .param("response",content==null?null:json(content),java.sql.Types.VARCHAR).param("actor",actor).param("now",now()).update();
   }
 
   private void applyReplacement(UUID proposal,int index,LessonGenerationProviderClient.Page page){

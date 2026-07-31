@@ -145,12 +145,12 @@ class AiEditorialIntegrationTest {
   @Test
   void migrationsCreateThePersistentEditorialWorkspace() {
     assertThat(jdbc.sql("SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank")
-        .query(String.class).list()).containsExactly("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20");
+        .query(String.class).list()).containsExactly("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21");
     assertThat(jdbc.sql("SELECT to_regclass('public.ai_editorial_target') IS NOT NULL AND to_regclass('public.ai_editorial_proposal') IS NOT NULL AND to_regclass('public.ai_editorial_finding') IS NOT NULL AND to_regclass('public.ai_editorial_validation_metric') IS NOT NULL AND to_regclass('public.ai_quota_profile') IS NOT NULL AND to_regclass('public.ai_quota_reservation') IS NOT NULL AND to_regclass('public.ai_provider_circuit') IS NOT NULL AND to_regclass('public.ai_provider_alert') IS NOT NULL AND to_regclass('public.ai_question_proposal') IS NOT NULL AND to_regclass('public.ai_question_proposal_option') IS NOT NULL")
         .query(Boolean.class).single()).isTrue();
     assertThat(jdbc.sql("SELECT to_regclass('public.ai_provider_attempt') IS NOT NULL AND to_regclass('public.ai_provider_routing_decision') IS NOT NULL AND to_regclass('public.ai_provider_capacity_snapshot') IS NOT NULL")
         .query(Boolean.class).single()).isTrue();
-    assertThat(jdbc.sql("SELECT to_regclass('public.ai_lesson_page_revision') IS NOT NULL AND to_regclass('public.ai_lesson_page_claim') IS NOT NULL")
+    assertThat(jdbc.sql("SELECT to_regclass('public.ai_lesson_page_revision') IS NOT NULL AND to_regclass('public.ai_lesson_page_claim') IS NOT NULL AND to_regclass('public.ai_lesson_page_repair_attempt') IS NOT NULL")
         .query(Boolean.class).single()).isTrue();
   }
 
@@ -197,6 +197,24 @@ class AiEditorialIntegrationTest {
       .andExpect(jsonPath("$[0].validationGates.approvedFactCoveragePassed").value(true))
       .andExpect(jsonPath("$[0].factStatements.length()").value(2))
       .andExpect(jsonPath("$[0].pages.length()").value(3));
+    UUID proposal=jdbc.sql("SELECT id FROM ai_lesson_proposal WHERE generation_job_id=:job")
+        .param("job",job).query(UUID.class).single();
+    mvc.perform(post("/internal/v1/lesson-generation/proposals/{proposal}/pages/0/validate",proposal)
+        .header("X-Internal-Api-Key","test-internal-key").contentType(MediaType.APPLICATION_JSON)
+        .content("{\"actor\":\"reviewer\",\"reason\":\"strict validation\"}"))
+        .andExpect(status().isOk());
+    mvc.perform(post("/internal/v1/lesson-generation/proposals/{proposal}/pages/0/repair",proposal)
+        .header("X-Internal-Api-Key","test-internal-key").contentType(MediaType.APPLICATION_JSON)
+        .content("{\"actor\":\"reviewer\",\"reason\":\"remove unsupported claims\",\"idempotencyKey\":\"repair-content-only\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.revisions[1].page.pageType").value("INTRO"))
+        .andExpect(jsonPath("$.revisions[1].page.title").value("Befolkningen i Sverige"))
+        .andExpect(jsonPath("$.revisions[1].page.knowledgeFactVersionIds[0]").value("55555555-5555-5555-5555-555555555555"))
+        .andExpect(jsonPath("$.revisions[1].status").value("VALIDATED"))
+        .andExpect(jsonPath("$.attempts[0].contractVersion").value("lesson-page-repair-v3-content-only"))
+        .andExpect(jsonPath("$.attempts[0].inputTokens").value(80))
+        .andExpect(jsonPath("$.attempts[0].outputTokens").value(40))
+        .andExpect(jsonPath("$.attempts[0].freeOnly").value(true));
   }
 
   @Test

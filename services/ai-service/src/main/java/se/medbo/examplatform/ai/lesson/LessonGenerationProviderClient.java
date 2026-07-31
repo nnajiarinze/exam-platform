@@ -21,7 +21,8 @@ public interface LessonGenerationProviderClient {
       String sourceSectionChecksum,String exactSourceText,List<Fact> facts,Page originalPage,
       List<String> surroundingPageTitles,List<String> repairReasons,List<FailedClaim> failedClaims,
       UUID jobId,String requester,int retryAttempt){}
-  record PageRepairResult(Page page,Usage usage){}
+  record PageRepairContent(String status,String body,List<String> evidenceQuotes,List<String> keyTerms){}
+  record PageRepairResult(PageRepairContent content,Usage usage){}
   Result generateLesson(Request request);
   PageRepairResult repairPage(PageRepairRequest request);
 }

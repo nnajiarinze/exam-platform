@@ -57,7 +57,7 @@ class GeminiAiProviderClientTest {
     var seen=new AtomicReference<StructuredAiProvider.Request>();var router=mock(FreeOnlyProviderRouter.class);
     UUID section=UUID.randomUUID(),fact=UUID.randomUUID(),version=UUID.randomUUID(),job=UUID.randomUUID();
     when(router.execute(any())).thenAnswer(invocation->{seen.set(invocation.getArgument(0));return new StructuredAiProvider.Response(
-        mapper.readTree("{\"pageType\":\"INTRO\",\"title\":\"Rubrik\",\"body\":\"Sverige är indelat i 21 regioner.\",\"knowledgeFactVersionIds\":[\""+version+"\"],\"evidenceQuotes\":[\"Sverige är indelat i 21 regioner.\"],\"keyTerms\":[]}"),
+        mapper.readTree("{\"status\":\"REPAIRED\",\"body\":\"Sverige är indelat i 21 regioner.\",\"evidenceQuotes\":[\"Sverige är indelat i 21 regioner.\"],\"keyTerms\":[]}"),
         "GROQ","test-free","test-free","request-44",300,80,8L,"stop",Map.of(),Map.of(),null,"HTTP_200",true);});
     var request=new LessonGenerationProviderClient.PageRepairRequest("Nivåer","Förstå nivåerna",section,
         "a".repeat(64),"Sverige är indelat i 21 regioner.",
@@ -65,8 +65,12 @@ class GeminiAiProviderClientTest {
         new LessonGenerationProviderClient.Page("INTRO","Rubrik","Utöver den nationella nivån är Sverige indelat i 21 regioner.",List.of(version),List.of(),List.of()),
         List.of("Rubrik","Sammanfattning"),List.of("LEARNER_USABILITY_MIN_40_WORDS"),List.of(new LessonGenerationProviderClient.FailedClaim(
             "Utöver den nationella nivån är Sverige indelat i 21 regioner.","UNSUPPORTED_CLAIM","Insufficient direct lexical support")),job,"reviewer",2);
-    new GeminiAiProviderClient(mapper,router).repairPage(request);
+    var result=new GeminiAiProviderClient(mapper,router).repairPage(request);
+    assertThat(result.content().body()).isEqualTo("Sverige är indelat i 21 regioner.");
     assertThat(seen.get().prompt()).contains("repairReasons","LEARNER_USABILITY_MIN_40_WORDS","failedClaims","Utöver den nationella nivån","UNSUPPORTED_CLAIM","Insufficient direct lexical support");
     assertThat(seen.get().systemInstruction()).contains("copied as a complete sentence from SOURCE","at most one","Never repeat a transition","Never output ellipses or placeholders","Do not pad to a word target");
+    assertThat(mapper.writeValueAsString(seen.get().jsonSchema()))
+        .contains("REPAIRED","INSUFFICIENT_GROUNDED_INFORMATION")
+        .doesNotContain("pageType","title","knowledgeFactVersionIds","topicId","learningObjectiveId","sourceSectionId");
   }
 }
