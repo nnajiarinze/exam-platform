@@ -50,6 +50,89 @@ class SverigeIFokusCorpusTest(unittest.TestCase):
         self.assertTrue(parsed.dry_run)
         self.assertEqual("reset", parsed.command)
 
+    def chapter(self, *, topics_covered=2, objectives_covered=2, approval_rate=2 / 3,
+                safety=None, sufficiency=None, attempted=2, systematic=None):
+        topic_results = sufficiency or [
+            {"topicCode": "T-1", "status": "SUFFICIENT"},
+            {"topicCode": "T-2", "status": "LIMITED_BUT_USABLE"},
+        ]
+        return {
+            "coverage": {"topicsCovered": topics_covered, "topicsTotal": 2,
+                         "objectivesCovered": objectives_covered, "objectivesTotal": 2,
+                         "sourceSectionsAttempted": attempted, "sourceSectionsTotal": 2},
+            "safety": {"unsupportedApprovedFacts": 0, "approvedGroundingFailures": 0,
+                       "approvedEvidenceFailures": 0, "sourceSectionMismatches": 0,
+                       "checksumMismatches": 0, "topicMappingFailures": 0,
+                       "objectiveMappingFailures": 0, "missingProvenance": 0,
+                       "lineageOrAuditFailures": 0, "freeOnlyConfirmed": True, **(safety or {})},
+            "efficiency": {"novelContentApprovalRate": approval_rate,
+                           "rejectedCandidates": 2 if approval_rate < 1 else 0},
+            "systematicFailures": systematic or {"detected": False, "reasons": []},
+            "topicSufficiency": topic_results,
+        }
+
+    def test_coverage_gate_passes_with_warning_at_sixty_six_percent(self):
+        result = corpusctl.evaluate_fact_gate(self.chapter())
+        self.assertEqual("PASS_WITH_WARNING", result["status"])
+        self.assertTrue(result["progressionAllowed"])
+        self.assertEqual("REVIEW_RECOMMENDED", result["warningLevel"])
+        self.assertIn("REVIEW_RECOMMENDED", result["warnings"])
+        self.assertEqual("CHAPTER_LESSON_PLANNING", result["resumePoint"])
+
+    def test_low_approval_rate_is_reporting_signal_when_content_is_sufficient(self):
+        result = corpusctl.evaluate_fact_gate(self.chapter(approval_rate=.5))
+        self.assertEqual("PASS_WITH_WARNING", result["status"])
+        self.assertNotIn("LOW_GENERATION_EFFICIENCY", result["reasons"])
+
+    def test_duplicate_candidates_are_excluded_only_from_novel_denominator(self):
+        metrics = corpusctl.fact_efficiency(6, 4, 2, 0, {"GOOD": 4, "DUPLICATE": 1,
+                                                          "NEEDS_SPLIT": 1}, 0, 2, 0)
+        self.assertAlmostEqual(4 / 6, metrics["rawApprovalRate"])
+        self.assertAlmostEqual(4 / 5, metrics["novelContentApprovalRate"])
+        self.assertAlmostEqual(1 / 6, metrics["needsSplitRate"])
+
+    def test_high_approval_rate_cannot_hide_coverage_gaps(self):
+        self.assertEqual("PARTIAL", corpusctl.evaluate_fact_gate(
+            self.chapter(topics_covered=1, approval_rate=.95))["status"])
+        self.assertEqual("PARTIAL", corpusctl.evaluate_fact_gate(
+            self.chapter(objectives_covered=1, approval_rate=.95))["status"])
+
+    def test_high_approval_rate_cannot_hide_safety_failures(self):
+        cases = [
+            {"unsupportedApprovedFacts": 1}, {"approvedGroundingFailures": 1},
+            {"approvedEvidenceFailures": 1}, {"sourceSectionMismatches": 1},
+            {"checksumMismatches": 1}, {"objectiveMappingFailures": 1},
+        ]
+        for safety in cases:
+            with self.subTest(safety=safety):
+                self.assertEqual("BLOCKED", corpusctl.evaluate_fact_gate(
+                    self.chapter(approval_rate=.95, safety=safety))["status"])
+
+    def test_insufficient_topic_is_partial_even_with_approved_facts(self):
+        sufficiency = [{"topicCode": "T-1", "status": "SUFFICIENT"},
+                       {"topicCode": "T-2", "status": "INSUFFICIENT"}]
+        result = corpusctl.evaluate_fact_gate(self.chapter(approval_rate=.95, sufficiency=sufficiency))
+        self.assertEqual("PARTIAL", result["status"])
+        self.assertIn("INSUFFICIENT_LESSON_MATERIAL:T-2", result["reasons"])
+
+    def test_systematic_pipeline_failure_blocks(self):
+        systematic = {"detected": True, "reasons": ["SYSTEMATIC_PROVIDER_FAILURE"]}
+        result = corpusctl.evaluate_fact_gate(self.chapter(approval_rate=.95, systematic=systematic))
+        self.assertEqual("BLOCKED", result["status"])
+        self.assertEqual("PIPELINE_DEFECT_SUSPECTED", result["warningLevel"])
+
+    def test_topic_sufficiency_uses_distinct_facts_and_grounded_source_depth(self):
+        strong = {"approvedFacts": 2, "distinctApprovedFacts": 2, "reasonablyTestableFacts": 2,
+                  "sourceSections": 1, "sourceSectionsAttempted": 1, "sourceCharacters": 200}
+        limited = {"approvedFacts": 1, "distinctApprovedFacts": 1, "reasonablyTestableFacts": 1,
+                   "sourceSections": 1, "sourceSectionsAttempted": 1, "sourceCharacters": 800}
+        shallow = {**limited, "sourceCharacters": 200}
+        duplicate = {**strong, "distinctApprovedFacts": 1}
+        self.assertEqual("SUFFICIENT", corpusctl.topic_lesson_sufficiency(strong)["status"])
+        self.assertEqual("LIMITED_BUT_USABLE", corpusctl.topic_lesson_sufficiency(limited)["status"])
+        self.assertEqual("INSUFFICIENT", corpusctl.topic_lesson_sufficiency(shallow)["status"])
+        self.assertEqual("INSUFFICIENT", corpusctl.topic_lesson_sufficiency(duplicate)["status"])
+
 
 if __name__ == "__main__":
     unittest.main()
