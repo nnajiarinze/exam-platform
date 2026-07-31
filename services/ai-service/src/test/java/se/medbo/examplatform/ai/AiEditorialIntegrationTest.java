@@ -41,6 +41,108 @@ class AiEditorialIntegrationTest {
   @Autowired ObjectMapper mapper;
 
   @Test
+  void knowledgeFactJobIsIdempotentAndPersistsGroundedV2Proposals() throws Exception {
+    String body = """
+        {"sourceId":"10000000-0000-0000-0000-000000000001",
+         "sourceSectionId":"10000000-0000-0000-0000-000000000002",
+         "sourceTitle":"Sveriges geografi",
+         "sourceContent":"Sverige är det största landet i Norden. Mer än hälften av Sveriges yta täcks av skog.",
+         "sourceContentChecksum":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+         "learningObjectiveId":"10000000-0000-0000-0000-000000000003",
+         "learningObjectiveTitle":"Förstå svensk geografi",
+         "requestedBy":"fact-integration",
+         "requestedCount":2,
+         "language":"sv",
+         "idempotencyKey":"fact-v2-idempotency"}
+        """;
+    String first = mvc.perform(post("/internal/v1/knowledge-fact-generation/jobs")
+        .header("X-Internal-Api-Key","test-internal-key")
+        .contentType(MediaType.APPLICATION_JSON).content(body))
+      .andExpect(status().isAccepted())
+      .andExpect(jsonPath("$.promptVersion").value("knowledge-fact-generation-v2"))
+      .andReturn().getResponse().getContentAsString();
+    String second = mvc.perform(post("/internal/v1/knowledge-fact-generation/jobs")
+        .header("X-Internal-Api-Key","test-internal-key")
+        .contentType(MediaType.APPLICATION_JSON).content(body))
+      .andExpect(status().isAccepted()).andReturn().getResponse().getContentAsString();
+    UUID job = UUID.fromString(mapper.readTree(first).get("id").asText());
+    assertThat(mapper.readTree(second).get("id").asText()).isEqualTo(job.toString());
+    awaitTerminal(job);
+    assertThat(jdbc.sql("SELECT status FROM ai_generation_job WHERE id=:id")
+      .param("id",job).query(String.class).single()).isEqualTo("COMPLETED");
+    assertThat(jdbc.sql("SELECT count(*) FROM ai_knowledge_fact_proposal WHERE generation_job_id=:id AND jsonb_array_length(source_evidence)>0")
+      .param("id",job).query(Long.class).single()).isEqualTo(2);
+
+    String duplicateBody = body.replace("fact-v2-idempotency", "fact-v2-duplicate");
+    String duplicateResponse = mvc.perform(post("/internal/v1/knowledge-fact-generation/jobs")
+        .header("X-Internal-Api-Key","test-internal-key")
+        .contentType(MediaType.APPLICATION_JSON).content(duplicateBody))
+      .andExpect(status().isAccepted()).andReturn().getResponse().getContentAsString();
+    UUID duplicateJob = UUID.fromString(mapper.readTree(duplicateResponse).get("id").asText());
+    awaitTerminal(duplicateJob);
+    assertThat(jdbc.sql("SELECT count(*) FROM ai_knowledge_fact_proposal WHERE generation_job_id=:id")
+      .param("id",duplicateJob).query(Long.class).single()).isZero();
+    assertThat(jdbc.sql("SELECT status FROM ai_generation_job WHERE id=:id")
+      .param("id",duplicateJob).query(String.class).single()).isEqualTo("PARTIALLY_COMPLETED");
+  }
+
+  @Test
+  void malformedProviderOutputProducesSpecificTerminalFailure() throws Exception {
+    String response = mvc.perform(post("/internal/v1/knowledge-fact-generation/jobs")
+        .header("X-Internal-Api-Key","test-internal-key")
+        .contentType(MediaType.APPLICATION_JSON).content("""
+          {"sourceId":"20000000-0000-0000-0000-000000000001",
+           "sourceSectionId":"20000000-0000-0000-0000-000000000002",
+           "sourceTitle":"Failure sample","sourceContent":"[[SIMULATE_MALFORMED]]",
+           "sourceContentChecksum":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+           "learningObjectiveId":"20000000-0000-0000-0000-000000000003",
+           "learningObjectiveTitle":"Failure reporting","requestedBy":"failure-integration",
+           "requestedCount":1,"language":"sv","idempotencyKey":"fact-failure-reporting"}
+          """))
+      .andExpect(status().isAccepted()).andReturn().getResponse().getContentAsString();
+    UUID job = UUID.fromString(mapper.readTree(response).get("id").asText());
+    awaitTerminal(job);
+    mvc.perform(get("/internal/v1/knowledge-fact-generation/jobs/{id}",job)
+        .header("X-Internal-Api-Key","test-internal-key"))
+      .andExpect(status().isOk())
+      .andExpect(jsonPath("$.status").value("FAILED"))
+      .andExpect(jsonPath("$.errorCode").value("AI_STRUCTURED_OUTPUT_INVALID"))
+      .andExpect(jsonPath("$.generatedCount").value(0));
+  }
+
+  @Test
+  void retryableFailureReusesTheIdempotentJobAndNeverDuplicatesProposals() throws Exception {
+    String body = """
+        {"sourceId":"30000000-0000-0000-0000-000000000001",
+         "sourceSectionId":"30000000-0000-0000-0000-000000000002",
+         "sourceTitle":"Retry sample","sourceContent":"[[SIMULATE_TIMEOUT]]",
+         "sourceContentChecksum":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+         "learningObjectiveId":"30000000-0000-0000-0000-000000000003",
+         "learningObjectiveTitle":"Retry idempotency","requestedBy":"retry-integration",
+         "requestedCount":1,"language":"sv","idempotencyKey":"fact-retry-idempotency"}
+        """;
+    String first = mvc.perform(post("/internal/v1/knowledge-fact-generation/jobs")
+        .header("X-Internal-Api-Key","test-internal-key")
+        .contentType(MediaType.APPLICATION_JSON).content(body))
+      .andExpect(status().isAccepted()).andReturn().getResponse().getContentAsString();
+    String second = mvc.perform(post("/internal/v1/knowledge-fact-generation/jobs")
+        .header("X-Internal-Api-Key","test-internal-key")
+        .contentType(MediaType.APPLICATION_JSON).content(body))
+      .andExpect(status().isAccepted()).andReturn().getResponse().getContentAsString();
+    UUID job = UUID.fromString(mapper.readTree(first).get("id").asText());
+    assertThat(mapper.readTree(second).get("id").asText()).isEqualTo(job.toString());
+    for (int attempt=0; attempt<120; attempt++) {
+      if ("FAILED".equals(jdbc.sql("SELECT status FROM ai_generation_job WHERE id=:id")
+          .param("id",job).query(String.class).single())) break;
+      Thread.sleep(100);
+    }
+    assertThat(jdbc.sql("SELECT retry_count FROM ai_generation_job WHERE id=:id")
+      .param("id",job).query(Integer.class).single()).isEqualTo(2);
+    assertThat(jdbc.sql("SELECT count(*) FROM ai_knowledge_fact_proposal WHERE generation_job_id=:id")
+      .param("id",job).query(Long.class).single()).isZero();
+  }
+
+  @Test
   void migrationsCreateThePersistentEditorialWorkspace() {
     assertThat(jdbc.sql("SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank")
         .query(String.class).list()).containsExactly("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13");

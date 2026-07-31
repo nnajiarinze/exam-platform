@@ -4,8 +4,8 @@ import java.util.List;
 
 public interface AiProviderClient {
     GenerationResult generate(GenerationRequest request);
-    record GenerationRequest(String sourceText,String objective,String language,int count,String instruction,String promptVersion,java.util.UUID jobId,String requester,int retryAttempt) {
-        public GenerationRequest(String sourceText,String objective,String language,int count,String instruction,String promptVersion){this(sourceText,objective,language,count,instruction,promptVersion,null,null,0);}
+    record GenerationRequest(String sourceText,String sectionTitle,String objective,String language,int count,String instruction,String promptVersion,java.util.UUID jobId,String requester,int retryAttempt) {
+        public GenerationRequest(String sourceText,String objective,String language,int count,String instruction,String promptVersion){this(sourceText,null,objective,language,count,instruction,promptVersion,null,null,0);}
     }
     record Evidence(String quote,String location) {}
     record Proposal(String text,List<Evidence> sourceEvidence,String confidence,String notes) {}

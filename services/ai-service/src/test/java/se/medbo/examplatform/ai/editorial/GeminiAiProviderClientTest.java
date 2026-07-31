@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import se.medbo.examplatform.ai.provider.AiProviderClient;
 import se.medbo.examplatform.ai.provider.AiProviderException;
 import se.medbo.examplatform.ai.provider.GeminiQuotaService;
+import se.medbo.examplatform.ai.generation.PromptTemplateRegistry;
 
 class GeminiAiProviderClientTest {
   private HttpServer server;
@@ -42,6 +43,17 @@ class GeminiAiProviderClientTest {
   }
 
   @Test void acceptsMissingUsageMetadata(){respond(200,"{\"responseId\":\"response-1\",\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"{\\\"proposals\\\":[],\\\"warnings\\\":[]}\"}]}}]}",null);var result=client().generate(request());assertThat(result.usage().inputTokens()).isNull();assertThat(result.usage().requestId()).isEqualTo("response-1");}
+  @Test void v2PromptCarriesSectionObjectiveAndStrictEvidenceInstructions(){
+    respond(200,"{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"{\\\"proposals\\\":[{\\\"text\\\":\\\"Riksdagen stiftar lagar.\\\",\\\"sourceEvidence\\\":[{\\\"quote\\\":\\\"Riksdagen stiftar lagar.\\\"}]}],\\\"warnings\\\":[]}\"}]}}]}",null);
+    client().generate(new AiProviderClient.GenerationRequest(
+      "Riksdagen stiftar lagar.","Riksdagen","Förstå lagstiftning","sv",3,"",
+      PromptTemplateRegistry.KNOWLEDGE_FACT_V2,null,"test",0));
+    assertThat(requestBody.get())
+      .contains("<SECTION_TITLE>Riksdagen</SECTION_TITLE>","<OBJECTIVE>Förstå lagstiftning</OBJECTIVE>")
+      .contains("one independently understandable, testable idea")
+      .contains("Copy PDF extraction artifacts exactly")
+      .doesNotContain("google_search","tools");
+  }
   @Test void rejectsMalformedStructuredJson(){respond(200,"{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"not-json\"}]}}]}",null);assertThatThrownBy(()->client().generate(request())).isInstanceOf(AiProviderException.class).hasMessageContaining("invalid structured JSON");}
   @Test void classifiesMinuteRateLimitAsRetryable(){respond(429,"{\"error\":{\"status\":\"RESOURCE_EXHAUSTED\",\"message\":\"RPM per minute exceeded\"}}",null);assertThatThrownBy(()->client().generate(request())).isInstanceOfSatisfying(AiProviderException.class,e->{assertThat(e.code()).isEqualTo("AI_PROVIDER_TEMPORARILY_RATE_LIMITED");assertThat(e.transientFailure()).isTrue();});verify(quota).rateLimited(any(),org.mockito.ArgumentMatchers.eq("AI_PROVIDER_TEMPORARILY_RATE_LIMITED"),org.mockito.ArgumentMatchers.eq(false));}
   @Test void classifiesDailyAndAuthenticationFailuresWithoutRetry(){respond(429,"{\"error\":{\"message\":\"requests per day quota exceeded\"}}",null);assertThatThrownBy(()->client().generate(request())).isInstanceOfSatisfying(AiProviderException.class,e->{assertThat(e.code()).isEqualTo("AI_PROVIDER_DAILY_QUOTA_EXHAUSTED");assertThat(e.transientFailure()).isFalse();});}
