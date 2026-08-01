@@ -53,6 +53,31 @@ class GeminiAiProviderClientTest {
     assertThat(mapper.writeValueAsString(seen.get().jsonSchema())).doesNotContain("factEvidence","sourceEvidence","confidence","warnings","language");
   }
 
+  @Test void questionPromptCarriesTheBoundedRecoveryTarget()throws Exception{
+    var seen=new AtomicReference<StructuredAiProvider.Request>();var router=mock(FreeOnlyProviderRouter.class);
+    when(router.execute(any())).thenAnswer(invocation->{seen.set(invocation.getArgument(0));return new StructuredAiProvider.Response(
+        mapper.readTree("{\"resultType\":\"INSUFFICIENT_GROUNDED_INFORMATION\",\"proposals\":[],\"reason\":\"unsafe\"}"),
+        "GROQ","test-free","test-free","request-45",100,20,8L,"stop",Map.of(),Map.of(),null,"HTTP_200",true);});
+    UUID fact=UUID.randomUUID(),version=UUID.randomUUID(),sourceId=UUID.randomUUID(),sectionId=UUID.randomUUID();
+    String statement="De största fackliga centralorganisationerna är LO, TCO och SACO.";
+    var target=new QuestionGenerationProviderClient.Target(fact,version,1,statement,"a".repeat(64),"sv");
+    var source=new QuestionGenerationProviderClient.Source(sourceId,sectionId,"Källa","Kapitel","Avsnitt",28,29,
+        "b".repeat(64),"c".repeat(64),statement,List.of(statement));
+    var context=new QuestionGenerationProviderClient.Context(UUID.randomUUID(),"Parter",null,UUID.randomUUID(),
+        "Arbetsmarknadens parter",UUID.randomUUID(),"Arbetsmarknad",UUID.randomUUID(),UUID.randomUUID(),List.of(source),null,null);
+    var narrow=new QuestionGenerationProviderClient.NarrowTarget(statement,"DIRECT_RECOGNITION",statement,
+        "Exakt LO, TCO och SACO",List.of("Saco som separat svar","externa organisationer"),
+        List.of("varje distraktor måste vara tydligt falsk","inga stavningsvarianter"),"Återge endast den exakta listan.");
+    var request=new QuestionGenerationProviderClient.Request(target,context,1,"SINGLE_CHOICE",
+        GeminiAiProviderClient.QUESTION_PROMPT_VERSION,null,"reviewer",0,null,"EASY","REMEMBER",narrow);
+
+    new GeminiAiProviderClient(mapper,router).generate(request);
+
+    assertThat(seen.get().prompt()).contains("narrowTarget","DIRECT_RECOGNITION","inga stavningsvarianter",
+        "Exakt LO, TCO och SACO");
+    assertThat(seen.get().systemInstruction()).contains("When NARROW_TARGET is supplied","follow it exactly");
+  }
+
   @Test void lessonRepairPromptCarriesExactRejectedClaimsAndStrictSentenceContract()throws Exception{
     var seen=new AtomicReference<StructuredAiProvider.Request>();var router=mock(FreeOnlyProviderRouter.class);
     UUID section=UUID.randomUUID(),fact=UUID.randomUUID(),version=UUID.randomUUID(),job=UUID.randomUUID();

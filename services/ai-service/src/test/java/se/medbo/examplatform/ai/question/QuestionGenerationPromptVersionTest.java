@@ -16,8 +16,11 @@ class QuestionGenerationPromptVersionTest {
     var context=new QuestionGenerationProviderClient.Context(UUID.randomUUID(),"Lagar",null,
         UUID.randomUUID(),"Demokrati",UUID.randomUUID(),"Samhälle",UUID.randomUUID(),UUID.randomUUID(),
         List.of(source),"sverige-i-fokus","QUESTION_GENERATION");
+    var narrow=new QuestionGenerationProviderClient.NarrowTarget("Riksdagen stiftar lagar.","DIRECT_RECOGNITION",
+        "Riksdagen stiftar lagar.","Riksdagen",List.of("andra aktörer"),List.of("entydigt falska"),
+        "Återge endast faktan.");
     var stored=new QuestionGenerationProviderClient.Request(target,context,1,"SINGLE_CHOICE",
-        "question-generation-intelligence-v1",null,null,0,null,null,null);
+        "question-generation-intelligence-v1",null,null,0,null,null,null,narrow);
     UUID jobId=UUID.randomUUID();
 
     var execution=QuestionGenerationJobService.currentExecution(stored,jobId,"worker",2);
@@ -27,5 +30,6 @@ class QuestionGenerationPromptVersionTest {
     assertThat(execution.context()).isSameAs(context);
     assertThat(execution.jobId()).isEqualTo(jobId);
     assertThat(execution.retryAttempt()).isEqualTo(2);
+    assertThat(execution.narrowTarget()).isSameAs(narrow);
   }
 }

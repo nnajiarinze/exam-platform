@@ -21,19 +21,29 @@ public interface QuestionGenerationProviderClient {
   }
   record Regeneration(UUID parentProposalId, String reasonCode, String reviewerFeedback,
                       String previousQuestionText, List<Option> previousOptions, int generationAttempt) {}
+  record NarrowTarget(String testedProposition, String allowedQuestionForm, String exactEvidence,
+                      String correctAnswerBoundary, List<String> forbiddenInterpretations,
+                      List<String> distractorConstraints, String explanationScope) {}
   record Request(Target target, Context context, int proposalCount, String questionType,
                  String promptVersion, UUID jobId, String requester, int retryAttempt,
-                 Regeneration regeneration, String targetDifficulty, String targetBloomLevel) {
-    Request(Target target, Context context, int proposalCount, String questionType,
+                 Regeneration regeneration, String targetDifficulty, String targetBloomLevel,
+                 NarrowTarget narrowTarget) {
+    public Request(Target target, Context context, int proposalCount, String questionType,
             String promptVersion, UUID jobId, String requester, int retryAttempt) {
-      this(target,context,proposalCount,questionType,promptVersion,jobId,requester,retryAttempt,null,null,null);
+      this(target,context,proposalCount,questionType,promptVersion,jobId,requester,retryAttempt,null,null,null,null);
     }
-    Request(Target target, Context context, int proposalCount, String questionType,
+    public Request(Target target, Context context, int proposalCount, String questionType,
             String promptVersion, UUID jobId, String requester, int retryAttempt, Regeneration regeneration) {
-      this(target,context,proposalCount,questionType,promptVersion,jobId,requester,retryAttempt,regeneration,null,null);
+      this(target,context,proposalCount,questionType,promptVersion,jobId,requester,retryAttempt,regeneration,null,null,null);
+    }
+    public Request(Target target, Context context, int proposalCount, String questionType,
+            String promptVersion, UUID jobId, String requester, int retryAttempt,
+            Regeneration regeneration, String targetDifficulty, String targetBloomLevel) {
+      this(target,context,proposalCount,questionType,promptVersion,jobId,requester,retryAttempt,
+          regeneration,targetDifficulty,targetBloomLevel,null);
     }
     Request execution(UUID id, String actor, int retry) {
-      return new Request(target, context, proposalCount, questionType, promptVersion, id, actor, retry,regeneration,targetDifficulty,targetBloomLevel);
+      return new Request(target, context, proposalCount, questionType, promptVersion, id, actor, retry,regeneration,targetDifficulty,targetBloomLevel,narrowTarget);
     }
   }
   record Option(String optionKey, String text, boolean correct, String rationale) {}
