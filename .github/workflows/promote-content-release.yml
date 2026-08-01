@@ -32,19 +32,23 @@ jobs:
           SNAPSHOT_GZIP_BASE64_PART_2: ${{ secrets.CONTENT_RELEASE_SNAPSHOT_GZIP_BASE64_PART_2 }}
         run: |
           set -Eeuo pipefail
+          snapshot_file="$(mktemp)"
+          trap 'rm -f "${snapshot_file}"' EXIT
           if [[ -n "${SNAPSHOT_GZIP_BASE64_PART_1}" || -n "${SNAPSHOT_GZIP_BASE64_PART_2}" ]]; then
             [[ -n "${SNAPSHOT_GZIP_BASE64_PART_1}" && -n "${SNAPSHOT_GZIP_BASE64_PART_2}" ]]
             SNAPSHOT_GZIP_BASE64="${SNAPSHOT_GZIP_BASE64_PART_1}${SNAPSHOT_GZIP_BASE64_PART_2}"
           fi
           if [[ -n "${SNAPSHOT_GZIP_BASE64}" ]]; then
-            SNAPSHOT_JSON="$(printf '%s' "${SNAPSHOT_GZIP_BASE64}" | base64 --decode | gzip --decompress)"
+            printf '%s' "${SNAPSHOT_GZIP_BASE64}" | base64 --decode | gzip --decompress >"${snapshot_file}"
+          else
+            printf '%s' "${SNAPSHOT_JSON}" >"${snapshot_file}"
           fi
           [[ "${COMMIT_SHA}" =~ ^[0-9a-f]{40}$ ]]
           [[ "${EXTERNAL_RELEASE_ID}" =~ ^[0-9a-f-]{36}$ ]]
           [[ "${EXPECTED_CHECKSUM}" =~ ^[0-9a-f]{64}$ ]]
-          [[ -n "${SNAPSHOT_JSON}" ]]
-          [[ "$(jq -r .externalReleaseId <<<"${SNAPSHOT_JSON}")" == "${EXTERNAL_RELEASE_ID}" ]]
-          [[ "$(jq -r .checksum <<<"${SNAPSHOT_JSON}")" == "${EXPECTED_CHECKSUM}" ]]
+          [[ -s "${snapshot_file}" ]]
+          [[ "$(jq -r .externalReleaseId "${snapshot_file}")" == "${EXTERNAL_RELEASE_ID}" ]]
+          [[ "$(jq -r .checksum "${snapshot_file}")" == "${EXPECTED_CHECKSUM}" ]]
       - name: Configure SSH
         env:
           SSH_PRIVATE_KEY: ${{ secrets.HOSTED_SSH_PRIVATE_KEY }}
@@ -68,22 +72,23 @@ jobs:
           SNAPSHOT_GZIP_BASE64_PART_2: ${{ secrets.CONTENT_RELEASE_SNAPSHOT_GZIP_BASE64_PART_2 }}
         run: |
           set -Eeuo pipefail
+          umask 077
+          local_snapshot="$(mktemp)"
           if [[ -n "${SNAPSHOT_GZIP_BASE64_PART_1}" || -n "${SNAPSHOT_GZIP_BASE64_PART_2}" ]]; then
             [[ -n "${SNAPSHOT_GZIP_BASE64_PART_1}" && -n "${SNAPSHOT_GZIP_BASE64_PART_2}" ]]
             SNAPSHOT_GZIP_BASE64="${SNAPSHOT_GZIP_BASE64_PART_1}${SNAPSHOT_GZIP_BASE64_PART_2}"
           fi
           if [[ -n "${SNAPSHOT_GZIP_BASE64}" ]]; then
-            SNAPSHOT_JSON="$(printf '%s' "${SNAPSHOT_GZIP_BASE64}" | base64 --decode | gzip --decompress)"
+            printf '%s' "${SNAPSHOT_GZIP_BASE64}" | base64 --decode | gzip --decompress >"${local_snapshot}"
+          else
+            printf '%s' "${SNAPSHOT_JSON}" >"${local_snapshot}"
           fi
-          umask 077
-          local_snapshot="$(mktemp)"
           remote_snapshot="$(ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" 'mktemp /tmp/content-release.XXXXXX.json')"
           cleanup() {
             rm -f "${local_snapshot}"
             ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" "rm -f '${remote_snapshot}'" || true
           }
           trap cleanup EXIT
-          printf '%s' "${SNAPSHOT_JSON}" >"${local_snapshot}"
           scp -q -o BatchMode=yes "${local_snapshot}" "${HOSTED_USER}@${HOSTED_HOST}:${remote_snapshot}"
           ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" \
             "bash -s '${COMMIT_SHA}' '${EXTERNAL_RELEASE_ID}' '${EXPECTED_CHECKSUM}' '${remote_snapshot}'" <<'REMOTE_SCRIPT'
