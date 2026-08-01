@@ -10,7 +10,7 @@ on:
         description: Use inspect first; execute requires its host fingerprint
         required: true
         type: choice
-        options: [inspect, verify, execute]
+        options: [inspect, verify, execute, migrate-source-v2]
       expected_host_sha256:
         description: Fingerprint from a separate inspect run; required for execute
         required: false
@@ -30,7 +30,7 @@ jobs:
           EXPECTED: ${{ inputs.expected_host_sha256 }}
         run: |
           [[ "${COMMIT_SHA}" =~ ^[0-9a-f]{40}$ ]]
-          [[ "${ACTION}" == inspect || "${ACTION}" == verify || "${ACTION}" == execute ]]
+          [[ "${ACTION}" == inspect || "${ACTION}" == verify || "${ACTION}" == execute || "${ACTION}" == migrate-source-v2 ]]
           if [[ "${ACTION}" == execute ]]; then [[ "${EXPECTED}" =~ ^[a-f0-9]{64}$ ]]; fi
       - name: Configure SSH
         env:
@@ -54,4 +54,8 @@ jobs:
             "cd /opt/citizenship-platform/repo &&
              git fetch --quiet origin '${COMMIT_SHA}' &&
              git checkout --detach '${COMMIT_SHA}' &&
-             ./infrastructure/hetzner/reset-sverige-i-fokus.sh '${ACTION}' '${EXPECTED}'"
+             if [[ '${ACTION}' == migrate-source-v2 ]]; then
+               ./infrastructure/hetzner/migrate-sverige-i-fokus-source-v2.sh;
+             else
+               ./infrastructure/hetzner/reset-sverige-i-fokus.sh '${ACTION}' '${EXPECTED}';
+             fi"
