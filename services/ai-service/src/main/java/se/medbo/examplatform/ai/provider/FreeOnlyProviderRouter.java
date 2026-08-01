@@ -11,34 +11,39 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
+import se.medbo.examplatform.ai.question.QuestionBankPaidCompletionPolicy;
 
 @Service
 public class FreeOnlyProviderRouter {
   private final List<StructuredAiProvider> providers;private final JdbcClient jdbc;private final ObjectMapper mapper;private final ProviderExecutionDeadline deadline;
   private final List<String> configuredPriority;private final int maxAttempts;private final String billingPolicy;
-  private final boolean allowPaidFallback,requireZeroCost,allowBillingUpgrade;
-  public FreeOnlyProviderRouter(List<StructuredAiProvider> providers,JdbcClient jdbc,ObjectMapper mapper,ProviderExecutionDeadline deadline,
+  private final boolean allowPaidFallback,requireZeroCost,allowBillingUpgrade;private final QuestionBankPaidCompletionPolicy paidCompletion;
+  @Autowired public FreeOnlyProviderRouter(List<StructuredAiProvider> providers,JdbcClient jdbc,ObjectMapper mapper,ProviderExecutionDeadline deadline,
       @Value("${ai.routing.priority:GEMINI,GROQ,CLOUDFLARE_WORKERS_AI,OPENROUTER_FREE}")String priority,
       @Value("${ai.routing.max-provider-attempts:4}")int maxAttempts,
       @Value("${ai.billing-policy:FREE_ONLY}")String billingPolicy,
       @Value("${ai.allow-paid-fallback:false}")boolean allowPaidFallback,
       @Value("${ai.require-zero-cost-provider:true}")boolean requireZeroCost,
       @Value("${ai.allow-automatic-billing-upgrade:false}")boolean allowBillingUpgrade,
-      @Value("${ai.openrouter.allow-paid:false}")boolean openRouterAllowPaid){
+      @Value("${ai.openrouter.allow-paid:false}")boolean openRouterAllowPaid,QuestionBankPaidCompletionPolicy paidCompletion){
     this.providers=providers;this.jdbc=jdbc;this.mapper=mapper;this.deadline=deadline;this.configuredPriority=List.of(priority.split(","));
     this.maxAttempts=Math.max(1,Math.min(maxAttempts,providers.size()));this.billingPolicy=openRouterAllowPaid?"FREE_FIRST_CAPPED_PAID":billingPolicy;
-    this.allowPaidFallback=openRouterAllowPaid;this.requireZeroCost=requireZeroCost;this.allowBillingUpgrade=allowBillingUpgrade;
+    this.allowPaidFallback=openRouterAllowPaid;this.requireZeroCost=requireZeroCost;this.allowBillingUpgrade=allowBillingUpgrade;this.paidCompletion=paidCompletion;
     if((!"FREE_ONLY".equals(billingPolicy)&&!"FREE_FIRST_CAPPED_PAID".equals(billingPolicy))||allowPaidFallback||!requireZeroCost||allowBillingUpgrade)
       throw new IllegalStateException("AI routing requires zero-cost free providers, no global paid fallback, and no automatic billing upgrade");
   }
+  public FreeOnlyProviderRouter(List<StructuredAiProvider> providers,JdbcClient jdbc,ObjectMapper mapper,ProviderExecutionDeadline deadline,String priority,int maxAttempts,String billingPolicy,boolean allowPaidFallback,boolean requireZeroCost,boolean allowBillingUpgrade,boolean openRouterAllowPaid){this(providers,jdbc,mapper,deadline,priority,maxAttempts,billingPolicy,allowPaidFallback,requireZeroCost,allowBillingUpgrade,openRouterAllowPaid,null);}
 
   public StructuredAiProvider.Response execute(StructuredAiProvider.Request request){
     var evaluated=new ArrayList<Map<String,Object>>();int attempts=0;OffsetDateTime next=null;AiProviderException last=null;
+    boolean paidOnly=paidCompletion!=null&&paidCompletion.job(request.jobId());
     for(var provider:ordered()){
       String rejection=null;var availability=provider.availability(request);
-      if(!provider.enabled())rejection="DISABLED";else if(!provider.credentialsConfigured())rejection="MISSING_CREDENTIALS";
+      if(paidOnly&&(!paidCompletion.provider().equals(provider.provider())||!paidCompletion.model().equals(provider.model())))rejection="PAID_COMPLETION_SCOPE_EXCLUDED";
+      else if(!provider.enabled())rejection="DISABLED";else if(!provider.credentialsConfigured())rejection="MISSING_CREDENTIALS";
       else if(!provider.supports(request))rejection="CAPABILITY_UNSUPPORTED";
       else if(!isPaid(provider)&&availability.freeStatus()!=StructuredAiProvider.FreeStatus.KNOWN)rejection="FREE_STATUS_UNVERIFIED";
       else if(isPaid(provider)&&!allowPaidFallback)rejection="PAID_FALLBACK_DISABLED";
@@ -55,7 +60,7 @@ public class FreeOnlyProviderRouter {
         if(!provider.infrastructureFallbackCodes().contains(error.code())){routing(request,evaluated,null,"PAUSED",next);throw error;}
       }
     }
-    routing(request,evaluated,null,"PAUSED",next);if(evaluated.stream().anyMatch(v->"OPENROUTER_PAID".equals(v.get("provider"))&&"PAID_BUDGET_EXHAUSTED".equals(v.get("reason"))))throw new AiProviderException("PAID_BUDGET_EXHAUSTED",false,"The configured OpenRouter paid budget cannot cover another request");throw new AiProviderException("AI_ALL_FREE_PROVIDERS_UNAVAILABLE",true,
+    routing(request,evaluated,null,"PAUSED",next);if(evaluated.stream().anyMatch(v->"OPENROUTER_PAID".equals(v.get("provider"))&&"PAID_BUDGET_EXHAUSTED".equals(v.get("reason"))))throw new AiProviderException("PAID_BUDGET_EXHAUSTED",false,"The configured OpenRouter paid budget cannot cover another request");if(paidOnly)throw last==null?new AiProviderException("AI_PROVIDER_UNAVAILABLE",true,"The pinned OpenRouter paid provider is unavailable"):last;throw new AiProviderException("AI_ALL_FREE_PROVIDERS_UNAVAILABLE",true,
         next==null?"All confirmed-free providers are unavailable":"All confirmed-free providers are unavailable until "+next);
   }
 
@@ -70,7 +75,7 @@ public class FreeOnlyProviderRouter {
   private void success(UUID id,StructuredAiProvider.Response r,long latency){jdbc.sql("UPDATE ai_provider_attempt SET status='SUCCEEDED',lifecycle_state='COMPLETED',outcome_classification='PROVIDER_COMPLETED_SUCCESS',provider_request_id=:request,input_tokens=:input,output_tokens=:output,latency_ms=:latency,finish_reason=:finish,response_received_at=:now,heartbeat_at=:now,completed_at=:now WHERE id=:id").param("request",r.providerRequestId(),Types.VARCHAR).param("input",r.inputTokens(),Types.INTEGER).param("output",r.outputTokens(),Types.INTEGER).param("latency",latency).param("finish",r.finishReason(),Types.VARCHAR).param("now",now()).param("id",id).update();}
   private void failure(UUID id,AiProviderException e,long latency){jdbc.sql("UPDATE ai_provider_attempt SET status='FAILED',lifecycle_state='FAILED_CONFIRMED',outcome_classification='PROVIDER_COMPLETED_FAILURE',error_code=:code,error_message=:message,latency_ms=:latency,fallback_reason=:reason,response_diagnostics=CAST(:diagnostics AS jsonb),raw_response=:raw,heartbeat_at=:now,completed_at=:now WHERE id=:id").param("code",e.code()).param("message",sanitize(e.getMessage())).param("latency",latency).param("reason",e.code()).param("diagnostics",json(e.diagnostics())).param("raw",e.rawResponse(),Types.VARCHAR).param("now",now()).param("id",id).update();}
   private void unknown(UUID id,AiProviderException e,long latency){jdbc.sql("UPDATE ai_provider_attempt SET status='RECONCILIATION_PENDING',lifecycle_state='TIMED_OUT_UNKNOWN',outcome_classification='OUTCOME_UNKNOWN',error_code=:code,error_message=:message,latency_ms=:latency,cancellation_succeeded=:cancel,response_diagnostics=CAST(:diagnostics AS jsonb),heartbeat_at=:now,completed_at=:now WHERE id=:id").param("code",e.code()).param("message",sanitize(e.getMessage())).param("latency",latency).param("cancel",Boolean.TRUE.equals(e.diagnostics().get("cancellationSucceeded"))).param("diagnostics",json(e.diagnostics())).param("now",now()).param("id",id).update();}
-  private void routing(StructuredAiProvider.Request r,List<Map<String,Object>> evaluated,StructuredAiProvider selected,String outcome,OffsetDateTime next){jdbc.sql("INSERT INTO ai_provider_routing_decision(id,job_id,operation,billing_policy,providers_evaluated,selected_provider,selected_model,outcome,next_retry_at,routed_at) VALUES(:id,:job,:op,:policy,CAST(:providers AS jsonb),:provider,:model,:outcome,:next,:now)").param("id",UUID.randomUUID()).param("job",r.jobId(),Types.OTHER).param("op",r.operation()).param("policy",billingPolicy).param("providers",json(evaluated)).param("provider",selected==null?null:selected.provider(),Types.VARCHAR).param("model",selected==null?null:selected.model(),Types.VARCHAR).param("outcome",outcome).param("next",next,Types.TIMESTAMP_WITH_TIMEZONE).param("now",now()).update();}
+  private void routing(StructuredAiProvider.Request r,List<Map<String,Object>> evaluated,StructuredAiProvider selected,String outcome,OffsetDateTime next){String policy=paidCompletion!=null&&paidCompletion.job(r.jobId())?QuestionBankPaidCompletionPolicy.MODE:billingPolicy;jdbc.sql("INSERT INTO ai_provider_routing_decision(id,job_id,operation,billing_policy,providers_evaluated,selected_provider,selected_model,outcome,next_retry_at,routed_at) VALUES(:id,:job,:op,:policy,CAST(:providers AS jsonb),:provider,:model,:outcome,:next,:now)").param("id",UUID.randomUUID()).param("job",r.jobId(),Types.OTHER).param("op",r.operation()).param("policy",policy).param("providers",json(evaluated)).param("provider",selected==null?null:selected.provider(),Types.VARCHAR).param("model",selected==null?null:selected.model(),Types.VARCHAR).param("outcome",outcome).param("next",next,Types.TIMESTAMP_WITH_TIMEZONE).param("now",now()).update();}
   private void snapshot(StructuredAiProvider p,StructuredAiProvider.Availability a){var c=a.capacity();jdbc.sql("INSERT INTO ai_provider_capacity_snapshot(id,provider,model,billing_policy,free_status,authority,request_limit,requests_used,requests_remaining,token_limit,tokens_used,tokens_remaining,neuron_limit,neurons_used,neurons_remaining,reset_at,retry_after,circuit_state,last_error,refreshed_at) VALUES(:id,:provider,:model,:policy,:free,:authority,:rl,:ru,:rr,:tl,:tu,:tr,:nl,:nu,:nr,:reset,:retry,:circuit,:error,:now)").param("id",UUID.randomUUID()).param("provider",p.provider()).param("model",p.model()).param("policy",billingPolicy).param("free",a.freeStatus().name()).param("authority",a.authority().name()).param("rl",number(c,"requestLimit"),Types.BIGINT).param("ru",number(c,"requestsUsed"),Types.BIGINT).param("rr",number(c,"requestsRemaining"),Types.BIGINT).param("tl",number(c,"tokenLimit"),Types.BIGINT).param("tu",number(c,"tokensUsed"),Types.BIGINT).param("tr",number(c,"tokensRemaining"),Types.BIGINT).param("nl",number(c,"neuronLimit"),Types.BIGINT).param("nu",number(c,"neuronsUsed"),Types.BIGINT).param("nr",number(c,"neuronsRemaining"),Types.BIGINT).param("reset",a.nextRetryAt(),Types.TIMESTAMP_WITH_TIMEZONE).param("retry",a.nextRetryAt(),Types.TIMESTAMP_WITH_TIMEZONE).param("circuit",a.circuitState()).param("error",a.reason(),Types.VARCHAR).param("now",now()).update();}
   private void recordSelectedProvider(UUID jobId,StructuredAiProvider provider){if(jobId==null)return;updateJobProvider("ai_generation_job",jobId,provider);updateJobProvider("ai_lesson_generation_job",jobId,provider);}
   private void updateJobProvider(String table,UUID jobId,StructuredAiProvider provider){jdbc.sql("UPDATE "+table+" SET provider=:provider,model=:model WHERE id=:id").param("provider",provider.provider()).param("model",provider.model()).param("id",jobId).update();}

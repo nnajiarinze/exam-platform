@@ -13,19 +13,20 @@ import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import se.medbo.examplatform.ai.question.QuestionBankPaidCompletionPolicy;
 
 @Component
 final class OpenRouterPaidProvider implements StructuredAiProvider {
   private final ObjectMapper mapper;private final OpenRouterPaidModelDiscoveryService discovery;private final OpenRouterPaidBudgetService budget;
-  private final HttpClient http;private final String key,base,referer,title;private final Duration timeout;private final int defaultMaximumOutputTokens;
+  private final HttpClient http;private final String key,base,referer,title;private final Duration timeout;private final int defaultMaximumOutputTokens;private final QuestionBankPaidCompletionPolicy paidCompletion;
   OpenRouterPaidProvider(ObjectMapper mapper,OpenRouterPaidModelDiscoveryService discovery,OpenRouterPaidBudgetService budget,
       @Value("${ai.openrouter.api-key:}")String key,@Value("${ai.openrouter.base-url:https://openrouter.ai/api/v1}")String base,
       @Value("${ai.openrouter.http-referer:}")String referer,@Value("${ai.openrouter.app-title:Svea Study}")String title,
       @Value("${ai.openrouter.timeout-seconds:45}")long timeoutSeconds,
-      @Value("${ai.openrouter.paid-default-max-output-tokens:4096}")int defaultMaximumOutputTokens){
+      @Value("${ai.openrouter.paid-default-max-output-tokens:4096}")int defaultMaximumOutputTokens,QuestionBankPaidCompletionPolicy paidCompletion){
     URI uri=URI.create(base);if(!"https".equalsIgnoreCase(uri.getScheme())||!"openrouter.ai".equalsIgnoreCase(uri.getHost())||uri.getUserInfo()!=null||uri.getPort()!=-1)throw new IllegalArgumentException("Provider base URL must be the official HTTPS endpoint");
     this.mapper=mapper;this.discovery=discovery;this.budget=budget;this.key=key;this.base=base.replaceAll("/+$","");this.referer=referer;this.title=title;
-    this.timeout=Duration.ofSeconds(Math.max(1,timeoutSeconds));this.defaultMaximumOutputTokens=Math.max(1,defaultMaximumOutputTokens);this.http=HttpClient.newBuilder().connectTimeout(timeout).build();
+    this.timeout=Duration.ofSeconds(Math.max(1,timeoutSeconds));this.defaultMaximumOutputTokens=Math.max(1,defaultMaximumOutputTokens);this.paidCompletion=paidCompletion;this.http=HttpClient.newBuilder().connectTimeout(timeout).build();
   }
   public String provider(){return "OPENROUTER_PAID";}public String model(){return discovery.current().map(OpenRouterPaidModelDiscoveryService.Model::id).orElse("DISCOVERY_PENDING");}
   public int priority(){return 4;}public boolean enabled(){return budget.allowed();}public boolean credentialsConfigured(){return !key.isBlank();}
@@ -39,7 +40,7 @@ final class OpenRouterPaidProvider implements StructuredAiProvider {
     }catch(AiProviderException e){return unavailable(e.code());}catch(Exception e){return unavailable("PROVIDER_UNHEALTHY");}
   }
   public Response execute(Request request){
-    var model=discovery.discoverAndPin();var reservation=budget.reserve(request,model,"ALL_FREE_PROVIDERS_UNAVAILABLE");long start=System.nanoTime();
+    var model=discovery.discoverAndPin();String reason=paidCompletion.job(request.jobId())?QuestionBankPaidCompletionPolicy.ROUTING_REASON:"ALL_FREE_PROVIDERS_UNAVAILABLE";var reservation=budget.reserve(request,model,reason);long start=System.nanoTime();
     HttpResponse<java.io.InputStream> response=null;JsonNode usage=null;String requestId=null;Integer prompt=null,completion=null,reasoning=null;BigDecimal actual=BigDecimal.ZERO;
     try{
       response=http.send(build(request,model.id()),HttpResponse.BodyHandlers.ofInputStream());requestId=response.headers().firstValue("x-generation-id").orElse(response.headers().firstValue("x-request-id").orElse(null));budget.recordResponseHeaders(reservation,requestId);

@@ -28,9 +28,9 @@ import se.medbo.examplatform.ai.provider.AiProviderException;
 @Service
 public class QuestionGenerationJobService {
   private static final String OPERATION="GENERATE_QUESTIONS_FROM_FACT";
-  private final JdbcClient jdbc;private final ObjectMapper mapper;private final QuestionGenerationProviderClient provider;private final QuestionProposalValidator validator;private final QuestionIntelligenceEngine intelligence;private final MeterRegistry metrics;private final TransactionTemplate transactions;private final CorpusCompletionRateLimit rateLimit;private final boolean enabled;private final int hourlyLimit,maxRetries;
+  private final JdbcClient jdbc;private final ObjectMapper mapper;private final QuestionGenerationProviderClient provider;private final QuestionProposalValidator validator;private final QuestionIntelligenceEngine intelligence;private final MeterRegistry metrics;private final TransactionTemplate transactions;private final CorpusCompletionRateLimit rateLimit;private final QuestionBankPaidCompletionPolicy paidCompletion;private final boolean enabled;private final int hourlyLimit,maxRetries;
   QuestionGenerationJobService(JdbcClient jdbc,ObjectMapper mapper,QuestionGenerationProviderClient provider,QuestionProposalValidator validator,QuestionIntelligenceEngine intelligence,MeterRegistry metrics,
-      PlatformTransactionManager transactionManager,CorpusCompletionRateLimit rateLimit,@Value("${ai.jobs.enabled:true}")boolean enabled,@Value("${ai.generation.rate-limit-per-hour:20}")int hourlyLimit,@Value("${ai.generation.max-retries:2}")int maxRetries){this.jdbc=jdbc;this.mapper=mapper;this.provider=provider;this.validator=validator;this.intelligence=intelligence;this.metrics=metrics;this.transactions=new TransactionTemplate(transactionManager);this.rateLimit=rateLimit;this.enabled=enabled;this.hourlyLimit=hourlyLimit;this.maxRetries=maxRetries;}
+      PlatformTransactionManager transactionManager,CorpusCompletionRateLimit rateLimit,QuestionBankPaidCompletionPolicy paidCompletion,@Value("${ai.jobs.enabled:true}")boolean enabled,@Value("${ai.generation.rate-limit-per-hour:20}")int hourlyLimit,@Value("${ai.generation.max-retries:2}")int maxRetries){this.jdbc=jdbc;this.mapper=mapper;this.provider=provider;this.validator=validator;this.intelligence=intelligence;this.metrics=metrics;this.transactions=new TransactionTemplate(transactionManager);this.rateLimit=rateLimit;this.paidCompletion=paidCompletion;this.enabled=enabled;this.hourlyLimit=hourlyLimit;this.maxRetries=maxRetries;}
 
   private record AssessedProposal(QuestionGenerationProviderClient.Proposal proposal,QuestionIntelligenceAssessment assessment){}
 
@@ -132,7 +132,7 @@ public class QuestionGenerationJobService {
     return create(request,actor,key,providerName,model,null);
   }
   @Transactional public Map<String,Object> create(QuestionGenerationProviderClient.Request request,String actor,String key,String providerName,String model,UUID targetPlanId){
-    validateRequest(request);rateLimit.enforce(jdbc,actor,hourlyLimit);
+    validateRequest(request);if(!paidCompletion.target(targetPlanId,actor))rateLimit.enforce(jdbc,actor,hourlyLimit);
     if(targetPlanId!=null){reconcileExpansionTargetSource(targetPlanId,request,actor);validateExpansionTargetDefinition(targetPlanId,request);}
     var existing=jdbc.sql("SELECT id FROM ai_generation_job WHERE requested_by=:actor AND idempotency_key=:key").param("actor",actor).param("key",key).query(UUID.class).list();if(!existing.isEmpty())return get(existing.getFirst());
     UUID id=UUID.randomUUID();OffsetDateTime now=now();String context=json(request);var first=request.context().sources().isEmpty()?null:request.context().sources().getFirst();

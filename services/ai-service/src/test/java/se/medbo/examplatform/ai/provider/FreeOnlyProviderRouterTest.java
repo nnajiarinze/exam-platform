@@ -4,12 +4,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import se.medbo.examplatform.ai.question.QuestionBankPaidCompletionPolicy;
 
 class FreeOnlyProviderRouterTest {
   private final ObjectMapper mapper=new ObjectMapper();
@@ -22,6 +27,7 @@ class FreeOnlyProviderRouterTest {
   @Test void respectsConfiguredPriority(){var router=new FreeOnlyProviderRouter(List.of(ready("GEMINI"),ready("GROQ")),mock(JdbcClient.class,RETURNS_DEEP_STUBS),mapper,new ProviderExecutionDeadline(5,1),"GROQ,GEMINI",2,"FREE_ONLY",false,true,false,false);assertThat(router.execute(request()).provider()).isEqualTo("GROQ");}
   @Test void rejectsAResponseThatIsNotConfirmedFree(){assertThatThrownBy(()->router(paidResponse("GEMINI")).execute(request())).isInstanceOfSatisfying(AiProviderException.class,e->assertThat(e.code()).isEqualTo("AI_PROVIDER_FREE_STATUS_UNVERIFIED"));}
   @Test void rejectsUnboundedGlobalPaidFallback(){assertThatThrownBy(()->new FreeOnlyProviderRouter(List.of(),mock(JdbcClient.class),mapper,new ProviderExecutionDeadline(5,1),"GEMINI",1,"FREE_ONLY",true,true,false,false)).isInstanceOf(IllegalStateException.class);}
+  @Test void paidCompletionExcludesEveryFreeProvider(){var free=mock(StructuredAiProvider.class);when(free.provider()).thenReturn("GEMINI");when(free.model()).thenReturn("free");when(free.availability(org.mockito.ArgumentMatchers.any())).thenReturn(new StructuredAiProvider.Availability(true,"READY",StructuredAiProvider.FreeStatus.KNOWN,StructuredAiProvider.CapacityAuthority.PROVIDER_API,"CLOSED",null,Map.of()));var paid=paidReady();var policy=mock(QuestionBankPaidCompletionPolicy.class);when(policy.job(org.mockito.ArgumentMatchers.any())).thenReturn(true);when(policy.provider()).thenReturn("OPENROUTER_PAID");when(policy.model()).thenReturn("paid-model");var router=new FreeOnlyProviderRouter(List.of(free,paid),mock(JdbcClient.class,RETURNS_DEEP_STUBS),mapper,new ProviderExecutionDeadline(5,1),"GEMINI,OPENROUTER_PAID",2,"FREE_ONLY",false,true,false,true,policy);assertThat(router.execute(request()).provider()).isEqualTo("OPENROUTER_PAID");verify(free,never()).execute(org.mockito.ArgumentMatchers.any());}
   private FreeOnlyProviderRouter router(StructuredAiProvider...p){return new FreeOnlyProviderRouter(List.of(p),mock(JdbcClient.class,RETURNS_DEEP_STUBS),mapper,new ProviderExecutionDeadline(5,1),"GEMINI,GROQ,CLOUDFLARE_WORKERS_AI,OPENROUTER_FREE",4,"FREE_ONLY",false,true,false,false);}
   private StructuredAiProvider ready(String name){return provider(name,new StructuredAiProvider.Availability(true,"READY",StructuredAiProvider.FreeStatus.KNOWN,StructuredAiProvider.CapacityAuthority.CONFIGURATION,"CLOSED",null,Map.of()));}
   private StructuredAiProvider blocked(String name,String reason){return provider(name,new StructuredAiProvider.Availability(false,reason,StructuredAiProvider.FreeStatus.KNOWN,StructuredAiProvider.CapacityAuthority.LOCAL_ESTIMATE,"QUOTA_PAUSED",null,Map.of()));}
@@ -30,5 +36,5 @@ class FreeOnlyProviderRouterTest {
   private StructuredAiProvider paidResponse(String name){return new StructuredAiProvider(){public String provider(){return name;}public String model(){return "paid";}public int priority(){return 1;}public boolean enabled(){return true;}public boolean credentialsConfigured(){return true;}public Capabilities capabilities(){return new Capabilities(true,true,true,true,true,true,10000,4096,true,true,true);}public Availability availability(Request r){return new Availability(true,"READY",FreeStatus.KNOWN,CapacityAuthority.PROVIDER_API,"CLOSED",null,Map.of());}public Response execute(Request r){return new Response(mapper.createObjectNode(),name,model(),model(),"request",1,1,1L,"stop",Map.of(),Map.of(),null,"HTTP_200",false);}};}
   private StructuredAiProvider paidReady(){return new StructuredAiProvider(){public String provider(){return "OPENROUTER_PAID";}public String model(){return "paid-model";}public int priority(){return 4;}public boolean enabled(){return true;}public boolean credentialsConfigured(){return true;}public Capabilities capabilities(){return new Capabilities(true,true,true,true,true,true,10000,4096,true,true,true);}public Availability availability(Request r){return new Availability(true,"READY",FreeStatus.UNKNOWN,CapacityAuthority.PROVIDER_API,"CLOSED",null,Map.of());}public Response execute(Request r){return new Response(mapper.createObjectNode(),provider(),model(),model(),"request",1,1,1L,"stop",Map.of(),Map.of(),null,"HTTP_200",false);}};}
   private StructuredAiProvider provider(String name,StructuredAiProvider.Availability a){return new StructuredAiProvider(){public String provider(){return name;}public String model(){return "free-model";}public int priority(){return 1;}public boolean enabled(){return true;}public boolean credentialsConfigured(){return true;}public Capabilities capabilities(){return new Capabilities(true,true,true,true,true,true,10000,4096,true,true,true);}public Availability availability(Request r){return a;}public Response execute(Request r){return new Response(mapper.createObjectNode(),name,model(),model(),"request",1,1,1L,"stop",Map.of(),Map.of(),null,"HTTP_200",true);}};}
-  private StructuredAiProvider.Request request(){return new StructuredAiProvider.Request("TEST","system","prompt",Map.of("type","object"),100,0,null,"test",0,"correlation","idempotency");}
+  private StructuredAiProvider.Request request(){return new StructuredAiProvider.Request("TEST","system","prompt",Map.of("type","object"),100,0,UUID.randomUUID(),"test",0,"correlation","idempotency");}
 }
