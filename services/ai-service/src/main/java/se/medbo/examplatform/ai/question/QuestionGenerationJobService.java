@@ -132,7 +132,9 @@ public class QuestionGenerationJobService {
     return create(request,actor,key,providerName,model,null);
   }
   @Transactional public Map<String,Object> create(QuestionGenerationProviderClient.Request request,String actor,String key,String providerName,String model,UUID targetPlanId){
-    validateRequest(request);if(!paidCompletion.target(targetPlanId,actor))rateLimit.enforce(jdbc,actor,hourlyLimit);
+    validateRequest(request);
+    boolean paidPlan=paidCompletion.target(targetPlanId);
+    if(paidPlan)actor=paidCompletion.actor();else rateLimit.enforce(jdbc,actor,hourlyLimit);
     if(targetPlanId!=null){reconcileExpansionTargetSource(targetPlanId,request,actor);validateExpansionTargetDefinition(targetPlanId,request);}
     var existing=jdbc.sql("SELECT id FROM ai_generation_job WHERE requested_by=:actor AND idempotency_key=:key").param("actor",actor).param("key",key).query(UUID.class).list();if(!existing.isEmpty())return get(existing.getFirst());
     UUID id=UUID.randomUUID();OffsetDateTime now=now();String context=json(request);var first=request.context().sources().isEmpty()?null:request.context().sources().getFirst();

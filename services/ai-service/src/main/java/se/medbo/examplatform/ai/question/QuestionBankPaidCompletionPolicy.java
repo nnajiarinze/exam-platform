@@ -22,11 +22,12 @@ public class QuestionBankPaidCompletionPolicy {
     this.jdbc=jdbc;this.enabled=enabled;this.corpusId=corpusId;this.planId=planId.isBlank()?null:UUID.fromString(planId);this.actor=actor;this.provider=provider;this.model=model;
     if(enabled&&(!"sverige-i-fokus-v1".equals(corpusId)||this.planId==null||!"OPENROUTER_PAID".equals(provider)||!"openai/gpt-oss-120b".equals(model)))throw new IllegalStateException("Paid completion mode must be pinned to the authorized corpus, plan, provider, and model");
   }
-  public boolean target(UUID targetId,String requestedBy){
-    if(!enabled||targetId==null||!actor.equals(requestedBy))return false;
+  public boolean target(UUID targetId){
+    if(!enabled||targetId==null)return false;
     return jdbc.sql("SELECT count(*)=1 FROM ai_question_target_plan t JOIN ai_question_fact_density_audit a ON a.id=t.density_audit_id JOIN ai_question_bank_expansion_plan p ON p.id=a.expansion_plan_id WHERE t.id=:target AND p.id=:plan AND p.corpus_id=:corpus AND p.definition_checksum='047c40c6dd3ad2bfa6deb5b9ab9181e479512fbee83ab1ef75572d8f4bb6e4a9'")
         .param("target",targetId).param("plan",planId).param("corpus",corpusId).query(Boolean.class).single();
   }
+  public boolean target(UUID targetId,String requestedBy){return actor.equals(requestedBy)&&target(targetId);}
   public boolean job(UUID jobId){
     if(!enabled||jobId==null)return false;
     return jdbc.sql("SELECT count(*)=1 FROM ai_question_target_plan t JOIN ai_question_fact_density_audit a ON a.id=t.density_audit_id JOIN ai_question_bank_expansion_plan p ON p.id=a.expansion_plan_id JOIN ai_generation_job j ON j.id=t.generation_job_id WHERE j.id=:job AND j.requested_by=:actor AND p.id=:plan AND p.corpus_id=:corpus")
