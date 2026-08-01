@@ -641,6 +641,10 @@ class LearningServiceIntegrationTest {
     void mockExamHttpEndpointsAreRegisteredAndHideCorrectnessBeforeSubmission() throws Exception {
         importAndActivate(snapshot("mock-http-release", "1"));
         insertMockBlueprint(3, 30, "50.00");
+        mockMvc.perform(get("/api/v1/mock-exams/configuration")
+                        .queryParam("examId", "swedish-citizenship"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.questionCount").value(3));
         String response = mockMvc.perform(post("/api/v1/mock-exams")
                         .header("X-Learner-Identity", "developer-learner")
                         .contentType(MediaType.APPLICATION_JSON)
