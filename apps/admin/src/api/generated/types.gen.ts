@@ -785,7 +785,7 @@ export type AiFreeProviderStatus = {
     model: string;
     enabled: boolean;
     credentialConfigured: boolean;
-    billingPolicy: 'FREE_ONLY';
+    billingPolicy: 'FREE_ONLY' | 'CAPPED_PAID';
     confirmedFree: boolean;
     freeStatus: 'KNOWN' | 'ESTIMATED' | 'UNKNOWN';
     status: string;
@@ -805,16 +805,20 @@ export type AiFreeProviderStatus = {
 };
 
 export type AiProviderOperations = {
-    billingPolicy: 'FREE_ONLY';
-    allowPaidFallback: false;
+    billingPolicy: 'FREE_ONLY' | 'FREE_FIRST_CAPPED_PAID';
+    allowPaidFallback: boolean;
     requireZeroCostProvider: true;
     allowAutomaticBillingUpgrade: false;
     priority: Array<string>;
     providers: Array<AiFreeProviderStatus>;
+    currentRoutingDecision: string;
     recentAttempts: Array<{
         [key: string]: unknown;
     }>;
     recentRouting: Array<{
+        [key: string]: unknown;
+    }>;
+    paidAccounting: Array<{
         [key: string]: unknown;
     }>;
 };

@@ -75,6 +75,32 @@ jobs:
           update_env GROQ_FREE_REQUEST_LIMIT 1000
           update_env GROQ_FREE_TOKEN_LIMIT 8000
           REMOTE_SCRIPT
+      - name: Enable application-capped OpenRouter paid fallback
+        env:
+          HOSTED_HOST: ${{ secrets.HOSTED_HOST }}
+          HOSTED_USER: ${{ secrets.HOSTED_USER }}
+        run: |
+          ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" 'bash -s' <<'REMOTE_SCRIPT'
+          set -Eeuo pipefail
+          env_file=/opt/citizenship-platform/.env
+          [[ -f "${env_file}" && "$(stat -c '%a' "${env_file}")" == 600 ]]
+          grep -Eq '^OPENROUTER_API_KEY=.+$' "${env_file}"
+          update_env() {
+            local key="$1" value="$2" temporary
+            temporary="$(mktemp "${env_file}.XXXXXX")"
+            awk -F= -v key="${key}" -v value="${value}" '
+              BEGIN { replaced=0 }
+              $1==key { if (!replaced) print key "=" value; replaced=1; next }
+              { print }
+              END { if (!replaced) print key "=" value }
+            ' "${env_file}" >"${temporary}"
+            chmod 600 "${temporary}"
+            mv "${temporary}" "${env_file}"
+          }
+          update_env OPENROUTER_ALLOW_PAID true
+          update_env OPENROUTER_BUDGET_USD 14.00
+          update_env AI_PROVIDER_PRIORITY GEMINI,GROQ,OPENROUTER_FREE,OPENROUTER_PAID
+          REMOTE_SCRIPT
       - name: Deploy immutable images
         env:
           COMMIT_SHA: ${{ inputs.commit_sha }}

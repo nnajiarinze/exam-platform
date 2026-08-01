@@ -29,7 +29,7 @@ ai:
   require-zero-cost-provider: ${AI_REQUIRE_ZERO_COST_PROVIDER:true}
   allow-automatic-billing-upgrade: ${AI_ALLOW_AUTOMATIC_BILLING_UPGRADE:false}
   routing:
-    priority: ${AI_PROVIDER_PRIORITY:GEMINI,GROQ,CLOUDFLARE_WORKERS_AI,OPENROUTER_FREE}
+    priority: ${AI_PROVIDER_PRIORITY:GEMINI,GROQ,OPENROUTER_FREE,OPENROUTER_PAID}
     max-provider-attempts: ${AI_MAX_PROVIDER_ATTEMPTS:4}
   editorial:
     enabled: ${AI_EDITORIAL_ASSISTANT_ENABLED:false}
@@ -95,6 +95,9 @@ ai:
     base-url: ${OPENROUTER_BASE_URL:https://openrouter.ai/api/v1}
     model: ${OPENROUTER_MODEL:}
     allow-free-router: ${OPENROUTER_ALLOW_FREE_ROUTER:false}
+    allow-paid: ${OPENROUTER_ALLOW_PAID:false}
+    budget-usd: ${OPENROUTER_BUDGET_USD:0}
+    paid-default-max-output-tokens: ${OPENROUTER_PAID_DEFAULT_MAX_OUTPUT_TOKENS:4096}
     http-referer: ${OPENROUTER_HTTP_REFERER:}
     app-title: ${OPENROUTER_APP_TITLE:Svea Study}
     timeout-seconds: ${OPENROUTER_TIMEOUT_SECONDS:45}

@@ -145,14 +145,16 @@ class AiEditorialIntegrationTest {
   @Test
   void migrationsCreateThePersistentEditorialWorkspace() {
     assertThat(jdbc.sql("SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank")
-        .query(String.class).list()).containsExactly("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22");
+        .query(String.class).list()).containsExactly("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25");
     assertThat(jdbc.sql("SELECT to_regclass('public.ai_editorial_target') IS NOT NULL AND to_regclass('public.ai_editorial_proposal') IS NOT NULL AND to_regclass('public.ai_editorial_finding') IS NOT NULL AND to_regclass('public.ai_editorial_validation_metric') IS NOT NULL AND to_regclass('public.ai_quota_profile') IS NOT NULL AND to_regclass('public.ai_quota_reservation') IS NOT NULL AND to_regclass('public.ai_provider_circuit') IS NOT NULL AND to_regclass('public.ai_provider_alert') IS NOT NULL AND to_regclass('public.ai_question_proposal') IS NOT NULL AND to_regclass('public.ai_question_proposal_option') IS NOT NULL")
         .query(Boolean.class).single()).isTrue();
     assertThat(jdbc.sql("SELECT to_regclass('public.ai_provider_attempt') IS NOT NULL AND to_regclass('public.ai_provider_routing_decision') IS NOT NULL AND to_regclass('public.ai_provider_capacity_snapshot') IS NOT NULL")
         .query(Boolean.class).single()).isTrue();
     assertThat(jdbc.sql("SELECT count(*)=2 FROM information_schema.columns WHERE table_name='ai_provider_attempt' AND column_name IN ('response_diagnostics','raw_response')")
         .query(Boolean.class).single()).isTrue();
-    assertThat(jdbc.sql("SELECT to_regclass('public.ai_lesson_page_revision') IS NOT NULL AND to_regclass('public.ai_lesson_page_claim') IS NOT NULL AND to_regclass('public.ai_lesson_page_repair_attempt') IS NOT NULL")
+    assertThat(jdbc.sql("SELECT to_regclass('public.ai_lesson_page_revision') IS NOT NULL AND to_regclass('public.ai_lesson_page_claim') IS NOT NULL AND to_regclass('public.ai_lesson_page_repair_attempt') IS NOT NULL AND to_regclass('public.ai_lesson_page_plan_revision') IS NOT NULL")
+        .query(Boolean.class).single()).isTrue();
+    assertThat(jdbc.sql("SELECT to_regclass('public.ai_openrouter_paid_model') IS NOT NULL AND to_regclass('public.ai_paid_budget') IS NOT NULL AND to_regclass('public.ai_paid_request_accounting') IS NOT NULL")
         .query(Boolean.class).single()).isTrue();
   }
 
@@ -217,6 +219,55 @@ class AiEditorialIntegrationTest {
         .andExpect(jsonPath("$.attempts[0].inputTokens").value(80))
         .andExpect(jsonPath("$.attempts[0].outputTokens").value(40))
         .andExpect(jsonPath("$.attempts[0].freeOnly").value(true));
+  }
+
+  @Test
+  void historicalChapter4AndChapter9PlanDriftCreatesExplicitImmutablePlanRevisions() throws Exception {
+    for(String regression:List.of("chapter-4-assignment-drift","chapter-9-omitted-fact")){
+      String response=mvc.perform(post("/internal/v1/lesson-generation/jobs")
+          .header("X-Internal-Api-Key","test-internal-key").contentType(MediaType.APPLICATION_JSON)
+          .content(lessonPlanRegressionRequest(regression)))
+          .andExpect(status().isAccepted()).andReturn().getResponse().getContentAsString();
+      UUID job=UUID.fromString(mapper.readTree(response).get("id").asText());
+      for(int attempt=0;attempt<50;attempt++){
+        if("COMPLETED".equals(jdbc.sql("SELECT status FROM ai_lesson_generation_job WHERE id=:id")
+            .param("id",job).query(String.class).single()))break;
+        Thread.sleep(100);
+      }
+      UUID proposal=jdbc.sql("SELECT id FROM ai_lesson_proposal WHERE generation_job_id=:job")
+          .param("job",job).query(UUID.class).single();
+      // Reproduce the historical provider persistence defect: the page kept only one
+      // of two deterministic Fact assignments before its first validation.
+      jdbc.sql("""
+          UPDATE ai_lesson_proposal SET pages=jsonb_set(pages,'{0,knowledgeFactVersionIds}',
+            '["55555555-5555-5555-5555-555555555555"]'::jsonb) WHERE id=:id
+          """).param("id",proposal).update();
+      mvc.perform(post("/internal/v1/lesson-generation/proposals/{proposal}/pages/0/validate",proposal)
+          .header("X-Internal-Api-Key","test-internal-key").contentType(MediaType.APPLICATION_JSON)
+          .content("{\"actor\":\"regression-test\",\"reason\":\"historical drift\"}"))
+          .andExpect(status().isOk());
+      mvc.perform(post("/internal/v1/lesson-generation/proposals/{proposal}/pages/0/reject",proposal)
+          .header("X-Internal-Api-Key","test-internal-key").contentType(MediaType.APPLICATION_JSON)
+          .content("{\"actor\":\"regression-test\",\"reason\":\"force repair path\"}"))
+          .andExpect(status().isOk());
+      mvc.perform(post("/internal/v1/lesson-generation/proposals/{proposal}/pages/0/repair",proposal)
+          .header("X-Internal-Api-Key","test-internal-key").contentType(MediaType.APPLICATION_JSON)
+          .content("{\"actor\":\"regression-test\",\"reason\":\"grounded repair\",\"idempotencyKey\":\""+regression+"-repair\"}"))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.revisions[0].pagePlanRevisionId").isNotEmpty())
+          .andExpect(jsonPath("$.revisions[1].pagePlanRevisionId").value(
+              org.hamcrest.Matchers.equalTo(jdbc.sql("SELECT page_plan_revision_id::text FROM ai_lesson_page_revision WHERE lesson_proposal_id=:id AND page_index=0 AND revision_number=1")
+                  .param("id",proposal).query(String.class).single())));
+      assertThat(jdbc.sql("SELECT count(*) FROM ai_lesson_page_plan_revision WHERE lesson_proposal_id=:id AND page_index=0")
+          .param("id",proposal).query(Long.class).single()).isEqualTo(2);
+      assertThat(jdbc.sql("""
+          SELECT count(*)=2 FROM ai_lesson_page_revision r JOIN ai_lesson_page_plan_revision p
+            ON p.id=r.page_plan_revision_id
+          WHERE r.lesson_proposal_id=:id AND r.page_index=0
+            AND p.page_type=r.page->>'pageType' AND p.title=r.page->>'title'
+            AND p.knowledge_fact_version_ids=r.page->'knowledgeFactVersionIds'
+          """).param("id",proposal).query(Boolean.class).single()).isTrue();
+    }
   }
 
   @Test
@@ -383,6 +434,22 @@ class AiEditorialIntegrationTest {
          "proposalCount":1,"questionType":"SINGLE_CHOICE","requestedBy":"reviewer-1","idempotencyKey":"%s"}
         """.formatted(idempotencyKey);
   }
+
+  private String lessonPlanRegressionRequest(String key){return """
+      {"topicId":"11111111-1111-1111-1111-111111111111","topicTitle":"Historisk regression",
+       "learningObjectiveId":"22222222-2222-2222-2222-222222222222","learningObjectiveTitle":"Förstå regressionen",
+       "sourceSectionId":"33333333-3333-3333-3333-333333333333","sourceSectionTitle":"Källa",
+       "sourceSectionChecksum":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+       "exactSourceText":"Ungefär 85 procent av Sveriges befolkning bor i städer. Ungefär fyra miljoner människor bor i och runt de tre största städerna.",
+       "facts":[
+         {"id":"44444444-4444-4444-4444-444444444444","versionId":"55555555-5555-5555-5555-555555555555","text":"Ungefär 85 procent av Sveriges befolkning bor i städer.","sourceSectionId":"33333333-3333-3333-3333-333333333333"},
+         {"id":"66666666-6666-6666-6666-666666666666","versionId":"77777777-7777-7777-7777-777777777777","text":"Ungefär fyra miljoner människor bor i och runt de tre största städerna.","sourceSectionId":"33333333-3333-3333-3333-333333333333"}],
+       "plan":[
+         {"pageType":"INTRO","title":"Introduktion","knowledgeFactVersionIds":["55555555-5555-5555-5555-555555555555","77777777-7777-7777-7777-777777777777"]},
+         {"pageType":"CORE","title":"Fördjupning","knowledgeFactVersionIds":["55555555-5555-5555-5555-555555555555","77777777-7777-7777-7777-777777777777"]},
+         {"pageType":"SUMMARY","title":"Sammanfattning","knowledgeFactVersionIds":["55555555-5555-5555-5555-555555555555","77777777-7777-7777-7777-777777777777"]}],
+       "language":"sv","requestedBy":"plan-regression","idempotencyKey":"%s"}
+      """.formatted(key);}
 
   private void awaitTerminal(UUID jobId) throws InterruptedException {
     for (int attempt = 0; attempt < 30; attempt++) {
