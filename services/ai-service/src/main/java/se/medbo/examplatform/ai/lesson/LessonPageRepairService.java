@@ -21,11 +21,11 @@ import se.medbo.examplatform.ai.provider.AiProviderException;
 class LessonPageRepairService {
   static final String PROMPT_VERSION="lesson-page-repair-v3-content-only";
   private final JdbcClient jdbc;private final ObjectMapper mapper;private final LessonGenerationProviderClient provider;
-  private final LessonPageClaimValidator validator;
-  LessonPageRepairService(JdbcClient jdbc,ObjectMapper mapper,LessonGenerationProviderClient provider,LessonPageClaimValidator validator){this.jdbc=jdbc;this.mapper=mapper;this.provider=provider;this.validator=validator;}
+  private final LessonPageClaimValidator validator;private final LessonPagePlanStore plans;
+  LessonPageRepairService(JdbcClient jdbc,ObjectMapper mapper,LessonGenerationProviderClient provider,LessonPageClaimValidator validator,LessonPagePlanStore plans){this.jdbc=jdbc;this.mapper=mapper;this.provider=provider;this.validator=validator;this.plans=plans;}
 
   Map<String,Object> inspect(UUID proposal){proposalRow(proposal);var revisions=jdbc.sql("""
-      SELECT id,page_index AS "pageIndex",revision_number AS "revisionNumber",replaces_revision_id AS "replacesRevisionId",
+      SELECT id,page_plan_revision_id AS "pagePlanRevisionId",page_index AS "pageIndex",revision_number AS "revisionNumber",replaces_revision_id AS "replacesRevisionId",
         status,page::text,diagnostics::text,validator_version AS "validatorVersion",provider,model,prompt_version AS "promptVersion",
         provider_request_id AS "providerRequestId",input_tokens AS "inputTokens",output_tokens AS "outputTokens",
         created_by AS "createdBy",created_at AS "createdAt",updated_at AS "updatedAt"
@@ -48,7 +48,8 @@ class LessonPageRepairService {
   @Transactional Map<String,Object> validate(UUID proposal,int index,String actor){
     var context=context(proposal,index);var existing=latest(proposal,index);
     if(existing!=null)return inspect(proposal);
-    persistRevision(proposal,index,1,null,"PENDING",context.page(),List.of(),actor);
+    var plan=plans.resolve(proposal,index,context.input(),context.page(),actor);
+    persistRevision(proposal,index,1,null,plan.id(),"PENDING",context.page(),List.of(),actor);
     UUID revision=latestId(proposal,index);var result=validator.validate(context.page(),context.input().exactSourceText(),context.factTexts());
     persistClaims(revision,result);jdbc.sql("UPDATE ai_lesson_page_revision SET status=:status,diagnostics=CAST(:diagnostics AS jsonb),updated_at=:now WHERE id=:id")
         .param("status",result.supported()?"VALIDATED":"REJECTED").param("diagnostics",json(result.failureCodes())).param("now",now()).param("id",revision).update();
@@ -68,11 +69,13 @@ class LessonPageRepairService {
     if(previous==null)throw error(HttpStatus.CONFLICT,"AI_LESSON_PAGE_NOT_REJECTED","Validate and reject the page before repair");
     if(idempotencyKey!=null&&idempotencyKey.equals(previous.get("idempotencyKey")))return inspect(proposal);
     if(!"REJECTED".equals(previous.get("status")))throw error(HttpStatus.CONFLICT,"AI_LESSON_PAGE_NOT_REJECTED","Validate and reject the page before repair");
-    validatePlanSnapshot(context,index);
+    var immutablePlan=plans.get((UUID)previous.get("pagePlanRevisionId"));
+    var previousPage=read((String)previous.get("page"),LessonGenerationProviderClient.Page.class);
+    validatePlanReference(immutablePlan,proposal,index,previousPage,context.input());
     var input=context.input();var rejectedClaims=failedClaimsForPage(proposal,index);
     var repairReasons=repairReasons(diagnostics(previous),reason);
     var request=new LessonGenerationProviderClient.PageRepairRequest(input.topicTitle(),input.learningObjectiveTitle(),
-        input.sourceSectionId(),input.sourceSectionChecksum(),input.exactSourceText(),input.facts(),context.page(),context.surroundingTitles(),
+        immutablePlan.sourceSectionId(),immutablePlan.sourceSectionChecksum(),input.exactSourceText(),input.facts(),previousPage,context.surroundingTitles(),
         List.copyOf(repairReasons),rejectedClaims,context.jobId(),actor,(Integer)previous.get("revisionNumber"));
     long started=System.nanoTime();LessonGenerationProviderClient.PageRepairResult generated;
     try{generated=provider.repairPage(request);}catch(AiProviderException e){
@@ -90,7 +93,7 @@ class LessonPageRepairService {
           "AI_PROVIDER_RESPONSE_INVALID",generated,elapsed(started),idempotencyKey,actor);
       throw error(HttpStatus.UNPROCESSABLE_ENTITY,"AI_PROVIDER_RESPONSE_INVALID","Repair response omitted mutable page content");
     }
-    var immutable=context.page();
+    var immutable=previousPage;
     String guardedBody=stripExactFailedClaims(content.body(),rejectedClaims);
     if(guardedBody.isBlank()){
       persistAttempt(proposal,index,(UUID)previous.get("id"),"INSUFFICIENT_INFORMATION",
@@ -101,7 +104,7 @@ class LessonPageRepairService {
         List.copyOf(immutable.knowledgeFactVersionIds()),List.copyOf(content.evidenceQuotes()),List.copyOf(content.keyTerms()));
     var result=validator.validate(page,input.exactSourceText(),context.factTexts());UUID revision=UUID.randomUUID();var usage=generated.usage();
     int revisionNumber=(Integer)previous.get("revisionNumber")+1;
-    persistRevision(proposal,index,revisionNumber,(UUID)previous.get("id"),result.supported()?"VALIDATED":"REJECTED",page,result.failureCodes(),actor,idempotencyKey,usage);
+    persistRevision(proposal,index,revisionNumber,(UUID)previous.get("id"),immutablePlan.id(),result.supported()?"VALIDATED":"REJECTED",page,result.failureCodes(),actor,idempotencyKey,usage);
     persistClaims(revisionId(proposal,index,revisionNumber),result);audit(actor,"AI_LESSON_PAGE_REPLACEMENT_CREATED",revisionId(proposal,index,revisionNumber),
         Map.of("proposalId",proposal,"pageIndex",index,"replacesRevisionId",previous.get("id"),"supported",result.supported(),"idempotencyKey",idempotencyKey==null?"":idempotencyKey));
     persistAttempt(proposal,index,(UUID)previous.get("id"),result.supported()?"SUCCEEDED":"CLAIM_REJECTED",
@@ -110,16 +113,16 @@ class LessonPageRepairService {
     return inspect(proposal);
   }
 
-  private void validatePlanSnapshot(Context context,int index){
-    var input=context.input();if(index>=input.plan().size())throw error(HttpStatus.CONFLICT,"PAGE_PLAN_NOT_FOUND","Page is absent from the deterministic plan snapshot");
-    var planned=input.plan().get(index);var page=context.page();
-    if(!planned.pageType().equals(page.pageType())||!planned.title().equals(page.title())
-        ||!planned.knowledgeFactVersionIds().equals(page.knowledgeFactVersionIds()))
+  private void validatePlanReference(LessonPagePlanStore.Plan plan,UUID proposal,int index,LessonGenerationProviderClient.Page page,LessonGenerationService.Create input){
+    if(!plan.proposalId().equals(proposal)||plan.pageIndex()!=index||!LessonPagePlanStore.matches(plan,page))
       throw error(HttpStatus.CONFLICT,"AI_LESSON_PAGE_REPAIR_PLAN_MISMATCH","Persisted page no longer matches its deterministic plan snapshot");
     var assigned=new java.util.LinkedHashSet<>(page.knowledgeFactVersionIds());
-    var available=input.facts().stream().filter(f->f.sourceSectionId().equals(input.sourceSectionId()))
+    var available=input.facts().stream().filter(f->f.sourceSectionId().equals(plan.sourceSectionId()))
         .map(LessonGenerationProviderClient.Fact::versionId).collect(java.util.stream.Collectors.toSet());
-    if(!available.containsAll(assigned))throw error(HttpStatus.CONFLICT,"SOURCE_CONTEXT_MISMATCH","Assigned Facts do not belong to the bounded Source context");
+    if(assigned.isEmpty()||!available.containsAll(assigned)
+        ||!input.topicId().equals(plan.topicId())||!input.learningObjectiveId().equals(plan.learningObjectiveId())
+        ||!input.sourceSectionChecksum().equals(plan.sourceSectionChecksum()))
+      throw error(HttpStatus.CONFLICT,"SOURCE_CONTEXT_MISMATCH","Immutable page plan does not belong to the bounded Topic, Objective, Source, and Fact context");
   }
 
   private long elapsed(long started){return Math.max(0,(System.nanoTime()-started)/1_000_000);}
@@ -153,7 +156,7 @@ class LessonPageRepairService {
   private record Context(UUID jobId,LessonGenerationService.Create input,LessonGenerationProviderClient.Page page,List<String> factTexts,List<String> surroundingTitles){}
   private Context context(UUID proposal,int index){var row=jdbc.sql("SELECT p.pages::text,j.id job_id,j.input_snapshot::text FROM ai_lesson_proposal p JOIN ai_lesson_generation_job j ON j.id=p.generation_job_id WHERE p.id=:id AND p.status='PROPOSED'").param("id",proposal).query().listOfRows();if(row.isEmpty())throw error(HttpStatus.NOT_FOUND,"AI_LESSON_PROPOSAL_NOT_FOUND","Repairable lesson proposal was not found");var pages=read((String)row.getFirst().get("pages"),new TypeReference<List<LessonGenerationProviderClient.Page>>(){});if(index<0||index>=pages.size())throw error(HttpStatus.NOT_FOUND,"AI_LESSON_PAGE_NOT_FOUND","Lesson page was not found");var input=read((String)row.getFirst().get("input_snapshot"),LessonGenerationService.Create.class);return new Context((UUID)row.getFirst().get("job_id"),input,pages.get(index),input.facts().stream().map(LessonGenerationProviderClient.Fact::text).toList(),pages.stream().map(LessonGenerationProviderClient.Page::title).toList());}
   private Map<String,Object> proposalRow(UUID id){var rows=jdbc.sql("SELECT pages::text,validation_gates::text FROM ai_lesson_proposal WHERE id=:id").param("id",id).query().listOfRows();if(rows.isEmpty())throw error(HttpStatus.NOT_FOUND,"AI_LESSON_PROPOSAL_NOT_FOUND","Lesson proposal was not found");return rows.getFirst();}
-  private Map<String,Object> latest(UUID proposal,int index){var rows=jdbc.sql("SELECT id,revision_number AS \"revisionNumber\",status,diagnostics::text,idempotency_key AS \"idempotencyKey\" FROM ai_lesson_page_revision WHERE lesson_proposal_id=:proposal AND page_index=:page ORDER BY revision_number DESC LIMIT 1").param("proposal",proposal).param("page",index).query().listOfRows();return rows.isEmpty()?null:rows.getFirst();}
+  private Map<String,Object> latest(UUID proposal,int index){var rows=jdbc.sql("SELECT id,page_plan_revision_id AS \"pagePlanRevisionId\",revision_number AS \"revisionNumber\",status,page::text,diagnostics::text,idempotency_key AS \"idempotencyKey\" FROM ai_lesson_page_revision WHERE lesson_proposal_id=:proposal AND page_index=:page ORDER BY revision_number DESC LIMIT 1").param("proposal",proposal).param("page",index).query().listOfRows();return rows.isEmpty()?null:rows.getFirst();}
   private UUID latestId(UUID proposal,int index){return revisionId(proposal,index,(Integer)latest(proposal,index).get("revisionNumber"));}
   private UUID revisionId(UUID proposal,int index,int revision){return jdbc.sql("SELECT id FROM ai_lesson_page_revision WHERE lesson_proposal_id=:proposal AND page_index=:page AND revision_number=:revision").param("proposal",proposal).param("page",index).param("revision",revision).query(UUID.class).single();}
   private List<String> diagnostics(Map<String,Object> row){return read((String)row.get("diagnostics"),new TypeReference<>(){});}
@@ -175,8 +178,8 @@ class LessonPageRepairService {
   static List<String> repairReasons(List<String> diagnostics,String reviewerReason){var reasons=new ArrayList<>(diagnostics==null?List.<String>of():diagnostics);if(reviewerReason!=null&&!reviewerReason.isBlank())reasons.add(reviewerReason.trim());return List.copyOf(reasons);}
   private static String normalizeClaim(String value){return Normalizer.normalize(value==null?"":value,Normalizer.Form.NFKC)
       .toLowerCase(java.util.Locale.ROOT).replace('\u00a0',' ').replaceAll("[^\\p{L}\\p{N}]+"," ").replaceAll("\\s+"," ").trim();}
-  private void persistRevision(UUID proposal,int index,int number,UUID replaces,String status,LessonGenerationProviderClient.Page page,List<String> diagnostics,String actor,LessonGenerationProviderClient.Usage... usageValue){persistRevision(proposal,index,number,replaces,status,page,diagnostics,actor,null,usageValue);}
-  private void persistRevision(UUID proposal,int index,int number,UUID replaces,String status,LessonGenerationProviderClient.Page page,List<String> diagnostics,String actor,String idempotencyKey,LessonGenerationProviderClient.Usage... usageValue){var usage=usageValue.length==0?null:usageValue[0];jdbc.sql("INSERT INTO ai_lesson_page_revision(id,lesson_proposal_id,page_index,revision_number,replaces_revision_id,status,page,diagnostics,validator_version,provider,model,prompt_version,provider_request_id,input_tokens,output_tokens,created_by,idempotency_key,created_at,updated_at) VALUES(:id,:proposal,:pageIndex,:number,:replaces,:status,CAST(:page AS jsonb),CAST(:diagnostics AS jsonb),:validator,:provider,:model,:prompt,:request,:input,:output,:actor,:idempotencyKey,:now,:now)").param("id",UUID.randomUUID()).param("proposal",proposal).param("pageIndex",index).param("number",number).param("replaces",replaces,java.sql.Types.OTHER).param("status",status).param("page",json(page)).param("diagnostics",json(diagnostics)).param("validator",LessonPageClaimValidator.VERSION).param("provider",usage==null?null:usage.provider(),java.sql.Types.VARCHAR).param("model",usage==null?null:usage.model(),java.sql.Types.VARCHAR).param("prompt",usage==null?null:PROMPT_VERSION,java.sql.Types.VARCHAR).param("request",usage==null?null:usage.requestId(),java.sql.Types.VARCHAR).param("input",usage==null?null:usage.inputTokens(),java.sql.Types.INTEGER).param("output",usage==null?null:usage.outputTokens(),java.sql.Types.INTEGER).param("actor",actor).param("idempotencyKey",idempotencyKey,java.sql.Types.VARCHAR).param("now",now()).update();}
+  private void persistRevision(UUID proposal,int index,int number,UUID replaces,UUID plan,String status,LessonGenerationProviderClient.Page page,List<String> diagnostics,String actor,LessonGenerationProviderClient.Usage... usageValue){persistRevision(proposal,index,number,replaces,plan,status,page,diagnostics,actor,null,usageValue);}
+  private void persistRevision(UUID proposal,int index,int number,UUID replaces,UUID plan,String status,LessonGenerationProviderClient.Page page,List<String> diagnostics,String actor,String idempotencyKey,LessonGenerationProviderClient.Usage... usageValue){var usage=usageValue.length==0?null:usageValue[0];jdbc.sql("INSERT INTO ai_lesson_page_revision(id,lesson_proposal_id,page_index,revision_number,replaces_revision_id,page_plan_revision_id,status,page,diagnostics,validator_version,provider,model,prompt_version,provider_request_id,input_tokens,output_tokens,created_by,idempotency_key,created_at,updated_at) VALUES(:id,:proposal,:pageIndex,:number,:replaces,:plan,:status,CAST(:page AS jsonb),CAST(:diagnostics AS jsonb),:validator,:provider,:model,:prompt,:request,:input,:output,:actor,:idempotencyKey,:now,:now)").param("id",UUID.randomUUID()).param("proposal",proposal).param("pageIndex",index).param("number",number).param("replaces",replaces,java.sql.Types.OTHER).param("plan",plan).param("status",status).param("page",json(page)).param("diagnostics",json(diagnostics)).param("validator",LessonPageClaimValidator.VERSION).param("provider",usage==null?null:usage.provider(),java.sql.Types.VARCHAR).param("model",usage==null?null:usage.model(),java.sql.Types.VARCHAR).param("prompt",usage==null?null:PROMPT_VERSION,java.sql.Types.VARCHAR).param("request",usage==null?null:usage.requestId(),java.sql.Types.VARCHAR).param("input",usage==null?null:usage.inputTokens(),java.sql.Types.INTEGER).param("output",usage==null?null:usage.outputTokens(),java.sql.Types.INTEGER).param("actor",actor).param("idempotencyKey",idempotencyKey,java.sql.Types.VARCHAR).param("now",now()).update();}
   private void persistClaims(UUID revision,LessonPageClaimValidator.Result result){for(var claim:result.claims())jdbc.sql("INSERT INTO ai_lesson_page_claim(id,page_revision_id,claim_order,claim_text,status,failure_code,diagnostic,evidence,validator_version,created_at) VALUES(:id,:revision,:ordering,:text,:status,:code,:diagnostic,CAST(:evidence AS jsonb),:validator,:now)").param("id",UUID.randomUUID()).param("revision",revision).param("ordering",claim.order()).param("text",claim.text()).param("status",claim.status()).param("code",claim.failureCode(),java.sql.Types.VARCHAR).param("diagnostic",claim.diagnostic()).param("evidence",json(claim.evidence())).param("validator",LessonPageClaimValidator.VERSION).param("now",now()).update();}
   private List<Map<String,Object>> claims(UUID revision){var rows=jdbc.sql("SELECT id,claim_order AS \"claimOrder\",claim_text AS \"claimText\",status,failure_code AS \"failureCode\",diagnostic,evidence::text,validator_version AS \"validatorVersion\" FROM ai_lesson_page_claim WHERE page_revision_id=:id ORDER BY claim_order").param("id",revision).query().listOfRows();rows.forEach(row->parse(row,"evidence",Object.class));return rows;}
   private void audit(String actor,String action,UUID entity,Map<String,Object> metadata){jdbc.sql("INSERT INTO ai_audit_event(id,occurred_at,actor_id,action,entity_type,entity_id,metadata) VALUES(:id,:now,:actor,:action,'AI_LESSON_PAGE_REVISION',:entity,CAST(:metadata AS jsonb))").param("id",UUID.randomUUID()).param("now",now()).param("actor",actor).param("action",action).param("entity",entity).param("metadata",json(metadata)).update();}

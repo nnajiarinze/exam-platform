@@ -23,6 +23,7 @@ import se.medbo.examplatform.ai.provider.AiProviderException;
 public class LessonGenerationService {
   public static final String PROMPT_VERSION="lesson-generation-v2-multi-page";
   private final JdbcClient jdbc;private final ObjectMapper mapper;private final LessonGenerationProviderClient provider;
+  private final LessonPagePlanStore plans;
   private final boolean enabled;private final String providerName,model;private final int maxRetries;
   public record Create(UUID topicId,String topicTitle,UUID learningObjectiveId,
       String learningObjectiveTitle,UUID sourceSectionId,String sourceSectionTitle,
@@ -30,12 +31,12 @@ public class LessonGenerationService {
       List<LessonGenerationProviderClient.PlannedPage> plan,
       String language,String requestedBy,String idempotencyKey){}
 
-  LessonGenerationService(JdbcClient jdbc,ObjectMapper mapper,LessonGenerationProviderClient provider,
+  LessonGenerationService(JdbcClient jdbc,ObjectMapper mapper,LessonGenerationProviderClient provider,LessonPagePlanStore plans,
       @Value("${ai.editorial.enabled:false}")boolean enabled,
       @Value("${ai.editorial.provider:FAKE}")String providerName,
       @Value("${ai.editorial.model:deterministic-v1}")String model,
       @Value("${ai.editorial.max-retries:2}")int maxRetries){
-    this.jdbc=jdbc;this.mapper=mapper;this.provider=provider;this.enabled=enabled;
+    this.jdbc=jdbc;this.mapper=mapper;this.provider=provider;this.plans=plans;this.enabled=enabled;
     this.providerName=providerName;this.model=model;this.maxRetries=maxRetries;
   }
 
@@ -196,7 +197,12 @@ public class LessonGenerationService {
   @Transactional void persist(UUID job,Create input,LessonGenerationProviderClient.Result result){
     var proposal=result.proposal();
     var expectedVersions=input.facts().stream().map(LessonGenerationProviderClient.Fact::versionId).collect(java.util.stream.Collectors.toSet());
-    var pages=proposal.pages()==null?List.<LessonGenerationProviderClient.Page>of():proposal.pages();
+    var providerPages=proposal.pages()==null?List.<LessonGenerationProviderClient.Page>of():proposal.pages();
+    var pages=providerPages.size()==input.plan().size()?java.util.stream.IntStream.range(0,providerPages.size()).mapToObj(i->{
+      var generated=providerPages.get(i);var planned=input.plan().get(i);
+      return new LessonGenerationProviderClient.Page(planned.pageType(),planned.title(),generated.body(),
+          List.copyOf(planned.knowledgeFactVersionIds()),generated.evidenceQuotes(),generated.keyTerms());
+    }).toList():providerPages;
     var actualVersions=pages.stream().flatMap(p->p.knowledgeFactVersionIds().stream()).collect(java.util.stream.Collectors.toSet());
     boolean complete=actualVersions.equals(expectedVersions);
     boolean planMatches=pages.size()==input.plan().size()&&java.util.stream.IntStream.range(0,pages.size()).allMatch(i->{
@@ -227,18 +233,19 @@ public class LessonGenerationService {
     gates.put("duplicateSectionCheckPassed",distinct);gates.put("swedishTextValidationPassed","sv".equalsIgnoreCase(input.language()));
     gates.put("learnerUsabilityPassed",nonEmpty&&terms&&wordBounds);gates.put("officialClaimCheckPassed",noOfficialClaim);
     String classification=gates.values().stream().allMatch(Boolean.TRUE::equals)?"GOOD":"NEEDS_REWRITE";
-    var now=now();jdbc.sql("""
+    var now=now();UUID proposalId=UUID.randomUUID();jdbc.sql("""
         INSERT INTO ai_lesson_proposal(id,generation_job_id,title,introduction,summary,fact_statements,
           key_terms,important_points,pages,status,automated_classification,validation_gates,created_at,updated_at)
         VALUES(:id,:job,:title,:introduction,:summary,CAST(:facts AS jsonb),CAST(:terms AS jsonb),
           CAST(:points AS jsonb),CAST(:pages AS jsonb),'PROPOSED',:classification,CAST(:gates AS jsonb),:now,:now)
-        """).param("id",UUID.randomUUID()).param("job",job).param("title",proposal.title())
+        """).param("id",proposalId).param("job",job).param("title",proposal.title())
         .param("introduction",proposal.introduction()).param("summary",proposal.summary())
         .param("facts",json(input.facts().stream().map(LessonGenerationProviderClient.Fact::text).toList()))
         .param("terms",json(pages.stream().flatMap(p->p.keyTerms().stream()).distinct().toList()))
         .param("points",json(proposal.importantPoints()==null?List.of():proposal.importantPoints()))
         .param("pages",json(pages))
         .param("classification",classification).param("gates",json(gates)).param("now",now).update();
+    for(int i=0;i<input.plan().size();i++)plans.createInitial(proposalId,i,input,input.plan().get(i),input.requestedBy());
     var usage=result.usage();jdbc.sql("""
         UPDATE ai_lesson_generation_job SET status='COMPLETED',completed_at=:now,input_tokens=:input,
           output_tokens=:output,provider_request_id=:request,actual_provider=:actualProvider,
