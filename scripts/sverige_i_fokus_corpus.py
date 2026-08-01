@@ -13,6 +13,9 @@ from dataclasses import dataclass
 from pathlib import Path
 
 CORPUS_ID = "sverige-i-fokus-v1"
+SOURCE_REVISION_ID = "sverige-i-fokus-source-v2"
+SOURCE_REVISION_VERSION = 2
+PARSER_VERSION = "chapter-boundary-v2"
 EXPECTED_SHA256 = "39a93261cc64af0122e186b7d67f57dffad573576570956a4754d22ce776aada"
 NAMESPACE = uuid.UUID("418411a4-4a89-50d8-aeef-68e9c237d12b")
 
@@ -83,39 +86,63 @@ def find_heading(text: str, heading: str) -> int:
     raise ValueError(f"Heading not found in extracted page: {heading!r}")
 
 
+def find_chapter_heading(text: str, chapter_number: int) -> int:
+    match = re.search(rf"(?im)^kapitel\s+{chapter_number}\s*[–-]", text)
+    if match:
+        return match.start()
+    raise ValueError(f"Chapter heading not found in extracted page: {chapter_number}")
+
+
 def extract_sections(pdf: Path) -> list[dict]:
     flattened = [(chapter, title, page) for chapter in CHAPTERS for title, page in chapter.subsections]
     pages = {page: page_text(pdf, page) for page in range(4, 49)}
     sections = []
     for index, (chapter, title, start_page) in enumerate(flattened):
-        next_page = flattened[index + 1][2] if index + 1 < len(flattened) else 48
+        next_item = flattened[index + 1] if index + 1 < len(flattened) else None
+        next_page = next_item[2] if next_item else 48
         start_offset = find_heading(pages[start_page], title)
-        if index + 1 < len(flattened) and next_page == start_page:
-            end_offset = find_heading(pages[start_page], flattened[index + 1][1])
-            pieces = [pages[start_page][start_offset:end_offset]]
-            end_page = start_page
-        else:
-            pieces = [pages[start_page][start_offset:]]
-            end_page = max(start_page, next_page - 1)
-            pieces.extend(pages[p] for p in range(start_page + 1, end_page + 1))
-            if next_page > start_page and next_page <= 47:
-                next_heading_offset = find_heading(pages[next_page], flattened[index + 1][1]) if index + 1 < len(flattened) else 0
-                prefix = pages[next_page][:next_heading_offset].strip()
-                if prefix:
-                    pieces.append(prefix)
-                    end_page = next_page
+        pieces = []
+        end_page = start_page
+        end_offset = len(pages[start_page])
+        boundary_reason = "END_OF_DOCUMENT"
+        # Page 48 is the publisher contact colophon, not curriculum content.
+        last_page = next_page if next_item else 47
+        for page in range(start_page, last_page + 1):
+            page_start = start_offset if page == start_page else 0
+            candidates: list[tuple[int, str]] = []
+            if next_item and page == next_page:
+                candidates.append((find_heading(pages[page], next_item[1]), "NEXT_SUBSECTION"))
+            next_chapter = CHAPTERS[CHAPTERS.index(chapter) + 1] if chapter != CHAPTERS[-1] else None
+            if next_chapter and page == next_chapter.page:
+                candidates.append((find_chapter_heading(pages[page], CHAPTERS.index(chapter) + 2), "NEXT_CHAPTER"))
+            page_end, reason = min(candidates, default=(len(pages[page]), "END_OF_DOCUMENT"), key=lambda item: item[0])
+            piece = pages[page][page_start:page_end].strip()
+            if piece:
+                pieces.append(piece)
+                end_page = page
+                end_offset = page_end
+            if candidates:
+                boundary_reason = reason
+                break
         exact = "\n\n".join(piece.strip() for piece in pieces if piece.strip())
         if len(exact) < len(title) + 40:
             raise ValueError(f"Section extraction is unexpectedly short: {title}")
-        section_id = stable_id("section", chapter.title, title)
+        section_id = stable_id("section", SOURCE_REVISION_ID, chapter.title, title)
         sections.append(
             {
                 "id": section_id,
+                "logicalSectionId": stable_id("section", chapter.title, title),
+                "sourceRevisionId": SOURCE_REVISION_ID,
+                "sourceRevisionVersion": SOURCE_REVISION_VERSION,
+                "parserVersion": PARSER_VERSION,
                 "chapter": chapter.title,
                 "subsection": title,
                 "structuralPath": f"{chapter.title} / {title}",
                 "startPage": start_page,
                 "endPage": end_page,
+                "extractionStart": {"page": start_page, "offset": start_offset},
+                "extractionEnd": {"page": end_page, "offset": end_offset},
+                "boundaryReason": boundary_reason,
                 "order": index + 1,
                 "exactText": exact,
                 "normalizedText": normalized(exact),
@@ -164,6 +191,16 @@ def manifest(sections: list[dict]) -> dict:
         )
     return {
         "corpusId": CORPUS_ID,
+        "sourceRevision": {
+            "id": SOURCE_REVISION_ID,
+            "version": SOURCE_REVISION_VERSION,
+            "parentRevisionId": "sverige-i-fokus-source-v1",
+            "parserVersion": PARSER_VERSION,
+            "createdAt": "2026-08-01T00:00:00Z",
+            "reviewStatus": "REVIEWED",
+            "reviewerActor": "sverige-i-fokus-boundary-correction",
+            "correctionReason": "Exclude following chapter headings and introductions from terminal Source Sections.",
+        },
         "source": {
             "id": stable_id("source", EXPECTED_SHA256),
             "title": "Sverige i fokus – Utbildningsmaterial till medborgarskapsprov: Grundläggande kunskaper om det svenska samhället",

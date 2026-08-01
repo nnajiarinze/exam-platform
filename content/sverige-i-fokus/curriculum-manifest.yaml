@@ -1,5 +1,15 @@
 {
   "corpusId": "sverige-i-fokus-v1",
+  "sourceRevision": {
+    "id": "sverige-i-fokus-source-v2",
+    "version": 2,
+    "parentRevisionId": "sverige-i-fokus-source-v1",
+    "parserVersion": "chapter-boundary-v2",
+    "createdAt": "2026-08-01T00:00:00Z",
+    "reviewStatus": "REVIEWED",
+    "reviewerActor": "sverige-i-fokus-boundary-correction",
+    "correctionReason": "Exclude following chapter headings and introductions from terminal Source Sections."
+  },
   "source": {
     "id": "46ba681d-eb48-5e1b-8335-3e5f46ece535",
     "title": "Sverige i fokus – Utbildningsmaterial till medborgarskapsprov: Grundläggande kunskaper om det svenska samhället",
@@ -42,7 +52,7 @@
               "code": "LO-01-01",
               "title": "Förstå huvuddragen i geografi, klimat och natur",
               "sourceSectionIds": [
-                "2b1c8785-beb1-54ad-b268-c2004e45d76d"
+                "ff04fd30-a7a2-5dbb-8cab-f2f586d35c6e"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -62,7 +72,7 @@
               "code": "LO-01-02",
               "title": "Förstå huvuddragen i sveriges indelning",
               "sourceSectionIds": [
-                "94b7294f-2711-52c1-867b-585dfed77ee5"
+                "7091c030-ee47-5ef1-a3b1-9850cc9efa25"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -82,7 +92,7 @@
               "code": "LO-01-03",
               "title": "Förstå huvuddragen i befolkning",
               "sourceSectionIds": [
-                "936fc9dd-e35a-5844-9287-d5e2ae7f2af9"
+                "39b2cdf0-0238-587e-84a3-e210f606a244"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -102,7 +112,7 @@
               "code": "LO-01-04",
               "title": "Förstå huvuddragen i naturresurser",
               "sourceSectionIds": [
-                "2d97d182-7464-5a7a-83f6-b4c6115c93c3"
+                "cb4b1794-d579-5bac-a172-5769a9b425a7"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -122,7 +132,7 @@
               "code": "LO-01-05",
               "title": "Förstå huvuddragen i klimatförändringar",
               "sourceSectionIds": [
-                "77e35d6a-24af-51ae-924b-4d28e0d647a7"
+                "db77cf4b-f7b2-5799-ac8c-f96a3e591ef2"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -150,7 +160,7 @@
               "code": "LO-02-01",
               "title": "Förstå huvuddragen i demokrati betyder folkstyre",
               "sourceSectionIds": [
-                "b989bf51-c7e5-5bba-87a2-56b6e6ed6e21"
+                "9fa0ba62-6195-512e-850f-8519512d9169"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -170,7 +180,7 @@
               "code": "LO-02-02",
               "title": "Förstå huvuddragen i hot mot demokratin",
               "sourceSectionIds": [
-                "928926e1-7518-508d-a802-cf8f33515162"
+                "2ecdbc3b-b15a-5e38-a785-46aaf99813c5"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -198,7 +208,7 @@
               "code": "LO-03-01",
               "title": "Förstå huvuddragen i landet styrs på olika nivåer",
               "sourceSectionIds": [
-                "9b8e6e93-7131-5f78-adf8-cf2ac1968d34"
+                "9c6fda12-ad38-5455-ad84-7c4e69a7755b"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -218,7 +228,7 @@
               "code": "LO-03-02",
               "title": "Förstå huvuddragen i sveriges statsskick",
               "sourceSectionIds": [
-                "18b0d946-757b-5c7e-9c30-596d8a3113f6"
+                "e6fe02cf-3467-5926-a80e-d369e67defc7"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -246,7 +256,7 @@
               "code": "LO-04-01",
               "title": "Förstå huvuddragen i val och röstning",
               "sourceSectionIds": [
-                "de5809ba-f1cb-5249-a756-def0b44329e0"
+                "03b8c8ff-84f6-5009-a07c-4bba12c67728"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -266,7 +276,7 @@
               "code": "LO-04-02",
               "title": "Förstå huvuddragen i politiska partier",
               "sourceSectionIds": [
-                "5d7c67a4-a3a5-5c8b-bdd8-bb7720e229ee"
+                "c39d6d8e-78c7-5221-bdfd-f8567104bd3d"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -294,7 +304,7 @@
               "code": "LO-05-01",
               "title": "Förstå huvuddragen i grundlagarna",
               "sourceSectionIds": [
-                "a7dc72d4-b83d-53e1-b2d6-7479d3bf188f"
+                "7de46ba3-242b-5a85-8a34-60328d49ea73"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -314,7 +324,7 @@
               "code": "LO-05-02",
               "title": "Förstå huvuddragen i rättsväsendet",
               "sourceSectionIds": [
-                "2987ef7b-7080-5403-817f-a38c661ba683"
+                "2138cb45-0734-5d19-8796-e82c889a2f9f"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -342,7 +352,7 @@
               "code": "LO-06-01",
               "title": "Förstå huvuddragen i fria medier",
               "sourceSectionIds": [
-                "2b8fabcc-2307-5121-ad9b-e25244f6cefe"
+                "01cb45df-a71a-5479-87c0-85c9773312d2"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -362,7 +372,7 @@
               "code": "LO-06-02",
               "title": "Förstå huvuddragen i olika slags medier",
               "sourceSectionIds": [
-                "b1574112-146c-5ba5-a6a4-3632bcc9edc4"
+                "4a06bb63-5d65-5008-b7cf-df5977132b31"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -382,7 +392,7 @@
               "code": "LO-06-03",
               "title": "Förstå huvuddragen i källkritik",
               "sourceSectionIds": [
-                "32d49b63-dc24-5cfe-b5ca-b8781fa84be0"
+                "c8ad1690-e99a-5005-988a-a6817deea3f2"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -410,7 +420,7 @@
               "code": "LO-07-01",
               "title": "Förstå huvuddragen i mänskliga rättigheter gäller alla",
               "sourceSectionIds": [
-                "e4b56f0c-e7c0-5ef6-a511-3178624d9bff"
+                "48028ada-4c2b-5107-9bd0-862bbd9e0499"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -430,7 +440,7 @@
               "code": "LO-07-02",
               "title": "Förstå huvuddragen i jämställdhet mellan könen",
               "sourceSectionIds": [
-                "79e7f687-80a4-5ed4-8e18-de8b590f707a"
+                "11124833-a3e8-54f1-a3c9-279a2968ef6a"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -450,7 +460,7 @@
               "code": "LO-07-03",
               "title": "Förstå huvuddragen i barns rättigheter",
               "sourceSectionIds": [
-                "65423152-2e8d-5ab0-a71a-a1f815911585"
+                "99c616f5-7d37-5f4c-b6fb-22c32a9bfc48"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -470,7 +480,7 @@
               "code": "LO-07-04",
               "title": "Förstå huvuddragen i minoriteters rättigheter",
               "sourceSectionIds": [
-                "e9971a9f-a37b-5fc5-b1d2-1149da2c34d1"
+                "b6d15673-0350-5e36-9663-cc2212e84f0d"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -490,7 +500,7 @@
               "code": "LO-07-05",
               "title": "Förstå huvuddragen i arbetet mot diskriminering",
               "sourceSectionIds": [
-                "11192ad4-2660-5cef-82d8-c27f4db3761d"
+                "ef43936d-ba80-5134-9105-e04fd96d910d"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -518,7 +528,7 @@
               "code": "LO-08-01",
               "title": "Förstå huvuddragen i så fungerar arbetsmarknaden",
               "sourceSectionIds": [
-                "0a7cb3bc-0b7e-5e6f-8807-73a4b4d81002"
+                "1220fabb-45f5-58e6-b79e-78944c58c306"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -538,7 +548,7 @@
               "code": "LO-08-02",
               "title": "Förstå huvuddragen i arbetsmarknadens parter",
               "sourceSectionIds": [
-                "cabff204-cf23-5ae8-ac23-e0b25d9e0374"
+                "62a8b6fd-c22f-50ce-8324-764ff63ce4ae"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -558,7 +568,7 @@
               "code": "LO-08-03",
               "title": "Förstå huvuddragen i lagar och regler på arbetsmarknaden",
               "sourceSectionIds": [
-                "4220373c-3639-58bd-acbd-770a4a0c1a9e"
+                "bda216c0-42da-5ebf-a307-af92d2a5b45e"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -578,7 +588,7 @@
               "code": "LO-08-04",
               "title": "Förstå huvuddragen i privatekonomi i sverige",
               "sourceSectionIds": [
-                "0f20ad7a-4461-56c5-af18-2f48dc6d3a8f"
+                "23892fba-4f34-53f5-be9d-7f1242e836f2"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -606,7 +616,7 @@
               "code": "LO-09-01",
               "title": "Förstå huvuddragen i skatter för sveriges välfärd",
               "sourceSectionIds": [
-                "7cd4ceaa-7c74-5dd0-839c-175e62aaef75"
+                "8efb5c9a-8f7e-52f5-b4c3-f73eb0f845d6"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -626,7 +636,7 @@
               "code": "LO-09-02",
               "title": "Förstå huvuddragen i stat, regioner och kommuner har olika ansvar",
               "sourceSectionIds": [
-                "c9801a5e-40ab-5a5e-a61e-cccbbe445aa7"
+                "387371cb-0ebd-5229-9f51-584f8773d2ba"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -654,7 +664,7 @@
               "code": "LO-10-01",
               "title": "Förstå huvuddragen i från jordbrukssamhälle till industrisamhälle",
               "sourceSectionIds": [
-                "bfde84a2-8f3b-5cdf-b744-6c8d812a3fe7"
+                "cde9d0b7-2b7a-598d-b57c-4c3d357cc928"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -674,7 +684,7 @@
               "code": "LO-10-02",
               "title": "Förstå huvuddragen i sveriges väg till demokrati",
               "sourceSectionIds": [
-                "8449b025-656a-5839-b165-b2a364caf86d"
+                "efff6ada-70db-58a5-836b-9b8b888817ec"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -694,7 +704,7 @@
               "code": "LO-10-03",
               "title": "Förstå huvuddragen i modernisering och folkhem",
               "sourceSectionIds": [
-                "42253132-f2ca-556d-9932-c824872b1396"
+                "08c0733c-353a-5c12-9472-a351813ee9be"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -714,7 +724,7 @@
               "code": "LO-10-04",
               "title": "Förstå huvuddragen i rekordåren",
               "sourceSectionIds": [
-                "5845064d-e6b6-5c07-8cfc-bafc734ba6c4"
+                "b98add4f-39df-5b83-b0cc-b66305d009d6"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -734,7 +744,7 @@
               "code": "LO-10-05",
               "title": "Förstå huvuddragen i informationssamhället och globalisering",
               "sourceSectionIds": [
-                "e7cb9ba3-c33b-585c-92d5-3c1536498b82"
+                "d8c9e4e5-c5e4-5a6e-8b7c-181ac4cbfd7c"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -762,7 +772,7 @@
               "code": "LO-11-01",
               "title": "Förstå huvuddragen i nordiskt och europeiskt samarbete",
               "sourceSectionIds": [
-                "dbc71f1e-c30a-56da-8609-bb9ac95fd615"
+                "b3d14aa1-b402-5f5a-a696-e9edc2cdbb87"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -782,7 +792,7 @@
               "code": "LO-11-02",
               "title": "Förstå huvuddragen i globalt samarbete",
               "sourceSectionIds": [
-                "5bd9923a-f2e4-55dc-8a8a-a7ed462e0e98"
+                "f9eb88ff-7b91-52b1-ba45-ad8c06ae6791"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -802,7 +812,7 @@
               "code": "LO-11-03",
               "title": "Förstå huvuddragen i försvars- och säkerhetspolitik",
               "sourceSectionIds": [
-                "ebe9006f-007c-5094-bb4d-ad3380dd14d6"
+                "68baaf09-ff56-5394-92f4-a99f2b19aa84"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -830,7 +840,7 @@
               "code": "LO-12-01",
               "title": "Förstå huvuddragen i religionsfrihet",
               "sourceSectionIds": [
-                "d4962daf-c79d-5426-9c12-82fe5c2007f2"
+                "1242ed2a-6454-564f-a5aa-4ef85b21de88"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -850,7 +860,7 @@
               "code": "LO-12-02",
               "title": "Förstå huvuddragen i religionens roll",
               "sourceSectionIds": [
-                "641c6d99-6d43-5583-b6ba-48e1836927a3"
+                "aa1f297c-0065-51f0-b098-7b42ce15445b"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,
@@ -878,7 +888,7 @@
               "code": "LO-13-01",
               "title": "Förstå huvuddragen i några traditionella högtider under året",
               "sourceSectionIds": [
-                "74c81806-e664-591d-af91-33db56caa2fd"
+                "6f3651d2-59a7-5a95-bf03-41dfef82d525"
               ],
               "factGenerationTarget": 8,
               "lessonTarget": 1,

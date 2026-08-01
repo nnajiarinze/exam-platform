@@ -39,7 +39,8 @@ services:
 
   content-service:
     build:
-      context: services/content-service
+      context: .
+      dockerfile: services/content-service/Dockerfile
     environment:
       CONTENT_DATABASE_URL: jdbc:postgresql://content-database:5432/content
       CONTENT_DATABASE_USERNAME: content
@@ -150,7 +151,8 @@ services:
 
   learning-service:
     build:
-      context: services/learning-service
+      context: .
+      dockerfile: services/learning-service/Dockerfile
     environment:
       LEARNING_DATABASE_URL: jdbc:postgresql://learning-database:5432/learning
       LEARNING_DATABASE_USERNAME: learning

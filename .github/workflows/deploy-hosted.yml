@@ -83,3 +83,11 @@ jobs:
         run: |
           ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" \
             "cd /opt/citizenship-platform/repo && git fetch --quiet origin '${COMMIT_SHA}' && git checkout --detach '${COMMIT_SHA}' && ./infrastructure/hetzner/deploy.sh '${COMMIT_SHA}'"
+      - name: Activate corrected Sverige i fokus source revision
+        env:
+          COMMIT_SHA: ${{ inputs.commit_sha }}
+          HOSTED_HOST: ${{ secrets.HOSTED_HOST }}
+          HOSTED_USER: ${{ secrets.HOSTED_USER }}
+        run: |
+          ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" \
+            "cd /opt/citizenship-platform/repo && test \"\$(git rev-parse HEAD)\" = '${COMMIT_SHA}' && ./infrastructure/hetzner/migrate-sverige-i-fokus-source-v2.sh"

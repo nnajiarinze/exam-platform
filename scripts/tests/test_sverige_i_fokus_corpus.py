@@ -25,6 +25,34 @@ class SverigeIFokusCorpusTest(unittest.TestCase):
         self.assertEqual(38, len(first))
         self.assertEqual(list(range(1, 39)), [item["order"] for item in first])
         self.assertTrue(all(item["startPage"] <= item["endPage"] <= 48 for item in first))
+        self.assertTrue(all(item["sourceRevisionVersion"] == 2 for item in first))
+
+    def test_all_sections_stop_before_a_later_chapter_heading(self):
+        sections = corpus.extract_sections(ROOT / "docs/sverige-i-fokus.pdf")
+        chapter_numbers = {chapter.title: index for index, chapter in enumerate(corpus.CHAPTERS, 1)}
+        for section in sections:
+            own = chapter_numbers[section["chapter"]]
+            for later in range(own + 1, len(corpus.CHAPTERS) + 1):
+                self.assertNotRegex(section["normalizedText"].casefold(), rf"kapitel\s+{later}\s*[–-]")
+
+    def test_chapter_eight_section_ends_before_chapter_nine(self):
+        sections = corpus.extract_sections(ROOT / "docs/sverige-i-fokus.pdf")
+        section = next(item for item in sections if item["subsection"] == "Privatekonomi i Sverige")
+        self.assertEqual(29, section["endPage"])
+        self.assertEqual("NEXT_CHAPTER", section["boundaryReason"])
+        self.assertEqual(1120, len(section["normalizedText"]))
+        self.assertTrue(section["normalizedText"].endswith("deklarera sin inkomst till Skatteverket."))
+        self.assertNotIn("Välfärdssamhället", section["normalizedText"])
+
+    def test_exactly_twelve_v2_sections_change_content(self):
+        old = json.loads(subprocess.run(
+            ["git", "show", "HEAD:content/sverige-i-fokus/source-sections.json"],
+            cwd=ROOT, check=True, capture_output=True, text=True,
+        ).stdout)
+        new = corpus.extract_sections(ROOT / "docs/sverige-i-fokus.pdf")
+        old_by_logical = {item["id"]: item for item in old}
+        changed = [item for item in new if item["exactText"] != old_by_logical[item["logicalSectionId"]]["exactText"]]
+        self.assertEqual([5, 7, 9, 11, 13, 16, 21, 25, 27, 32, 35, 37], [item["order"] for item in changed])
 
     def test_manifest_maps_every_topic_and_objective_to_evidence(self):
         manifest = json.loads((ROOT / "content/sverige-i-fokus/curriculum-manifest.yaml").read_text())
