@@ -6,7 +6,9 @@ source "${SCRIPT_DIR}/lib.sh"
 load_platform_paths
 
 cd "${PLATFORM_REPOSITORY}"
-python3 scripts/sverige_i_fokus_corpus.py --check >/dev/null
+printf '%s  %s\n' \
+  '39a93261cc64af0122e186b7d67f57dffad573576570956a4754d22ce776aada' \
+  'docs/sverige-i-fokus.pdf' | sha256sum --check --status
 python3 scripts/sverige_i_fokus_sql.py | compose exec -T content-database \
   sh -c 'psql -X -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
 
