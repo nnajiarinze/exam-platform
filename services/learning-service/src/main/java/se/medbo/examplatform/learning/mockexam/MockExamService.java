@@ -597,7 +597,7 @@ public class MockExamService {
         return new AttemptView(attempt.id(), attempt.examId(), attempt.releaseId(), attempt.blueprintName(),
                 attempt.description(), attempt.status(), attempt.startedAt(), attempt.expiresAt(),
                 attempt.submittedAt(), attempt.totalQuestions(), attempt.durationMinutes(),
-                attempt.passingPercentage(), remaining,
+                attempt.durationMinutes() != null, attempt.passingPercentage(), remaining,
                 (int) navigation.stream().filter(NavigationItem::answered).count(), navigation);
     }
 
@@ -756,11 +756,13 @@ public class MockExamService {
 
     public record AttemptView(UUID attemptId, String examId, UUID releaseId, String name, String description,
                               String status, Instant startedAt, Instant expiresAt, Instant submittedAt,
-                              int totalQuestions, Integer durationMinutes, BigDecimal passPercentage,
+                              int totalQuestions, Integer durationMinutes, boolean timed, BigDecimal passPercentage,
                               int remainingSeconds, int answered,
                               List<NavigationItem> questions) {}
     public record ConfigurationView(String examId, String name, String description, int questionCount,
-                                    Integer durationMinutes, BigDecimal passPercentage) {}
+                                    Integer durationMinutes, BigDecimal passPercentage) {
+        public boolean timed() { return durationMinutes != null; }
+    }
     public record NavigationItem(UUID attemptQuestionId, int sequenceNumber, boolean answered, boolean flagged) {}
     public record QuestionView(UUID attemptQuestionId, String questionId, String prompt, String questionType,
                                List<AnswerOptionView> answerOptions, int sequenceNumber, int totalQuestions,

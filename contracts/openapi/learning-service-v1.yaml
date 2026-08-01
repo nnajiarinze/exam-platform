@@ -785,13 +785,14 @@ components:
     MockExamConfiguration:
       type: object
       additionalProperties: false
-      required: [examId, name, description, questionCount, durationMinutes, passPercentage]
+      required: [examId, name, description, questionCount, timed, passPercentage]
       properties:
         examId: { type: string }
         name: { type: string }
         description: { type: string }
         questionCount: { type: integer, minimum: 1 }
         durationMinutes: { type: [integer, "null"], minimum: 1, description: Null means untimed. }
+        timed: { type: boolean }
         passPercentage: { type: number, minimum: 0, maximum: 100 }
     MockExamStatus:
       type: string
@@ -808,7 +809,7 @@ components:
     MockExamAttempt:
       type: object
       additionalProperties: false
-      required: [attemptId, examId, releaseId, name, description, status, startedAt, expiresAt, totalQuestions, durationMinutes, passPercentage, remainingSeconds, answered, questions]
+      required: [attemptId, examId, releaseId, name, description, status, startedAt, totalQuestions, timed, passPercentage, remainingSeconds, answered, questions]
       properties:
         attemptId: { type: string, format: uuid }
         examId: { type: string }
@@ -821,6 +822,7 @@ components:
         submittedAt: { type: [string, "null"], format: date-time }
         totalQuestions: { type: integer, minimum: 1 }
         durationMinutes: { type: [integer, "null"], minimum: 1 }
+        timed: { type: boolean }
         passPercentage: { type: number, minimum: 0, maximum: 100 }
         remainingSeconds: { type: integer, minimum: 0 }
         answered: { type: integer, minimum: 0 }

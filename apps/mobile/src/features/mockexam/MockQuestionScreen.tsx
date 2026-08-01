@@ -36,7 +36,7 @@ export function MockQuestionScreen({
     () => setSelected(question.data?.selectedOptionIds ?? []),
     [question.data?.attemptQuestionId, question.data?.selectedOptionIds],
   );
-  const timed = attempt.data?.durationMinutes != null;
+  const timed = attempt.data?.timed ?? false;
   const remaining = useCountdown(timed
     ? question.data?.remainingSeconds ?? attempt.data?.remainingSeconds ?? -1
     : -1);

@@ -236,7 +236,8 @@ export type MockExamConfiguration = {
     /**
      * Null means untimed.
      */
-    durationMinutes: number | null;
+    durationMinutes?: number | null;
+    timed: boolean;
     passPercentage: number;
 };
 
@@ -257,10 +258,11 @@ export type MockExamAttempt = {
     description: string;
     status: MockExamStatus;
     startedAt: string;
-    expiresAt: string | null;
+    expiresAt?: string | null;
     submittedAt?: string | null;
     totalQuestions: number;
-    durationMinutes: number | null;
+    durationMinutes?: number | null;
+    timed: boolean;
     passPercentage: number;
     remainingSeconds: number;
     answered: number;

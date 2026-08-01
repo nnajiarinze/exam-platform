@@ -8,6 +8,7 @@ type Definition = {
   description: string;
   questionCount: number;
   durationMinutes: number | null;
+  timed: boolean;
   passPercentage: number;
 };
 
