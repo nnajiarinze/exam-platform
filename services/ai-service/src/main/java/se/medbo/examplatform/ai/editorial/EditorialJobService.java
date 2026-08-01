@@ -11,15 +11,16 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import se.medbo.examplatform.ai.generation.AiApiException;
+import se.medbo.examplatform.ai.generation.CorpusCompletionRateLimit;
 import se.medbo.examplatform.ai.provider.AiProviderException;
 
 @Service
 public class EditorialJobService {
   private final JdbcClient jdbc; private final ObjectMapper mapper; private final AiEditorialProviderClient provider;
-  private final EditorialPromptTemplateRegistry prompts; private final boolean enabled; private final int maxRetries,hourlyLimit;
-  public EditorialJobService(JdbcClient jdbc,ObjectMapper mapper,AiEditorialProviderClient provider,EditorialPromptTemplateRegistry prompts,
+  private final EditorialPromptTemplateRegistry prompts; private final CorpusCompletionRateLimit rateLimit; private final boolean enabled; private final int maxRetries,hourlyLimit;
+  public EditorialJobService(JdbcClient jdbc,ObjectMapper mapper,AiEditorialProviderClient provider,EditorialPromptTemplateRegistry prompts,CorpusCompletionRateLimit rateLimit,
       @Value("${ai.editorial.enabled:false}")boolean enabled,@Value("${ai.editorial.max-retries:2}")int maxRetries,
-      @Value("${ai.editorial.request-limit-per-hour:30}")int hourlyLimit){this.jdbc=jdbc;this.mapper=mapper;this.provider=provider;this.prompts=prompts;this.enabled=enabled;this.maxRetries=maxRetries;this.hourlyLimit=hourlyLimit;}
+      @Value("${ai.editorial.request-limit-per-hour:30}")int hourlyLimit){this.jdbc=jdbc;this.mapper=mapper;this.provider=provider;this.prompts=prompts;this.rateLimit=rateLimit;this.enabled=enabled;this.maxRetries=maxRetries;this.hourlyLimit=hourlyLimit;}
 
   @Transactional public Map<String,Object> create(AiEditorialProviderClient.Request request,String actor,String key,String providerName,String model){
     if(!enabled)throw error(HttpStatus.SERVICE_UNAVAILABLE,"AI_FEATURE_DISABLED","AI-assisted generation is disabled");
@@ -33,8 +34,7 @@ public class EditorialJobService {
       throw error(HttpStatus.UNPROCESSABLE_ENTITY,"AI_EDITORIAL_INSUFFICIENT_EVIDENCE","Linked Sources do not plausibly support the target fact");
     int maximum=Set.of(EditorialOperationType.MAKE_ATOMIC,EditorialOperationType.SPLIT_FACT).contains(request.operation())?5:3;
     if(request.count()<1||request.count()>maximum)throw error(HttpStatus.UNPROCESSABLE_ENTITY,"AI_INVALID_GENERATION_REQUEST","Requested output count is outside the operation limit");
-    long recent=jdbc.sql("SELECT count(*) FROM ai_generation_job WHERE requested_by=:actor AND created_at>now()-interval '1 hour'").param("actor",actor).query(Long.class).single();
-    if(recent>=hourlyLimit)throw error(HttpStatus.TOO_MANY_REQUESTS,"AI_RATE_LIMIT_EXCEEDED","The hourly AI generation limit was reached");
+    rateLimit.enforce(jdbc,actor,hourlyLimit);
     var existing=jdbc.sql("SELECT id FROM ai_generation_job WHERE requested_by=:actor AND idempotency_key=:key").param("actor",actor).param("key",key).query(UUID.class).list();
     if(!existing.isEmpty())return get(existing.getFirst());
     var target=request.targets().getFirst();var source=request.sources()==null||request.sources().isEmpty()?null:request.sources().getFirst();var id=UUID.randomUUID();var now=now();

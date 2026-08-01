@@ -22,14 +22,15 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 import se.medbo.examplatform.ai.generation.AiApiException;
+import se.medbo.examplatform.ai.generation.CorpusCompletionRateLimit;
 import se.medbo.examplatform.ai.provider.AiProviderException;
 
 @Service
 public class QuestionGenerationJobService {
   private static final String OPERATION="GENERATE_QUESTIONS_FROM_FACT";
-  private final JdbcClient jdbc;private final ObjectMapper mapper;private final QuestionGenerationProviderClient provider;private final QuestionProposalValidator validator;private final QuestionIntelligenceEngine intelligence;private final MeterRegistry metrics;private final TransactionTemplate transactions;private final boolean enabled;private final int hourlyLimit,maxRetries;
+  private final JdbcClient jdbc;private final ObjectMapper mapper;private final QuestionGenerationProviderClient provider;private final QuestionProposalValidator validator;private final QuestionIntelligenceEngine intelligence;private final MeterRegistry metrics;private final TransactionTemplate transactions;private final CorpusCompletionRateLimit rateLimit;private final boolean enabled;private final int hourlyLimit,maxRetries;
   QuestionGenerationJobService(JdbcClient jdbc,ObjectMapper mapper,QuestionGenerationProviderClient provider,QuestionProposalValidator validator,QuestionIntelligenceEngine intelligence,MeterRegistry metrics,
-      PlatformTransactionManager transactionManager,@Value("${ai.jobs.enabled:true}")boolean enabled,@Value("${ai.generation.rate-limit-per-hour:20}")int hourlyLimit,@Value("${ai.generation.max-retries:2}")int maxRetries){this.jdbc=jdbc;this.mapper=mapper;this.provider=provider;this.validator=validator;this.intelligence=intelligence;this.metrics=metrics;this.transactions=new TransactionTemplate(transactionManager);this.enabled=enabled;this.hourlyLimit=hourlyLimit;this.maxRetries=maxRetries;}
+      PlatformTransactionManager transactionManager,CorpusCompletionRateLimit rateLimit,@Value("${ai.jobs.enabled:true}")boolean enabled,@Value("${ai.generation.rate-limit-per-hour:20}")int hourlyLimit,@Value("${ai.generation.max-retries:2}")int maxRetries){this.jdbc=jdbc;this.mapper=mapper;this.provider=provider;this.validator=validator;this.intelligence=intelligence;this.metrics=metrics;this.transactions=new TransactionTemplate(transactionManager);this.rateLimit=rateLimit;this.enabled=enabled;this.hourlyLimit=hourlyLimit;this.maxRetries=maxRetries;}
 
   private record AssessedProposal(QuestionGenerationProviderClient.Proposal proposal,QuestionIntelligenceAssessment assessment){}
 
@@ -126,7 +127,7 @@ public class QuestionGenerationJobService {
   }
 
   @Transactional public Map<String,Object> create(QuestionGenerationProviderClient.Request request,String actor,String key,String providerName,String model){
-    validateRequest(request);long recent=jdbc.sql("SELECT count(*) FROM ai_generation_job WHERE requested_by=:actor AND created_at>now()-interval '1 hour'").param("actor",actor).query(Long.class).single();if(recent>=hourlyLimit)throw error(HttpStatus.TOO_MANY_REQUESTS,"AI_RATE_LIMIT_EXCEEDED","The hourly AI generation limit was reached");
+    validateRequest(request);rateLimit.enforce(jdbc,actor,hourlyLimit);
     var existing=jdbc.sql("SELECT id FROM ai_generation_job WHERE requested_by=:actor AND idempotency_key=:key").param("actor",actor).param("key",key).query(UUID.class).list();if(!existing.isEmpty())return get(existing.getFirst());
     UUID id=UUID.randomUUID();OffsetDateTime now=now();String context=json(request);var first=request.context().sources().isEmpty()?null:request.context().sources().getFirst();
     jdbc.sql("INSERT INTO ai_generation_job(id,job_type,operation_type,source_id,source_title,source_content,source_content_checksum,learning_objective_id,learning_objective_title,requested_by,requested_count,language,idempotency_key,status,provider,model,prompt_version,created_at,next_attempt_at,input_character_count,target_context,target_content_checksum) VALUES(:id,'QUESTION_GENERATION',:operation,:source,:sourceTitle,:sourceContent,:sourceChecksum,:objective,:objectiveTitle,:actor,:count,:language,:key,'QUEUED',:provider,:model,:prompt,:now,:now,:characters,CAST(:context AS jsonb),:checksum)")
