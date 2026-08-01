@@ -1,0 +1,45 @@
+package se.medbo.examplatform.content.ai;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import se.medbo.examplatform.content.shared.DomainException;
+
+@Service
+class FactEvidenceProvenanceCorrectionService {
+  private static final String REASON="PDF_HYPHENATION_PROVENANCE_ALIGNMENT";
+  private final JdbcClient jdbc;private final ObjectMapper mapper;
+  FactEvidenceProvenanceCorrectionService(JdbcClient jdbc,ObjectMapper mapper){this.jdbc=jdbc;this.mapper=mapper;}
+
+  @Transactional Map<String,Object> correct(UUID factId){
+    requireAuthor();var row=rows(factId);if(row.isEmpty())throw new DomainException(HttpStatus.NOT_FOUND,"KNOWLEDGE_FACT_NOT_FOUND","Knowledge Fact was not found");var fact=row.getFirst();
+    if(!"APPROVED".equals(fact.get("review_status"))||!"ACTIVE".equals(fact.get("status"))||((Number)fact.get("chapter")).intValue()!=10||!"sverige-i-fokus-source-v2".equals(fact.get("source_revision_id")))throw conflict("FACT_EVIDENCE_CORRECTION_SCOPE_INVALID","Only active approved Chapter 10 Facts on source revision v2 are eligible");
+    UUID version=(UUID)fact.get("version_id");var existing=jdbc.sql("SELECT id FROM knowledge_fact_evidence_provenance_correction WHERE knowledge_fact_version_id=:version AND validator_version=:validator ORDER BY revision_number DESC LIMIT 1").param("version",version).param("validator",PdfEvidenceNormalizer.VERSION).query(UUID.class).optional();if(existing.isPresent())return correction(existing.get());
+    List<Map<String,Object>> previous=read(String.valueOf(fact.get("source_evidence")));String exact=String.valueOf(fact.get("exact_text"));var corrected=new ArrayList<Map<String,Object>>();var normalized=new ArrayList<String>();var rawOffsets=new ArrayList<Map<String,Integer>>();var normalizedOffsets=new ArrayList<Map<String,Integer>>();var operations=new java.util.LinkedHashSet<String>();
+    for(var evidence:previous){String quote=String.valueOf(evidence.get("quote"));var match=PdfEvidenceNormalizer.uniqueMatch(exact,quote);if(match==null)throw conflict("INVALID_AFTER_SOURCE_REVALIDATION","Stored evidence has no unique deterministic source-v2 match");corrected.add(Map.of("quote",match.rawText()));normalized.add(match.normalizedText());rawOffsets.add(Map.of("start",match.rawStart(),"end",match.rawEnd()));normalizedOffsets.add(Map.of("start",match.normalizedStart(),"end",match.normalizedEnd()));operations.addAll(match.operations());}
+    UUID id=UUID.randomUUID();int revision=jdbc.sql("SELECT coalesce(max(revision_number),0)+1 FROM knowledge_fact_evidence_provenance_correction WHERE knowledge_fact_version_id=:version").param("version",version).query(Integer.class).single();UUID previousId=jdbc.sql("SELECT id FROM knowledge_fact_evidence_provenance_correction WHERE knowledge_fact_version_id=:version ORDER BY revision_number DESC LIMIT 1").param("version",version).query(UUID.class).optional().orElse(null);String actor=actor();var now=OffsetDateTime.now(ZoneOffset.UTC);
+    jdbc.sql("INSERT INTO knowledge_fact_evidence_provenance_correction(id,knowledge_fact_version_id,revision_number,previous_correction_id,source_revision_id,source_section_id,source_section_checksum,previous_source_evidence,corrected_source_evidence,corrected_normalized_evidence,page_start,page_end,raw_offsets,normalized_offsets,normalization_operations,correction_reason,validator_version,validation_status,corrected_by,human_verified,created_at) VALUES(:id,:version,:revision,:previous,:sourceRevision,:section,:checksum,CAST(:old AS jsonb),CAST(:corrected AS jsonb),CAST(:normalized AS jsonb),:pageStart,:pageEnd,CAST(:raw AS jsonb),CAST(:normalizedOffsets AS jsonb),CAST(:operations AS jsonb),:reason,:validator,'PASS',:actor,false,:now)")
+      .param("id",id).param("version",version).param("revision",revision).param("previous",previousId,java.sql.Types.OTHER).param("sourceRevision",fact.get("source_revision_id")).param("section",fact.get("source_section_id")).param("checksum",fact.get("section_checksum")).param("old",json(previous)).param("corrected",json(corrected)).param("normalized",json(normalized)).param("pageStart",fact.get("page_start")).param("pageEnd",fact.get("page_end")).param("raw",json(rawOffsets)).param("normalizedOffsets",json(normalizedOffsets)).param("operations",json(operations)).param("reason",REASON).param("validator",PdfEvidenceNormalizer.VERSION).param("actor",actor).param("now",now).update();
+    jdbc.sql("INSERT INTO audit_event(id,occurred_at,actor_id,actor_name,actor_role,action,entity_type,entity_id,entity_version,metadata,request_id) VALUES(:id,:now,:actor,:actor,'ADMIN','CONFIG_CHANGE','KnowledgeFactEvidenceProvenanceCorrection',:entity,:revision,CAST(:metadata AS jsonb),:request)").param("id",UUID.randomUUID()).param("now",now).param("actor",actor).param("entity",id).param("revision",revision).param("metadata",json(Map.of("factId",factId,"factVersionId",version,"reason",REASON,"humanVerified",false))).param("request","fact-evidence-correction-"+id).update();return correction(id);
+  }
+  Map<String,Object> current(UUID factId){var id=jdbc.sql("SELECT c.id FROM knowledge_fact_evidence_provenance_correction c JOIN knowledge_fact_version v ON v.id=c.knowledge_fact_version_id WHERE v.knowledge_fact_id=:fact ORDER BY c.revision_number DESC LIMIT 1").param("fact",factId).query(UUID.class).optional().orElseThrow(()->new DomainException(HttpStatus.NOT_FOUND,"FACT_EVIDENCE_CORRECTION_NOT_FOUND","No evidence correction exists"));return correction(id);}
+  private List<Map<String,Object>> rows(UUID id){return jdbc.sql("SELECT k.review_status,k.status,s.sort_order chapter,v.id version_id,p.source_evidence::text,p.source_section_id,ss.source_revision_id,ss.section_checksum,ss.page_start,ss.page_end,ss.exact_text FROM knowledge_fact k JOIN knowledge_fact_version v ON v.id=k.current_version_id JOIN learning_objective lo ON lo.id=k.learning_objective_id JOIN topic t ON t.id=lo.topic_id JOIN subject s ON s.id=t.subject_id JOIN knowledge_fact_ai_provenance p ON p.knowledge_fact_version_id=v.id JOIN source_section ss ON ss.id=p.source_section_id JOIN learning_objective_source_section m ON m.learning_objective_id=lo.id AND m.source_section_id=ss.id WHERE k.id=:id").param("id",id).query().listOfRows();}
+  private Map<String,Object> correction(UUID id){var row=jdbc.sql("SELECT id,knowledge_fact_version_id AS \"knowledgeFactVersionId\",revision_number AS \"revisionNumber\",previous_correction_id AS \"previousCorrectionId\",source_revision_id AS \"sourceRevisionId\",source_section_id AS \"sourceSectionId\",source_section_checksum AS \"sourceSectionChecksum\",previous_source_evidence::text AS \"previousEvidence\",corrected_source_evidence::text AS \"correctedEvidence\",corrected_normalized_evidence::text AS \"normalizedEvidence\",page_start AS \"pageStart\",page_end AS \"pageEnd\",raw_offsets::text AS \"rawOffsets\",normalized_offsets::text AS \"normalizedOffsets\",normalization_operations::text AS \"normalizationOperations\",correction_reason AS \"correctionReason\",validator_version AS \"validatorVersion\",validation_status AS \"validationStatus\",corrected_by AS \"correctedBy\",human_verified AS \"humanVerified\",created_at AS \"createdAt\" FROM knowledge_fact_evidence_provenance_correction WHERE id=:id").param("id",id).query().singleRow();for(String key:List.of("previousEvidence","correctedEvidence","normalizedEvidence","rawOffsets","normalizedOffsets","normalizationOperations"))row.put(key,readObject(String.valueOf(row.get(key))));return row;}
+  private List<Map<String,Object>> read(String value){try{return mapper.readValue(value,new TypeReference<>(){});}catch(Exception e){throw new IllegalStateException(e);}}
+  private Object readObject(String value){try{return mapper.readValue(value,Object.class);}catch(Exception e){throw new IllegalStateException(e);}}
+  private String json(Object value){try{return mapper.writeValueAsString(value);}catch(Exception e){throw new IllegalStateException(e);}}
+  private void requireAuthor(){if(SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream().noneMatch(a->List.of("ROLE_CONTENT_AUTHOR","ROLE_ADMIN").contains(a.getAuthority())))throw new DomainException(HttpStatus.FORBIDDEN,"FORBIDDEN","Content author permission is required");}
+  private String actor(){return SecurityContextHolder.getContext().getAuthentication().getName();}
+  private DomainException conflict(String code,String message){return new DomainException(HttpStatus.CONFLICT,code,message);}
+}

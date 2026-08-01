@@ -2550,6 +2550,72 @@ export type RepairKnowledgeFactSourceSectionProvenanceResponses = {
 
 export type RepairKnowledgeFactSourceSectionProvenanceResponse = RepairKnowledgeFactSourceSectionProvenanceResponses[keyof RepairKnowledgeFactSourceSectionProvenanceResponses];
 
+export type CorrectKnowledgeFactEvidenceProvenanceData = {
+    body?: never;
+    path: {
+        knowledgeFactId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/ai/knowledge-facts/{knowledgeFactId}/evidence-provenance-corrections';
+};
+
+export type CorrectKnowledgeFactEvidenceProvenanceErrors = {
+    /**
+     * The authenticated identity lacks a required role
+     */
+    403: ApiError;
+    /**
+     * Resource not found
+     */
+    404: ApiError;
+    /**
+     * Conflict or stale version
+     */
+    409: ApiError;
+};
+
+export type CorrectKnowledgeFactEvidenceProvenanceError = CorrectKnowledgeFactEvidenceProvenanceErrors[keyof CorrectKnowledgeFactEvidenceProvenanceErrors];
+
+export type CorrectKnowledgeFactEvidenceProvenanceResponses = {
+    /**
+     * Versioned provenance correction
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type CorrectKnowledgeFactEvidenceProvenanceResponse = CorrectKnowledgeFactEvidenceProvenanceResponses[keyof CorrectKnowledgeFactEvidenceProvenanceResponses];
+
+export type GetCurrentKnowledgeFactEvidenceProvenanceCorrectionData = {
+    body?: never;
+    path: {
+        knowledgeFactId: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/ai/knowledge-facts/{knowledgeFactId}/evidence-provenance-corrections/current';
+};
+
+export type GetCurrentKnowledgeFactEvidenceProvenanceCorrectionErrors = {
+    /**
+     * Resource not found
+     */
+    404: ApiError;
+};
+
+export type GetCurrentKnowledgeFactEvidenceProvenanceCorrectionError = GetCurrentKnowledgeFactEvidenceProvenanceCorrectionErrors[keyof GetCurrentKnowledgeFactEvidenceProvenanceCorrectionErrors];
+
+export type GetCurrentKnowledgeFactEvidenceProvenanceCorrectionResponses = {
+    /**
+     * Current correction
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type GetCurrentKnowledgeFactEvidenceProvenanceCorrectionResponse = GetCurrentKnowledgeFactEvidenceProvenanceCorrectionResponses[keyof GetCurrentKnowledgeFactEvidenceProvenanceCorrectionResponses];
+
 export type ListLessonDraftsData = {
     body?: never;
     path?: never;
