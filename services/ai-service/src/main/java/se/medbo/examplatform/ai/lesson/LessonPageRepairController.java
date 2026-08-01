@@ -20,5 +20,5 @@ final class LessonPageRepairController {
   @GetMapping Map<String,Object> pages(@PathVariable UUID proposalId){return service.inspect(proposalId);}
   @PostMapping("/{pageIndex}/validate") Map<String,Object> validate(@PathVariable UUID proposalId,@PathVariable int pageIndex,@Valid@RequestBody Action request){return service.validate(proposalId,pageIndex,request.actor());}
   @PostMapping("/{pageIndex}/reject") Map<String,Object> reject(@PathVariable UUID proposalId,@PathVariable int pageIndex,@Valid@RequestBody Action request){return service.reject(proposalId,pageIndex,request.actor(),request.reason());}
-  @PostMapping("/{pageIndex}/repair") Map<String,Object> repair(@PathVariable UUID proposalId,@PathVariable int pageIndex,@Valid@RequestBody Action request){return service.repair(proposalId,pageIndex,request.actor(),request.idempotencyKey());}
+  @PostMapping("/{pageIndex}/repair") Map<String,Object> repair(@PathVariable UUID proposalId,@PathVariable int pageIndex,@Valid@RequestBody Action request){return service.repair(proposalId,pageIndex,request.actor(),request.reason(),request.idempotencyKey());}
 }

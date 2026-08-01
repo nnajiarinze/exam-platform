@@ -63,16 +63,17 @@ class LessonPageRepairService {
     audit(actor,"AI_LESSON_PAGE_REJECTED",(UUID)revision.get("id"),Map.of("proposalId",proposal,"pageIndex",index,"reason",reason==null?"claim validation":reason));return inspect(proposal);
   }
 
-  Map<String,Object> repair(UUID proposal,int index,String actor,String idempotencyKey){
+  Map<String,Object> repair(UUID proposal,int index,String actor,String reason,String idempotencyKey){
     var context=context(proposal,index);var previous=latest(proposal,index);
     if(previous==null)throw error(HttpStatus.CONFLICT,"AI_LESSON_PAGE_NOT_REJECTED","Validate and reject the page before repair");
     if(idempotencyKey!=null&&idempotencyKey.equals(previous.get("idempotencyKey")))return inspect(proposal);
     if(!"REJECTED".equals(previous.get("status")))throw error(HttpStatus.CONFLICT,"AI_LESSON_PAGE_NOT_REJECTED","Validate and reject the page before repair");
     validatePlanSnapshot(context,index);
     var input=context.input();var rejectedClaims=failedClaimsForPage(proposal,index);
+    var repairReasons=repairReasons(diagnostics(previous),reason);
     var request=new LessonGenerationProviderClient.PageRepairRequest(input.topicTitle(),input.learningObjectiveTitle(),
         input.sourceSectionId(),input.sourceSectionChecksum(),input.exactSourceText(),input.facts(),context.page(),context.surroundingTitles(),
-        diagnostics(previous),rejectedClaims,context.jobId(),actor,(Integer)previous.get("revisionNumber"));
+        List.copyOf(repairReasons),rejectedClaims,context.jobId(),actor,(Integer)previous.get("revisionNumber"));
     long started=System.nanoTime();LessonGenerationProviderClient.PageRepairResult generated;
     try{generated=provider.repairPage(request);}catch(AiProviderException e){
       persistAttempt(proposal,index,(UUID)previous.get("id"),"PROVIDER_REJECTED",e.code(),null,
@@ -171,6 +172,7 @@ class LessonPageRepairService {
         .filter(sentence->!rejected.contains(normalizeClaim(sentence)))
         .collect(java.util.stream.Collectors.joining(" "));
   }
+  static List<String> repairReasons(List<String> diagnostics,String reviewerReason){var reasons=new ArrayList<>(diagnostics==null?List.<String>of():diagnostics);if(reviewerReason!=null&&!reviewerReason.isBlank())reasons.add(reviewerReason.trim());return List.copyOf(reasons);}
   private static String normalizeClaim(String value){return Normalizer.normalize(value==null?"":value,Normalizer.Form.NFKC)
       .toLowerCase(java.util.Locale.ROOT).replace('\u00a0',' ').replaceAll("[^\\p{L}\\p{N}]+"," ").replaceAll("\\s+"," ").trim();}
   private void persistRevision(UUID proposal,int index,int number,UUID replaces,String status,LessonGenerationProviderClient.Page page,List<String> diagnostics,String actor,LessonGenerationProviderClient.Usage... usageValue){persistRevision(proposal,index,number,replaces,status,page,diagnostics,actor,null,usageValue);}

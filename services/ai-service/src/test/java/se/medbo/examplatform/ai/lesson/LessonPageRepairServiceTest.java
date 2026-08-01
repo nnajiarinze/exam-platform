@@ -7,6 +7,11 @@ import org.junit.jupiter.api.Test;
 
 class LessonPageRepairServiceTest {
   @Test
+  void forwardsNarrowReviewerGroundingInstructionAlongsideDiagnostics() {
+    assertThat(LessonPageRepairService.repairReasons(List.of("UNSUPPORTED_CLAIM"),"  SUPPORTED_CONCEPTS_ONLY  "))
+        .containsExactly("UNSUPPORTED_CLAIM","SUPPORTED_CONCEPTS_ONLY");
+  }
+  @Test
   void stripsOnlyExactPreviouslyRejectedClaimsFromProviderContent() {
     var failed=List.of(new LessonGenerationProviderClient.FailedClaim(
         "I Sverige finns diskrimineringslagen.","UNSUPPORTED_CLAIM","Not directly supported"));
