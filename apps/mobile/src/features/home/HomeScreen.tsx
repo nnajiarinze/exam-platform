@@ -219,7 +219,9 @@ export function HomeScreen({
           <ActionCard
             icon="exam"
             title="Mock exam"
-            description="Practice under timed exam conditions"
+            description={history.data?.length
+              ? `Latest ${history.data[0].percentage}% · Best ${Math.max(...history.data.map(item => item.percentage))}% · ${history.data.length} attempts`
+              : "Take a complete exam using the active curriculum"}
             accent
             onPress={() => navigation.navigate("MockExam")}
           />

@@ -233,7 +233,10 @@ export type MockExamConfiguration = {
     name: string;
     description: string;
     questionCount: number;
-    durationMinutes: number;
+    /**
+     * Null means untimed.
+     */
+    durationMinutes: number | null;
     passPercentage: number;
 };
 
@@ -254,10 +257,10 @@ export type MockExamAttempt = {
     description: string;
     status: MockExamStatus;
     startedAt: string;
-    expiresAt: string;
+    expiresAt: string | null;
     submittedAt?: string | null;
     totalQuestions: number;
-    durationMinutes: number;
+    durationMinutes: number | null;
     passPercentage: number;
     remainingSeconds: number;
     answered: number;
@@ -312,6 +315,15 @@ export type MockExamTopicResult = {
     percentage: number;
 };
 
+export type MockExamObjectiveResult = {
+    objectiveId: string;
+    objectiveName: string;
+    total: number;
+    answered: number;
+    correct: number;
+    percentage: number;
+};
+
 export type MockExamSubjectResult = {
     subjectId: string;
     subjectName: string;
@@ -343,6 +355,9 @@ export type MockExamIncorrectQuestion = {
         feedback?: string | null;
     }>;
     explanation: string;
+    topicName: string;
+    objectiveName: string;
+    lessonTopicId: string;
 };
 
 export type MockExamResult = {
@@ -367,6 +382,7 @@ export type MockExamResult = {
     autoSubmitted: boolean;
     subjects: Array<MockExamSubjectResult>;
     topics: Array<MockExamTopicResult>;
+    objectives: Array<MockExamObjectiveResult>;
     incorrectQuestions: Array<MockExamIncorrectQuestion>;
 };
 
@@ -1366,3 +1382,40 @@ export type GetMockExamResultsResponses = {
 };
 
 export type GetMockExamResultsResponse = GetMockExamResultsResponses[keyof GetMockExamResultsResponses];
+
+export type GetMockExamQuestionReviewData = {
+    body?: never;
+    path: {
+        attemptId: string;
+    };
+    query?: {
+        incorrectOnly?: boolean;
+    };
+    url: '/api/v1/mock-exams/{attemptId}/results/questions';
+};
+
+export type GetMockExamQuestionReviewErrors = {
+    /**
+     * Authentication is absent or invalid.
+     */
+    401: Error;
+    /**
+     * Learner-owned or requested resource was not found.
+     */
+    404: Error;
+    /**
+     * Request conflicts with current or previously accepted state.
+     */
+    409: Error;
+};
+
+export type GetMockExamQuestionReviewError = GetMockExamQuestionReviewErrors[keyof GetMockExamQuestionReviewErrors];
+
+export type GetMockExamQuestionReviewResponses = {
+    /**
+     * Immutable question review without internal identifiers.
+     */
+    200: Array<MockExamIncorrectQuestion>;
+};
+
+export type GetMockExamQuestionReviewResponse = GetMockExamQuestionReviewResponses[keyof GetMockExamQuestionReviewResponses];

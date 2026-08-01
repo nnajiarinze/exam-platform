@@ -36,9 +36,10 @@ export function MockQuestionScreen({
     () => setSelected(question.data?.selectedOptionIds ?? []),
     [question.data?.attemptQuestionId, question.data?.selectedOptionIds],
   );
-  const remaining = useCountdown(
-    question.data?.remainingSeconds ?? attempt.data?.remainingSeconds ?? -1,
-  );
+  const timed = attempt.data?.durationMinutes != null;
+  const remaining = useCountdown(timed
+    ? question.data?.remainingSeconds ?? attempt.data?.remainingSeconds ?? -1
+    : -1);
   const answer = useMutation({
     mutationFn: (optionIds: string[]) =>
       learningApi.answerMockQuestion(
@@ -89,8 +90,8 @@ export function MockQuestionScreen({
     }
   }, [attempt.data?.status, attemptId, navigation, setAttempt]);
   useEffect(() => {
-    if (question.data && remaining === 0 && !submit.isPending) submit.mutate();
-  }, [remaining, question.data]);
+    if (timed && question.data && remaining === 0 && !submit.isPending) submit.mutate();
+  }, [remaining, question.data, timed]);
   const go = (sequence: number) =>
     navigation.setParams({ attemptId, sequenceNumber: sequence });
   const confirmSubmit = () => {
@@ -100,7 +101,7 @@ export function MockQuestionScreen({
     const total = attempt.data?.totalQuestions ?? 0;
     Alert.alert(
       "Submit mock examination?",
-      `${answered} answered · ${total - answered} unanswered · ${flagged} flagged\n${formatCountdown(Math.max(0, remaining))} remaining\n\nYou cannot change answers after submission.`,
+      `${answered} answered · ${total - answered} unanswered · ${flagged} flagged${timed ? `\n${formatCountdown(Math.max(0, remaining))} remaining` : ""}\n\nYou cannot change answers after submission.`,
       [
         { text: "Return to exam", style: "cancel" },
         {
@@ -137,14 +138,14 @@ export function MockQuestionScreen({
         <Text style={styles.progress}>
           QUESTION {sequenceNumber} OF {question.data.totalQuestions}
         </Text>
-        <View style={styles.timerPill}>
+        {timed ? <View style={styles.timerPill}>
           <Text
             accessibilityLabel={`${displayedRemaining} seconds remaining`}
             style={styles.timer}
           >
             {formatCountdown(displayedRemaining)}
           </Text>
-        </View>
+        </View> : <Text style={styles.untimed}>UNTIMED</Text>}
       </View>
       <QuestionNavigator
         questions={attempt.data.questions}
@@ -235,6 +236,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   timer: { color: theme.colors.accentStrong, fontSize: 18, fontWeight: "700" },
+  untimed: { color: theme.colors.muted, ...theme.typography.label },
   prompt: {
     color: theme.colors.text,
     fontSize: 28,

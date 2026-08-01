@@ -1,6 +1,6 @@
 import { client } from './generated/client.gen';
 import { createMockExam, createPracticeSession, deleteMyLearnerAccount, flagMockExamQuestion, getMockExam, getMockExamConfiguration, getMockExamHistory,
-  getMockExamQuestion, getMockExamResults, getNextPracticeQuestion, getSubjects, getTopicProgress, getStudySubjects,
+  getMockExamQuestion, getMockExamQuestionReview, getMockExamResults, getNextPracticeQuestion, getSubjects, getTopicProgress, getStudySubjects,
   getStudyTopics, getTopicLesson, getContinueLearning, updateLessonProgress,
   getMyLearnerProfile, getMyLearnerSettings, submitMockExam, submitMockExamResponse, submitPracticeResponse, updateMyLearnerProfile, updateMyLearnerSettings } from './generated/sdk.gen';
 import type { CreatePracticeSessionRequest, SubmitAnswerRequest, UpdateLearnerProfile, UpdateLearnerSettings } from './generated/types.gen';
@@ -48,5 +48,6 @@ export const learningApi = {
   flagMockQuestion: async (identity: string, attemptId: string, attemptQuestionId: string, flagged: boolean, version?: number) => (await flagMockExamQuestion({ path: { attemptId, attemptQuestionId }, body: { flagged, version }, headers: headers(identity), throwOnError: true })).data,
   submitMockExam: async (identity: string, attemptId: string) => (await submitMockExam({ path: { attemptId }, headers: headers(identity), throwOnError: true })).data,
   mockResults: async (identity: string, attemptId: string) => (await getMockExamResults({ path: { attemptId }, headers: headers(identity), throwOnError: true })).data,
+  mockQuestionReview: async (identity: string, attemptId: string, incorrectOnly = false) => (await getMockExamQuestionReview({ path: { attemptId }, query: { incorrectOnly }, headers: headers(identity), throwOnError: true })).data,
   mockHistory: async (identity: string) => (await getMockExamHistory({ headers: headers(identity), throwOnError: true })).data,
 };

@@ -133,6 +133,19 @@ export function MockResultView({
           </Text>
         </Card>
       ))}
+      <SectionHeader title="Objective breakdown" />
+      {result.objectives.map((objective) => (
+        <Card key={objective.objectiveId}>
+          <View style={styles.breakdownHeader}>
+            <Text style={styles.topic}>{objective.objectiveName}</Text>
+            <Text style={styles.percent}>{objective.percentage}%</Text>
+          </View>
+          <ProgressBar value={objective.percentage} />
+          <Text style={styles.meta}>
+            {objective.correct}/{objective.total} correct
+          </Text>
+        </Card>
+      ))}
       <SectionHeader title="Attempt details" />
       <Card>
         <Body>

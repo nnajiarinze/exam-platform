@@ -624,6 +624,8 @@ class LearningServiceIntegrationTest {
         assertThat(result.passed()).isFalse();
         assertThat(result.topics()).hasSize(2);
         assertThat(result.incorrectQuestions()).hasSize(2);
+        assertThat(mockExamService.review(learnerId, attempt.attemptId(), false)).hasSize(3);
+        assertThat(mockExamService.review(learnerId, attempt.attemptId(), true)).hasSize(2);
         assertThat(result.incorrectQuestions().getFirst().correctAnswerOptionId()).isNotBlank();
         assertThat(mockExamService.history(learnerId)).singleElement()
                 .satisfies(item -> assertThat(item.attemptId()).isEqualTo(attempt.attemptId()));

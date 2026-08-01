@@ -29,6 +29,7 @@ import { AiKnowledgeFactGenerationPage } from '../../features/ai/pages/AiKnowled
 import { AiQuestionBatchListPage } from '../../features/ai/pages/AiQuestionBatchListPage';
 import { AiQuestionBatchDetailPage } from '../../features/ai/pages/AiQuestionBatchDetailPage';
 import { AiProvidersPage } from '../../features/ai/pages/AiProvidersPage';
+import { MockExamDefinitionPage } from '../../features/mockexam/MockExamDefinitionPage';
 
 export function AppRouter() {
   return <Routes>
@@ -40,6 +41,7 @@ export function AppRouter() {
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="exam-structure" element={<ExamListPage />} />
+        <Route path="mock-exam-definition" element={<MockExamDefinitionPage />} />
         <Route path="exam-structure/exams/new" element={<ExamEditorPage />} />
         <Route path="exam-structure/exams/:id" element={<ExamEditorPage />} />
         <Route path="exam-structure/exam-versions/:id" element={<ExamVersionPage />} />

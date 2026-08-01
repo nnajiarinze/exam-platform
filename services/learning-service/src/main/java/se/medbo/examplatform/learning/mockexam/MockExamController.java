@@ -92,6 +92,14 @@ public class MockExamController {
         return service.results(identityResolver.resolve(identity), attemptId);
     }
 
+    @GetMapping("/{attemptId}/results/questions")
+    public List<MockExamService.IncorrectQuestion> review(
+            @RequestHeader(value = "X-Learner-Identity", required = false) String identity,
+            @PathVariable UUID attemptId,
+            @RequestParam(defaultValue = "false") boolean incorrectOnly) {
+        return service.review(identityResolver.resolve(identity), attemptId, incorrectOnly);
+    }
+
     public record CreateMockExamRequest(@NotBlank @Size(max = 200) String examId) {}
     public record SubmitMockAnswerRequest(@NotNull UUID attemptQuestionId,
                                           @jakarta.validation.constraints.NotEmpty @Size(max = 6)

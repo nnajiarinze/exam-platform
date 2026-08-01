@@ -127,7 +127,7 @@ export function MockExamScreen({
                 <StatTile
                   icon="progress"
                   label="DURATION"
-                  value={`${config.durationMinutes} min`}
+                  value={config.durationMinutes == null ? "Untimed" : `${config.durationMinutes} min`}
                 />
               </View>
             </View>
@@ -160,8 +160,9 @@ export function MockExamScreen({
           <Card tone="soft">
             <Text style={styles.tipTitle}>○ No distractions</Text>
             <Text style={styles.muted}>
-              Find a quiet place for {config?.durationMinutes ?? "the full"}{" "}
-              minutes.
+              {config?.durationMinutes == null
+                ? "Take your time and finish in one focused sitting."
+                : `Find a quiet place for the full ${config.durationMinutes} minutes.`}
             </Text>
           </Card>
           <Card tone="soft">

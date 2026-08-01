@@ -450,6 +450,25 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/NotFound" }
         "409": { $ref: "#/components/responses/Conflict" }
+  /api/v1/mock-exams/{attemptId}/results/questions:
+    parameters:
+      - $ref: "#/components/parameters/AttemptId"
+    get:
+      summary: Review all or only incorrect questions after submission
+      operationId: getMockExamQuestionReview
+      tags: [Mock examinations]
+      security: [{ learnerBearer: [] }]
+      parameters:
+        - {name: incorrectOnly, in: query, required: false, schema: {type: boolean, default: false}}
+      responses:
+        "200":
+          description: Immutable question review without internal identifiers.
+          content:
+            application/json:
+              schema: {type: array, items: {$ref: "#/components/schemas/MockExamIncorrectQuestion"}}
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
 components:
   securitySchemes:
     learnerBearer:
@@ -772,7 +791,7 @@ components:
         name: { type: string }
         description: { type: string }
         questionCount: { type: integer, minimum: 1 }
-        durationMinutes: { type: integer, minimum: 1 }
+        durationMinutes: { type: [integer, "null"], minimum: 1, description: Null means untimed. }
         passPercentage: { type: number, minimum: 0, maximum: 100 }
     MockExamStatus:
       type: string
@@ -798,10 +817,10 @@ components:
         description: { type: string }
         status: { $ref: "#/components/schemas/MockExamStatus" }
         startedAt: { type: string, format: date-time }
-        expiresAt: { type: string, format: date-time }
+        expiresAt: { type: [string, "null"], format: date-time }
         submittedAt: { type: [string, "null"], format: date-time }
         totalQuestions: { type: integer, minimum: 1 }
-        durationMinutes: { type: integer, minimum: 1 }
+        durationMinutes: { type: [integer, "null"], minimum: 1 }
         passPercentage: { type: number, minimum: 0, maximum: 100 }
         remainingSeconds: { type: integer, minimum: 0 }
         answered: { type: integer, minimum: 0 }
@@ -863,6 +882,17 @@ components:
         answered: { type: integer, minimum: 0 }
         correct: { type: integer, minimum: 0 }
         percentage: { type: number, minimum: 0, maximum: 100 }
+    MockExamObjectiveResult:
+      type: object
+      additionalProperties: false
+      required: [objectiveId, objectiveName, total, answered, correct, percentage]
+      properties:
+        objectiveId: { type: string }
+        objectiveName: { type: string }
+        total: { type: integer, minimum: 1 }
+        answered: { type: integer, minimum: 0 }
+        correct: { type: integer, minimum: 0 }
+        percentage: { type: number, minimum: 0, maximum: 100 }
     MockExamSubjectResult:
       type: object
       additionalProperties: false
@@ -878,7 +908,7 @@ components:
     MockExamIncorrectQuestion:
       type: object
       additionalProperties: false
-      required: [questionId, prompt, questionType, selectedOptionIds, correctOptionIds, options, explanation]
+      required: [questionId, prompt, questionType, selectedOptionIds, correctOptionIds, options, explanation, topicName, objectiveName, lessonTopicId]
       properties:
         questionId: { type: string }
         prompt: { type: string }
@@ -898,10 +928,13 @@ components:
               missed: { type: boolean }
               feedback: { type: [string, "null"] }
         explanation: { type: string }
+        topicName: { type: string }
+        objectiveName: { type: string }
+        lessonTopicId: { type: string }
     MockExamResult:
       type: object
       additionalProperties: false
-      required: [attemptId, name, status, startedAt, completedAt, durationSeconds, correctAnswers, incorrectAnswers, unansweredAnswers, percentage, passPercentage, passed, autoSubmitted, subjects, topics, incorrectQuestions]
+      required: [attemptId, name, status, startedAt, completedAt, durationSeconds, correctAnswers, incorrectAnswers, unansweredAnswers, percentage, passPercentage, passed, autoSubmitted, subjects, topics, objectives, incorrectQuestions]
       properties:
         attemptId: { type: string, format: uuid }
         name: { type: string }
@@ -922,6 +955,9 @@ components:
         topics:
           type: array
           items: { $ref: "#/components/schemas/MockExamTopicResult" }
+        objectives:
+          type: array
+          items: { $ref: "#/components/schemas/MockExamObjectiveResult" }
         incorrectQuestions:
           type: array
           items: { $ref: "#/components/schemas/MockExamIncorrectQuestion" }

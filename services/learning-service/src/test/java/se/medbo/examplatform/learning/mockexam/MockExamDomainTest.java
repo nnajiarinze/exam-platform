@@ -46,6 +46,21 @@ class MockExamDomainTest {
     }
 
     @Test
+    void selectionIsDeterministicForAnAttemptSeedAndContainsNoDuplicates() {
+        UUID topic = UUID.randomUUID();
+        var candidates = java.util.stream.IntStream.range(0, 8)
+                .mapToObj(index -> candidate(topic, "fact-" + index)).toList();
+        var allocation = List.of(new MockExamGenerator.TopicAllocation(topic, "topic", 5));
+        UUID seed = UUID.randomUUID();
+
+        var first = generator.generate(candidates, allocation, 5, seed);
+        var second = generator.generate(candidates, allocation, 5, seed);
+
+        assertThat(second).isEqualTo(first);
+        assertThat(first.stream().map(MockExamGenerator.QuestionCandidate::id)).doesNotHaveDuplicates();
+    }
+
+    @Test
     void scoresUsingConfiguredThreshold() {
         assertThat(MockExamScoring.calculate(3, 4, new BigDecimal("75.00")).passed()).isTrue();
         assertThat(MockExamScoring.calculate(2, 4, new BigDecimal("75.00")).passed()).isFalse();

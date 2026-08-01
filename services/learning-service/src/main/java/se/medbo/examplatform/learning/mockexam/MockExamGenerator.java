@@ -4,6 +4,10 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Comparator;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import se.medbo.examplatform.learning.shared.ApiException;
@@ -18,6 +22,11 @@ public class MockExamGenerator {
 
     public List<QuestionCandidate> generate(List<QuestionCandidate> eligible, List<TopicAllocation> allocations,
             int totalQuestions) {
+        return generate(eligible, allocations, totalQuestions, null);
+    }
+
+    public List<QuestionCandidate> generate(List<QuestionCandidate> eligible, List<TopicAllocation> allocations,
+            int totalQuestions, UUID attemptSeed) {
         int allocated = allocations.stream().mapToInt(TopicAllocation::questionCount).sum();
         if (allocated != totalQuestions) {
             throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "INVALID_MOCK_BLUEPRINT",
@@ -30,7 +39,7 @@ public class MockExamGenerator {
                     .filter(candidate -> candidate.topicId().equals(allocation.topicId()))
                     .filter(candidate -> !selectedQuestionIds.contains(candidate.id()))
                     .toList());
-            randomizer.shuffle(candidates);
+            order(candidates, attemptSeed, allocation.externalTopicId());
             if (candidates.size() < allocation.questionCount()) {
                 throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "INSUFFICIENT_MOCK_QUESTIONS",
                         "Topic %s requires %d questions but only %d are eligible"
@@ -42,8 +51,25 @@ public class MockExamGenerator {
                 selectedQuestionIds.add(candidate.id());
             }
         }
-        randomizer.shuffle(selected);
+        order(selected, attemptSeed, "exam");
         return List.copyOf(selected);
+    }
+
+    private void order(List<QuestionCandidate> values, UUID seed, String scope) {
+        if (seed == null) {
+            randomizer.shuffle(values);
+            return;
+        }
+        values.sort(Comparator.comparing(value -> digest(seed + ":" + scope + ":" + value.id())));
+    }
+
+    private static String digest(String value) {
+        try {
+            return java.util.HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                    .digest(value.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException impossible) {
+            throw new IllegalStateException(impossible);
+        }
     }
 
     public interface Randomizer {

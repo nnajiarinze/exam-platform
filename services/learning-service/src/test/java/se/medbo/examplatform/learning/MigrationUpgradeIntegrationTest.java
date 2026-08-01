@@ -36,7 +36,7 @@ class MigrationUpgradeIntegrationTest {
                 .migrate();
 
         assertThat(jdbc.sql("SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank")
-                .query(String.class).list()).containsExactly("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15");
+                .query(String.class).list()).containsExactly("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16");
         assertThat(jdbc.sql("""
                 SELECT is_nullable FROM information_schema.columns
                 WHERE table_name = 'imported_answer_option' AND column_name = 'content_release_id'
@@ -56,6 +56,8 @@ class MigrationUpgradeIntegrationTest {
         assertThat(jdbc.sql("SELECT to_regclass('public.mock_exam_response_selection') IS NOT NULL")
                 .query(Boolean.class).single()).isTrue();
         assertThat(jdbc.sql("SELECT to_regclass('public.lesson_progress') IS NOT NULL")
+                .query(Boolean.class).single()).isTrue();
+        assertThat(jdbc.sql("SELECT to_regclass('public.mock_exam_option_snapshot') IS NOT NULL")
                 .query(Boolean.class).single()).isTrue();
     }
 }
