@@ -24,11 +24,11 @@ import org.springframework.web.bind.annotation.RestController;
 final class AiQuestionGenerationController {
   private final AiQuestionGenerationService service;
   AiQuestionGenerationController(AiQuestionGenerationService service){this.service=service;}
-  record Create(@Min(1)@Max(3)int proposalCount,String questionType,@Size(min=1,max=200)String idempotencyKey){}
+  record Create(@Min(1)@Max(3)int proposalCount,String questionType,@Size(min=1,max=200)String idempotencyKey,Map<String,Object> narrowTarget,UUID targetPlanId){}
   record Reject(@NotBlank String reasonCode,@Size(max=1000)String comment,@PositiveOrZero long version){}
   record Regenerate(@NotBlank@Size(max=1000)String reviewerFeedback,@PositiveOrZero long version,@NotBlank@Size(max=200)String idempotencyKey){}
   record Accept(@PositiveOrZero long version){}
-  @PostMapping("/knowledge-facts/{factId}/ai-question-generation-jobs")@ResponseStatus(HttpStatus.ACCEPTED)Map<String,Object>create(@PathVariable UUID factId,@Valid@RequestBody Create request){return service.create(factId,request.proposalCount(),request.questionType(),request.idempotencyKey());}
+  @PostMapping("/knowledge-facts/{factId}/ai-question-generation-jobs")@ResponseStatus(HttpStatus.ACCEPTED)Map<String,Object>create(@PathVariable UUID factId,@Valid@RequestBody Create request){return service.create(factId,request.proposalCount(),request.questionType(),request.idempotencyKey(),request.narrowTarget(),request.targetPlanId());}
   @GetMapping("/knowledge-facts/{factId}/ai-question-generation-eligibility")Map<String,Object>eligibility(@PathVariable UUID factId){return service.eligibility(factId);}
   @GetMapping("/knowledge-facts/{factId}/ai-question-generation-jobs")List<Map<String,Object>>history(@PathVariable UUID factId,@RequestParam(defaultValue="10")@Min(1)@Max(50)int limit){return service.history(factId,limit);}
   @GetMapping("/ai/question-generation-jobs/{jobId}")Map<String,Object>job(@PathVariable UUID jobId){return service.job(jobId);}

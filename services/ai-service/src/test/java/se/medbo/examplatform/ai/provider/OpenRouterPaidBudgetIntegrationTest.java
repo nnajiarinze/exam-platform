@@ -27,6 +27,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 class OpenRouterPaidBudgetIntegrationTest {
   @Container @ServiceConnection static final PostgreSQLContainer<?> POSTGRES=new PostgreSQLContainer<>("postgres:16-alpine");
   @Autowired JdbcClient jdbc;
+  @Autowired ProviderAttemptRecoveryService recovery;
   private final OpenRouterPaidModelDiscoveryService.Model model=new OpenRouterPaidModelDiscoveryService.Model(
       "openai/test-editorial",new BigDecimal("0.000001"),new BigDecimal("0.000002"),BigDecimal.ZERO,BigDecimal.ZERO,
       32768,List.of("response_format","structured_outputs","temperature","max_tokens"),OffsetDateTime.now(ZoneOffset.UTC));
@@ -51,6 +52,28 @@ class OpenRouterPaidBudgetIntegrationTest {
     var service=new OpenRouterPaidBudgetService(jdbc,false,new BigDecimal("14.00000000"));
     assertThatThrownBy(()->service.reserve(request(),model,"FREE_CHAIN_EXHAUSTED")).isInstanceOfSatisfying(AiProviderException.class,e->assertThat(e.code()).isEqualTo("PAID_BUDGET_EXHAUSTED"));
     assertThat(jdbc.sql("SELECT count(*) FROM ai_paid_request_accounting").query(Long.class).single()).isZero();
+  }
+  @Test void unknownOutcomeRemainsUnavailableAndSurvivesRestart(){
+    var service=new OpenRouterPaidBudgetService(jdbc,true,new BigDecimal("0.10000000"));var reservation=service.reserve(request(),model,"FREE_CHAIN_EXHAUSTED");
+    service.markUnknown(reservation,45_001,null,"AI_PROVIDER_HARD_TIMEOUT");
+    var status=new OpenRouterPaidBudgetService(jdbc,true,new BigDecimal("0.10000000")).status(model,4096);
+    assertThat(status).containsEntry("reservedUsd",new BigDecimal("0.00000000"))
+        .containsEntry("unknownExposureUsd",reservation.estimatedCost())
+        .containsEntry("remainingUsd",new BigDecimal("0.10000000").subtract(reservation.estimatedCost()));
+    assertThat(jdbc.sql("SELECT status,reservation_state,reconciliation_state,outcome_classification FROM ai_paid_request_accounting WHERE id=:id")
+        .param("id",reservation.id()).query().singleRow()).containsEntry("status","RECONCILIATION_PENDING")
+        .containsEntry("reservation_state","EXPIRED_UNKNOWN").containsEntry("reconciliation_state","UNKNOWN")
+        .containsEntry("outcome_classification","OUTCOME_UNKNOWN");
+  }
+  @Test void authoritativeProviderCostReconcilesUnknownExposure(){
+    var service=new OpenRouterPaidBudgetService(jdbc,true,new BigDecimal("0.10000000"));var reservation=service.reserve(request(),model,"FREE_CHAIN_EXHAUSTED");service.markUnknown(reservation,45_001,"generation-1","AI_PROVIDER_HARD_TIMEOUT");
+    service.reconcileUnknownCharged(reservation.id(),new BigDecimal("0.00400000"),100,50,5,"stop");var status=service.status(model,4096);
+    assertThat(status).containsEntry("spentUsd",new BigDecimal("0.00400000")).containsEntry("unknownExposureUsd",new BigDecimal("0.00000000"));
+    assertThat(jdbc.sql("SELECT status,reservation_state,reconciliation_state,outcome_classification FROM ai_paid_request_accounting WHERE id=:id").param("id",reservation.id()).query().singleRow())
+        .containsEntry("status","RECONCILED_SUCCESS").containsEntry("reservation_state","RECONCILED_CHARGED").containsEntry("reconciliation_state","SUCCEEDED").containsEntry("outcome_classification","PROVIDER_COMPLETED_SUCCESS");
+  }
+  @Test void startupRecoveryMovesAnExpiredPaidLeaseToUnknownWithoutRetry(){
+    var service=new OpenRouterPaidBudgetService(jdbc,true,new BigDecimal("0.10000000"));var reservation=service.reserve(request(),model,"FREE_CHAIN_EXHAUSTED");jdbc.sql("UPDATE ai_paid_request_accounting SET lease_expires_at=now()-interval '1 second' WHERE id=:id").param("id",reservation.id()).update();recovery.recoverExpired();var row=jdbc.sql("SELECT status,reservation_state,reconciliation_state FROM ai_paid_request_accounting WHERE id=:id").param("id",reservation.id()).query().singleRow();assertThat(row).containsEntry("status","RECONCILIATION_PENDING").containsEntry("reservation_state","EXPIRED_UNKNOWN").containsEntry("reconciliation_state","UNKNOWN");assertThat(service.status(model,4096)).containsEntry("unknownExposureUsd",reservation.estimatedCost());
   }
   private StructuredAiProvider.Request request(){return new StructuredAiProvider.Request("LESSON","system","prompt",Map.of("type","object"),4096,0,UUID.randomUUID(),"test",0,"correlation","checkpoint-key");}
 }

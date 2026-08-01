@@ -16,7 +16,16 @@ public interface StructuredAiProvider {
       String circuitState,OffsetDateTime nextRetryAt,Map<String,Object> capacity){}
   record Request(String operation,String systemInstruction,String prompt,Map<String,Object> jsonSchema,
       int maximumOutputTokens,double temperature,UUID jobId,String requester,int retryAttempt,
-      String correlationId,String idempotencyKey){}
+      String correlationId,String idempotencyKey,UUID providerAttemptId){
+    public Request(String operation,String systemInstruction,String prompt,Map<String,Object> jsonSchema,
+        int maximumOutputTokens,double temperature,UUID jobId,String requester,int retryAttempt,
+        String correlationId,String idempotencyKey){
+      this(operation,systemInstruction,prompt,jsonSchema,maximumOutputTokens,temperature,jobId,requester,
+          retryAttempt,correlationId,idempotencyKey,null);
+    }
+    Request withProviderAttempt(UUID attemptId){return new Request(operation,systemInstruction,prompt,jsonSchema,
+        maximumOutputTokens,temperature,jobId,requester,retryAttempt,correlationId,idempotencyKey,attemptId);}
+  }
   record Response(JsonNode structuredResponse,String provider,String model,String actualModel,
       String providerRequestId,Integer inputTokens,Integer outputTokens,Long latencyMs,String finishReason,
       Map<String,Object> rateLimits,Map<String,Object> freeCapacity,OffsetDateTime retryAfter,

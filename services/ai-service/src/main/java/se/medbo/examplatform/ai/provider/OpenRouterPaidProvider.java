@@ -40,11 +40,11 @@ final class OpenRouterPaidProvider implements StructuredAiProvider {
   }
   public Response execute(Request request){
     var model=discovery.discoverAndPin();var reservation=budget.reserve(request,model,"ALL_FREE_PROVIDERS_UNAVAILABLE");long start=System.nanoTime();
-    HttpResponse<String> response=null;JsonNode usage=null;String requestId=null;Integer prompt=null,completion=null,reasoning=null;BigDecimal actual=BigDecimal.ZERO;
+    HttpResponse<java.io.InputStream> response=null;JsonNode usage=null;String requestId=null;Integer prompt=null,completion=null,reasoning=null;BigDecimal actual=BigDecimal.ZERO;
     try{
-      response=http.send(build(request,model.id()),HttpResponse.BodyHandlers.ofString());requestId=response.headers().firstValue("x-request-id").orElse(null);
-      if(response.statusCode()/100!=2)throw classify(response.statusCode());
-      JsonNode root=mapper.readTree(response.body());usage=root.path("usage");requestId=requestId==null?root.path("id").asText(null):requestId;
+      response=http.send(build(request,model.id()),HttpResponse.BodyHandlers.ofInputStream());requestId=response.headers().firstValue("x-generation-id").orElse(response.headers().firstValue("x-request-id").orElse(null));budget.recordResponseHeaders(reservation,requestId);
+      if(response.statusCode()/100!=2){response.body().close();throw classify(response.statusCode());}
+      JsonNode root;try(var body=response.body()){root=mapper.readTree(body);}usage=root.path("usage");requestId=requestId==null?root.path("id").asText(null):requestId;
       prompt=integer(usage,"prompt_tokens");completion=integer(usage,"completion_tokens");reasoning=integer(usage.path("completion_tokens_details"),"reasoning_tokens");actual=actualCost(usage,model,prompt,completion,reasoning);
       String content=root.path("choices").path(0).path("message").path("content").asText();JsonNode structured;
       try{structured=OpenAiCompatibleFreeProvider.normalizeStructuredResponse(mapper,content);}catch(Exception e){throw new AiProviderException("AI_PROVIDER_RESPONSE_INVALID",false,"OpenRouter paid returned invalid structured JSON");}
@@ -52,8 +52,9 @@ final class OpenRouterPaidProvider implements StructuredAiProvider {
       return new Response(structured,provider(),model.id(),root.path("model").asText(model.id()),requestId,prompt,completion,latency,
           root.path("choices").path(0).path("finish_reason").asText(null),Map.of(),Map.of(),null,"HTTP_"+response.statusCode(),false);
     }catch(AiProviderException e){budget.reconcile(reservation,prompt,completion,reasoning,(System.nanoTime()-start)/1_000_000,actual,requestId,"FAILED",e.code());throw e;
-    }catch(java.net.http.HttpTimeoutException e){var error=new AiProviderException("AI_REQUEST_TIMEOUT",true,"OpenRouter paid request timed out");budget.reconcile(reservation,prompt,completion,reasoning,(System.nanoTime()-start)/1_000_000,actual,requestId,"FAILED",error.code());throw error;
-    }catch(InterruptedException e){Thread.currentThread().interrupt();var error=new AiProviderException("AI_REQUEST_CANCELLED",false,"OpenRouter paid request was cancelled");budget.reconcile(reservation,prompt,completion,reasoning,(System.nanoTime()-start)/1_000_000,actual,requestId,"FAILED",error.code());throw error;
+    }catch(java.net.http.HttpTimeoutException e){var error=unknownTimeout("OpenRouter paid request timed out");budget.markUnknown(reservation,(System.nanoTime()-start)/1_000_000,requestId,error.code());throw error;
+    }catch(InterruptedException e){Thread.currentThread().interrupt();var error=unknownTimeout("OpenRouter paid request was interrupted after dispatch");budget.markUnknown(reservation,(System.nanoTime()-start)/1_000_000,requestId,error.code());throw error;
+    }catch(java.io.IOException e){var error=unknownTimeout("OpenRouter paid transport ended without an authoritative response");budget.markUnknown(reservation,(System.nanoTime()-start)/1_000_000,requestId,error.code());throw error;
     }catch(Exception e){var error=new AiProviderException("AI_PROVIDER_RESPONSE_INVALID",false,"OpenRouter paid returned an invalid response");budget.reconcile(reservation,prompt,completion,reasoning,(System.nanoTime()-start)/1_000_000,actual,requestId,"FAILED",error.code());throw error;}
   }
   private HttpRequest build(Request r,String model)throws Exception{
@@ -65,6 +66,7 @@ final class OpenRouterPaidProvider implements StructuredAiProvider {
     return model.promptPrice().multiply(BigDecimal.valueOf(prompt==null?0:prompt)).add(model.completionPrice().multiply(BigDecimal.valueOf(completion==null?0:completion))).add(model.reasoningPrice().multiply(BigDecimal.valueOf(reasoning==null?0:reasoning))).add(model.requestPrice());
   }
   private AiProviderException classify(int status){if(status==429)return new AiProviderException("AI_PROVIDER_TEMPORARILY_RATE_LIMITED",true,"OpenRouter paid is rate limited");if(status==401||status==403)return new AiProviderException("AI_PROVIDER_AUTHENTICATION_FAILED",false,"OpenRouter paid authentication failed");if(status==404)return new AiProviderException("AI_PROVIDER_MODEL_UNAVAILABLE",false,"OpenRouter paid model is unavailable");if(status==408||status>=500)return new AiProviderException("AI_PROVIDER_UNAVAILABLE",true,"OpenRouter paid is unavailable");return new AiProviderException("AI_PROVIDER_RESPONSE_INVALID",false,"OpenRouter paid rejected the request");}
+  private AiProviderException unknownTimeout(String message){return new AiProviderException("AI_PROVIDER_HARD_TIMEOUT",false,message,Map.of("outcomeCertainty","OUTCOME_UNKNOWN"),null);}
   private Integer integer(JsonNode n,String key){return n.has(key)&&n.get(key).canConvertToInt()?n.get(key).asInt():null;}
   private Availability unavailable(String reason){return new Availability(false,reason,FreeStatus.UNKNOWN,CapacityAuthority.PROVIDER_API,"UNKNOWN",null,Map.of());}
 }
