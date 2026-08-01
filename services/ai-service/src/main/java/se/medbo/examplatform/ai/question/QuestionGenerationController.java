@@ -36,12 +36,14 @@ final class QuestionGenerationController {
   record Deterministic(@NotNull QuestionGenerationProviderClient.Request request,
                        @NotNull QuestionGenerationProviderClient.Proposal proposal,
                        @NotBlank String actor,@NotBlank@Size(max=200)String idempotencyKey){}
+  record RetryTarget(@NotBlank String actor,@NotBlank@Size(max=200)String idempotencyKey){}
   @PostMapping("/jobs")@ResponseStatus(HttpStatus.ACCEPTED)Map<String,Object>create(@Valid@RequestBody Create r){return service.create(new QuestionGenerationProviderClient.Request(r.target(),r.context(),r.proposalCount(),r.questionType(),QuestionGenerationProviderClient.CURRENT_PROMPT_VERSION,null,null,0,null,null,null,r.narrowTarget()),r.requestedBy(),r.idempotencyKey(),provider,model,r.targetPlanId());}
   @PostMapping("/deterministic-proposals")Map<String,Object>deterministic(@Valid@RequestBody Deterministic r){return service.createDeterministic(r.request(),r.proposal(),r.actor(),r.idempotencyKey());}
   @GetMapping("/jobs/{id}")Map<String,Object>job(@PathVariable UUID id){return service.get(id);}
   @GetMapping("/jobs")List<Map<String,Object>>jobs(@RequestParam UUID knowledgeFactId,@RequestParam(defaultValue="10")@Min(1)@Max(50)int limit){return service.history(knowledgeFactId,limit);}
   @GetMapping("/jobs/{id}/proposals")List<Map<String,Object>>proposals(@PathVariable UUID id){return service.proposals(id).stream().map(service::withIntelligence).toList();}
   @PostMapping("/jobs/{id}/cancel")Map<String,Object>cancel(@PathVariable UUID id){return service.cancel(id);}
+  @PostMapping("/expansion-targets/{id}/retry-confirmed-failure")@ResponseStatus(HttpStatus.ACCEPTED)Map<String,Object>retryTarget(@PathVariable UUID id,@Valid@RequestBody RetryTarget r){return service.retryConfirmedExpansionTarget(id,r.actor(),r.idempotencyKey());}
   @GetMapping("/proposals/{id}")Map<String,Object>proposal(@PathVariable UUID id){return service.withIntelligence(service.proposal(id));}
   @PostMapping("/proposals/{id}/reject")Map<String,Object>reject(@PathVariable UUID id,@Valid@RequestBody Reject r){return service.withIntelligence(service.reject(id,r.reasonCode(),r.comment(),r.actor(),r.version()));}
   @PostMapping("/proposals/{id}/regenerate")@ResponseStatus(HttpStatus.ACCEPTED)Map<String,Object>regenerate(@PathVariable UUID id,@Valid@RequestBody Regenerate r){return service.regenerate(id,r.reviewerFeedback(),r.actor(),r.version(),r.idempotencyKey(),provider,model);}
