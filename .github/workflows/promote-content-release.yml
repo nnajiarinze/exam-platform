@@ -28,8 +28,14 @@ jobs:
           EXPECTED_CHECKSUM: ${{ inputs.expected_checksum }}
           SNAPSHOT_JSON: ${{ secrets.CONTENT_RELEASE_SNAPSHOT_JSON }}
           SNAPSHOT_GZIP_BASE64: ${{ secrets.CONTENT_RELEASE_SNAPSHOT_GZIP_BASE64 }}
+          SNAPSHOT_GZIP_BASE64_PART_1: ${{ secrets.CONTENT_RELEASE_SNAPSHOT_GZIP_BASE64_PART_1 }}
+          SNAPSHOT_GZIP_BASE64_PART_2: ${{ secrets.CONTENT_RELEASE_SNAPSHOT_GZIP_BASE64_PART_2 }}
         run: |
           set -Eeuo pipefail
+          if [[ -n "${SNAPSHOT_GZIP_BASE64_PART_1}" || -n "${SNAPSHOT_GZIP_BASE64_PART_2}" ]]; then
+            [[ -n "${SNAPSHOT_GZIP_BASE64_PART_1}" && -n "${SNAPSHOT_GZIP_BASE64_PART_2}" ]]
+            SNAPSHOT_GZIP_BASE64="${SNAPSHOT_GZIP_BASE64_PART_1}${SNAPSHOT_GZIP_BASE64_PART_2}"
+          fi
           if [[ -n "${SNAPSHOT_GZIP_BASE64}" ]]; then
             SNAPSHOT_JSON="$(printf '%s' "${SNAPSHOT_GZIP_BASE64}" | base64 --decode | gzip --decompress)"
           fi
@@ -58,8 +64,14 @@ jobs:
           HOSTED_USER: ${{ secrets.HOSTED_USER }}
           SNAPSHOT_JSON: ${{ secrets.CONTENT_RELEASE_SNAPSHOT_JSON }}
           SNAPSHOT_GZIP_BASE64: ${{ secrets.CONTENT_RELEASE_SNAPSHOT_GZIP_BASE64 }}
+          SNAPSHOT_GZIP_BASE64_PART_1: ${{ secrets.CONTENT_RELEASE_SNAPSHOT_GZIP_BASE64_PART_1 }}
+          SNAPSHOT_GZIP_BASE64_PART_2: ${{ secrets.CONTENT_RELEASE_SNAPSHOT_GZIP_BASE64_PART_2 }}
         run: |
           set -Eeuo pipefail
+          if [[ -n "${SNAPSHOT_GZIP_BASE64_PART_1}" || -n "${SNAPSHOT_GZIP_BASE64_PART_2}" ]]; then
+            [[ -n "${SNAPSHOT_GZIP_BASE64_PART_1}" && -n "${SNAPSHOT_GZIP_BASE64_PART_2}" ]]
+            SNAPSHOT_GZIP_BASE64="${SNAPSHOT_GZIP_BASE64_PART_1}${SNAPSHOT_GZIP_BASE64_PART_2}"
+          fi
           if [[ -n "${SNAPSHOT_GZIP_BASE64}" ]]; then
             SNAPSHOT_JSON="$(printf '%s' "${SNAPSHOT_GZIP_BASE64}" | base64 --decode | gzip --decompress)"
           fi
