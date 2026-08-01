@@ -36,8 +36,11 @@ cd "${PLATFORM_REPOSITORY}"
 printf '%s  %s\n' \
   '39a93261cc64af0122e186b7d67f57dffad573576570956a4754d22ce776aada' \
   'docs/sverige-i-fokus.pdf' | sha256sum --check --status
-python3 scripts/sverige_i_fokus_sql.py | PGPASSWORD="${database_password}" "${PSQL}" \
-  -X -v ON_ERROR_STOP=1 --username="${database_user}" --dbname="${database_url}"
+sql_file="$(mktemp)"
+trap 'rm -f "${sql_file}"' EXIT
+python3 scripts/sverige_i_fokus_sql.py >"${sql_file}"
+PGPASSWORD="${database_password}" "${PSQL}" -X -v ON_ERROR_STOP=1 \
+  --username="${database_user}" --dbname="${database_url}" <"${sql_file}"
 
 verification="$(PGPASSWORD="${database_password}" "${PSQL}" -XAt -v ON_ERROR_STOP=1 \
   --username="${database_user}" --dbname="${database_url}" --command="SELECT json_build_object('activeRevision',(SELECT id FROM source_revision WHERE status='ACTIVE'),'v1Sections',(SELECT count(*) FROM source_section WHERE source_revision_id='sverige-i-fokus-source-v1'),'v2Sections',(SELECT count(*) FROM source_section WHERE source_revision_id='sverige-i-fokus-source-v2'),'affectedItems',(SELECT count(*) FROM source_revision_revalidation WHERE classification IN ('AFFECTED_REQUIRES_REPAIR','INVALID_AFTER_BOUNDARY_CORRECTION')))::text")"
