@@ -98,4 +98,29 @@ class GeminiAiProviderClientTest {
         .contains("REPAIRED","INSUFFICIENT_GROUNDED_INFORMATION")
         .doesNotContain("pageType","title","knowledgeFactVersionIds","topicId","learningObjectiveId","sourceSectionId");
   }
+
+  @Test void lessonGenerationRestoresImmutablePlanMetadataInsteadOfRoundTrippingIt()throws Exception{
+    var seen=new AtomicReference<StructuredAiProvider.Request>();var router=mock(FreeOnlyProviderRouter.class);
+    UUID section=UUID.randomUUID(),fact=UUID.randomUUID(),version=UUID.randomUUID(),job=UUID.randomUUID();
+    when(router.execute(any())).thenAnswer(invocation->{seen.set(invocation.getArgument(0));return new StructuredAiProvider.Response(
+        mapper.readTree("{\"title\":\"Sveriges säkerhet\",\"introduction\":\"En introduktion.\",\"summary\":\"En sammanfattning.\",\"importantPoints\":[\"En punkt\"],\"pages\":[{\"body\":\"Sverige blev medlem i Nato år 2024.\",\"evidenceQuotes\":[\"Sverige blev medlem i Nato år 2024.\"],\"keyTerms\":[\"Nato\"]}]}"),
+        "OPENROUTER_PAID","test-paid","test-paid","request-46",120,60,8L,"stop",Map.of(),Map.of(),null,"HTTP_200",false);});
+    var plan=List.of(new LessonGenerationProviderClient.PlannedPage("SUMMARY","Att komma ihåg",List.of(version)));
+    var request=new LessonGenerationProviderClient.Request(UUID.randomUUID(),"Säkerhet",UUID.randomUUID(),
+        "Förstå säkerhet",section,"Källa","a".repeat(64),"Sverige blev medlem i Nato år 2024.",
+        List.of(new LessonGenerationProviderClient.Fact(fact,version,"Sverige blev medlem i Nato år 2024.",section)),
+        plan,"sv",job,"reviewer",0);
+
+    var result=new GeminiAiProviderClient(mapper,router).generateLesson(request);
+
+    assertThat(result.proposal().pages()).singleElement().satisfies(page->{
+      assertThat(page.pageType()).isEqualTo("SUMMARY");
+      assertThat(page.title()).isEqualTo("Att komma ihåg");
+      assertThat(page.knowledgeFactVersionIds()).containsExactly(version);
+    });
+    assertThat(mapper.writeValueAsString(seen.get().jsonSchema()))
+        .contains("body","evidenceQuotes","keyTerms")
+        .doesNotContain("pageType","knowledgeFactVersionIds");
+    assertThat(seen.get().systemInstruction()).contains("read-only","must not be returned");
+  }
 }
