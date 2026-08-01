@@ -79,28 +79,33 @@ jobs:
         env:
           HOSTED_HOST: ${{ secrets.HOSTED_HOST }}
           HOSTED_USER: ${{ secrets.HOSTED_USER }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
-          ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" 'bash -s' <<'REMOTE_SCRIPT'
-          set -Eeuo pipefail
-          env_file=/opt/citizenship-platform/.env
-          [[ -f "${env_file}" && "$(stat -c '%a' "${env_file}")" == 600 ]]
-          grep -Eq '^OPENROUTER_API_KEY=.+$' "${env_file}"
-          update_env() {
-            local key="$1" value="$2" temporary
-            temporary="$(mktemp "${env_file}.XXXXXX")"
-            awk -F= -v key="${key}" -v value="${value}" '
-              BEGIN { replaced=0 }
-              $1==key { if (!replaced) print key "=" value; replaced=1; next }
-              { print }
-              END { if (!replaced) print key "=" value }
-            ' "${env_file}" >"${temporary}"
-            chmod 600 "${temporary}"
-            mv "${temporary}" "${env_file}"
-          }
-          update_env OPENROUTER_ALLOW_PAID true
-          update_env OPENROUTER_BUDGET_USD 14.00
-          update_env AI_PROVIDER_PRIORITY GEMINI,GROQ,OPENROUTER_FREE,OPENROUTER_PAID
+          [[ -n "${OPENROUTER_API_KEY}" ]]
+          read -r -d '' remote_script <<'REMOTE_SCRIPT' || true
+            set -Eeuo pipefail
+            IFS= read -r openrouter_key
+            env_file=/opt/citizenship-platform/.env
+            [[ -n "${openrouter_key}" && -f "${env_file}" && "$(stat -c "%a" "${env_file}")" == 600 ]]
+            update_env() {
+              local key="$1" value="$2" temporary
+              temporary="$(mktemp "${env_file}.XXXXXX")"
+              awk -F= -v key="${key}" -v value="${value}" '
+                BEGIN { replaced=0 }
+                $1==key { if (!replaced) print key "=" value; replaced=1; next }
+                { print }
+                END { if (!replaced) print key "=" value }
+              ' "${env_file}" >"${temporary}"
+              chmod 600 "${temporary}"
+              mv "${temporary}" "${env_file}"
+            }
+            update_env OPENROUTER_API_KEY "${openrouter_key}"
+            update_env OPENROUTER_ALLOW_PAID true
+            update_env OPENROUTER_BUDGET_USD 14.00
+            update_env AI_PROVIDER_PRIORITY GEMINI,GROQ,OPENROUTER_FREE,OPENROUTER_PAID
           REMOTE_SCRIPT
+          printf '%s\n' "${OPENROUTER_API_KEY}" | ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" \
+            "bash -c $(printf '%q' "${remote_script}")"
       - name: Deploy immutable images
         env:
           COMMIT_SHA: ${{ inputs.commit_sha }}
