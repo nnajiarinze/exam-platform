@@ -16,8 +16,16 @@ public interface QuestionGenerationProviderClient {
   }
   record Source(UUID sourceId, UUID sourceSectionId, String title, String chapterTitle,
                 String subsectionTitle, Integer pageStart, Integer pageEnd, String checksum,
-                String contentChecksum, String contentExcerpt, List<String> exactEvidence) {
-    Source(UUID sourceId,String title,String checksum,String contentExcerpt){this(sourceId,null,title,null,null,null,null,checksum,checksum,contentExcerpt,List.of());}
+                String contentChecksum, String contentExcerpt, List<String> exactEvidence,
+                String sourceRevisionId, UUID logicalSectionId, UUID historicalSourceSectionId,
+                UUID sourceIdentityReconciliationId) {
+    public Source(UUID sourceId,UUID sourceSectionId,String title,String chapterTitle,String subsectionTitle,
+                  Integer pageStart,Integer pageEnd,String checksum,String contentChecksum,
+                  String contentExcerpt,List<String> exactEvidence){
+      this(sourceId,sourceSectionId,title,chapterTitle,subsectionTitle,pageStart,pageEnd,checksum,
+          contentChecksum,contentExcerpt,exactEvidence,null,null,null,null);
+    }
+    Source(UUID sourceId,String title,String checksum,String contentExcerpt){this(sourceId,null,title,null,null,null,null,checksum,checksum,contentExcerpt,List.of(),null,null,null,null);}
   }
   record Regeneration(UUID parentProposalId, String reasonCode, String reviewerFeedback,
                       String previousQuestionText, List<Option> previousOptions, int generationAttempt) {}
