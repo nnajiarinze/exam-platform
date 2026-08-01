@@ -50,6 +50,7 @@ public class MockExamService {
                 """).param("examId", canonicalExamId).query((rs, row) -> new ConfigurationView(
                         rs.getString("exam_id"), rs.getString("name"), rs.getString("description"),
                         rs.getInt("total_questions"), rs.getObject("duration_minutes", Integer.class),
+                        rs.getObject("duration_minutes", Integer.class) != null,
                         rs.getBigDecimal("passing_percentage"))).optional()
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "MOCK_BLUEPRINT_NOT_FOUND",
                         "No active mock exam blueprint exists for the exam"));
@@ -760,9 +761,7 @@ public class MockExamService {
                               int remainingSeconds, int answered,
                               List<NavigationItem> questions) {}
     public record ConfigurationView(String examId, String name, String description, int questionCount,
-                                    Integer durationMinutes, BigDecimal passPercentage) {
-        public boolean timed() { return durationMinutes != null; }
-    }
+                                    Integer durationMinutes, boolean timed, BigDecimal passPercentage) {}
     public record NavigationItem(UUID attemptQuestionId, int sequenceNumber, boolean answered, boolean flagged) {}
     public record QuestionView(UUID attemptQuestionId, String questionId, String prompt, String questionType,
                                List<AnswerOptionView> answerOptions, int sequenceNumber, int totalQuestions,
