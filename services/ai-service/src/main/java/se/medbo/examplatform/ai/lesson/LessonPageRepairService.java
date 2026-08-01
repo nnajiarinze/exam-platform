@@ -168,7 +168,11 @@ class LessonPageRepairService {
       """).param("proposal",proposal).param("page",pageIndex)
       .query((rs,row)->new LessonGenerationProviderClient.FailedClaim(rs.getString(1),rs.getString(2),rs.getString(3))).list();}
   static String stripExactFailedClaims(String body,List<LessonGenerationProviderClient.FailedClaim> failedClaims){
-    var rejected=failedClaims.stream().map(LessonGenerationProviderClient.FailedClaim::text)
+    var rejected=failedClaims.stream()
+        // A MISSING_EVIDENCE rejection is about the evidence envelope, not the claim text.
+        // Retaining the same grounded claim with corrected exact evidence is a valid repair.
+        .filter(claim->!"MISSING_EVIDENCE".equals(claim.failureCode()))
+        .map(LessonGenerationProviderClient.FailedClaim::text)
         .map(LessonPageRepairService::normalizeClaim).collect(java.util.stream.Collectors.toSet());
     return java.util.Arrays.stream(body.trim().split("(?<=[.!?])\\s+"))
         .map(String::trim).filter(sentence->!sentence.isBlank())

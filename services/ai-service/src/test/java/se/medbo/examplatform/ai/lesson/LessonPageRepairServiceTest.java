@@ -35,6 +35,15 @@ class LessonPageRepairServiceTest {
   }
 
   @Test
+  void preservesAClaimRejectedOnlyForMissingEvidenceSoTheEnvelopeCanBeRepaired() {
+    String claim="Sverige fortsatte att vara neutralt och valde att stå utanför Nato efter andra världskriget.";
+    var failed=List.of(new LessonGenerationProviderClient.FailedClaim(
+        claim,"MISSING_EVIDENCE","No exact page evidence occurs in the bounded source"));
+
+    assertThat(LessonPageRepairService.stripExactFailedClaims(claim,failed)).isEqualTo(claim);
+  }
+
+  @Test
   void stripsRejectedClaimsAccumulatedAcrossRepairLineage() {
     var failed=List.of(
         new LessonGenerationProviderClient.FailedClaim("Första felaktiga påståendet.","UNSUPPORTED_CLAIM","Unsupported"),
