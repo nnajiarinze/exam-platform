@@ -11,7 +11,7 @@ if ! command -v psql >/dev/null 2>&1 || [[ "$(psql --version 2>/dev/null | sed -
   install -d -m 700 "${POSTGRES_TOOL_DIR}"
   wrapper="${POSTGRES_TOOL_DIR}/psql"
   printf '%s\n' '#!/usr/bin/env bash' \
-    'exec docker run --rm --network host -e PGPASSWORD postgres:18-alpine psql "$@"' >"${wrapper}"
+    'exec docker run --rm -i --network host -e PGPASSWORD postgres:18-alpine psql "$@"' >"${wrapper}"
   chmod 700 "${wrapper}"
   export POSTGRES_TOOL_DIR
 fi
