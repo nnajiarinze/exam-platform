@@ -33,7 +33,11 @@ final class QuestionGenerationController {
   record Regenerate(@NotBlank@Size(max=1000)String reviewerFeedback,@NotBlank String actor,@PositiveOrZero long version,
                     @NotBlank@Size(max=200)String idempotencyKey){}
   record Accept(@NotNull UUID questionId,@NotBlank String actor,@PositiveOrZero long version,@NotBlank String validationChecksum){}
+  record Deterministic(@NotNull QuestionGenerationProviderClient.Request request,
+                       @NotNull QuestionGenerationProviderClient.Proposal proposal,
+                       @NotBlank String actor,@NotBlank@Size(max=200)String idempotencyKey){}
   @PostMapping("/jobs")@ResponseStatus(HttpStatus.ACCEPTED)Map<String,Object>create(@Valid@RequestBody Create r){return service.create(new QuestionGenerationProviderClient.Request(r.target(),r.context(),r.proposalCount(),r.questionType(),QuestionGenerationProviderClient.CURRENT_PROMPT_VERSION,null,null,0,null,null,null,r.narrowTarget()),r.requestedBy(),r.idempotencyKey(),provider,model);}
+  @PostMapping("/deterministic-proposals")Map<String,Object>deterministic(@Valid@RequestBody Deterministic r){return service.createDeterministic(r.request(),r.proposal(),r.actor(),r.idempotencyKey());}
   @GetMapping("/jobs/{id}")Map<String,Object>job(@PathVariable UUID id){return service.get(id);}
   @GetMapping("/jobs")List<Map<String,Object>>jobs(@RequestParam UUID knowledgeFactId,@RequestParam(defaultValue="10")@Min(1)@Max(50)int limit){return service.history(knowledgeFactId,limit);}
   @GetMapping("/jobs/{id}/proposals")List<Map<String,Object>>proposals(@PathVariable UUID id){return service.proposals(id).stream().map(service::withIntelligence).toList();}

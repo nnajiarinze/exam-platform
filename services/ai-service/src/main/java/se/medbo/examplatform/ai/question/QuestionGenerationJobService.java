@@ -136,6 +136,30 @@ public class QuestionGenerationJobService {
     int order=0;for(var source:c.sources())jdbc.sql("INSERT INTO ai_question_generation_source(generation_job_id,source_id,source_section_id,source_title,source_checksum,content_excerpt,display_order) VALUES(:job,:source,:section,:title,:checksum,:excerpt,:display)").param("job",id).param("source",source.sourceId()).param("section",source.sourceSectionId(),Types.OTHER).param("title",source.title()).param("checksum",source.checksum()).param("excerpt",source.contentExcerpt()).param("display",order++).update();
     metrics.counter("ai.question_generation.jobs","result","requested").increment();return get(id);
   }
+  @Transactional public Map<String,Object> createDeterministic(QuestionGenerationProviderClient.Request supplied,
+      QuestionGenerationProviderClient.Proposal proposal,String actor,String key) {
+    var request=new QuestionGenerationProviderClient.Request(supplied.target(),supplied.context(),1,
+        "SINGLE_CHOICE","deterministic-question-v1",null,actor,0,null,"EASY","REMEMBER",null);
+    var existing=jdbc.sql("SELECT id FROM ai_generation_job WHERE requested_by=:actor AND idempotency_key=:key")
+        .param("actor",actor).param("key",key).query(UUID.class).list();
+    if(!existing.isEmpty())return deterministicResult(existing.getFirst());
+    UUID jobId=(UUID)create(request,actor,key,"SYSTEM_DETERMINISTIC","deterministic-question-v1").get("id");
+    jdbc.sql("UPDATE ai_generation_job SET status='RUNNING',started_at=:now,provider='SYSTEM_DETERMINISTIC',model='deterministic-question-v1' WHERE id=:id")
+        .param("now",now()).param("id",jobId).update();
+    var row=jdbc.sql("SELECT * FROM ai_generation_job WHERE id=:id").param("id",jobId).query().singleRow();
+    var result=new QuestionGenerationProviderClient.Result("QUESTIONS_PROPOSED",List.of(proposal),null,List.of(),
+        new QuestionGenerationProviderClient.Usage(0,0,null),null,"SYSTEM_DETERMINISTIC","deterministic-question-v1");
+    persist(jobId,row,request,result);
+    var response=deterministicResult(jobId);UUID proposalId=(UUID)response.get("proposalId");
+    if(proposalId!=null)audit(actor,"SYSTEM_DETERMINISTIC_PROPOSAL_CREATED",proposalId,Map.of("jobId",jobId,"humanVerified",false));
+    return response;
+  }
+  private Map<String,Object> deterministicResult(UUID jobId) {
+    var proposals=jdbc.sql("SELECT id FROM ai_question_proposal WHERE generation_job_id=:job ORDER BY proposal_order")
+        .param("job",jobId).query(UUID.class).list();
+    var response=new java.util.LinkedHashMap<String,Object>(get(jobId));
+    response.put("proposalId",proposals.isEmpty()?null:proposals.getFirst());return response;
+  }
   public Map<String,Object> get(UUID id){var rows=jdbc.sql("SELECT j.id,j.operation_type AS \"operationType\",j.result_type AS \"resultType\",j.requested_by AS \"requestedBy\",j.requested_count AS \"requestedCount\",d.requested_question_type AS \"requestedQuestionType\",d.target_fact_id AS \"targetKnowledgeFactId\",d.target_fact_version_id AS \"targetKnowledgeFactVersionId\",d.target_version AS \"targetVersion\",d.target_fact_checksum AS \"targetChecksum\",j.status,j.provider,j.model,j.prompt_version AS \"promptVersion\",j.created_at AS \"createdAt\",j.started_at AS \"startedAt\",j.completed_at AS \"completedAt\",j.failed_at AS \"failedAt\",j.cancelled_at AS \"cancelledAt\",j.retry_count AS \"retryCount\",j.input_tokens AS \"inputTokens\",j.output_tokens AS \"outputTokens\",j.total_tokens AS \"totalTokens\",j.provider_request_id AS \"providerRequestId\",j.error_code AS \"errorCode\",j.error_message AS \"errorMessage\",j.version,(SELECT count(*) FROM ai_question_proposal p WHERE p.generation_job_id=j.id) AS \"proposalCount\" FROM ai_generation_job j JOIN ai_question_generation_detail d ON d.generation_job_id=j.id WHERE j.id=:id AND j.job_type='QUESTION_GENERATION'").param("id",id).query().listOfRows();if(rows.isEmpty())throw error(HttpStatus.NOT_FOUND,"AI_JOB_NOT_FOUND","Question generation job was not found");return rows.getFirst();}
   public List<Map<String,Object>> history(UUID factId,int limit){return jdbc.sql("SELECT j.id FROM ai_generation_job j JOIN ai_question_generation_detail d ON d.generation_job_id=j.id WHERE j.job_type='QUESTION_GENERATION' AND d.target_fact_id=:fact ORDER BY CASE WHEN j.status IN ('QUEUED','RUNNING') THEN 0 ELSE 1 END,j.created_at DESC,j.id DESC LIMIT :limit").param("fact",factId).param("limit",limit).query(UUID.class).list().stream().map(this::get).toList();}
   public List<Map<String,Object>> proposals(UUID job){get(job);return jdbc.sql("SELECT id FROM ai_question_proposal WHERE generation_job_id=:job ORDER BY proposal_order").param("job",job).query(UUID.class).list().stream().map(this::proposal).toList();}
