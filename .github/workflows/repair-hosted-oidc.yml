@@ -151,7 +151,10 @@ jobs:
           deployed_image="$("${compose[@]}" ps -q api-gateway | xargs docker inspect -f '{{.Config.Image}}')"
           [[ "${deployed_image}" == */citizenship-api-gateway:"${image_sha}" ]]
           rm -f "${release_backup}"
-          trap recover_gateway EXIT
+          # The deployment is now committed. Clear the rollback trap explicitly;
+          # leaving any EXIT handler installed risks restoring the previous image
+          # after the remote shell has already reported successful smoke tests.
+          trap - EXIT
           gateway_stopped=false
           REMOTE
       - name: Validate external OIDC metadata and Admin security headers
@@ -182,9 +185,17 @@ jobs:
           grep -q '<title>Sign in to Svea Study</title>' login.html
           curl --fail --silent --show-error --proto '=https' "${callback}" | grep -q '<title>Content administration</title>'
           curl --fail --silent --show-error --proto '=https' --dump-header headers.txt --output index.html "${base}/"
+          asset_path="$(sed -n 's#.*src="\([^"]*index-[^"]*\.js\)".*#\1#p' index.html)"
+          [[ "${asset_path}" == /assets/index-*.js ]]
+          curl --fail --silent --show-error --proto '=https' --output admin.js "${base}${asset_path}"
+          grep -Fq 'redirect_uri:`${window.location.origin}/oidc/callback`' admin.js
+          if grep -Fq 'redirect_uri:`${window.location.origin}/auth/callback`' admin.js; then
+            echo 'Hosted Admin still contains the gateway-conflicting OIDC callback.' >&2
+            exit 1
+          fi
           grep -qi '^content-security-policy:.*connect-src '\''self' headers.txt
           if grep -Eqi 'onrender|46\.224\.221\.7|http://' index.html; then
             echo 'Hosted Admin HTML leaked a stale or insecure endpoint.' >&2
             exit 1
           fi
-          rm -f discovery.json headers.txt index.html login.html
+          rm -f discovery.json headers.txt index.html login.html admin.js
