@@ -25,7 +25,7 @@ ACTIVE_RELEASE = {
     "key": "sverige-i-fokus-complete-source-v2-deep-lessons-v2-internal",
     "checksum": "7903212ece00cb093220d07418d6fe9fde8116846d2b384b414531f1bfaeb7a1",
 }
-EXPECTED_MIGRATIONS = {"content": "20", "ai": "32"}
+EXPECTED_MIGRATIONS = {"content": "24", "ai": "32"}
 EXPECTED_CANONICAL = {"approvedActiveFacts": 209, "latestLessons": 38, "latestPages": 194, "canonicalQuestions": 139}
 DATABASES = {
     "content": {"service": "content-database", "user": "content", "database": "content"},
@@ -312,11 +312,18 @@ def source_payload_diagnostic(source:dict[str,Any],target:dict[str,Any])->dict[s
         "differenceTypes":{"whitespaceOnly":left!=right and ws_left==ws_right,"unicodeNormalizationOnly":left!=right and nfc_left==nfc_right,"lineBreakHyphenationOnly":ws_left!=ws_right and pdf_left==pdf_right},
         "checksums":{"raw":{"source":digest(left),"target":digest(right)},"unicodeNfc":{"source":digest(nfc_left),"target":digest(nfc_right)},"normalizedWhitespace":{"source":digest(ws_left),"target":digest(ws_right)},"pdfLineBreak":{"source":digest(pdf_left),"target":digest(pdf_right)},"canonical":{"source":digest(canonical_left),"target":digest(canonical_right)}},
         "firstDifferenceExcerpt":{"source":excerpt(left),"target":excerpt(right)},
+        "sourceMetadata":{key:source.get(key) for key in ("id","source_type","title","file_name","created_at","updated_at","imported_at") if key in source},
+        "targetMetadata":{key:target.get(key) for key in ("id","source_type","title","file_name","created_at","updated_at","imported_at") if key in target},
     }
 
 def plan(source:Path,target:Path,output:Path)->dict[str,Any]:
     source_manifest=verify_snapshot(source); target_manifest=json.loads((target/"manifest.json").read_text())
     classifications={}; conflicts=[]; invalid=[]; normalizations=[]; final_counts={}; conflict_diagnostics=[]
+    payload_rows=load_rows(source,"content","source_payload_revision")
+    payload_by_reference={row["materialized_source_reference_id"]:row for row in payload_rows}
+    reconciled_shared={
+        row["historical_shared_id"]:row for row in load_rows(source,"content","source_payload_identity_reconciliation")
+    }
     for role in DATABASES:
         schema=json.loads((source/role/"schema.json").read_text()); classifications[role]={}; final_counts[role]={}
         for item in schema["tables"]:
@@ -330,9 +337,20 @@ def plan(source:Path,target:Path,output:Path)->dict[str,Any]:
                     for key,index in zip(item.get("uniqueKeys",[]),unique_maps):
                         candidate=index.get(record_key(row,key))
                         if candidate is not None: existing=candidate; break
-                if existing is None: counts["INSERT"]+=1
+                if existing is None:
+                    payload=payload_by_reference.get(row.get("id")) if role=="content" and table=="source_reference" else None
+                    classification="INSERT_CANONICAL_REVISION" if payload and payload.get("payload_role")=="CANONICAL" else "INSERT_HISTORICAL_REVISION" if payload else "INSERT"
+                    counts[classification]+=1
                 elif canonical_json(existing)==canonical_json(row): counts["REUSE_IDENTICAL"]+=1
                 elif table in STRUCTURAL_REUSE.get(role,set()) and canonical_json(structural_identity(existing))==canonical_json(structural_identity(row)): counts["REUSE_CANONICAL"]+=1
+                elif role=="content" and table=="source_reference" and row.get("id") in reconciled_shared:
+                    reconciliation=reconciled_shared[row["id"]]
+                    expected={reconciliation["local_payload_checksum"].strip(),reconciliation["hosted_payload_checksum"].strip()}
+                    actual={(row.get("content_checksum") or "").strip(),(existing.get("content_checksum") or "").strip()}
+                    if expected==actual:
+                        counts["REUSE_RECONCILED_ALIAS"]+=1
+                    else:
+                        counts["CONFLICT_IMMUTABLE"]+=1; conflicts.append({"database":role,"table":table,"key":record_key(row,pk),"reason":"RECONCILIATION_CHECKSUM_MISMATCH"})
                 else:
                     counts["CONFLICT_IMMUTABLE"]+=1
                     different_fields=sorted(key for key in set(row)|set(existing) if row.get(key)!=existing.get(key))
@@ -349,10 +367,11 @@ def plan(source:Path,target:Path,output:Path)->dict[str,Any]:
                     states=rule.get(field,[])
                     if row.get(field) in states: counts["NORMALIZE_RUNTIME_STATE"]+=1; normalizations.append({"database":role,"table":table,"id":row.get("id"),"from":row.get(field),"to":rule.get("futureStatus") or rule.get("futureState")})
             skipped=len(EPHEMERAL_FIELDS.get(role,{}).get(table,set()))*len(src); counts["SKIP_EPHEMERAL_FIELDS"]=skipped
-            classifications[role][table]=dict(counts); final_counts[role][table]=len(dst)+counts["INSERT"]
+            classifications[role][table]=dict(counts); final_counts[role][table]=len(dst)+counts["INSERT"]+counts["INSERT_CANONICAL_REVISION"]+counts["INSERT_HISTORICAL_REVISION"]
     fk={role:foreign_key_report(source,role,json.loads((source/role/"schema.json").read_text())) for role in DATABASES}; cross=cross_service_report(source)
     invalid=[failure for report in fk.values() for failure in report["failures"]]+cross["failures"]
-    report={"snapshotSemanticChecksum":source_manifest["semanticChecksum"],"classifications":classifications,"conflicts":conflicts,"conflictDiagnostics":conflict_diagnostics,"invalidReferences":invalid,"runtimeNormalizations":normalizations,"finalCounts":final_counts,"crossService":cross,"foreignKeys":fk,"idempotency":{"secondRunInsert":0,"secondRunExpected":"REUSE_IDENTICAL or REUSE_CANONICAL only"},"blocking":bool(conflicts or invalid)}
+    migration_compatibility={"source":source_manifest.get("migrations",{}),"target":target_manifest.get("migrations",{}),"dryRunCompatible":True,"futureImportPrerequisite":{"contentMinimum":"24","aiMinimum":"32"}}
+    report={"snapshotSemanticChecksum":source_manifest["semanticChecksum"],"classifications":classifications,"conflicts":conflicts,"conflictDiagnostics":conflict_diagnostics,"invalidReferences":invalid,"runtimeNormalizations":normalizations,"finalCounts":final_counts,"crossService":cross,"foreignKeys":fk,"migrationCompatibility":migration_compatibility,"idempotency":{"secondRunInsert":0,"secondRunExpected":"REUSE_IDENTICAL, REUSE_CANONICAL, or REUSE_RECONCILED_ALIAS only"},"blocking":bool(conflicts or invalid)}
     output.write_text(json.dumps(report,indent=2,sort_keys=True)+"\n"); print(canonical_json({"event":"dry_run_planned","blocking":report["blocking"],"conflicts":len(conflicts),"invalidReferences":len(invalid)}))
     return report
 

@@ -25,6 +25,17 @@ def rewrite_manifest(root:Path, manifest:dict):
     manifest["completeSnapshotChecksum"]=snapshot.hashlib.sha256(snapshot.canonical_json(manifest).encode()).hexdigest()
     (root/"manifest.json").write_text(json.dumps(manifest))
 
+def replace_content_schema(root:Path, tables:list[dict]):
+    schema={"tables":tables,"foreignKeys":[]}
+    (root/"content"/"schema.json").write_text(json.dumps(schema))
+    manifest=json.loads((root/"manifest.json").read_text())
+    path=root/"content"/"schema.json"
+    manifest["files"]["content/schema.json"]={"sha256":snapshot.file_sha(path),"bytes":path.stat().st_size}
+    for data_path in (root/"content"/"tables").glob("*.ndjson"):
+        relative=str(data_path.relative_to(root))
+        manifest["files"][relative]={"sha256":snapshot.file_sha(data_path),"bytes":data_path.stat().st_size}
+    rewrite_manifest(root,manifest)
+
 class AuthoringSnapshotTests(unittest.TestCase):
     def test_verify_accepts_checksums_and_rejects_secrets(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -59,5 +70,39 @@ class AuthoringSnapshotTests(unittest.TestCase):
         self.assertTrue(report["equalities"]["pdfLineBreak"])
         self.assertTrue(report["differenceTypes"]["lineBreakHyphenationOnly"])
         self.assertEqual(report["sourceDocumentChecksum"],report["targetDocumentChecksum"])
+
+    def test_reconciled_divergent_source_uuid_reuses_only_exact_recorded_alias(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory); source=root/"source"; target=root/"target"
+            minimal_snapshot(source); minimal_snapshot(target)
+            source_ref={"id":"shared","content_text":"source-v2","content_checksum":"a"*64}
+            target_ref={"id":"shared","content_text":"source-v1","content_checksum":"b"*64}
+            reconciliation={"id":"reconciliation","historical_shared_id":"shared","local_payload_checksum":"a"*64,"hosted_payload_checksum":"b"*64}
+            payload={"id":"payload","materialized_source_reference_id":"shared","payload_role":"CANONICAL"}
+            tables=[
+                {"table":"source_reference","columns":[],"primaryKey":["id"],"uniqueKeys":[]},
+                {"table":"source_payload_revision","columns":[],"primaryKey":["id"],"uniqueKeys":[]},
+                {"table":"source_payload_identity_reconciliation","columns":[],"primaryKey":["id"],"uniqueKeys":[]},
+            ]
+            for snapshot_root,ref in ((source,source_ref),(target,target_ref)):
+                (snapshot_root/"content"/"tables"/"source_reference.ndjson").write_text(json.dumps(ref)+"\n")
+                (snapshot_root/"content"/"tables"/"source_payload_revision.ndjson").write_text((json.dumps(payload)+"\n") if snapshot_root==source else "")
+                (snapshot_root/"content"/"tables"/"source_payload_identity_reconciliation.ndjson").write_text((json.dumps(reconciliation)+"\n") if snapshot_root==source else "")
+                replace_content_schema(snapshot_root,tables)
+            report=snapshot.plan(source,target,root/"plan.json")
+            self.assertEqual(report["classifications"]["content"]["source_reference"]["REUSE_RECONCILED_ALIAS"],1)
+            self.assertEqual(report["conflicts"],[])
+
+    def test_unreconciled_divergent_source_uuid_remains_immutable_conflict(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory); source=root/"source"; target=root/"target"
+            minimal_snapshot(source); minimal_snapshot(target)
+            table={"table":"source_reference","columns":[],"primaryKey":["id"],"uniqueKeys":[]}
+            for snapshot_root,text in ((source,"source-v2"),(target,"source-v1")):
+                (snapshot_root/"content"/"tables"/"source_reference.ndjson").write_text(json.dumps({"id":"shared","content_text":text,"content_checksum":text})+"\n")
+                replace_content_schema(snapshot_root,[table])
+            report=snapshot.plan(source,target,root/"plan.json")
+            self.assertEqual(report["classifications"]["content"]["source_reference"]["CONFLICT_IMMUTABLE"],1)
+            self.assertTrue(report["blocking"])
 
 if __name__=="__main__": unittest.main()
