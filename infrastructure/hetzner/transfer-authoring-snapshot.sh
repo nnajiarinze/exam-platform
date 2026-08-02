@@ -110,6 +110,7 @@ learning_before="$(learning_state)"
 [[ "$(jq -r .activeReleaseId <<<"${learning_before}")" == "${EXPECTED_RELEASE_ID}" ]] || die "Learning active release mismatch"
 
 work="$(mktemp -d /tmp/authoring-dry-run.XXXXXX)"; chmod 700 "${work}"
+# shellcheck disable=SC2329 # Invoked by the EXIT trap.
 cleanup(){ rm -rf -- "${work}"; rm -f -- "${SNAPSHOT_ARCHIVE}"; }
 trap cleanup EXIT
 tar -xzf "${SNAPSHOT_ARCHIVE}" -C "${work}"
@@ -141,7 +142,11 @@ for role in content ai; do
   export "AUTHORING_${prefix}_PGHOST=$(jq -r .host <<<"${metadata}")" "AUTHORING_${prefix}_PGPORT=$(jq -r .port <<<"${metadata}")" "AUTHORING_${prefix}_PGUSER=${!username_var}" "AUTHORING_${prefix}_PGPASSWORD=${!password_var}" "AUTHORING_${prefix}_PGSSLMODE=$(jq -r 'if .sslmode=="" then "require" else .sslmode end' <<<"${metadata}")"
 done
 python3 scripts/authoring_snapshot.py export --output "${work}/target-before" --source-commit "${SOURCE_COMMIT}" --allow-noncanonical >/dev/null
+set +e
 python3 scripts/authoring_snapshot.py plan --source "${snapshot}" --target "${work}/target-before" --output "${work}/dry-run-report.json"
+plan_status=$?
+set -e
+[[ "${plan_status}" -eq 0 || "${plan_status}" -eq 2 ]] || die "Dry-run planner failed unexpectedly"
 python3 scripts/authoring_snapshot.py export --output "${work}/target-after" --source-commit "${SOURCE_COMMIT}" --allow-noncanonical >/dev/null
 before_semantic="$(jq -r .semanticChecksum "${work}/target-before/manifest.json")"; after_semantic="$(jq -r .semanticChecksum "${work}/target-after/manifest.json")"
 [[ "${before_semantic}" == "${after_semantic}" ]] || die "Content or AI changed during DRY_RUN"
@@ -150,3 +155,4 @@ learning_after="$(learning_state)"; [[ "${learning_before}" == "${learning_after
 jq -n --arg event authoring_transfer_dry_run --arg hostSha256 "${HOST_SHA256}" --arg contentMigration "${content_migration}" --arg aiMigration "${ai_migration}" --arg targetBefore "${before_semantic}" --arg targetAfter "${after_semantic}" --argjson learningBefore "${learning_before}" --argjson learningAfter "${learning_after}" --argjson backups "${backup_report}" --slurpfile plan "${work}/dry-run-report.json" '{event:$event,region:"eu-central-1",hostSha256:$hostSha256,migrations:{content:$contentMigration,ai:$aiMigration},readOnlyTransactions:{content:true,ai:true,learning:true},zeroWrite:{targetBefore:$targetBefore,targetAfter:$targetAfter,equal:($targetBefore==$targetAfter)},learning:{before:$learningBefore,after:$learningAfter,equal:($learningBefore==$learningAfter)},backupControls:$backups,plan:$plan[0]}' >"${work}/sanitized-dry-run-report.json"
 cp "${work}/sanitized-dry-run-report.json" "${PLATFORM_STATE_DIR}/authoring-transfer-last-dry-run.json"
 cat "${work}/sanitized-dry-run-report.json"
+exit "${plan_status}"

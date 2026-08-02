@@ -131,6 +131,7 @@ jobs:
           set -Eeuo pipefail
           remote_archive="$(ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" 'mktemp /tmp/authoring-snapshot.XXXXXX.tar.gz')"
           remote_code_dir="$(ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" 'mktemp -d /tmp/authoring-transfer-code.XXXXXX')"
+          # shellcheck disable=SC2329 # Invoked by the EXIT trap.
           cleanup() {
             rm -f snapshot.tar.gz transfer-code.tar.gz
             ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" "rm -f -- '${remote_archive}'; rm -rf -- '${remote_code_dir}'" || true
@@ -139,13 +140,17 @@ jobs:
           tar -czf transfer-code.tar.gz infrastructure/hetzner/transfer-authoring-snapshot.sh infrastructure/hetzner/lib.sh scripts/authoring_snapshot.py
           scp -q -o BatchMode=yes snapshot.tar.gz "${HOSTED_USER}@${HOSTED_HOST}:${remote_archive}"
           scp -q -o BatchMode=yes transfer-code.tar.gz "${HOSTED_USER}@${HOSTED_HOST}:${remote_code_dir}/transfer-code.tar.gz"
+          set +e
           ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" \
             "tar -xzf '${remote_code_dir}/transfer-code.tar.gz' -C '${remote_code_dir}' && cd '${remote_code_dir}' && AUTHORING_BACKUP_CONFIRMED='${BACKUP_CONFIRMED}' AUTHORING_IMPORT_CONFIRMATION='${IMPORT_CONFIRMATION}' ./infrastructure/hetzner/transfer-authoring-snapshot.sh '${MODE}' '${remote_archive}' '${EXPECTED_SEMANTIC}' '${EXPECTED_ENDPOINT}' '${EXPECTED_CONTENT_MIGRATION}' '${EXPECTED_AI_MIGRATION}' '${EXPECTED_RELEASE}' '${{ inputs.commit_sha }}'"
+          operation_status=$?
+          set -e
           if [[ "${MODE}" == DRY_RUN ]]; then
             scp -q -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}:/opt/citizenship-platform/state/authoring-transfer-last-dry-run.json" sanitized-dry-run-report.json
           fi
+          exit "${operation_status}"
       - uses: actions/upload-artifact@v4
-        if: inputs.mode == 'DRY_RUN'
+        if: always() && inputs.mode == 'DRY_RUN'
         with:
           name: authoring-transfer-sanitized-dry-run
           path: sanitized-dry-run-report.json
