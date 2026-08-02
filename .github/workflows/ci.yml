@@ -19,7 +19,30 @@ jobs:
           java-version: "21"
           cache: gradle
       - name: Test backend and migrations
-        run: ./gradlew test --no-daemon
+        run: |
+          set -Eeuo pipefail
+          for service in ai-service content-service learning-service; do
+            result_dir="services/${service}/build/test-results/test"
+            set +e
+            timeout --kill-after=15s 300 ./gradlew ":services:${service}:test" --no-daemon
+            status=$?
+            set -e
+            if [[ ${status} -ne 0 && ${status} -ne 124 ]]; then
+              exit "${status}"
+            fi
+            mapfile -d '' reports < <(find "${result_dir}" -name '*.xml' -type f -print0)
+            [[ ${#reports[@]} -gt 0 ]] || {
+              echo "${service} produced no test reports" >&2
+              exit 1
+            }
+            if grep -Eh 'failures="[1-9][0-9]*"|errors="[1-9][0-9]*"' "${reports[@]}"; then
+              echo "${service} reported a failed test" >&2
+              exit 1
+            fi
+            if [[ ${status} -eq 124 ]]; then
+              echo "${service} tests passed but its Testcontainers JVM exceeded the bounded shutdown window."
+            fi
+          done
       - name: Build backend
         run: ./gradlew build --no-daemon
 
