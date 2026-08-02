@@ -61,7 +61,7 @@ for prefix in CONTENT AI LEARNING; do
   printf -v "${prefix}_USERNAME" '%s' "${username}"; printf -v "${prefix}_PASSWORD" '%s' "${password}"
 done
 
-hosts=()
+hosts=(); migration_hosts=()
 for prefix in CONTENT AI LEARNING; do
   for connection in RUNTIME MIGRATION; do
     url_var="${prefix}_${connection}_URL"; metadata="$(printf '%s' "${!url_var}" | url_metadata)"
@@ -69,11 +69,14 @@ for prefix in CONTENT AI LEARNING; do
     [[ "${database}" == "${prefix,,}" ]] || die "${prefix} ${connection} targets unexpected database"
     [[ "${host,,}" == *.eu-central-1.aws.neon.tech ]] || die "${prefix} ${connection} is not a Neon eu-central-1 endpoint"
     [[ "${host,,}" != *us-east* && "${host,,}" != *render* ]] || die "Legacy US or Render target rejected"
-    hosts+=("${host,,}")
+    canonical_host="${host,,}"; canonical_host="${canonical_host/-pooler./.}"
+    hosts+=("${canonical_host}")
+    if [[ "${connection}" == "MIGRATION" ]]; then migration_hosts+=("${host,,}"); fi
   done
 done
 for host in "${hosts[@]}"; do [[ "${host}" == "${hosts[0]}" ]] || die "Service database endpoints differ unexpectedly"; done
-HOST_SHA256="$(printf '%s' "${hosts[0]}" | sha256sum | awk '{print $1}')"
+[[ "${migration_hosts[0]}" == "${migration_hosts[1]}" && "${migration_hosts[0]}" == "${migration_hosts[2]}" ]] || die "Migration database endpoints differ unexpectedly"
+HOST_SHA256="$(printf '%s' "${migration_hosts[0]}" | sha256sum | awk '{print $1}')"
 [[ "${HOST_SHA256}" == "${EXPECTED_HOST_SHA256}" ]] || die "Authoritative endpoint fingerprint mismatch"
 
 db_value() {
