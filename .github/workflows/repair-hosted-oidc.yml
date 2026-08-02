@@ -67,8 +67,8 @@ jobs:
             if [[ "${gateway_stopped}" == true ]]; then "${compose[@]}" up -d api-gateway >/dev/null 2>&1 || true; fi
           }
           trap recover_gateway EXIT
-          cert_dir="/etc/letsencrypt/live/${public_domain}"
-          if [[ ! -s "${cert_dir}/fullchain.pem" || ! -s "${cert_dir}/privkey.pem" ]]; then
+          if ! docker run --rm -v /etc/letsencrypt:/certs:ro alpine:3.22 \
+            sh -c "test -s '/certs/live/${public_domain}/fullchain.pem' && test -s '/certs/live/${public_domain}/privkey.pem'"; then
             "${compose[@]}" stop api-gateway
             gateway_stopped=true
             API_DOMAIN="${public_domain}" TLS_EMAIL="${tls_email}" TLS_AUTHENTICATOR=standalone \

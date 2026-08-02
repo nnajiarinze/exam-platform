@@ -38,11 +38,16 @@ gateway_args=(
 docker run -d --name "${gateway}" "${gateway_args[@]}" \
   -v "${test_root}/certs:/etc/letsencrypt:ro" "${image}" >/dev/null
 
-for _ in {1..20}; do
-  [[ "$(docker inspect -f '{{.State.Health.Status}}' "${gateway}")" == healthy ]] && break
+for _ in {1..60}; do
+  gateway_health="$(docker inspect -f '{{.State.Health.Status}}' "${gateway}")"
+  [[ "${gateway_health}" == healthy || "${gateway_health}" == unhealthy ]] && break
   sleep 1
 done
-[[ "$(docker inspect -f '{{.State.Health.Status}}' "${gateway}")" == healthy ]]
+if [[ "$(docker inspect -f '{{.State.Health.Status}}' "${gateway}")" != healthy ]]; then
+  docker logs "${gateway}" >&2
+  docker inspect -f '{{json .State.Health}}' "${gateway}" >&2
+  exit 1
+fi
 docker exec "${gateway}" nginx -t
 listeners="$(docker exec "${gateway}" netstat -lnt)"
 grep -qE '0\.0\.0\.0:8080[[:space:]]' <<<"${listeners}"
