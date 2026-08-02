@@ -62,6 +62,27 @@ class AuthoringSnapshotTests(unittest.TestCase):
         self.assertNotIn("actual_cost_usd",snapshot.EPHEMERAL_FIELDS["ai"]["ai_paid_request_accounting"])
         self.assertIn("heartbeat_at",snapshot.EPHEMERAL_FIELDS["ai"]["ai_paid_request_accounting"])
 
+    def test_runtime_normalization_is_exact_and_preserves_unknown_cost(self):
+        row={"lifecycle_state":"RESERVED","actual_cost_usd":None,"unknown_exposure":True,"worker_id":"old"}
+        normalized=snapshot.runtime_normalized_row("ai","ai_provider_attempt",row)
+        self.assertEqual(normalized["lifecycle_state"],"RECOVERED_STALE")
+        self.assertIsNone(normalized["actual_cost_usd"])
+        self.assertTrue(normalized["unknown_exposure"])
+        self.assertEqual(row["lifecycle_state"],"RESERVED")
+
+    def test_planner_treats_approved_runtime_normalization_as_idempotent_reuse(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory); source=root/"source"; target=root/"target"; minimal_snapshot(source); minimal_snapshot(target)
+            table={"table":"ai_provider_attempt","columns":[],"primaryKey":["id"],"uniqueKeys":[]}
+            (source/"ai"/"tables"/"ai_provider_attempt.ndjson").write_text(json.dumps({"id":"attempt","lifecycle_state":"RESERVED","actual_cost_usd":None})+"\n")
+            (target/"ai"/"tables"/"ai_provider_attempt.ndjson").write_text(json.dumps({"id":"attempt","lifecycle_state":"RECOVERED_STALE","actual_cost_usd":None})+"\n")
+            for snapshot_root in (source,target): replace_content_schema(snapshot_root,json.loads((snapshot_root/"content"/"schema.json").read_text())["tables"])
+            for snapshot_root in (source,target):
+                (snapshot_root/"ai"/"schema.json").write_text(json.dumps({"tables":[table],"foreignKeys":[]})); manifest=json.loads((snapshot_root/"manifest.json").read_text()); path=snapshot_root/"ai"/"schema.json"; data=snapshot_root/"ai"/"tables"/"ai_provider_attempt.ndjson"; manifest["files"]["ai/schema.json"]={"sha256":snapshot.file_sha(path),"bytes":path.stat().st_size}; manifest["files"]["ai/tables/ai_provider_attempt.ndjson"]={"sha256":snapshot.file_sha(data),"bytes":data.stat().st_size}; rewrite_manifest(snapshot_root,manifest)
+            report=snapshot.plan(source,target,root/"plan.json")
+            self.assertEqual(report["classifications"]["ai"]["ai_provider_attempt"]["REUSE_IDENTICAL"],1)
+            self.assertEqual(report["conflicts"],[])
+
     def test_source_payload_diagnostic_distinguishes_normalizations(self):
         source={"content_text":"Rätts-\nväsendet  är öppet.","content_checksum":"a","file_checksum":"pdf"}
         target={"content_text":"Rättsväsendet är öppet.","content_checksum":"b","file_checksum":"pdf"}

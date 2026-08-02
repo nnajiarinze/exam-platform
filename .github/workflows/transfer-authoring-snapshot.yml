@@ -147,6 +147,8 @@ jobs:
           set -e
           if [[ "${MODE}" == DRY_RUN ]]; then
             scp -q -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}:/opt/citizenship-platform/state/authoring-transfer-last-dry-run.json" sanitized-dry-run-report.json
+          else
+            scp -q -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}:/opt/citizenship-platform/state/authoring-transfer-last-import.json" sanitized-import-report.json
           fi
           exit "${operation_status}"
       - uses: actions/upload-artifact@v4
@@ -156,3 +158,10 @@ jobs:
           path: sanitized-dry-run-report.json
           if-no-files-found: error
           retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: always() && inputs.mode == 'IMPORT'
+        with:
+          name: authoring-transfer-sanitized-import
+          path: sanitized-import-report.json
+          if-no-files-found: error
+          retention-days: 30

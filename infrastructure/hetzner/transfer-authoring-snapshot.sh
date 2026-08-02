@@ -24,7 +24,6 @@ for command in docker jq python3 sha256sum tar; do require_command "${command}";
 if [[ "${MODE}" == "IMPORT" ]]; then
   [[ "${AUTHORING_IMPORT_CONFIRMATION:-}" == "IMPORT_VERIFIED_AUTHORING_STATE" ]] || die "IMPORT requires explicit confirmation"
   [[ "${AUTHORING_BACKUP_CONFIRMED:-}" == "true" ]] || die "IMPORT requires verified Content and AI backups"
-  die "IMPORT execution is intentionally disabled until a successful DRY_RUN is separately approved"
 fi
 
 if ! command -v psql >/dev/null 2>&1 || [[ "$(psql --version 2>/dev/null | sed -E 's/.* ([0-9]+)(\..*)?$/\1/')" -lt 18 ]]; then
@@ -110,15 +109,25 @@ learning_before="$(learning_state)"
 [[ "$(jq -r .activeReleaseId <<<"${learning_before}")" == "${EXPECTED_RELEASE_ID}" ]] || die "Learning active release mismatch"
 
 work="$(mktemp -d /tmp/authoring-dry-run.XXXXXX)"; chmod 700 "${work}"
+ROLLBACK_REQUIRED=false
 # shellcheck disable=SC2329 # Invoked by the EXIT trap.
-cleanup(){ rm -rf -- "${work}"; rm -f -- "${SNAPSHOT_ARCHIVE}"; }
+cleanup(){
+  if [[ "${ROLLBACK_REQUIRED}" == true ]]; then
+    compose stop content-service ai-service >/dev/null 2>&1 || true
+    restore_authoring >/dev/null 2>&1 || true
+    compose up -d content-service ai-service --wait --wait-timeout 240 >/dev/null 2>&1 || true
+  fi
+  rm -rf -- "${work}"; rm -f -- "${SNAPSHOT_ARCHIVE}"
+}
 trap cleanup EXIT
 tar -xzf "${SNAPSHOT_ARCHIVE}" -C "${work}"
 snapshot="${work}/authoring-snapshot"
 python3 scripts/authoring_snapshot.py verify --snapshot "${snapshot}" --expected-semantic "${EXPECTED_SEMANTIC}" >/dev/null
 
-# Prove full future backup tooling against both authoring databases without retaining a production backup in DRY_RUN.
+# Create verified database backups. IMPORT retains fresh recovery artifacts; DRY_RUN retains none.
 backup_report='[]'
+import_backup_dir=""
+if [[ "${MODE}" == IMPORT ]]; then import_backup_dir="${PLATFORM_ROOT}/backups/authoring-import-$(date -u +%Y%m%dT%H%M%SZ)"; install -d -m 700 "${import_backup_dir}"; fi
 for prefix in CONTENT AI; do
   username_var="${prefix}_USERNAME"; password_var="${prefix}_PASSWORD"; url_var="${prefix}_MIGRATION_URL"
   archive="${work}/${prefix,,}-backup-capability.dump"
@@ -132,7 +141,9 @@ for prefix in CONTENT AI; do
   else
     backup_migration="${ai_migration}"
   fi
-  backup_report="$(jq -c --arg db "${prefix,,}" --arg checksum "${checksum}" --arg migration "${backup_migration}" --arg fingerprint "${HOST_SHA256}" --arg timestamp "${backup_timestamp}" --arg identifier "${backup_identifier}" '.+[{database:$db,schema:"public",targetFingerprint:$fingerprint,migration:$migration,backupTimestamp:$timestamp,backupIdentifier:$identifier,artifactChecksum:$checksum,validation:"PG_RESTORE_LIST_OK",kind:"FULL_PUBLIC_SCHEMA_CAPABILITY_PROOF",retained:false,restoration:"Restore only to an isolated empty database using pg_restore --clean --if-exists --no-owner --no-acl; never restore over production."}]' <<<"${backup_report}")"
+  retained=false
+  if [[ "${MODE}" == IMPORT ]]; then install -m 600 "${archive}" "${import_backup_dir}/${prefix,,}-public.dump"; retained=true; printf -v "${prefix}_BACKUP" '%s' "${archive}"; backup_identifier="authoring-import-${prefix,,}-${backup_timestamp//[:]/-}"; fi
+  backup_report="$(jq -c --arg db "${prefix,,}" --arg checksum "${checksum}" --arg migration "${backup_migration}" --arg fingerprint "${HOST_SHA256}" --arg timestamp "${backup_timestamp}" --arg identifier "${backup_identifier}" --argjson retained "${retained}" '.+[{database:$db,schema:"public",targetFingerprint:$fingerprint,migration:$migration,backupTimestamp:$timestamp,backupIdentifier:$identifier,artifactChecksum:$checksum,validation:"PG_RESTORE_LIST_OK",kind:"FULL_PUBLIC_SCHEMA_BACKUP",retained:$retained,restoration:"Stop Content and AI, then use PostgreSQL 18 pg_restore --clean --if-exists --exit-on-error --no-owner --no-acl against the matching database."}]' <<<"${backup_report}")"
 done
 
 # Export authoritative Content and AI targets using read-only, repeatable transactions and environment-only credentials.
@@ -147,10 +158,47 @@ python3 scripts/authoring_snapshot.py plan --source "${snapshot}" --target "${wo
 plan_status=$?
 set -e
 [[ "${plan_status}" -eq 0 || "${plan_status}" -eq 2 ]] || die "Dry-run planner failed unexpectedly"
+[[ "${plan_status}" -eq 0 ]] || die "Import planner found blocking conflicts or invalid references"
+
+if [[ "${MODE}" == IMPORT ]]; then
+  restore_authoring() {
+    local prefix username_var password_var url_var backup_var
+    for prefix in CONTENT AI; do
+      username_var="${prefix}_USERNAME"; password_var="${prefix}_PASSWORD"; url_var="${prefix}_MIGRATION_URL"; backup_var="${prefix}_BACKUP"
+      PGPASSWORD="${!password_var}" "${PG_RESTORE}" --clean --if-exists --exit-on-error --no-owner --no-acl --username="${!username_var}" --dbname="${!url_var}" "${!backup_var}"
+    done
+  }
+  compose stop content-service ai-service
+  ROLLBACK_REQUIRED=true
+  set +e
+  content_import="$(python3 scripts/authoring_snapshot.py import-role --snapshot "${snapshot}" --role content 2>&1)"; content_status=$?
+  if [[ "${content_status}" -eq 0 ]]; then ai_import="$(python3 scripts/authoring_snapshot.py import-role --snapshot "${snapshot}" --role ai 2>&1)"; ai_status=$?; else ai_import=''; ai_status=1; fi
+  set -e
+  if [[ "${content_status}" -ne 0 || "${ai_status}" -ne 0 ]]; then
+    if restore_authoring; then ROLLBACK_REQUIRED=false; fi
+    compose up -d content-service ai-service --wait --wait-timeout 240 || true
+    die "Coordinated authoring import failed and recovery restore was attempted"
+  fi
+  compose up -d content-service ai-service --wait --wait-timeout 240
+fi
+
 python3 scripts/authoring_snapshot.py export --output "${work}/target-after" --source-commit "${SOURCE_COMMIT}" --allow-noncanonical >/dev/null
 before_semantic="$(jq -r .semanticChecksum "${work}/target-before/manifest.json")"; after_semantic="$(jq -r .semanticChecksum "${work}/target-after/manifest.json")"
-[[ "${before_semantic}" == "${after_semantic}" ]] || die "Content or AI changed during DRY_RUN"
+if [[ "${MODE}" == DRY_RUN ]]; then [[ "${before_semantic}" == "${after_semantic}" ]] || die "Content or AI changed during DRY_RUN"; fi
 learning_after="$(learning_state)"; [[ "${learning_before}" == "${learning_after}" ]] || die "Learning changed during DRY_RUN"
+
+if [[ "${MODE}" == IMPORT ]]; then
+  python3 scripts/authoring_snapshot.py plan --source "${snapshot}" --target "${work}/target-after" --output "${work}/post-import-plan.json"
+  post_inserts="$(jq '[.classifications[][]|to_entries[]|select(.key=="INSERT" or .key=="INSERT_CANONICAL_REVISION" or .key=="INSERT_HISTORICAL_REVISION")|.value]|add // 0' "${work}/post-import-plan.json")"
+  [[ "${post_inserts}" == 0 && "$(jq '.conflicts|length' "${work}/post-import-plan.json")" == 0 && "$(jq '.invalidReferences|length' "${work}/post-import-plan.json")" == 0 ]] || die "Post-import idempotency validation failed"
+  canonical="$(db_value content "SELECT json_build_object('approvedActiveFacts',(SELECT count(*) FROM knowledge_fact WHERE review_status='APPROVED' AND status='ACTIVE'),'latestLessons',(SELECT count(*) FROM lesson_draft d WHERE d.review_status='REVIEWED' AND NOT EXISTS(SELECT 1 FROM lesson_draft n WHERE n.topic_id=d.topic_id AND n.review_status='REVIEWED' AND n.version_number>d.version_number)),'latestPages',(SELECT count(*) FROM lesson_draft_section s JOIN lesson_draft d ON d.id=s.lesson_draft_id WHERE d.review_status='REVIEWED' AND NOT EXISTS(SELECT 1 FROM lesson_draft n WHERE n.topic_id=d.topic_id AND n.review_status='REVIEWED' AND n.version_number>d.version_number)),'questions',(SELECT count(*) FROM question),'releases',(SELECT count(*) FROM content_release),'activeRelease',(SELECT json_build_object('id',id,'key',release_number,'checksum',checksum) FROM content_release WHERE id='${EXPECTED_RELEASE_ID}'))::text")"
+  [[ "$(jq -r '.approvedActiveFacts==209 and .latestLessons==38 and .latestPages==194 and .questions==139 and .activeRelease.id!=null' <<<"${canonical}")" == true ]] || die "Hosted canonical count validation failed"
+  jq -n --arg event authoring_transfer_import --arg hostSha256 "${HOST_SHA256}" --arg contentMigration "${content_migration}" --arg aiMigration "${ai_migration}" --arg targetBefore "${before_semantic}" --arg targetAfter "${after_semantic}" --argjson backups "${backup_report}" --argjson learningBefore "${learning_before}" --argjson learningAfter "${learning_after}" --argjson canonical "${canonical}" --argjson contentImport "$(tail -1 <<<"${content_import}")" --argjson aiImport "$(tail -1 <<<"${ai_import}")" --slurpfile initialPlan "${work}/dry-run-report.json" --slurpfile finalPlan "${work}/post-import-plan.json" '{event:$event,region:"eu-central-1",hostSha256:$hostSha256,migrations:{content:$contentMigration,ai:$aiMigration},backups:$backups,initialPlan:$initialPlan[0],imports:{content:$contentImport,ai:$aiImport},postImportPlan:$finalPlan[0],canonical:$canonical,learning:{before:$learningBefore,after:$learningAfter,equal:($learningBefore==$learningAfter)},targetChecksums:{before:$targetBefore,after:$targetAfter},importExecuted:true}' >"${work}/sanitized-import-report.json"
+  cp "${work}/sanitized-import-report.json" "${PLATFORM_STATE_DIR}/authoring-transfer-last-import.json"
+  cat "${work}/sanitized-import-report.json"
+  ROLLBACK_REQUIRED=false
+  exit 0
+fi
 
 jq -n --arg event authoring_transfer_dry_run --arg hostSha256 "${HOST_SHA256}" --arg contentMigration "${content_migration}" --arg aiMigration "${ai_migration}" --arg targetBefore "${before_semantic}" --arg targetAfter "${after_semantic}" --argjson learningBefore "${learning_before}" --argjson learningAfter "${learning_after}" --argjson backups "${backup_report}" --slurpfile plan "${work}/dry-run-report.json" '{event:$event,region:"eu-central-1",hostSha256:$hostSha256,migrations:{content:$contentMigration,ai:$aiMigration},readOnlyTransactions:{content:true,ai:true,learning:true},zeroWrite:{targetBefore:$targetBefore,targetAfter:$targetAfter,equal:($targetBefore==$targetAfter)},learning:{before:$learningBefore,after:$learningAfter,equal:($learningBefore==$learningAfter)},backupControls:$backups,plan:$plan[0]}' >"${work}/sanitized-dry-run-report.json"
 cp "${work}/sanitized-dry-run-report.json" "${PLATFORM_STATE_DIR}/authoring-transfer-last-dry-run.json"

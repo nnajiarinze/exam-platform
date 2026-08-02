@@ -278,6 +278,28 @@ def load_rows(snapshot:Path,role:str,table:str)->list[dict[str,Any]]:
     path=snapshot/role/"tables"/f"{table}.ndjson"
     return [json.loads(line) for line in path.read_text().splitlines()] if path.exists() else []
 
+def runtime_normalized_row(role:str,table:str,row:dict[str,Any])->dict[str,Any]:
+    result=dict(row); rule=RUNTIME_RULES.get(table,{}) if role=="ai" else {}
+    field="status" if "status" in rule else "lifecycle_state" if "lifecycle_state" in rule else "reservation_state" if "reservation_state" in rule else None
+    if field and result.get(field) in rule[field]: result[field]=rule.get("futureStatus") or rule.get("futureState")
+    return result
+
+def import_role(snapshot:Path,role:str)->dict[str,Any]:
+    manifest=verify_snapshot(snapshot); schema=json.loads((snapshot/role/"schema.json").read_text())
+    if manifest["migrations"].get(role)!=EXPECTED_MIGRATIONS[role]: raise SystemExit(f"{role} snapshot migration mismatch")
+    known={item["table"] for item in schema["tables"]}; statements=["BEGIN;","SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;","CREATE TEMP TABLE _authoring_import_json(raw text) ON COMMIT DROP;"]; expected=0
+    for table in manifest["dependencyOrder"][role]:
+        path=snapshot/role/"tables"/f"{table}.ndjson"
+        if table not in known or not path.exists(): continue
+        rows=[runtime_normalized_row(role,table,json.loads(line)) for line in path.read_text().splitlines()]; expected+=len(rows)
+        normalized=snapshot/role/"import"/f"{table}.ndjson"; normalized.parent.mkdir(exist_ok=True)
+        normalized.write_text("".join(canonical_json(row)+"\n" for row in rows)); os.chmod(normalized,0o600)
+        safe_path=str(normalized).replace("'","''")
+        statements += ["TRUNCATE _authoring_import_json;",f"\\copy _authoring_import_json(raw) FROM '{safe_path}' WITH (FORMAT csv, DELIMITER E'\\x02', QUOTE E'\\x01')",f"INSERT INTO public.{quote_ident(table)} SELECT (jsonb_populate_record(NULL::public.{quote_ident(table)},raw::jsonb)).* FROM _authoring_import_json ON CONFLICT DO NOTHING;"]
+    statements.append("COMMIT;"); output=psql(role,"\n".join(statements)+"\n")
+    inserted=sum(map(int,re.findall(r"INSERT 0 (\d+)",output))); result={"role":role,"snapshotRows":expected,"inserted":inserted,"reused":expected-inserted}
+    print(canonical_json({"event":"snapshot_role_imported",**result})); return result
+
 def record_key(row:dict[str,Any], columns:list[str])->tuple[Any,...]: return tuple(row.get(column) for column in columns)
 
 def structural_identity(row:dict[str,Any])->dict[str,Any]:
@@ -332,35 +354,36 @@ def plan(source:Path,target:Path,output:Path)->dict[str,Any]:
             unique_maps=[{record_key(row,key):row for row in dst if all(row.get(column) is not None for column in key)} for key in item.get("uniqueKeys",[]) if key]
             counts=defaultdict(int)
             for row in src:
-                existing=dst_by_pk.get(record_key(row,pk)) if pk else None
+                effective=runtime_normalized_row(role,table,row)
+                existing=dst_by_pk.get(record_key(effective,pk)) if pk else None
                 if existing is None and table in STRUCTURAL_REUSE.get(role,set()):
                     for key,index in zip(item.get("uniqueKeys",[]),unique_maps):
-                        candidate=index.get(record_key(row,key))
+                        candidate=index.get(record_key(effective,key))
                         if candidate is not None: existing=candidate; break
                 if existing is None:
-                    payload=payload_by_reference.get(row.get("id")) if role=="content" and table=="source_reference" else None
+                    payload=payload_by_reference.get(effective.get("id")) if role=="content" and table=="source_reference" else None
                     classification="INSERT_CANONICAL_REVISION" if payload and payload.get("payload_role")=="CANONICAL" else "INSERT_HISTORICAL_REVISION" if payload else "INSERT"
                     counts[classification]+=1
-                elif canonical_json(existing)==canonical_json(row): counts["REUSE_IDENTICAL"]+=1
-                elif table in STRUCTURAL_REUSE.get(role,set()) and canonical_json(structural_identity(existing))==canonical_json(structural_identity(row)): counts["REUSE_CANONICAL"]+=1
-                elif role=="content" and table=="source_reference" and row.get("id") in reconciled_shared:
-                    reconciliation=reconciled_shared[row["id"]]
+                elif canonical_json(existing)==canonical_json(effective): counts["REUSE_IDENTICAL"]+=1
+                elif table in STRUCTURAL_REUSE.get(role,set()) and canonical_json(structural_identity(existing))==canonical_json(structural_identity(effective)): counts["REUSE_CANONICAL"]+=1
+                elif role=="content" and table=="source_reference" and effective.get("id") in reconciled_shared:
+                    reconciliation=reconciled_shared[effective["id"]]
                     expected={reconciliation["local_payload_checksum"].strip(),reconciliation["hosted_payload_checksum"].strip()}
-                    actual={(row.get("content_checksum") or "").strip(),(existing.get("content_checksum") or "").strip()}
+                    actual={(effective.get("content_checksum") or "").strip(),(existing.get("content_checksum") or "").strip()}
                     if expected==actual:
                         counts["REUSE_RECONCILED_ALIAS"]+=1
                     else:
-                        counts["CONFLICT_IMMUTABLE"]+=1; conflicts.append({"database":role,"table":table,"key":record_key(row,pk),"reason":"RECONCILIATION_CHECKSUM_MISMATCH"})
+                        counts["CONFLICT_IMMUTABLE"]+=1; conflicts.append({"database":role,"table":table,"key":record_key(effective,pk),"reason":"RECONCILIATION_CHECKSUM_MISMATCH"})
                 else:
                     counts["CONFLICT_IMMUTABLE"]+=1
-                    different_fields=sorted(key for key in set(row)|set(existing) if row.get(key)!=existing.get(key))
+                    different_fields=sorted(key for key in set(effective)|set(existing) if effective.get(key)!=existing.get(key))
                     conflicts.append({
-                        "database":role,"table":table,"key":record_key(row,pk),"differentFields":different_fields,
-                        "sourceFieldChecksums":{key:hashlib.sha256(canonical_json(row.get(key)).encode()).hexdigest() for key in different_fields},
+                        "database":role,"table":table,"key":record_key(effective,pk),"differentFields":different_fields,
+                        "sourceFieldChecksums":{key:hashlib.sha256(canonical_json(effective.get(key)).encode()).hexdigest() for key in different_fields},
                         "targetFieldChecksums":{key:hashlib.sha256(canonical_json(existing.get(key)).encode()).hexdigest() for key in different_fields},
                     })
                     if role=="content" and table=="source_reference":
-                        conflict_diagnostics.append({"table":table,"key":record_key(row,pk),"analysis":source_payload_diagnostic(row,existing)})
+                        conflict_diagnostics.append({"table":table,"key":record_key(effective,pk),"analysis":source_payload_diagnostic(effective,existing)})
                 rule=RUNTIME_RULES.get(table)
                 if rule:
                     field="status" if "status" in rule else "lifecycle_state" if "lifecycle_state" in rule else "reservation_state"
@@ -380,11 +403,13 @@ def main():
     exp=sub.add_parser("export"); exp.add_argument("--output",type=Path,required=True); exp.add_argument("--source-commit",required=True); exp.add_argument("--allow-noncanonical",action="store_true")
     val=sub.add_parser("verify"); val.add_argument("--snapshot",type=Path,required=True); val.add_argument("--expected-semantic")
     dry=sub.add_parser("plan"); dry.add_argument("--source",type=Path,required=True); dry.add_argument("--target",type=Path,required=True); dry.add_argument("--output",type=Path,required=True)
+    imp=sub.add_parser("import-role"); imp.add_argument("--snapshot",type=Path,required=True); imp.add_argument("--role",choices=sorted(DATABASES),required=True)
     args=parser.parse_args()
     if args.command=="export": export_snapshot(args.output,args.source_commit,args.allow_noncanonical)
     elif args.command=="verify": verify_snapshot(args.snapshot,args.expected_semantic)
-    else:
+    elif args.command=="plan":
         result=plan(args.source,args.target,args.output)
         if result["blocking"]: raise SystemExit(2)
+    else: import_role(args.snapshot,args.role)
 
 if __name__=="__main__": main()
