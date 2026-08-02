@@ -34,7 +34,7 @@ import { MockExamDefinitionPage } from '../../features/mockexam/MockExamDefiniti
 export function AppRouter() {
   return <Routes>
     <Route path="/login" element={<LoginPage />} />
-    <Route path="/auth/callback" element={<AuthCallbackPage />} />
+    <Route path="/oidc/callback" element={<AuthCallbackPage />} />
     <Route path="/unauthorized" element={<UnauthorizedPage />} />
     <Route element={<ProtectedRoute />}>
       <Route element={<AdminLayout />}>

@@ -38,7 +38,7 @@
     {
       "clientId": "admin-portal", "name": "Content Admin Portal", "publicClient": true,
       "standardFlowEnabled": true, "directAccessGrantsEnabled": false,
-      "redirectUris": ["http://localhost:5173/auth/callback", "http://127.0.0.1:5173/auth/callback", "https://api.46-224-221-7.sslip.io/auth/callback"],
+      "redirectUris": ["http://localhost:5173/oidc/callback", "http://127.0.0.1:5173/oidc/callback", "https://api.46-224-221-7.sslip.io/oidc/callback"],
       "webOrigins": ["http://localhost:5173", "http://127.0.0.1:5173", "https://api.46-224-221-7.sslip.io"],
       "attributes": {
         "pkce.code.challenge.method": "S256",

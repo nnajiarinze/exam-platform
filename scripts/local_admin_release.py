@@ -25,7 +25,7 @@ def credentials(username: str) -> tuple[str, str]:
 
 
 def token(client_id: str="admin-portal", username: str="demo.admin",
-          redirect: str="http://127.0.0.1:5173/auth/callback") -> str:
+          redirect: str="http://127.0.0.1:5173/oidc/callback") -> str:
     verifier = secrets.token_urlsafe(64)
     challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).decode().rstrip("=")
     params = urllib.parse.urlencode({"client_id": client_id, "redirect_uri": redirect,

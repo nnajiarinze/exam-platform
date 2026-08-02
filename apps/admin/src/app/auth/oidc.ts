@@ -5,7 +5,10 @@ import { isAdminRole, type AdminIdentity } from '../permissions/permissions';
 export const userManager = new UserManager({
   authority: environment.oidcAuthority,
   client_id: environment.oidcClientId,
-  redirect_uri: `${window.location.origin}/auth/callback`,
+  // `/auth/*` is owned by the gateway's Keycloak reverse proxy in hosted
+  // environments. Keep the SPA callback outside that namespace so Nginx
+  // serves the Admin application after Keycloak redirects the browser.
+  redirect_uri: `${window.location.origin}/oidc/callback`,
   post_logout_redirect_uri: `${window.location.origin}/login`,
   response_type: 'code', scope: environment.requiredScopes.join(' '),
   automaticSilentRenew: true,

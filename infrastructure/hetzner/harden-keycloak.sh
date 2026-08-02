@@ -70,8 +70,8 @@ if [[ "${mode}" == "BOOTSTRAP_HTTP" ]]; then
   kcadm update "clients/${mobile_id}" -r exam-platform \
     -s 'redirectUris=["sveastudy://auth/callback","exp://192.168.1.213:8081/--/auth/callback"]' \
     -s 'webOrigins=[]' >/dev/null
-  admin_redirects="$(jq -cn --arg hosted "${admin_portal_url}/auth/callback" \
-    '["http://localhost:5173/auth/callback","http://127.0.0.1:5173/auth/callback",$hosted]')"
+  admin_redirects="$(jq -cn --arg hosted "${admin_portal_url}/oidc/callback" \
+    '["http://localhost:5173/oidc/callback","http://127.0.0.1:5173/oidc/callback",$hosted]')"
   admin_origins="$(jq -cn --arg hosted "${admin_portal_url}" \
     '["http://localhost:5173","http://127.0.0.1:5173",$hosted]')"
   logout_redirects="http://localhost:5173##http://127.0.0.1:5173##${admin_portal_url}"
@@ -79,7 +79,7 @@ else
   kcadm update "clients/${mobile_id}" -r exam-platform \
     -s 'redirectUris=["sveastudy://auth/callback"]' \
     -s 'webOrigins=[]' >/dev/null
-  admin_redirects="$(jq -cn --arg hosted "${admin_portal_url}/auth/callback" '[$hosted]')"
+  admin_redirects="$(jq -cn --arg hosted "${admin_portal_url}/oidc/callback" '[$hosted]')"
   admin_origins="$(jq -cn --arg hosted "${admin_portal_url}" '[$hosted]')"
   logout_redirects="${admin_portal_url}"
 fi

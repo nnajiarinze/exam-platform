@@ -134,6 +134,8 @@ jobs:
           if ! "${compose[@]}" pull api-gateway ||
              ! "${compose[@]}" up -d --no-deps --wait --wait-timeout 60 api-gateway ||
              ! "${compose[@]}" exec -T --user 101:101 api-gateway nginx -t ||
+             ! KEYCLOAK_SECURITY_MODE=HTTPS_HOSTED ADMIN_PORTAL_URL="https://${public_domain}" \
+                 ./infrastructure/hetzner/harden-keycloak.sh ||
              ! API_DOMAIN="${public_domain}" ./infrastructure/hetzner/smoke-test.sh --internal; then
             echo 'Hosted deployment smoke failed; collecting non-secret reachability evidence.' >&2
             curl --fail --silent --show-error --resolve "${public_domain}:443:127.0.0.1" \
@@ -167,10 +169,22 @@ jobs:
             (.jwks_uri|startswith($issuer+"/")) and
             ([.[]|strings|select(test("localhost|onrender|keycloak:|46\\.224\\.221\\.7|http:"))]|length)==0' discovery.json
           curl --fail --silent --show-error --proto '=https' "$(jq -r .jwks_uri discovery.json)" | jq -e '.keys|length>0'
+          callback="${base}/oidc/callback"
+          authorization_url="$(jq -r .authorization_endpoint discovery.json)"
+          curl --fail --silent --show-error --get --output login.html \
+            --data-urlencode client_id=admin-portal \
+            --data-urlencode redirect_uri="${callback}" \
+            --data-urlencode response_type=code \
+            --data-urlencode scope=openid \
+            --data-urlencode code_challenge=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+            --data-urlencode code_challenge_method=S256 \
+            "${authorization_url}"
+          grep -q '<title>Sign in to Svea Study</title>' login.html
+          curl --fail --silent --show-error --proto '=https' "${callback}" | grep -q '<title>Content administration</title>'
           curl --fail --silent --show-error --proto '=https' --dump-header headers.txt --output index.html "${base}/"
           grep -qi '^content-security-policy:.*connect-src '\''self' headers.txt
           if grep -Eqi 'onrender|46\.224\.221\.7|http://' index.html; then
             echo 'Hosted Admin HTML leaked a stale or insecure endpoint.' >&2
             exit 1
           fi
-          rm -f discovery.json headers.txt index.html
+          rm -f discovery.json headers.txt index.html login.html
