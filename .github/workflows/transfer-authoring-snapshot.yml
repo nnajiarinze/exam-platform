@@ -1,0 +1,153 @@
+name: Transfer guarded authoring snapshot
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: Full implementation commit SHA
+        required: true
+      mode:
+        description: DRY_RUN performs no persistent database writes
+        required: true
+        type: choice
+        options: [DRY_RUN, IMPORT]
+      encrypted_asset_url:
+        description: URL of the encrypted snapshot release asset
+        required: true
+      encrypted_payload_sha256:
+        description: SHA-256 of the encrypted payload
+        required: true
+      plaintext_archive_sha256:
+        description: SHA-256 of the authenticated plaintext tar.gz
+        required: true
+      snapshot_semantic_checksum:
+        description: Deterministic snapshot semantic checksum
+        required: true
+      expected_endpoint_fingerprint:
+        description: SHA-256 of the authoritative Neon EU endpoint host
+        required: true
+      expected_content_migration:
+        required: true
+        default: "20"
+      expected_ai_migration:
+        required: true
+        default: "32"
+      expected_active_release_id:
+        required: true
+        default: be07a3f5-a80c-42c8-bf1c-02541755f178
+      backup_confirmed:
+        description: Future IMPORT requires separately verified backups
+        required: true
+        type: boolean
+        default: false
+      import_confirmation:
+        description: IMPORT requires IMPORT_VERIFIED_AUTHORING_STATE
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  guarded-transfer:
+    runs-on: ubuntu-latest
+    environment: hosted
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit_sha }}
+      - name: Validate immutable controls
+        env:
+          COMMIT_SHA: ${{ inputs.commit_sha }}
+          MODE: ${{ inputs.mode }}
+          ASSET_URL: ${{ inputs.encrypted_asset_url }}
+          ENCRYPTED_SHA256: ${{ inputs.encrypted_payload_sha256 }}
+          PLAINTEXT_SHA256: ${{ inputs.plaintext_archive_sha256 }}
+          SNAPSHOT_SHA256: ${{ inputs.snapshot_semantic_checksum }}
+          ENDPOINT_SHA256: ${{ inputs.expected_endpoint_fingerprint }}
+          CONTENT_MIGRATION: ${{ inputs.expected_content_migration }}
+          AI_MIGRATION: ${{ inputs.expected_ai_migration }}
+          RELEASE_ID: ${{ inputs.expected_active_release_id }}
+          BACKUP_CONFIRMED: ${{ inputs.backup_confirmed }}
+          IMPORT_CONFIRMATION: ${{ inputs.import_confirmation }}
+        run: |
+          set -Eeuo pipefail
+          [[ "${COMMIT_SHA}" =~ ^[a-f0-9]{40}$ ]]
+          [[ "${MODE}" == DRY_RUN || "${MODE}" == IMPORT ]]
+          [[ "${ASSET_URL}" == https://github.com/${{ github.repository }}/releases/download/* ]]
+          [[ "${ENCRYPTED_SHA256}" =~ ^[a-f0-9]{64}$ && "${PLAINTEXT_SHA256}" =~ ^[a-f0-9]{64}$ && "${SNAPSHOT_SHA256}" =~ ^[a-f0-9]{64}$ && "${ENDPOINT_SHA256}" =~ ^[a-f0-9]{64}$ ]]
+          [[ "${CONTENT_MIGRATION}" == 20 && "${AI_MIGRATION}" == 32 ]]
+          [[ "${RELEASE_ID}" =~ ^[a-f0-9-]{36}$ ]]
+          if [[ "${MODE}" == IMPORT ]]; then
+            [[ "${BACKUP_CONFIRMED}" == true ]]
+            [[ "${IMPORT_CONFIRMATION}" == IMPORT_VERIFIED_AUTHORING_STATE ]]
+          fi
+      - name: Install authenticated-encryption tooling
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq age expect
+      - name: Download, authenticate, decrypt, and validate snapshot
+        env:
+          ASSET_URL: ${{ inputs.encrypted_asset_url }}
+          EXPECTED_ENCRYPTED_SHA256: ${{ inputs.encrypted_payload_sha256 }}
+          EXPECTED_PLAINTEXT_SHA256: ${{ inputs.plaintext_archive_sha256 }}
+          EXPECTED_SEMANTIC: ${{ inputs.snapshot_semantic_checksum }}
+          AGE_PASSPHRASE: ${{ secrets.AUTHORING_SNAPSHOT_PASSPHRASE }}
+        run: |
+          set -Eeuo pipefail
+          umask 077
+          trap 'rm -rf snapshot-check snapshot.tar.gz snapshot.tar.gz.age' ERR
+          [[ -n "${AGE_PASSPHRASE}" ]]
+          curl --fail --silent --show-error --location --output snapshot.tar.gz.age "${ASSET_URL}"
+          echo "${EXPECTED_ENCRYPTED_SHA256}  snapshot.tar.gz.age" | sha256sum --check --strict
+          scripts/age_with_passphrase.exp decrypt snapshot.tar.gz.age snapshot.tar.gz
+          echo "${EXPECTED_PLAINTEXT_SHA256}  snapshot.tar.gz" | sha256sum --check --strict
+          mkdir snapshot-check
+          tar -xzf snapshot.tar.gz -C snapshot-check
+          python3 scripts/authoring_snapshot.py verify --snapshot snapshot-check/authoring-snapshot --expected-semantic "${EXPECTED_SEMANTIC}"
+          rm -rf snapshot-check snapshot.tar.gz.age
+      - name: Configure protected Hetzner SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.HOSTED_SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ secrets.HOSTED_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "${SSH_PRIVATE_KEY}" > ~/.ssh/id_ed25519
+          printf '%s\n' "${KNOWN_HOSTS}" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+      - name: Execute guarded operation on authoritative Hetzner target
+        env:
+          HOSTED_HOST: ${{ secrets.HOSTED_HOST }}
+          HOSTED_USER: ${{ secrets.HOSTED_USER }}
+          MODE: ${{ inputs.mode }}
+          EXPECTED_SEMANTIC: ${{ inputs.snapshot_semantic_checksum }}
+          EXPECTED_ENDPOINT: ${{ inputs.expected_endpoint_fingerprint }}
+          EXPECTED_CONTENT_MIGRATION: ${{ inputs.expected_content_migration }}
+          EXPECTED_AI_MIGRATION: ${{ inputs.expected_ai_migration }}
+          EXPECTED_RELEASE: ${{ inputs.expected_active_release_id }}
+          BACKUP_CONFIRMED: ${{ inputs.backup_confirmed }}
+          IMPORT_CONFIRMATION: ${{ inputs.import_confirmation }}
+        run: |
+          set -Eeuo pipefail
+          remote_archive="$(ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" 'mktemp /tmp/authoring-snapshot.XXXXXX.tar.gz')"
+          remote_code_dir="$(ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" 'mktemp -d /tmp/authoring-transfer-code.XXXXXX')"
+          cleanup() {
+            rm -f snapshot.tar.gz transfer-code.tar.gz
+            ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" "rm -f -- '${remote_archive}'; rm -rf -- '${remote_code_dir}'" || true
+          }
+          trap cleanup EXIT
+          tar -czf transfer-code.tar.gz infrastructure/hetzner/transfer-authoring-snapshot.sh infrastructure/hetzner/lib.sh scripts/authoring_snapshot.py
+          scp -q -o BatchMode=yes snapshot.tar.gz "${HOSTED_USER}@${HOSTED_HOST}:${remote_archive}"
+          scp -q -o BatchMode=yes transfer-code.tar.gz "${HOSTED_USER}@${HOSTED_HOST}:${remote_code_dir}/transfer-code.tar.gz"
+          ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" \
+            "tar -xzf '${remote_code_dir}/transfer-code.tar.gz' -C '${remote_code_dir}' && cd '${remote_code_dir}' && AUTHORING_BACKUP_CONFIRMED='${BACKUP_CONFIRMED}' AUTHORING_IMPORT_CONFIRMATION='${IMPORT_CONFIRMATION}' ./infrastructure/hetzner/transfer-authoring-snapshot.sh '${MODE}' '${remote_archive}' '${EXPECTED_SEMANTIC}' '${EXPECTED_ENDPOINT}' '${EXPECTED_CONTENT_MIGRATION}' '${EXPECTED_AI_MIGRATION}' '${EXPECTED_RELEASE}' '${{ inputs.commit_sha }}'"
+          if [[ "${MODE}" == DRY_RUN ]]; then
+            scp -q -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}:/opt/citizenship-platform/state/authoring-transfer-last-dry-run.json" sanitized-dry-run-report.json
+          fi
+      - uses: actions/upload-artifact@v4
+        if: inputs.mode == 'DRY_RUN'
+        with:
+          name: authoring-transfer-sanitized-dry-run
+          path: sanitized-dry-run-report.json
+          if-no-files-found: error
+          retention-days: 14

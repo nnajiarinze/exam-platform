@@ -1,0 +1,43 @@
+#!/usr/bin/expect -f
+log_user 0
+set timeout 120
+
+if {$argc != 3} {
+    puts stderr "Usage: age_with_passphrase.exp encrypt|decrypt INPUT OUTPUT"
+    exit 2
+}
+if {![info exists env(AGE_PASSPHRASE)] || $env(AGE_PASSPHRASE) eq ""} {
+    puts stderr "AGE_PASSPHRASE must come from a protected environment"
+    exit 2
+}
+
+set operation [lindex $argv 0]
+set input [lindex $argv 1]
+set output [lindex $argv 2]
+if {$operation eq "encrypt"} {
+    spawn age --encrypt --passphrase --output $output $input
+    expect {
+        -re {Enter passphrase.*:} { send -- "$env(AGE_PASSPHRASE)\r" }
+        timeout { puts stderr "age passphrase prompt timed out"; exit 1 }
+        eof { puts stderr "age exited before requesting a passphrase"; exit 1 }
+    }
+    expect {
+        -re {Confirm passphrase:} { send -- "$env(AGE_PASSPHRASE)\r" }
+        timeout { puts stderr "age confirmation prompt timed out"; exit 1 }
+        eof { puts stderr "age exited before confirming the passphrase"; exit 1 }
+    }
+} elseif {$operation eq "decrypt"} {
+    spawn age --decrypt --output $output $input
+    expect {
+        -re {Enter passphrase:} { send -- "$env(AGE_PASSPHRASE)\r" }
+        timeout { puts stderr "age passphrase prompt timed out"; exit 1 }
+        eof { puts stderr "age exited before requesting a passphrase"; exit 1 }
+    }
+} else {
+    puts stderr "operation must be encrypt or decrypt"
+    exit 2
+}
+
+expect eof
+set status [wait]
+exit [lindex $status 3]
