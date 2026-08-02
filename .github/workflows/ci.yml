@@ -141,6 +141,9 @@ jobs:
           severity: ${{ matrix.scan_severity }}
       - name: Validate hosted Compose
         run: ./infrastructure/hetzner/validate-hosted-config.sh
+      - name: Validate hosted gateway runtime selection
+        if: matrix.name == 'gateway'
+        run: ./infrastructure/gateway/test-hosted-runtime.sh citizenship-gateway:ci
 
   security:
     runs-on: ubuntu-latest

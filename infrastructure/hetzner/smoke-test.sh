@@ -15,7 +15,12 @@ PUBLIC_SCHEME="${PUBLIC_SCHEME:-https}"
   die "PUBLIC_SCHEME must be http or https"
 PUBLIC_BASE="${PUBLIC_SCHEME}://${API_DOMAIN}"
 
-curl --fail --silent --show-error "${PUBLIC_BASE}/healthz" >/dev/null
+health="$(curl --fail --silent --show-error "${PUBLIC_BASE}/healthz")"
+if [[ "${PUBLIC_SCHEME}" == "https" ]]; then
+  [[ "${health}" == '{"status":"UP","mode":"hosted-https"}' ]] ||
+    die "Hosted HTTPS gateway reported an unexpected runtime mode: ${health}"
+  curl --fail --silent --show-error --proto '=https' --tlsv1.2 "${PUBLIC_BASE}/healthz" >/dev/null
+fi
 curl --fail --silent --show-error \
   "${PUBLIC_BASE}/auth/realms/exam-platform/.well-known/openid-configuration" >/dev/null
 
@@ -28,6 +33,11 @@ if [[ -n "${ADMIN_PORTAL_URL:-}" ]]; then
 fi
 
 if "${INTERNAL}"; then
+  if [[ "${PUBLIC_SCHEME}" == "https" ]]; then
+    internal_https_health="$(compose exec -T api-gateway wget --no-check-certificate -q -O - https://127.0.0.1:8443/healthz)"
+    [[ "${internal_https_health}" == '{"status":"UP","mode":"hosted-https"}' ]] ||
+      die "Gateway has no valid internal HTTPS listener"
+  fi
   compose exec -T api-gateway wget -q -O /dev/null http://content-service:8080/actuator/health/readiness
   compose exec -T api-gateway wget -q -O /dev/null http://learning-service:8080/actuator/health/readiness
   compose exec -T api-gateway wget -q -O /dev/null http://ai-service:8080/actuator/health/readiness

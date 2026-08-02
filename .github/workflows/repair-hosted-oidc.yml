@@ -87,7 +87,39 @@ jobs:
           update_env ADMIN_PORTAL_URL "https://${public_domain}"
           update_env KEYCLOAK_SECURITY_MODE HTTPS_HOSTED
           update_env CORS_ALLOWED_ORIGINS "https://${public_domain}"
-          if ! ./infrastructure/hetzner/deploy.sh "${image_sha}"; then
+          remove_env() {
+            local key="$1" temporary
+            temporary="$(mktemp "${env_file}.XXXXXX")"
+            awk -F= -v key="${key}" '$1!=key { print }' "${env_file}" >"${temporary}"
+            chmod 600 "${temporary}"
+            mv "${temporary}" "${env_file}"
+          }
+          # This legacy provisioning override must never select bootstrap HTTP in production.
+          remove_env GATEWAY_CONFIG_TEMPLATE
+          release_backup="$(mktemp "${release_env}.XXXXXX")"
+          cp "${release_env}" "${release_backup}"
+          rollback_gateway() {
+            cp "${release_backup}" "${release_env}"
+            "${compose[@]}" up -d --no-deps --wait --wait-timeout 60 api-gateway >/dev/null 2>&1 || true
+          }
+          trap 'rollback_gateway; recover_gateway' EXIT
+          update_release_env() {
+            local key="$1" value="$2" temporary
+            temporary="$(mktemp "${release_env}.XXXXXX")"
+            awk -F= -v key="${key}" -v value="${value}" '
+              BEGIN { replaced=0 }
+              $1==key { if (!replaced) print key "=" value; replaced=1; next }
+              { print }
+              END { if (!replaced) print key "=" value }
+            ' "${release_env}" >"${temporary}"
+            chmod 600 "${temporary}"
+            mv "${temporary}" "${release_env}"
+          }
+          update_release_env GATEWAY_IMAGE_TAG "${image_sha}"
+          if ! "${compose[@]}" pull api-gateway ||
+             ! "${compose[@]}" up -d --no-deps --wait --wait-timeout 60 api-gateway ||
+             ! "${compose[@]}" exec -T api-gateway nginx -t ||
+             ! API_DOMAIN="${public_domain}" ./infrastructure/hetzner/smoke-test.sh --internal; then
             echo 'Hosted deployment smoke failed; collecting non-secret reachability evidence.' >&2
             curl --fail --silent --show-error --resolve "${public_domain}:443:127.0.0.1" \
               "https://${public_domain}/healthz" >/dev/null && echo 'Gateway TLS is reachable on host loopback.'
@@ -99,6 +131,8 @@ jobs:
               echo 'Host firewall inspection privilege is not installed for the deployment identity.' >&2
             exit 1
           fi
+          rm -f "${release_backup}"
+          trap recover_gateway EXIT
           gateway_stopped=false
           REMOTE
       - name: Validate external OIDC metadata and Admin security headers

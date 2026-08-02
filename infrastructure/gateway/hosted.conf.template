@@ -9,7 +9,7 @@ server {
   location = /healthz {
     access_log off;
     default_type application/json;
-    return 200 '{"status":"UP"}';
+    return 200 '{"status":"UP","mode":"hosted-https"}';
   }
 
   location / {
@@ -43,7 +43,7 @@ server {
   location = /healthz {
     access_log off;
     default_type application/json;
-    return 200 '{"status":"UP"}';
+    return 200 '{"status":"UP","mode":"hosted-https"}';
   }
 
   location /content/ {

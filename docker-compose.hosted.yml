@@ -20,7 +20,7 @@ x-java-security: &java-security
 
 services:
   api-gateway:
-    image: ${IMAGE_REGISTRY:?Set IMAGE_REGISTRY}/citizenship-api-gateway:${IMAGE_TAG:?Set immutable IMAGE_TAG}
+    image: ${IMAGE_REGISTRY:?Set IMAGE_REGISTRY}/citizenship-api-gateway:${GATEWAY_IMAGE_TAG:-${IMAGE_TAG:?Set immutable IMAGE_TAG}}
     build:
       context: .
       dockerfile: infrastructure/gateway/Dockerfile
@@ -44,7 +44,8 @@ services:
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt:ro
       - /var/www/certbot:/var/www/certbot:ro
-      - ${GATEWAY_CONFIG_TEMPLATE:-./infrastructure/gateway/hosted.conf.template}:/etc/nginx/templates/default.conf.template:ro
+      # Production Compose must never be redirected to bootstrap-http by a stale env value.
+      - ./infrastructure/gateway/hosted.conf.template:/etc/nginx/templates/default.conf.template:ro
     depends_on:
       content-service:
         condition: service_healthy

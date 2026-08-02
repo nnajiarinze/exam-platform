@@ -6,6 +6,8 @@ ENV_FILE="${1:-${REPOSITORY_ROOT}/.env.hosted.example}"
 
 docker compose --env-file "${ENV_FILE}" -f "${COMPOSE_FILE}" config --quiet
 rendered="$(docker compose --env-file "${ENV_FILE}" -f "${COMPOSE_FILE}" config)"
+override_rendered="$(GATEWAY_CONFIG_TEMPLATE=./infrastructure/gateway/bootstrap-http.conf.template \
+  docker compose --env-file "${ENV_FILE}" -f "${COMPOSE_FILE}" config)"
 
 [[ "$(grep -cE '^[[:space:]]+published:' <<<"${rendered}")" -eq 2 ]] || {
   printf 'Expected exactly two published gateway ports.\n' >&2; exit 1;
@@ -35,4 +37,20 @@ grep -q "connect-src 'self'" "${REPOSITORY_ROOT}/infrastructure/gateway/hosted.c
 grep -q 'try_files \$uri \$uri/ /index.html' "${REPOSITORY_ROOT}/infrastructure/gateway/hosted.conf.template" || {
   printf 'Hosted gateway does not serve the Admin SPA callback routes.\n' >&2; exit 1;
 }
+grep -qE '^[[:space:]]+source: .*infrastructure/gateway/hosted\.conf\.template$' <<<"${rendered}" || {
+  printf 'Hosted gateway is not pinned to the HTTPS template.\n' >&2; exit 1;
+}
+! grep -q 'GATEWAY_CONFIG_TEMPLATE' "${COMPOSE_FILE}" || {
+  printf 'Hosted Compose still permits runtime gateway template overrides.\n' >&2; exit 1;
+}
+grep -qE 'source: .*infrastructure/gateway/hosted\.conf\.template$' <<<"${override_rendered}" || {
+  printf 'A stale environment value can still select bootstrap HTTP.\n' >&2; exit 1;
+}
+! grep -qE 'source: .*bootstrap-http\.conf\.template$' <<<"${override_rendered}" || exit 1
+grep -q 'listen 8443 ssl;' "${REPOSITORY_ROOT}/infrastructure/gateway/hosted.conf.template" || {
+  printf 'Hosted gateway has no TLS listener.\n' >&2; exit 1;
+}
+grep -q 'X-Forwarded-Port 443' "${REPOSITORY_ROOT}/infrastructure/gateway/hosted.conf.template" || exit 1
+grep -q 'X-Forwarded-Proto https' "${REPOSITORY_ROOT}/infrastructure/gateway/hosted.conf.template" || exit 1
+grep -q 'mode.*hosted-https' "${REPOSITORY_ROOT}/infrastructure/gateway/hosted.conf.template" || exit 1
 printf 'Hosted Compose security and routing validation passed.\n'
