@@ -97,6 +97,7 @@ ai:
     allow-free-router: ${OPENROUTER_ALLOW_FREE_ROUTER:false}
     allow-paid: ${OPENROUTER_ALLOW_PAID:false}
     budget-usd: ${OPENROUTER_BUDGET_USD:0}
+    paid-model: ${OPENROUTER_PAID_MODEL:}
     paid-default-max-output-tokens: ${OPENROUTER_PAID_DEFAULT_MAX_OUTPUT_TOKENS:4096}
     http-referer: ${OPENROUTER_HTTP_REFERER:}
     app-title: ${OPENROUTER_APP_TITLE:Svea Study}

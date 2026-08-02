@@ -21,8 +21,8 @@ import se.medbo.examplatform.ai.provider.AiProviderException;
 class LessonPageRepairService {
   static final String PROMPT_VERSION="lesson-page-repair-v3-content-only";
   private final JdbcClient jdbc;private final ObjectMapper mapper;private final LessonGenerationProviderClient provider;
-  private final LessonPageClaimValidator validator;private final LessonPagePlanStore plans;
-  LessonPageRepairService(JdbcClient jdbc,ObjectMapper mapper,LessonGenerationProviderClient provider,LessonPageClaimValidator validator,LessonPagePlanStore plans){this.jdbc=jdbc;this.mapper=mapper;this.provider=provider;this.validator=validator;this.plans=plans;}
+  private final LessonPageClaimValidator validator;private final LessonPageTemplateValidator templateValidator;private final LessonPagePlanStore plans;
+  LessonPageRepairService(JdbcClient jdbc,ObjectMapper mapper,LessonGenerationProviderClient provider,LessonPageClaimValidator validator,LessonPageTemplateValidator templateValidator,LessonPagePlanStore plans){this.jdbc=jdbc;this.mapper=mapper;this.provider=provider;this.validator=validator;this.templateValidator=templateValidator;this.plans=plans;}
 
   Map<String,Object> inspect(UUID proposal){proposalRow(proposal);var revisions=jdbc.sql("""
       SELECT id,page_plan_revision_id AS "pagePlanRevisionId",page_index AS "pageIndex",revision_number AS "revisionNumber",replaces_revision_id AS "replacesRevisionId",
@@ -51,9 +51,11 @@ class LessonPageRepairService {
     var plan=plans.resolve(proposal,index,context.input(),context.page(),actor);
     persistRevision(proposal,index,1,null,plan.id(),"PENDING",context.page(),List.of(),actor);
     UUID revision=latestId(proposal,index);var result=validator.validate(context.page(),context.input().exactSourceText(),context.factTexts());
+    var planned=context.input().plan().get(index);var template=templateValidator.validate(context.page().body(),planned.learnerQuestion(),planned.expectedTransition());
+    var failures=new ArrayList<String>(result.failureCodes());failures.addAll(template.failureCodes());boolean passed=result.supported()&&template.passed();
     persistClaims(revision,result);jdbc.sql("UPDATE ai_lesson_page_revision SET status=:status,diagnostics=CAST(:diagnostics AS jsonb),updated_at=:now WHERE id=:id")
-        .param("status",result.supported()?"VALIDATED":"REJECTED").param("diagnostics",json(result.failureCodes())).param("now",now()).param("id",revision).update();
-    audit(actor,"AI_LESSON_PAGE_VALIDATED",revision,Map.of("proposalId",proposal,"pageIndex",index,"supported",result.supported(),"validatorVersion",LessonPageClaimValidator.VERSION));
+        .param("status",passed?"VALIDATED":"REJECTED").param("diagnostics",json(failures)).param("now",now()).param("id",revision).update();
+    audit(actor,"AI_LESSON_PAGE_VALIDATED",revision,Map.of("proposalId",proposal,"pageIndex",index,"supported",passed,"validatorVersion",LessonPageClaimValidator.VERSION,"templateValidatorVersion",LessonPageTemplateValidator.VERSION));
     return inspect(proposal);
   }
 
@@ -75,7 +77,8 @@ class LessonPageRepairService {
     var input=context.input();var rejectedClaims=failedClaimsForPage(proposal,index);
     var repairReasons=repairReasons(diagnostics(previous),reason);
     var request=new LessonGenerationProviderClient.PageRepairRequest(input.topicTitle(),input.learningObjectiveTitle(),
-        immutablePlan.sourceSectionId(),immutablePlan.sourceSectionChecksum(),input.exactSourceText(),input.facts(),previousPage,context.surroundingTitles(),
+        immutablePlan.sourceSectionId(),immutablePlan.sourceSectionChecksum(),input.exactSourceText(),input.facts(),previousPage,
+        input.plan().get(index).learnerQuestion(),input.plan().get(index).expectedTransition(),context.surroundingTitles(),
         List.copyOf(repairReasons),rejectedClaims,context.jobId(),actor,(Integer)previous.get("revisionNumber"));
     long started=System.nanoTime();LessonGenerationProviderClient.PageRepairResult generated;
     try{generated=provider.repairPage(request);}catch(AiProviderException e){
@@ -94,22 +97,31 @@ class LessonPageRepairService {
       throw error(HttpStatus.UNPROCESSABLE_ENTITY,"AI_PROVIDER_RESPONSE_INVALID","Repair response omitted mutable page content");
     }
     var immutable=previousPage;
-    String guardedBody=stripExactFailedClaims(content.body(),rejectedClaims);
+    var planned=input.plan().get(index);
+    var assignedFacts=input.facts().stream().filter(fact->planned.knowledgeFactVersionIds().contains(fact.versionId()))
+        .map(LessonGenerationProviderClient.Fact::text).toList();
+    String guardedBody=enforceMaximumWords(deduplicateSubstantiveSentences(stripExactFailedClaims(
+        templateValidator.restoreImmutableEnvelope(content.body(),planned.learnerQuestion(),planned.expectedTransition(),assignedFacts),
+        rejectedClaims)),assignedFacts,160);
     if(guardedBody.isBlank()){
       persistAttempt(proposal,index,(UUID)previous.get("id"),"INSUFFICIENT_INFORMATION",
           "AI_LESSON_PAGE_REPAIR_INSUFFICIENT_GROUNDED_INFORMATION",generated,elapsed(started),idempotencyKey,actor);
       throw error(HttpStatus.UNPROCESSABLE_ENTITY,"AI_LESSON_PAGE_REPAIR_INSUFFICIENT_GROUNDED_INFORMATION","Repair contained only previously rejected claims");
     }
+    var evidence=new java.util.LinkedHashSet<String>();if(content.evidenceQuotes()!=null)evidence.addAll(content.evidenceQuotes());
+    if(planned.exactSupportingEvidence()!=null)evidence.addAll(planned.exactSupportingEvidence());
     var page=new LessonGenerationProviderClient.Page(immutable.pageType(),immutable.title(),guardedBody,
-        List.copyOf(immutable.knowledgeFactVersionIds()),List.copyOf(content.evidenceQuotes()),List.copyOf(content.keyTerms()));
-    var result=validator.validate(page,input.exactSourceText(),context.factTexts());UUID revision=UUID.randomUUID();var usage=generated.usage();
+        List.copyOf(immutable.knowledgeFactVersionIds()),List.copyOf(evidence),List.copyOf(content.keyTerms()));
+    var result=validator.validate(page,input.exactSourceText(),context.factTexts());
+    var template=templateValidator.validate(page.body(),planned.learnerQuestion(),planned.expectedTransition());
+    var failures=new ArrayList<String>(result.failureCodes());failures.addAll(template.failureCodes());boolean passed=result.supported()&&template.passed();UUID revision=UUID.randomUUID();var usage=generated.usage();
     int revisionNumber=(Integer)previous.get("revisionNumber")+1;
-    persistRevision(proposal,index,revisionNumber,(UUID)previous.get("id"),immutablePlan.id(),result.supported()?"VALIDATED":"REJECTED",page,result.failureCodes(),actor,idempotencyKey,usage);
+    persistRevision(proposal,index,revisionNumber,(UUID)previous.get("id"),immutablePlan.id(),passed?"VALIDATED":"REJECTED",page,failures,actor,idempotencyKey,usage);
     persistClaims(revisionId(proposal,index,revisionNumber),result);audit(actor,"AI_LESSON_PAGE_REPLACEMENT_CREATED",revisionId(proposal,index,revisionNumber),
-        Map.of("proposalId",proposal,"pageIndex",index,"replacesRevisionId",previous.get("id"),"supported",result.supported(),"idempotencyKey",idempotencyKey==null?"":idempotencyKey));
-    persistAttempt(proposal,index,(UUID)previous.get("id"),result.supported()?"SUCCEEDED":"CLAIM_REJECTED",
-        result.supported()?null:String.join(",",result.failureCodes()),generated,elapsed(started),idempotencyKey,actor);
-    if(result.supported())applyReplacement(proposal,index,page);
+        Map.of("proposalId",proposal,"pageIndex",index,"replacesRevisionId",previous.get("id"),"supported",passed,"idempotencyKey",idempotencyKey==null?"":idempotencyKey));
+    persistAttempt(proposal,index,(UUID)previous.get("id"),passed?"SUCCEEDED":"CLAIM_REJECTED",
+        passed?null:String.join(",",failures),generated,elapsed(started),idempotencyKey,actor);
+    if(passed)applyReplacement(proposal,index,page);
     return inspect(proposal);
   }
 
@@ -171,15 +183,42 @@ class LessonPageRepairService {
     var rejected=failedClaims.stream()
         // A MISSING_EVIDENCE rejection is about the evidence envelope, not the claim text.
         // Retaining the same grounded claim with corrected exact evidence is a valid repair.
-        .filter(claim->!"MISSING_EVIDENCE".equals(claim.failureCode()))
+        .filter(claim->!java.util.Set.of("MISSING_EVIDENCE","DUPLICATE_CLAIM").contains(claim.failureCode()))
         .map(LessonGenerationProviderClient.FailedClaim::text)
         .map(LessonPageRepairService::normalizeClaim).collect(java.util.stream.Collectors.toSet());
-    return java.util.Arrays.stream(body.trim().split("(?<=[.!?])\\s+"))
-        .map(String::trim).filter(sentence->!sentence.isBlank())
-        .filter(sentence->!rejected.contains(normalizeClaim(sentence)))
-        .collect(java.util.stream.Collectors.joining(" "));
+    return body.trim().lines().map(line->java.util.Arrays.stream(line.trim().split("(?<=[.!?])\\s+"))
+            .map(String::trim).filter(sentence->!sentence.isBlank())
+            .filter(sentence->!rejected.contains(normalizeClaim(sentence)))
+            .collect(java.util.stream.Collectors.joining(" ")))
+        .filter(line->!line.isBlank()).collect(java.util.stream.Collectors.joining("\n"));
   }
   static List<String> repairReasons(List<String> diagnostics,String reviewerReason){var reasons=new ArrayList<>(diagnostics==null?List.<String>of():diagnostics);if(reviewerReason!=null&&!reviewerReason.isBlank())reasons.add(reviewerReason.trim());return List.copyOf(reasons);}
+  static String deduplicateSubstantiveSentences(String body){
+    var seen=new java.util.LinkedHashSet<String>();
+    return body.trim().lines().map(line->{String trimmed=line.trim();
+      if(trimmed.startsWith("• ")||trimmed.startsWith("Fråga:")||trimmed.equals("Kom ihåg:")
+          ||trimmed.startsWith("Nästa sida förklarar:")||trimmed.startsWith("Du har nu gått igenom"))return trimmed;
+      return java.util.Arrays.stream(trimmed.split("(?<=[.!?])\\s+")).map(String::trim).filter(sentence->!sentence.isBlank())
+          .filter(sentence->seen.add(normalizeClaim(sentence))).collect(java.util.stream.Collectors.joining(" "));})
+        .filter(line->!line.isBlank()).collect(java.util.stream.Collectors.joining("\n"));
+  }
+  static String enforceMaximumWords(String body,List<String> assignedFacts,int maximum){
+    var lines=new ArrayList<>(body.trim().lines().map(String::trim).filter(line->!line.isBlank()).toList());
+    var protectedClaims=assignedFacts.stream().map(LessonPageRepairService::normalizeClaim).toList();
+    while(String.join("\n",lines).split("\\s+").length>maximum){boolean removed=false;
+      for(int lineIndex=lines.size()-1;lineIndex>=0&&!removed;lineIndex--){String line=lines.get(lineIndex);
+        if(line.startsWith("• ")||line.startsWith("Fråga:")||line.equals("Kom ihåg:")
+            ||line.startsWith("Nästa sida förklarar:")||line.startsWith("Du har nu gått igenom"))continue;
+        var sentences=new ArrayList<>(java.util.Arrays.asList(line.split("(?<=[.!?])\\s+")));
+        for(int sentenceIndex=sentences.size()-1;sentenceIndex>=0;sentenceIndex--){String normalized=normalizeClaim(sentences.get(sentenceIndex));
+          boolean assigned=protectedClaims.stream().anyMatch(fact->fact.contains(normalized)||normalized.contains(fact));
+          if(!assigned){sentences.remove(sentenceIndex);if(sentences.isEmpty())lines.remove(lineIndex);else lines.set(lineIndex,String.join(" ",sentences));removed=true;break;}
+        }
+      }
+      if(!removed)break;
+    }
+    return String.join("\n",lines);
+  }
   private static String normalizeClaim(String value){return Normalizer.normalize(value==null?"":value,Normalizer.Form.NFKC)
       .toLowerCase(java.util.Locale.ROOT).replace('\u00a0',' ').replaceAll("[^\\p{L}\\p{N}]+"," ").replaceAll("\\s+"," ").trim();}
   private void persistRevision(UUID proposal,int index,int number,UUID replaces,UUID plan,String status,LessonGenerationProviderClient.Page page,List<String> diagnostics,String actor,LessonGenerationProviderClient.Usage... usageValue){persistRevision(proposal,index,number,replaces,plan,status,page,diagnostics,actor,null,usageValue);}

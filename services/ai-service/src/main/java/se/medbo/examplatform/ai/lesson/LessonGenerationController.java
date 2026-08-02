@@ -26,9 +26,9 @@ final class LessonGenerationController {
   }
   record PlannedPage(@NotBlank String pageType,@NotBlank String title,@NotEmpty List<@NotNull UUID> knowledgeFactVersionIds,
       String learnerQuestion,String pagePurpose,List<String> exactSupportingEvidence,List<String> allowedConcepts,
-      List<String> forbiddenConcepts,List<String> neighbouringPageTitles){
+      List<String> forbiddenConcepts,List<String> neighbouringPageTitles,String expectedTransition){
     LessonGenerationProviderClient.PlannedPage input(){return new LessonGenerationProviderClient.PlannedPage(pageType,title,
-        knowledgeFactVersionIds,learnerQuestion,pagePurpose,exactSupportingEvidence,allowedConcepts,forbiddenConcepts,neighbouringPageTitles);}
+        knowledgeFactVersionIds,learnerQuestion,pagePurpose,exactSupportingEvidence,allowedConcepts,forbiddenConcepts,neighbouringPageTitles,expectedTransition);}
   }
   record Create(@NotNull UUID topicId,@NotBlank String topicTitle,@NotNull UUID learningObjectiveId,
       @NotBlank String learningObjectiveTitle,@NotNull UUID sourceSectionId,@NotBlank String sourceSectionTitle,

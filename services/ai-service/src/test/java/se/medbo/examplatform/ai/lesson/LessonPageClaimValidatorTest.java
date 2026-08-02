@@ -23,6 +23,27 @@ class LessonPageClaimValidatorTest {
     var result=validator.validate(page("I den här lektionen läser du om demokratin. Falsk information och hat sprids ibland på sociala medier för att skapa konflikter i samhället."),normalizedSource,List.of(fact));
     assertThat(result.supported()).isTrue();assertThat(result.claims().getFirst().status()).isEqualTo("NON_FACTUAL_TEXT");
   }
+  @Test void acceptsDehyphenatedPdfLineBreakEvidence(){
+    var page=new LessonGenerationProviderClient.Page("CORE","Rubrik","I Sverige är diskriminering förbjudet.",
+        List.of(UUID.randomUUID()),List.of("I Sverige är diskriminering förbjudet."),List.of("diskriminering"));
+    var result=validator.validate(page,
+        "I Sverige är dis-\nkriminering förbjudet.",List.of("I Sverige är diskriminering förbjudet."));
+    assertThat(result.supported()).isTrue();
+  }
+  @Test void treatsV2QuestionRememberMarkerAndTransitionAsNonFactual(){
+    var body="Fråga: Vad behöver du förstå om demokrati?\nKom ihåg:\n• Falsk information och hat sprids ibland på sociala medier för att skapa konflikter i samhället.\nNästa sida förklarar: Fria medier.";
+    var result=validator.validate(page(body),source,List.of(fact));
+    assertThat(result.supported()).isTrue();
+    assertThat(result.claims()).extracting(LessonPageClaimValidator.Claim::status)
+        .containsExactly("NON_FACTUAL_TEXT","NON_FACTUAL_TEXT","SUPPORTED","NON_FACTUAL_TEXT");
+  }
+  @Test void treatsBoundedLearnerDirectionsAsNonFactualWithoutHidingClaims(){
+    var body="På den här sidan läser du meningarna i tur och ordning. Läs dem igen och jämför orden. Jämför sedan de två formuleringarna. Använd faktaraden när du sammanfattar. Lägg märke till vilka ord som återkommer. Riksdagen beslutar om statens budget.";
+    var result=validator.validate(page(body),source,List.of(fact));
+    assertThat(result.claims()).extracting(LessonPageClaimValidator.Claim::status)
+        .containsExactly("NON_FACTUAL_TEXT","NON_FACTUAL_TEXT","NON_FACTUAL_TEXT","NON_FACTUAL_TEXT","NON_FACTUAL_TEXT","REJECTED");
+    assertThat(result.failureCodes()).contains("UNSUPPORTED_CLAIM");
+  }
   @Test void rejectsCrossSectionClaimAndMissingEvidence(){
     var result=validator.validate(page("Riksdagen beslutar om statens budget."),source,List.of(fact));
     assertThat(result.failureCodes()).contains("UNSUPPORTED_CLAIM");

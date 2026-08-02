@@ -1,0 +1,299 @@
+{
+  "auditId": "18dfee6f-033f-5e64-ae75-c0d88150b06c",
+  "topics": {
+    "80528354-8a60-5a63-acb8-3ad9ce5b5a37": {
+      "groups": [
+        {
+          "sourceSectionId": "ff04fd30-a7a2-5dbb-8cab-f2f586d35c6e",
+          "planChecksums": [
+            "0c9f9d2e7cc7f6e2d694301506550fe2a337163a1eb89ce5a7c05871e614feab",
+            "0f366b30bf3beb99d3b1defdafc38c0dc8cf5db6fe58b2af6ef64101ce174df8",
+            "0b9694f4916f604954f8ff6a98b66539042a3e9380ca8a07d52937e7a541370f",
+            "42dddd280e22b973be7f76adb0e51e6740ef697e229d339e678a3a48081b4e29",
+            "6cd1652185e39899220f4f0b2786f91fcd9f67f4f0cef6726532a6ab225d6cfa"
+          ],
+          "job": {
+            "id": "78369885-fd96-4c4d-ace1-22db7d24af77",
+            "topicId": "80528354-8a60-5a63-acb8-3ad9ce5b5a37",
+            "learningObjectiveId": "ce074f6c-ce2b-518e-8da7-ccb7071abd57",
+            "sourceSectionId": "ff04fd30-a7a2-5dbb-8cab-f2f586d35c6e",
+            "requestedBy": "codex-lesson-depth-expansion",
+            "language": "sv",
+            "status": "FAILED",
+            "provider": "GEMINI",
+            "model": "gemini-3.1-flash-lite",
+            "promptVersion": "lesson-generation-v2-multi-page",
+            "retryCount": 0,
+            "errorCode": "AI_PROVIDER_HARD_TIMEOUT",
+            "errorMessage": "Provider execution exceeded its absolute deadline",
+            "createdAt": "2026-08-02T07:30:59.139+00:00",
+            "startedAt": "2026-08-02T07:31:00.084+00:00",
+            "failedAt": "2026-08-02T07:31:45.333+00:00",
+            "version": 2,
+            "proposalCount": 0
+          },
+          "status": "FAILED"
+        },
+        {
+          "sourceSectionId": "ff04fd30-a7a2-5dbb-8cab-f2f586d35c6e",
+          "planChecksums": [
+            "0c9f9d2e7cc7f6e2d694301506550fe2a337163a1eb89ce5a7c05871e614feab",
+            "0f366b30bf3beb99d3b1defdafc38c0dc8cf5db6fe58b2af6ef64101ce174df8",
+            "0b9694f4916f604954f8ff6a98b66539042a3e9380ca8a07d52937e7a541370f",
+            "42dddd280e22b973be7f76adb0e51e6740ef697e229d339e678a3a48081b4e29",
+            "6cd1652185e39899220f4f0b2786f91fcd9f67f4f0cef6726532a6ab225d6cfa"
+          ],
+          "job": {
+            "id": "e9625fde-26a5-4982-9b23-525c001a0872",
+            "topicId": "80528354-8a60-5a63-acb8-3ad9ce5b5a37",
+            "learningObjectiveId": "ce074f6c-ce2b-518e-8da7-ccb7071abd57",
+            "sourceSectionId": "ff04fd30-a7a2-5dbb-8cab-f2f586d35c6e",
+            "requestedBy": "codex-lesson-depth-expansion",
+            "language": "sv",
+            "status": "FAILED",
+            "provider": "GEMINI",
+            "model": "gemini-3.1-flash-lite",
+            "promptVersion": "lesson-generation-v2-multi-page",
+            "retryCount": 0,
+            "errorCode": "AI_PROVIDER_RESPONSE_INVALID",
+            "errorMessage": "OpenRouter paid returned invalid structured JSON",
+            "createdAt": "2026-08-02T07:32:06.175+00:00",
+            "startedAt": "2026-08-02T07:32:06.391+00:00",
+            "failedAt": "2026-08-02T07:32:24.075+00:00",
+            "version": 2,
+            "proposalCount": 0
+          },
+          "status": "FAILED"
+        },
+        {
+          "sourceSectionId": "ff04fd30-a7a2-5dbb-8cab-f2f586d35c6e",
+          "planChecksums": [
+            "0c9f9d2e7cc7f6e2d694301506550fe2a337163a1eb89ce5a7c05871e614feab",
+            "0f366b30bf3beb99d3b1defdafc38c0dc8cf5db6fe58b2af6ef64101ce174df8",
+            "0b9694f4916f604954f8ff6a98b66539042a3e9380ca8a07d52937e7a541370f",
+            "42dddd280e22b973be7f76adb0e51e6740ef697e229d339e678a3a48081b4e29",
+            "6cd1652185e39899220f4f0b2786f91fcd9f67f4f0cef6726532a6ab225d6cfa"
+          ],
+          "job": {
+            "id": "22a8cf32-c89a-4c25-87ae-69e02fd3c90b",
+            "topicId": "80528354-8a60-5a63-acb8-3ad9ce5b5a37",
+            "learningObjectiveId": "ce074f6c-ce2b-518e-8da7-ccb7071abd57",
+            "sourceSectionId": "ff04fd30-a7a2-5dbb-8cab-f2f586d35c6e",
+            "requestedBy": "codex-lesson-depth-expansion",
+            "language": "sv",
+            "status": "FAILED",
+            "provider": "GEMINI",
+            "model": "gemini-3.1-flash-lite",
+            "promptVersion": "lesson-generation-v2-multi-page",
+            "retryCount": 0,
+            "errorCode": "AI_PROVIDER_HARD_TIMEOUT",
+            "errorMessage": "Provider execution exceeded its absolute deadline",
+            "createdAt": "2026-08-02T07:32:52.321+00:00",
+            "startedAt": "2026-08-02T07:32:55.355+00:00",
+            "failedAt": "2026-08-02T07:33:40.547+00:00",
+            "version": 2,
+            "proposalCount": 0
+          },
+          "status": "FAILED"
+        },
+        {
+          "sourceSectionId": "ff04fd30-a7a2-5dbb-8cab-f2f586d35c6e",
+          "planChecksums": [
+            "0c9f9d2e7cc7f6e2d694301506550fe2a337163a1eb89ce5a7c05871e614feab",
+            "0f366b30bf3beb99d3b1defdafc38c0dc8cf5db6fe58b2af6ef64101ce174df8",
+            "0b9694f4916f604954f8ff6a98b66539042a3e9380ca8a07d52937e7a541370f",
+            "42dddd280e22b973be7f76adb0e51e6740ef697e229d339e678a3a48081b4e29",
+            "6cd1652185e39899220f4f0b2786f91fcd9f67f4f0cef6726532a6ab225d6cfa"
+          ],
+          "job": {
+            "id": "5ad80bfe-1f90-478d-b4cc-8988b6771b7f",
+            "topicId": "80528354-8a60-5a63-acb8-3ad9ce5b5a37",
+            "learningObjectiveId": "ce074f6c-ce2b-518e-8da7-ccb7071abd57",
+            "sourceSectionId": "ff04fd30-a7a2-5dbb-8cab-f2f586d35c6e",
+            "requestedBy": "codex-lesson-depth-expansion",
+            "language": "sv",
+            "status": "FAILED",
+            "provider": "GEMINI",
+            "model": "gemini-3.1-flash-lite",
+            "promptVersion": "lesson-generation-v2-multi-page",
+            "retryCount": 0,
+            "errorCode": "AI_PROVIDER_HARD_TIMEOUT",
+            "errorMessage": "Provider execution exceeded its absolute deadline",
+            "createdAt": "2026-08-02T07:33:47.552+00:00",
+            "startedAt": "2026-08-02T07:33:47.586+00:00",
+            "failedAt": "2026-08-02T07:34:32.766+00:00",
+            "version": 2,
+            "proposalCount": 0
+          },
+          "status": "FAILED"
+        },
+        {
+          "sourceSectionId": "ff04fd30-a7a2-5dbb-8cab-f2f586d35c6e",
+          "planChecksums": [
+            "0c9f9d2e7cc7f6e2d694301506550fe2a337163a1eb89ce5a7c05871e614feab",
+            "0f366b30bf3beb99d3b1defdafc38c0dc8cf5db6fe58b2af6ef64101ce174df8"
+          ],
+          "job": {
+            "id": "217a98bd-f591-4ce9-87c5-8c45b643f939",
+            "topicId": "80528354-8a60-5a63-acb8-3ad9ce5b5a37",
+            "learningObjectiveId": "ce074f6c-ce2b-518e-8da7-ccb7071abd57",
+            "sourceSectionId": "ff04fd30-a7a2-5dbb-8cab-f2f586d35c6e",
+            "requestedBy": "codex-lesson-depth-expansion",
+            "language": "sv",
+            "status": "FAILED",
+            "provider": "GEMINI",
+            "model": "gemini-3.1-flash-lite",
+            "promptVersion": "lesson-generation-v2-multi-page",
+            "retryCount": 0,
+            "errorCode": "AI_PROVIDER_HARD_TIMEOUT",
+            "errorMessage": "Provider execution exceeded its absolute deadline",
+            "createdAt": "2026-08-02T07:35:14.892+00:00",
+            "startedAt": "2026-08-02T07:35:15.258+00:00",
+            "failedAt": "2026-08-02T07:36:00.502+00:00",
+            "version": 2,
+            "proposalCount": 0
+          },
+          "status": "FAILED"
+        },
+        {
+          "sourceSectionId": "ff04fd30-a7a2-5dbb-8cab-f2f586d35c6e",
+          "planChecksums": [
+            "0c9f9d2e7cc7f6e2d694301506550fe2a337163a1eb89ce5a7c05871e614feab",
+            "0f366b30bf3beb99d3b1defdafc38c0dc8cf5db6fe58b2af6ef64101ce174df8"
+          ],
+          "job": {
+            "id": "4b70d131-7a62-46f0-a0e0-3ef1a1c706b1",
+            "topicId": "80528354-8a60-5a63-acb8-3ad9ce5b5a37",
+            "learningObjectiveId": "ce074f6c-ce2b-518e-8da7-ccb7071abd57",
+            "sourceSectionId": "ff04fd30-a7a2-5dbb-8cab-f2f586d35c6e",
+            "requestedBy": "codex-lesson-depth-expansion",
+            "language": "sv",
+            "status": "FAILED",
+            "provider": "GEMINI",
+            "model": "gemini-3.1-flash-lite",
+            "promptVersion": "lesson-generation-v2-multi-page",
+            "retryCount": 0,
+            "errorCode": "AI_PROVIDER_HARD_TIMEOUT",
+            "errorMessage": "Provider execution exceeded its absolute deadline",
+            "createdAt": "2026-08-02T07:36:06.935+00:00",
+            "startedAt": "2026-08-02T07:36:07.938+00:00",
+            "failedAt": "2026-08-02T07:36:53.063+00:00",
+            "version": 2,
+            "proposalCount": 0
+          },
+          "status": "FAILED"
+        },
+        {
+          "sourceSectionId": "ff04fd30-a7a2-5dbb-8cab-f2f586d35c6e",
+          "planChecksums": [
+            "0c9f9d2e7cc7f6e2d694301506550fe2a337163a1eb89ce5a7c05871e614feab",
+            "0f366b30bf3beb99d3b1defdafc38c0dc8cf5db6fe58b2af6ef64101ce174df8"
+          ],
+          "job": {
+            "id": "01f3f22f-4b63-4d21-83dc-f8750df67a30",
+            "topicId": "80528354-8a60-5a63-acb8-3ad9ce5b5a37",
+            "learningObjectiveId": "ce074f6c-ce2b-518e-8da7-ccb7071abd57",
+            "sourceSectionId": "ff04fd30-a7a2-5dbb-8cab-f2f586d35c6e",
+            "requestedBy": "codex-lesson-depth-expansion",
+            "language": "sv",
+            "status": "FAILED",
+            "provider": "GEMINI",
+            "model": "gemini-3.1-flash-lite",
+            "promptVersion": "lesson-generation-v2-multi-page",
+            "retryCount": 0,
+            "errorCode": "AI_PROVIDER_RESPONSE_INVALID",
+            "errorMessage": "OpenRouter paid returned invalid structured JSON",
+            "createdAt": "2026-08-02T07:36:58.604+00:00",
+            "startedAt": "2026-08-02T07:36:59.104+00:00",
+            "failedAt": "2026-08-02T07:37:10.149+00:00",
+            "version": 2,
+            "proposalCount": 0
+          },
+          "status": "FAILED"
+        },
+        {
+          "sourceSectionId": "ff04fd30-a7a2-5dbb-8cab-f2f586d35c6e",
+          "planChecksums": [
+            "0c9f9d2e7cc7f6e2d694301506550fe2a337163a1eb89ce5a7c05871e614feab",
+            "0f366b30bf3beb99d3b1defdafc38c0dc8cf5db6fe58b2af6ef64101ce174df8"
+          ],
+          "job": {
+            "id": "0e82d765-dc6d-4704-9182-e8c44b87d9d2",
+            "topicId": "80528354-8a60-5a63-acb8-3ad9ce5b5a37",
+            "learningObjectiveId": "ce074f6c-ce2b-518e-8da7-ccb7071abd57",
+            "sourceSectionId": "ff04fd30-a7a2-5dbb-8cab-f2f586d35c6e",
+            "requestedBy": "codex-lesson-depth-expansion",
+            "language": "sv",
+            "status": "FAILED",
+            "provider": "GEMINI",
+            "model": "gemini-3.1-flash-lite",
+            "promptVersion": "lesson-generation-v2-multi-page",
+            "retryCount": 0,
+            "errorCode": "AI_PROVIDER_HARD_TIMEOUT",
+            "errorMessage": "Provider execution exceeded its absolute deadline",
+            "createdAt": "2026-08-02T07:37:16.244+00:00",
+            "startedAt": "2026-08-02T07:37:17.094+00:00",
+            "failedAt": "2026-08-02T07:38:02.234+00:00",
+            "version": 2,
+            "proposalCount": 0
+          },
+          "status": "FAILED"
+        },
+        {
+          "sourceSectionId": "ff04fd30-a7a2-5dbb-8cab-f2f586d35c6e",
+          "planChecksums": [
+            "0c9f9d2e7cc7f6e2d694301506550fe2a337163a1eb89ce5a7c05871e614feab"
+          ],
+          "job": {
+            "id": "6a9bcbb3-1d08-4a71-a0e8-fbb325a75486",
+            "topicId": "80528354-8a60-5a63-acb8-3ad9ce5b5a37",
+            "learningObjectiveId": "ce074f6c-ce2b-518e-8da7-ccb7071abd57",
+            "sourceSectionId": "ff04fd30-a7a2-5dbb-8cab-f2f586d35c6e",
+            "requestedBy": "codex-lesson-depth-expansion",
+            "language": "sv",
+            "status": "FAILED",
+            "provider": "OPENROUTER_PAID",
+            "model": "openai/gpt-oss-120b",
+            "promptVersion": "lesson-generation-v2-multi-page",
+            "retryCount": 0,
+            "errorCode": "AI_PROVIDER_RESPONSE_INVALID",
+            "errorMessage": "Provider response omitted required field: summary",
+            "createdAt": "2026-08-02T07:38:17.738+00:00",
+            "startedAt": "2026-08-02T07:38:18.548+00:00",
+            "failedAt": "2026-08-02T07:38:50.173+00:00",
+            "version": 2,
+            "proposalCount": 0
+          },
+          "status": "FAILED"
+        },
+        {
+          "sourceSectionId": "ff04fd30-a7a2-5dbb-8cab-f2f586d35c6e",
+          "planChecksums": [
+            "0c9f9d2e7cc7f6e2d694301506550fe2a337163a1eb89ce5a7c05871e614feab"
+          ],
+          "job": {
+            "id": "3609809d-b400-462f-9635-e1c22e7e65cb",
+            "topicId": "80528354-8a60-5a63-acb8-3ad9ce5b5a37",
+            "learningObjectiveId": "ce074f6c-ce2b-518e-8da7-ccb7071abd57",
+            "sourceSectionId": "ff04fd30-a7a2-5dbb-8cab-f2f586d35c6e",
+            "requestedBy": "codex-lesson-depth-expansion",
+            "language": "sv",
+            "status": "FAILED",
+            "provider": "GEMINI",
+            "model": "gemini-3.1-flash-lite",
+            "promptVersion": "lesson-generation-v2-multi-page",
+            "retryCount": 0,
+            "errorCode": "AI_PROVIDER_HARD_TIMEOUT",
+            "errorMessage": "Provider execution exceeded its absolute deadline",
+            "createdAt": "2026-08-02T07:39:04.588+00:00",
+            "startedAt": "2026-08-02T07:39:05.233+00:00",
+            "failedAt": "2026-08-02T07:39:50.546+00:00",
+            "version": 2,
+            "proposalCount": 0
+          },
+          "status": "FAILED"
+        }
+      ]
+    }
+  }
+}

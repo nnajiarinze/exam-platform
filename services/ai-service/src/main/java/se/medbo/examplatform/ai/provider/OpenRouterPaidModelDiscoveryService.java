@@ -42,7 +42,7 @@ public class OpenRouterPaidModelDiscoveryService {
       @Value("${ai.openrouter.api-key:}")String key,
       @Value("${ai.openrouter.base-url:https://openrouter.ai/api/v1}")String base,
       @Value("${ai.openrouter.allow-paid:false}")boolean allowPaid,
-      @Value("${ai.groq.model:}")String preferredModel,
+      @Value("${ai.openrouter.paid-model:}")String preferredModel,
       @Value("${ai.openrouter.timeout-seconds:45}")long timeoutSeconds){
     URI uri=URI.create(base);if(!"https".equalsIgnoreCase(uri.getScheme())||!"openrouter.ai".equalsIgnoreCase(uri.getHost())||uri.getUserInfo()!=null||uri.getPort()!=-1)throw new IllegalArgumentException("Provider base URL must be the official HTTPS endpoint");
     this.jdbc=jdbc;this.mapper=mapper;this.key=key;this.base=base.replaceAll("/+$","");
@@ -62,7 +62,8 @@ public class OpenRouterPaidModelDiscoveryService {
 
   @Transactional
   public Model discoverAndPin(){
-    var existing=current();if(existing.isPresent())return existing.get();
+    var existing=current();
+    if(existing.isPresent()&&(preferredModel.isBlank()||preferredModel.equals(existing.get().id())))return existing.get();
     if(!allowPaid)throw new AiProviderException("AI_PAID_USAGE_NOT_ENABLED",false,"OpenRouter paid fallback is disabled");
     if(key.isBlank())throw new AiProviderException("AI_PROVIDER_AUTHENTICATION_FAILED",false,"OpenRouter credentials are not configured");
     try{
@@ -79,7 +80,7 @@ public class OpenRouterPaidModelDiscoveryService {
               .thenComparing(Comparator.comparingLong(Model::contextLength).reversed())
               .thenComparing(Model::id)).orElseThrow());
       String parameters=mapper.writeValueAsString(selected.parameters());String fingerprint=sha256(selected.id()+"|"+selected.promptPrice()+"|"+selected.completionPrice()+"|"+parameters);
-      jdbc.sql("INSERT INTO ai_openrouter_paid_model(singleton,model,prompt_usd_per_token,completion_usd_per_token,reasoning_usd_per_token,request_usd,context_length,supported_parameters,catalog_fingerprint,discovered_at) VALUES(true,:model,:prompt,:completion,:reasoning,:request,:context,CAST(:parameters AS jsonb),:fingerprint,:now) ON CONFLICT(singleton) DO NOTHING")
+      jdbc.sql("INSERT INTO ai_openrouter_paid_model(singleton,model,prompt_usd_per_token,completion_usd_per_token,reasoning_usd_per_token,request_usd,context_length,supported_parameters,catalog_fingerprint,discovered_at) VALUES(true,:model,:prompt,:completion,:reasoning,:request,:context,CAST(:parameters AS jsonb),:fingerprint,:now) ON CONFLICT(singleton) DO UPDATE SET model=EXCLUDED.model,prompt_usd_per_token=EXCLUDED.prompt_usd_per_token,completion_usd_per_token=EXCLUDED.completion_usd_per_token,reasoning_usd_per_token=EXCLUDED.reasoning_usd_per_token,request_usd=EXCLUDED.request_usd,context_length=EXCLUDED.context_length,supported_parameters=EXCLUDED.supported_parameters,catalog_fingerprint=EXCLUDED.catalog_fingerprint,discovered_at=EXCLUDED.discovered_at")
           .param("model",selected.id()).param("prompt",selected.promptPrice()).param("completion",selected.completionPrice())
           .param("reasoning",selected.reasoningPrice()).param("request",selected.requestPrice()).param("context",selected.contextLength())
           .param("parameters",parameters).param("fingerprint",fingerprint).param("now",selected.discoveredAt()).update();

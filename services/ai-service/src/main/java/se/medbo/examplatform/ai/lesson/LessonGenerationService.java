@@ -23,7 +23,7 @@ import se.medbo.examplatform.ai.provider.AiProviderException;
 public class LessonGenerationService {
   public static final String PROMPT_VERSION="lesson-generation-v2-multi-page";
   private final JdbcClient jdbc;private final ObjectMapper mapper;private final LessonGenerationProviderClient provider;
-  private final LessonPagePlanStore plans;
+  private final LessonPagePlanStore plans;private final LessonPageTemplateValidator templateValidator;
   private final boolean enabled;private final String providerName,model;private final int maxRetries;
   public record Create(UUID topicId,String topicTitle,UUID learningObjectiveId,
       String learningObjectiveTitle,UUID sourceSectionId,String sourceSectionTitle,
@@ -33,12 +33,12 @@ public class LessonGenerationService {
     boolean pageSet(){return "DEPTH_PAGE_SET".equals(generationMode);}
   }
 
-  LessonGenerationService(JdbcClient jdbc,ObjectMapper mapper,LessonGenerationProviderClient provider,LessonPagePlanStore plans,
+  LessonGenerationService(JdbcClient jdbc,ObjectMapper mapper,LessonGenerationProviderClient provider,LessonPagePlanStore plans,LessonPageTemplateValidator templateValidator,
       @Value("${ai.editorial.enabled:false}")boolean enabled,
       @Value("${ai.editorial.provider:FAKE}")String providerName,
       @Value("${ai.editorial.model:deterministic-v1}")String model,
       @Value("${ai.editorial.max-retries:2}")int maxRetries){
-    this.jdbc=jdbc;this.mapper=mapper;this.provider=provider;this.plans=plans;this.enabled=enabled;
+    this.jdbc=jdbc;this.mapper=mapper;this.provider=provider;this.plans=plans;this.templateValidator=templateValidator;this.enabled=enabled;
     this.providerName=providerName;this.model=model;this.maxRetries=maxRetries;
   }
 
@@ -202,8 +202,13 @@ public class LessonGenerationService {
     var providerPages=proposal.pages()==null?List.<LessonGenerationProviderClient.Page>of():proposal.pages();
     var pages=providerPages.size()==input.plan().size()?java.util.stream.IntStream.range(0,providerPages.size()).mapToObj(i->{
       var generated=providerPages.get(i);var planned=input.plan().get(i);
-      return new LessonGenerationProviderClient.Page(planned.pageType(),planned.title(),generated.body(),
-          List.copyOf(planned.knowledgeFactVersionIds()),generated.evidenceQuotes(),generated.keyTerms());
+      var assignedFacts=input.facts().stream().filter(fact->planned.knowledgeFactVersionIds().contains(fact.versionId()))
+          .map(LessonGenerationProviderClient.Fact::text).toList();
+      var evidence=new LinkedHashSet<String>();if(generated.evidenceQuotes()!=null)evidence.addAll(generated.evidenceQuotes());
+      if(planned.exactSupportingEvidence()!=null)evidence.addAll(planned.exactSupportingEvidence());
+      return new LessonGenerationProviderClient.Page(planned.pageType(),planned.title(),
+          templateValidator.restoreImmutableEnvelope(generated.body(),planned.learnerQuestion(),planned.expectedTransition(),assignedFacts),
+          List.copyOf(planned.knowledgeFactVersionIds()),List.copyOf(evidence),generated.keyTerms());
     }).toList():providerPages;
     var actualVersions=pages.stream().flatMap(p->p.knowledgeFactVersionIds().stream()).collect(java.util.stream.Collectors.toSet());
     boolean complete=actualVersions.equals(expectedVersions);
@@ -220,6 +225,8 @@ public class LessonGenerationService {
     boolean exact=pages.stream().allMatch(p->expectedVersions.containsAll(p.knowledgeFactVersionIds()));
     boolean distinct=pages.stream().map(p->normalize(p.body())).distinct().count()==pages.size();
     boolean wordBounds=pages.stream().allMatch(p->{int words=p.body().trim().split("\\s+").length;return words>=(input.pageSet()?70:40)&&words<=(input.pageSet()?160:240);});
+    boolean pageTemplate=!input.pageSet()||java.util.stream.IntStream.range(0,pages.size()).allMatch(i->{var plan=input.plan().get(i);
+      return templateValidator.validate(pages.get(i).body(),plan.learnerQuestion(),plan.expectedTransition()).passed();});
     boolean noOfficialClaim=java.util.stream.Stream.concat(
         java.util.stream.Stream.of(proposal.title(),proposal.introduction(),proposal.summary()),
         pages.stream().flatMap(p->java.util.stream.Stream.of(p.title(),p.body())))
@@ -234,6 +241,7 @@ public class LessonGenerationService {
     gates.put("contradictionCheckPassed",exact);gates.put("placeholderCheckPassed",nonEmpty&&!containsPlaceholder(pages));
     gates.put("duplicateSectionCheckPassed",distinct);gates.put("swedishTextValidationPassed","sv".equalsIgnoreCase(input.language()));
     gates.put("learnerUsabilityPassed",nonEmpty&&terms&&wordBounds);gates.put("officialClaimCheckPassed",noOfficialClaim);
+    gates.put("lessonPageTemplatePassed",pageTemplate);
     String classification=gates.values().stream().allMatch(Boolean.TRUE::equals)?"GOOD":"NEEDS_REWRITE";
     var now=now();UUID proposalId=UUID.randomUUID();jdbc.sql("""
         INSERT INTO ai_lesson_proposal(id,generation_job_id,title,introduction,summary,fact_statements,
@@ -263,7 +271,7 @@ public class LessonGenerationService {
       .map(p->p.body().toLowerCase(java.util.Locale.ROOT)).anyMatch(v->v.contains("lorem ipsum")||v.contains("[placeholder]")||v.contains("todo"));}
   private String normalize(String value){return value.toLowerCase(java.util.Locale.ROOT).replaceAll("[^\\p{L}\\p{N}]+"," ").trim();}
   private String normalizeEvidence(String value){return java.text.Normalizer.normalize(value,java.text.Normalizer.Form.NFKC)
-      .replace('\u00a0',' ').replaceAll("\\s+"," ").trim();}
+      .replace('\u00a0',' ').replaceAll("-\\s+","").replaceAll("\\s+"," ").trim();}
 
   private void failOrRetry(UUID id,int retries,AiProviderException error){
     if("AI_ALL_FREE_PROVIDERS_UNAVAILABLE".equals(error.code())){pause(id,error);return;}

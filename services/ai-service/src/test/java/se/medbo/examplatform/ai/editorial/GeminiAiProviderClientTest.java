@@ -88,12 +88,12 @@ class GeminiAiProviderClientTest {
         "a".repeat(64),"Sverige är indelat i 21 regioner.",
         List.of(new LessonGenerationProviderClient.Fact(fact,version,"Sverige är indelat i 21 regioner.",section)),
         new LessonGenerationProviderClient.Page("INTRO","Rubrik","Utöver den nationella nivån är Sverige indelat i 21 regioner.",List.of(version),List.of(),List.of()),
-        List.of("Rubrik","Sammanfattning"),List.of("LEARNER_USABILITY_MIN_40_WORDS"),List.of(new LessonGenerationProviderClient.FailedClaim(
+        "Vad innebär regioner?","Nästa sida förklarar: Kommuner.",List.of("Rubrik","Sammanfattning"),List.of("LEARNER_USABILITY_MIN_40_WORDS"),List.of(new LessonGenerationProviderClient.FailedClaim(
             "Utöver den nationella nivån är Sverige indelat i 21 regioner.","UNSUPPORTED_CLAIM","Insufficient direct lexical support")),job,"reviewer",2);
     var result=new GeminiAiProviderClient(mapper,router).repairPage(request);
     assertThat(result.content().body()).isEqualTo("Sverige är indelat i 21 regioner.");
-    assertThat(seen.get().prompt()).contains("repairReasons","LEARNER_USABILITY_MIN_40_WORDS","failedClaims","Utöver den nationella nivån","UNSUPPORTED_CLAIM","Insufficient direct lexical support");
-    assertThat(seen.get().systemInstruction()).contains("copied as a complete sentence from SOURCE","at most one","Never repeat a transition","Never output ellipses or placeholders","Do not pad to a word target");
+    assertThat(seen.get().prompt()).contains("repairReasons","LEARNER_USABILITY_MIN_40_WORDS","failedClaims","Utöver den nationella nivån","UNSUPPORTED_CLAIM","Insufficient direct lexical support","Vad innebär regioner?","Nästa sida förklarar: Kommuner.");
+    assertThat(seen.get().systemInstruction()).contains("copied as a complete sentence from SOURCE","one or two concise learner instructions","Never repeat a transition","Never output ellipses or placeholders");
     assertThat(mapper.writeValueAsString(seen.get().jsonSchema()))
         .contains("REPAIRED","INSUFFICIENT_GROUNDED_INFORMATION")
         .doesNotContain("pageType","title","knowledgeFactVersionIds","topicId","learningObjectiveId","sourceSectionId");

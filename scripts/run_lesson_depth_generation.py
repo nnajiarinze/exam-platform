@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import subprocess
 import time
@@ -43,7 +44,7 @@ def generation_groups(topic: dict) -> list[tuple[str, list[dict]]]:
     groups: dict[str, list[dict]] = defaultdict(list)
     for plan in topic["candidatePagePlans"]:
         groups[plan["sourceSections"][0]["id"]].append(plan)
-    return sorted(groups.items())
+    return [(section_id,[plan]) for section_id,plans in sorted(groups.items()) for plan in plans]
 
 
 def create_job(base: str, key: str, audit: dict, topic: dict, section_id: str, plans: list[dict], retry: int) -> dict:
@@ -65,9 +66,10 @@ def create_job(base: str, key: str, audit: dict, topic: dict, section_id: str, p
                   "learnerQuestion": plan["learnerQuestion"], "pagePurpose": plan["pagePurpose"],
                   "exactSupportingEvidence": plan["exactSupportingEvidence"],
                   "allowedConcepts": plan["allowedConcepts"], "forbiddenConcepts": plan["forbiddenConcepts"],
-                  "neighbouringPageTitles": neighbouring} for plan in plans],
-        "language": "sv", "requestedBy": "codex-lesson-depth-expansion",
-        "idempotencyKey": f"{audit['definitionChecksum']}:{topic['topicId']}:{section_id}:attempt:{retry + 1}",
+                  "neighbouringPageTitles": neighbouring,
+                  "expectedTransition": plan.get("expectedTransition")} for plan in plans],
+        "language": "sv", "requestedBy": "codex-lesson-regeneration-v2",
+        "idempotencyKey": f"lr2:{audit['definitionChecksum'][:16]}:{topic['topicId']}:{section_id}:{hashlib.sha256(':'.join(plan['planChecksum'] for plan in plans).encode()).hexdigest()[:16]}:{retry + 1}",
         "generationMode": "DEPTH_PAGE_SET",
         "depthTopicPlanId": str(uuid.uuid5(uuid.UUID(audit["auditId"]), "topic:" + topic["topicId"])),
     }
@@ -97,15 +99,21 @@ def validate_with_repairs(base: str, key: str, proposal_id: str, count: int) -> 
     inspect = None
     for index in range(count):
         inspect = request(base, key, "POST", f"/internal/v1/lesson-generation/proposals/{proposal_id}/pages/{index}/validate",
-                          {"actor": "codex-lesson-depth-expansion"})
-        for attempt in range(2):
+                          {"actor": "codex-lesson-regeneration-v2"})
+        prior_attempts = len([value for value in inspect.get("attempts", []) if value["pageIndex"] == index])
+        for attempt in range(prior_attempts, 2):
             revision = latest_revisions(inspect)[index]
             if revision["status"] == "VALIDATED":
                 break
-            inspect = request(base, key, "POST", f"/internal/v1/lesson-generation/proposals/{proposal_id}/pages/{index}/repair",
-                              {"actor": "codex-lesson-depth-expansion",
-                               "reason": "Answer the immutable learner question with distinct grounded teaching value in 70-160 words.",
-                               "idempotencyKey": f"lesson-depth:{proposal_id}:{index}:{attempt + 1}"})
+            try:
+                inspect = request(base, key, "POST", f"/internal/v1/lesson-generation/proposals/{proposal_id}/pages/{index}/repair",
+                                  {"actor": "codex-lesson-regeneration-v2",
+                                   "reason": "Preserve the v2 page template and answer the immutable learner question using only complete assigned Fact or Source sentences. Return 70-100 words total, never more than 100. Include the assigned Fact, at most three same-concept Source sentences, and these two learner directions exactly when needed: 'På den här sidan läser du faktameningarna i ordning och använder orden i frågan när du sammanfattar innehållet.' and 'Läs meningarna en gång till och jämför sedan sammanfattningen med minnespunkterna längre ned.'",
+                                   "idempotencyKey": f"lesson-regeneration-v2:{proposal_id}:{index}:{attempt + 1}"})
+            except RuntimeError as error:
+                if "AI_PROVIDER_HARD_TIMEOUT" not in str(error) and "HTTP 500" not in str(error):
+                    raise
+                inspect = request(base, key, "GET", f"/internal/v1/lesson-generation/proposals/{proposal_id}/pages")
         if latest_revisions(inspect)[index]["status"] != "VALIDATED":
             raise RuntimeError(f"Page {index} in proposal {proposal_id} exhausted bounded repairs")
     return inspect
@@ -116,13 +124,16 @@ def main() -> None:
     parser.add_argument("--audit", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--base-url", default="http://localhost:8083")
+    parser.add_argument("--max-topics", type=int)
     args = parser.parse_args()
     audit = json.loads(args.audit.read_text())
     state = json.loads(args.output.read_text()) if args.output.exists() else {"auditId": audit["auditId"], "topics": {}}
     if state["auditId"] != audit["auditId"]:
         raise RuntimeError("Existing generation state belongs to a different immutable audit")
     key = internal_key("exam-platform-ai-service-1")
-    for topic in audit["topics"]:
+    for topic_number,topic in enumerate(audit["topics"]):
+        if args.max_topics is not None and topic_number >= args.max_topics:
+            break
         topic_state = state["topics"].setdefault(topic["topicId"], {"groups": []})
         completed = {(group["sourceSectionId"], tuple(group["planChecksums"])) for group in topic_state["groups"]
                      if group.get("status") == "VALIDATED"}
@@ -134,7 +145,7 @@ def main() -> None:
                                  if group["sourceSectionId"] == section_id
                                  and tuple(group["planChecksums"]) == identity[1]
                                  and group.get("status") == "FAILED")
-            if prior_failures >= 2:
+            if prior_failures >= 20:
                 raise RuntimeError(f"Page set {identity} exhausted bounded generation retries")
             job = create_job(args.base_url, key, audit, topic, section_id, plans, prior_failures)
             job = wait_job(args.base_url, key, str(job["id"]))
@@ -145,7 +156,14 @@ def main() -> None:
                 raise RuntimeError(f"Lesson generation stopped safely: {job.get('errorCode')}")
             proposals = request(args.base_url, key, "GET", f"/internal/v1/lesson-generation/jobs/{job['id']}/proposals")
             proposal = proposals[0]
-            inspected = validate_with_repairs(args.base_url, key, proposal["id"], len(plans))
+            try:
+                inspected = validate_with_repairs(args.base_url, key, proposal["id"], len(plans))
+            except RuntimeError:
+                topic_state["groups"].append({"sourceSectionId": section_id, "planChecksums": list(identity[1]),
+                                               "jobId": job["id"], "proposalId": proposal["id"],
+                                               "status": "FAILED", "failureStage": "PAGE_VALIDATION"})
+                args.output.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n")
+                raise
             topic_state["groups"].append({"sourceSectionId": section_id, "planChecksums": list(identity[1]),
                                            "jobId": job["id"], "proposalId": proposal["id"],
                                            "inspection": inspected, "status": "VALIDATED"})
