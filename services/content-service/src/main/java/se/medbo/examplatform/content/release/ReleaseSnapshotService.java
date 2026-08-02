@@ -37,7 +37,7 @@ public class ReleaseSnapshotService {
     public Map<String,Object> coverage(UUID releaseId){return jdbc.sql("SELECT count(DISTINCT s.id) AS \"subjectCount\",count(DISTINCT t.id) AS \"topicCount\",count(DISTINCT lo.id) AS \"learningObjectiveCount\",count(DISTINCT ri.content_version_id) FILTER(WHERE ri.content_type='QUESTION') AS \"questionCount\",count(DISTINCT ri.content_version_id) FILTER(WHERE ri.content_type='KNOWLEDGE_FACT') AS \"knowledgeFactCount\",count(DISTINCT ri.content_version_id) FILTER(WHERE ri.content_type='QUESTION' AND qv.difficulty='EASY') AS \"easyCount\",count(DISTINCT ri.content_version_id) FILTER(WHERE ri.content_type='QUESTION' AND qv.difficulty='MEDIUM') AS \"mediumCount\",count(DISTINCT ri.content_version_id) FILTER(WHERE ri.content_type='QUESTION' AND qv.difficulty='HARD') AS \"hardCount\" FROM content_release_item ri LEFT JOIN question_version qv ON ri.content_type='QUESTION' AND qv.id=ri.content_version_id LEFT JOIN knowledge_fact_version kfv ON ri.content_type='KNOWLEDGE_FACT' AND kfv.id=ri.content_version_id JOIN learning_objective lo ON lo.id=COALESCE(qv.learning_objective_id,(SELECT f.learning_objective_id FROM knowledge_fact f WHERE f.id=kfv.knowledge_fact_id)) JOIN topic t ON t.id=lo.topic_id JOIN subject s ON s.id=t.subject_id WHERE ri.release_id=:id").param("id",releaseId).query().singleRow();}
     private Map<String,Object> reviewedLesson(UUID topicId){return jdbc.sql("SELECT id,summary FROM lesson_draft WHERE topic_id=:topic AND review_status='REVIEWED' ORDER BY version_number DESC LIMIT 1").param("topic",topicId).query().listOfRows().stream().findFirst().orElse(null);}
     private List<LessonSection> lessonSections(UUID releaseId,UUID lessonId){return jdbc.sql("""
-        SELECT section.id,section.section_checksum AS version_id,section.title,section.explanation,
+        SELECT section.logical_section_id AS id,section.id AS section_version_id,section.section_checksum AS version_id,section.title,section.explanation,
           section.display_order
         FROM lesson_draft_section section
         WHERE section.lesson_draft_id=:lesson
@@ -50,7 +50,7 @@ public class ReleaseSnapshotService {
                   AND item.content_version_id=link.knowledge_fact_version_id))
         ORDER BY section.display_order,section.id
         """).param("lesson",lessonId).param("release",releaseId).query().listOfRows().stream().map(row->{
-          UUID section=(UUID)row.get("id");var sources=jdbc.sql("""
+          UUID section=(UUID)row.get("section_version_id");var sources=jdbc.sql("""
               SELECT DISTINCT source.title,source.url
               FROM lesson_draft_section_fact link
               JOIN knowledge_fact_source fact_source

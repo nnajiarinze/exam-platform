@@ -360,6 +360,8 @@ export type LessonDraftSectionRequest = {
     keyTerms?: Array<string>;
     supportedExamples?: Array<string>;
     knowledgeFactVersionIds: Array<string>;
+    predecessorSectionIds?: Array<string>;
+    mappingType?: 'RETAINED' | 'REORDERED' | 'SUPERSEDED' | 'SPLIT' | 'MERGED' | 'ADDED' | null;
 };
 
 export type LessonDraftRequest = {
@@ -369,6 +371,10 @@ export type LessonDraftRequest = {
     summary: string;
     importantPoints?: Array<string>;
     sections: Array<LessonDraftSectionRequest>;
+    supersedesLessonDraftId?: string | null;
+    generationPlanId?: string | null;
+    revisionReason?: 'LESSON_DEPTH_EXPANSION' | null;
+    humanVerified?: boolean;
 };
 
 export type LessonDraftDecision = {
@@ -392,8 +398,15 @@ export type LessonDraft = {
     createdAt: string;
     updatedAt: string;
     reviewedAt?: string | null;
+    supersedesLessonDraftId?: string | null;
+    generationPlanId?: string | null;
+    revisionReason?: string | null;
+    humanVerified?: boolean;
     version: number;
     sections?: Array<{
+        [key: string]: unknown;
+    }>;
+    supersessionMappings?: Array<{
         [key: string]: unknown;
     }>;
 };

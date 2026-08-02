@@ -146,26 +146,38 @@ public class ContentImportTransaction {
                 }
             }
         }
-        carryCompletedLessons(releaseId, canonicalExamId);
+        carryLessonProgress(releaseId, canonicalExamId);
         return new ImportResult(releaseId, true, "IMPORTED");
     }
 
-    private void carryCompletedLessons(UUID releaseId,String examId){
+    private void carryLessonProgress(UUID releaseId,String examId){
         jdbc.sql("""
             INSERT INTO lesson_progress(id,learner_id,content_release_id,topic_id,last_section_id,
               completed_section_count,started_at,last_accessed_at,completed_at,carried_completion_at)
-            SELECT gen_random_uuid(),progress.learner_id,:release,new_topic.id,first_section.id,
-              0,now(),now(),NULL,progress.completed_at
+            SELECT gen_random_uuid(),progress.learner_id,:release,new_topic.id,
+              CASE WHEN progress.completed_at IS NOT NULL THEN first_section.id ELSE resume_section.id END,
+              CASE WHEN progress.completed_at IS NOT NULL THEN 0
+                   ELSE LEAST(progress.completed_section_count,resume_section.display_order) END,
+              progress.started_at,progress.last_accessed_at,NULL,progress.completed_at
             FROM imported_content_release previous
             JOIN imported_topic old_topic ON old_topic.content_release_id=previous.id
             JOIN lesson_progress progress ON progress.topic_id=old_topic.id
-              AND progress.completed_at IS NOT NULL
+            JOIN imported_lesson_section old_last ON old_last.id=progress.last_section_id
             JOIN imported_topic new_topic ON new_topic.content_release_id=:release
               AND new_topic.external_topic_id=old_topic.external_topic_id
             JOIN LATERAL (
               SELECT section.id FROM imported_lesson_section section WHERE section.topic_id=new_topic.id
               ORDER BY section.display_order,section.id LIMIT 1
             ) first_section ON true
+            JOIN LATERAL (
+              SELECT section.id,section.display_order FROM imported_lesson_section section
+              WHERE section.topic_id=new_topic.id
+              ORDER BY CASE WHEN section.external_section_id=old_last.external_section_id THEN 0
+                            WHEN section.display_order>=progress.completed_section_count THEN 1 ELSE 2 END,
+                       CASE WHEN section.display_order>=progress.completed_section_count
+                            THEN section.display_order ELSE 2147483647-section.display_order END,
+                       section.id LIMIT 1
+            ) resume_section ON true
             WHERE previous.exam_id=:exam AND previous.status='ACTIVE'
             ON CONFLICT(learner_id,content_release_id,topic_id) DO NOTHING
             """).param("release",releaseId).param("exam",examId).update();

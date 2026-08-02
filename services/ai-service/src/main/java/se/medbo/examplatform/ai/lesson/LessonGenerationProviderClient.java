@@ -5,7 +5,13 @@ import java.util.UUID;
 
 public interface LessonGenerationProviderClient {
   record Fact(UUID id,UUID versionId,String text,UUID sourceSectionId){}
-  record PlannedPage(String pageType,String title,List<UUID> knowledgeFactVersionIds){}
+  record PlannedPage(String pageType,String title,List<UUID> knowledgeFactVersionIds,
+      String learnerQuestion,String pagePurpose,List<String> exactSupportingEvidence,
+      List<String> allowedConcepts,List<String> forbiddenConcepts,List<String> neighbouringPageTitles){
+    public PlannedPage(String pageType,String title,List<UUID> knowledgeFactVersionIds){
+      this(pageType,title,knowledgeFactVersionIds,null,null,List.of(),List.of(),List.of(),List.of());
+    }
+  }
   record Request(UUID topicId,String topicTitle,UUID learningObjectiveId,
       String learningObjectiveTitle,UUID sourceSectionId,String sourceSectionTitle,
       String sourceSectionChecksum,String exactSourceText,List<Fact> facts,List<PlannedPage> plan,String language,

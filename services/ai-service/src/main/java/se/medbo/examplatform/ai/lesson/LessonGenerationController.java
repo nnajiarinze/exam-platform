@@ -24,18 +24,22 @@ final class LessonGenerationController {
   record Fact(@NotNull UUID id,@NotNull UUID versionId,@NotBlank String text,@NotNull UUID sourceSectionId){
     LessonGenerationProviderClient.Fact input(){return new LessonGenerationProviderClient.Fact(id,versionId,text,sourceSectionId);}
   }
-  record PlannedPage(@NotBlank String pageType,@NotBlank String title,@NotEmpty List<@NotNull UUID> knowledgeFactVersionIds){
-    LessonGenerationProviderClient.PlannedPage input(){return new LessonGenerationProviderClient.PlannedPage(pageType,title,knowledgeFactVersionIds);}
+  record PlannedPage(@NotBlank String pageType,@NotBlank String title,@NotEmpty List<@NotNull UUID> knowledgeFactVersionIds,
+      String learnerQuestion,String pagePurpose,List<String> exactSupportingEvidence,List<String> allowedConcepts,
+      List<String> forbiddenConcepts,List<String> neighbouringPageTitles){
+    LessonGenerationProviderClient.PlannedPage input(){return new LessonGenerationProviderClient.PlannedPage(pageType,title,
+        knowledgeFactVersionIds,learnerQuestion,pagePurpose,exactSupportingEvidence,allowedConcepts,forbiddenConcepts,neighbouringPageTitles);}
   }
   record Create(@NotNull UUID topicId,@NotBlank String topicTitle,@NotNull UUID learningObjectiveId,
       @NotBlank String learningObjectiveTitle,@NotNull UUID sourceSectionId,@NotBlank String sourceSectionTitle,
       @NotBlank String sourceSectionChecksum,@NotBlank String exactSourceText,@NotEmpty List<@Valid Fact> facts,
       @NotEmpty List<@Valid PlannedPage> plan,
-      @NotBlank String language,@NotBlank String requestedBy,@NotBlank String idempotencyKey){
+      @NotBlank String language,@NotBlank String requestedBy,@NotBlank String idempotencyKey,
+      String generationMode,UUID depthTopicPlanId){
     LessonGenerationService.Create input(){return new LessonGenerationService.Create(topicId,topicTitle,
         learningObjectiveId,learningObjectiveTitle,sourceSectionId,sourceSectionTitle,sourceSectionChecksum,
         exactSourceText,facts.stream().map(Fact::input).toList(),plan.stream().map(PlannedPage::input).toList(),
-        language,requestedBy,idempotencyKey);}
+        language,requestedBy,idempotencyKey,generationMode,depthTopicPlanId);}
   }
   record Accept(@NotNull UUID lessonDraftId,@NotBlank String actor,long version){}
   @PostMapping("/jobs")@ResponseStatus(HttpStatus.ACCEPTED)Map<String,Object>create(@Valid@RequestBody Create request){return service.create(request.input());}

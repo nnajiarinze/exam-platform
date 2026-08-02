@@ -24,8 +24,12 @@ final class LessonDraftController {
   private final LessonDraftService service;
   LessonDraftController(LessonDraftService service){this.service=service;}
 
-  record Section(@NotNull UUID sourceSectionId,@NotBlank String title,@NotBlank String explanation,List<String> keyTerms,List<String> supportedExamples,@NotEmpty List<UUID> knowledgeFactVersionIds){}
-  record Create(@NotNull UUID topicId,@NotBlank String title,@NotBlank String introduction,@NotBlank String summary,List<String> importantPoints,@NotEmpty List<@Valid Section> sections){}
+  record Section(@NotNull UUID sourceSectionId,@NotBlank String title,@NotBlank String explanation,
+      List<String> keyTerms,List<String> supportedExamples,@NotEmpty List<UUID> knowledgeFactVersionIds,
+      List<UUID> predecessorSectionIds,String mappingType){}
+  record Create(@NotNull UUID topicId,@NotBlank String title,@NotBlank String introduction,@NotBlank String summary,
+      List<String> importantPoints,@NotEmpty List<@Valid Section> sections,UUID supersedesLessonDraftId,
+      UUID generationPlanId,String revisionReason,Boolean humanVerified){}
   record Decision(@PositiveOrZero long version,String note){}
 
   @PostMapping @ResponseStatus(HttpStatus.CREATED) Map<String,Object> create(@Valid @RequestBody Create request){return service.create(request);}

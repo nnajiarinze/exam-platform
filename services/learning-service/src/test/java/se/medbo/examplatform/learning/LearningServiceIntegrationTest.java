@@ -175,6 +175,48 @@ class LearningServiceIntegrationTest {
     }
 
     @Test
+    void releaseImportPreservesIncompletePositionAndCarriesCompletedStudyAgainState() throws Exception {
+        importAndActivate(snapshot("progress-release-1", "1"));
+        mockMvc.perform(put("/api/v1/learning/topics/topic-a/progress")
+                        .queryParam("examId", "swedish-citizenship")
+                        .header("X-Learner-Identity", "developer-learner")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"sectionId":"fact-2","completed":true}
+                                """))
+                .andExpect(status().isOk());
+
+        importAndActivate(snapshot("progress-release-2", "2"));
+        mockMvc.perform(get("/api/v1/learning/topics/topic-a/lesson")
+                        .queryParam("examId", "swedish-citizenship")
+                        .header("X-Learner-Identity", "developer-learner"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.progress.lastSectionId").value("fact-2"))
+                .andExpect(jsonPath("$.progress.completedSectionCount").value(1))
+                .andExpect(jsonPath("$.progress.completed").value(false));
+
+        for (String sectionId : List.of("fact-1", "fact-3")) {
+            mockMvc.perform(put("/api/v1/learning/topics/topic-a/progress")
+                            .queryParam("examId", "swedish-citizenship")
+                            .header("X-Learner-Identity", "developer-learner")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""
+                                    {"sectionId":"%s","completed":true}
+                                    """.formatted(sectionId)))
+                    .andExpect(status().isOk());
+        }
+
+        importAndActivate(snapshot("progress-release-3", "3"));
+        mockMvc.perform(get("/api/v1/learning/topics/topic-a/lesson")
+                        .queryParam("examId", "swedish-citizenship")
+                        .header("X-Learner-Identity", "developer-learner"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.progress.lastSectionId").value("fact-1"))
+                .andExpect(jsonPath("$.progress.completed").value(true))
+                .andExpect(jsonPath("$.progress.completionPercentage").value(0));
+    }
+
+    @Test
     void authenticatedLearnerGetsDeterministicSettingsDefaults() throws Exception {
         mockMvc.perform(get("/api/v1/me/settings").header("X-Learner-Identity", "developer-learner"))
                 .andExpect(status().isOk())

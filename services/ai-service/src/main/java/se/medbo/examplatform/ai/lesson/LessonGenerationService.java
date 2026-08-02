@@ -29,7 +29,9 @@ public class LessonGenerationService {
       String learningObjectiveTitle,UUID sourceSectionId,String sourceSectionTitle,
       String sourceSectionChecksum,String exactSourceText,List<LessonGenerationProviderClient.Fact> facts,
       List<LessonGenerationProviderClient.PlannedPage> plan,
-      String language,String requestedBy,String idempotencyKey){}
+      String language,String requestedBy,String idempotencyKey,String generationMode,UUID depthTopicPlanId){
+    boolean pageSet(){return "DEPTH_PAGE_SET".equals(generationMode);}
+  }
 
   LessonGenerationService(JdbcClient jdbc,ObjectMapper mapper,LessonGenerationProviderClient provider,LessonPagePlanStore plans,
       @Value("${ai.editorial.enabled:false}")boolean enabled,
@@ -47,17 +49,17 @@ public class LessonGenerationService {
         ||blank(input.sourceSectionChecksum())||!input.sourceSectionChecksum().matches("[a-f0-9]{64}")
         ||blank(input.exactSourceText())
         ||input.facts()==null||input.facts().isEmpty()||input.facts().size()>10
-        ||input.plan()==null||input.plan().size()<3||input.plan().size()>6
+        ||input.plan()==null||input.plan().isEmpty()||input.plan().size()>6
         ||blank(input.language())||blank(input.requestedBy())||blank(input.idempotencyKey()))
       throw error(HttpStatus.UNPROCESSABLE_ENTITY,"AI_LESSON_INPUT_INVALID","Complete topic, objective, section, fact, language, requester, and idempotency data is required");
     if(input.facts().stream().anyMatch(f->f.id()==null||f.versionId()==null||blank(f.text())
         ||!input.sourceSectionId().equals(f.sourceSectionId())))
       throw error(HttpStatus.UNPROCESSABLE_ENTITY,"AI_LESSON_GROUNDING_INVALID","Every fact must be versioned and mapped to the requested Source Section");
     var versions=input.facts().stream().map(LessonGenerationProviderClient.Fact::versionId).collect(java.util.stream.Collectors.toSet());
-    if(input.plan().stream().anyMatch(p->blank(p.pageType())||blank(p.title())
+    if((!input.pageSet()&&input.plan().size()<3)||input.plan().stream().anyMatch(p->blank(p.pageType())||blank(p.title())
         ||p.knowledgeFactVersionIds()==null||p.knowledgeFactVersionIds().isEmpty()
         ||!versions.containsAll(p.knowledgeFactVersionIds())))
-      throw error(HttpStatus.UNPROCESSABLE_ENTITY,"AI_LESSON_PLAN_INVALID","The deterministic page plan must contain 3-6 grounded pages");
+      throw error(HttpStatus.UNPROCESSABLE_ENTITY,"AI_LESSON_PLAN_INVALID","The deterministic page plan must contain grounded pages; full lessons require 3-6 pages");
     var existing=jdbc.sql("SELECT id FROM ai_lesson_generation_job WHERE requested_by=:actor AND idempotency_key=:key")
         .param("actor",input.requestedBy()).param("key",input.idempotencyKey()).query(UUID.class).optional();
     if(existing.isPresent())return get(existing.get());
@@ -217,7 +219,7 @@ public class LessonGenerationService {
             &&normalizedSource.contains(normalizeEvidence(q))));
     boolean exact=pages.stream().allMatch(p->expectedVersions.containsAll(p.knowledgeFactVersionIds()));
     boolean distinct=pages.stream().map(p->normalize(p.body())).distinct().count()==pages.size();
-    boolean wordBounds=pages.stream().allMatch(p->{int words=p.body().trim().split("\\s+").length;return words>=40&&words<=240;});
+    boolean wordBounds=pages.stream().allMatch(p->{int words=p.body().trim().split("\\s+").length;return words>=(input.pageSet()?70:40)&&words<=(input.pageSet()?160:240);});
     boolean noOfficialClaim=java.util.stream.Stream.concat(
         java.util.stream.Stream.of(proposal.title(),proposal.introduction(),proposal.summary()),
         pages.stream().flatMap(p->java.util.stream.Stream.of(p.title(),p.body())))
@@ -226,7 +228,7 @@ public class LessonGenerationService {
     boolean terms=pages.stream().allMatch(p->p.keyTerms()!=null&&p.keyTerms().stream().allMatch(v->v!=null&&!v.isBlank()&&v.length()<=80));
     var gates=new LinkedHashMap<String,Boolean>();
     gates.put("approvedFactCoveragePassed",complete);gates.put("unsupportedStatementDetectionPassed",exact);
-    gates.put("lessonStructurePassed",nonEmpty&&pages.size()>=3&&pages.size()<=6);gates.put("sectionOrderingPassed",planMatches);
+    gates.put("lessonStructurePassed",nonEmpty&&pages.size()>=(input.pageSet()?1:3)&&pages.size()<=6);gates.put("sectionOrderingPassed",planMatches);
     gates.put("topicMappingPassed",input.topicId()!=null);gates.put("learningObjectiveMappingPassed",input.learningObjectiveId()!=null);
     gates.put("sourceEvidencePassed",evidence);gates.put("sourceChecksumPassed",input.sourceSectionChecksum().matches("[a-f0-9]{64}"));
     gates.put("contradictionCheckPassed",exact);gates.put("placeholderCheckPassed",nonEmpty&&!containsPlaceholder(pages));
