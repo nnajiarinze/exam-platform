@@ -60,7 +60,7 @@ jobs:
           git fetch --quiet origin "${commit_sha}"
           git checkout --detach "${commit_sha}"
           tls_email="$(sed -n 's/^TLS_EMAIL=//p' "${env_file}" | tail -1)"
-          sudo API_DOMAIN="${public_domain}" TLS_EMAIL="${tls_email}" ./infrastructure/hetzner/provision-tls.sh
+          API_DOMAIN="${public_domain}" TLS_EMAIL="${tls_email}" ./infrastructure/hetzner/provision-tls.sh
           update_env() {
             local key="$1" value="$2" temporary
             temporary="$(mktemp "${env_file}.XXXXXX")"
