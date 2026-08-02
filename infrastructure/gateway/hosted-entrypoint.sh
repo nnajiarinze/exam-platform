@@ -12,11 +12,11 @@ for file in fullchain.pem privkey.pem; do
   fi
 done
 
-install -d -m 0700 -o 101 -g 101 "${runtime_dir}"
-install -m 0400 -o 101 -g 101 "${source_dir}/fullchain.pem" "${runtime_dir}/fullchain.pem"
-install -m 0400 -o 101 -g 101 "${source_dir}/privkey.pem" "${runtime_dir}/privkey.pem"
-install -m 0600 -o 101 -g 101 /dev/null /tmp/nginx-error.log
-install -m 0600 -o 101 -g 101 /dev/null /tmp/nginx-access.log
+install -d -m 0750 "${runtime_dir}"
+install -m 0440 "${source_dir}/fullchain.pem" "${runtime_dir}/fullchain.pem"
+install -m 0440 "${source_dir}/privkey.pem" "${runtime_dir}/privkey.pem"
+install -m 0660 /dev/null /tmp/nginx-error.log
+install -m 0660 /dev/null /tmp/nginx-access.log
 
 # Preserve container-native logging while ensuring Nginx itself never runs as root.
 su-exec 101:101 tail -n 0 -F /tmp/nginx-access.log &

@@ -124,7 +124,7 @@ jobs:
           update_release_env GATEWAY_IMAGE_TAG "${image_sha}"
           if ! "${compose[@]}" pull api-gateway ||
              ! "${compose[@]}" up -d --no-deps --wait --wait-timeout 60 api-gateway ||
-             ! "${compose[@]}" exec -T api-gateway nginx -t ||
+             ! "${compose[@]}" exec -T --user 101:101 api-gateway nginx -t ||
              ! API_DOMAIN="${public_domain}" ./infrastructure/hetzner/smoke-test.sh --internal; then
             echo 'Hosted deployment smoke failed; collecting non-secret reachability evidence.' >&2
             curl --fail --silent --show-error --resolve "${public_domain}:443:127.0.0.1" \

@@ -30,6 +30,10 @@ docker run -d --name "${keycloak}" --network "${network}" --network-alias keyclo
 
 gateway_args=(
   --network "${network}"
+  --cap-drop ALL
+  --cap-add SETGID
+  --cap-add SETUID
+  --security-opt no-new-privileges
   -e API_DOMAIN=test.local
   -e 'NGINX_ENVSUBST_FILTER=^(API_DOMAIN)$'
   -v "${test_root}/www:/var/www/certbot:ro"
@@ -48,7 +52,7 @@ if [[ "$(docker inspect -f '{{.State.Health.Status}}' "${gateway}")" != healthy 
   docker inspect -f '{{json .State.Health}}' "${gateway}" >&2
   exit 1
 fi
-docker exec "${gateway}" nginx -t
+docker exec --user 101:101 "${gateway}" nginx -t
 listeners="$(docker exec "${gateway}" netstat -lnt)"
 grep -qE '0\.0\.0\.0:8080[[:space:]]' <<<"${listeners}"
 grep -qE '0\.0\.0\.0:8443[[:space:]]' <<<"${listeners}"

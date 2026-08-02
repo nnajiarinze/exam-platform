@@ -15,6 +15,7 @@ RUN apk upgrade --no-cache && apk add --no-cache su-exec && \
 COPY --chmod=0755 infrastructure/gateway/hosted-entrypoint.sh /usr/local/bin/hosted-entrypoint
 COPY infrastructure/gateway/default.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=admin-build --chown=101:101 /workspace/apps/admin/dist/ /usr/share/nginx/html/
+USER 0:101
 HEALTHCHECK --interval=15s --timeout=3s --start-period=10s --retries=3 \
   CMD test "$(wget -q -O - http://127.0.0.1:8080/healthz)" = '{"status":"UP","mode":"hosted-https"}' && \
     test "$(wget --no-check-certificate -q -O - https://127.0.0.1:8443/healthz)" = '{"status":"UP","mode":"hosted-https"}'
