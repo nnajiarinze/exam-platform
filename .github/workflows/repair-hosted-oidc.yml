@@ -1,0 +1,99 @@
+name: Repair hosted OIDC reachability
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: Full tested commit SHA with published immutable images
+        required: true
+      public_domain:
+        description: Public HTTPS hostname resolving to the authoritative Hetzner host
+        required: true
+        default: api.46-224-221-7.sslip.io
+
+permissions:
+  contents: read
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    environment: hosted
+    steps:
+      - name: Validate immutable inputs
+        env:
+          COMMIT_SHA: ${{ inputs.commit_sha }}
+          PUBLIC_DOMAIN: ${{ inputs.public_domain }}
+        run: |
+          [[ "${COMMIT_SHA}" =~ ^[0-9a-f]{40}$ ]]
+          [[ "${PUBLIC_DOMAIN}" == api.46-224-221-7.sslip.io ]]
+          [[ "$(getent ahostsv4 "${PUBLIC_DOMAIN}" | awk 'NR==1{print $1}')" == 46.224.221.7 ]]
+      - name: Configure protected Hetzner SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.HOSTED_SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ secrets.HOSTED_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "${SSH_PRIVATE_KEY}" >~/.ssh/id_ed25519
+          printf '%s\n' "${KNOWN_HOSTS}" >~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+      - name: Provision TLS and deploy affected components
+        env:
+          COMMIT_SHA: ${{ inputs.commit_sha }}
+          PUBLIC_DOMAIN: ${{ inputs.public_domain }}
+          HOSTED_HOST: ${{ secrets.HOSTED_HOST }}
+          HOSTED_USER: ${{ secrets.HOSTED_USER }}
+        run: |
+          ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" "bash -s '${COMMIT_SHA}' '${PUBLIC_DOMAIN}'" <<'REMOTE'
+          set -Eeuo pipefail
+          commit_sha="$1" public_domain="$2"
+          root=/opt/citizenship-platform
+          repo="${root}/repo"
+          env_file="${root}/.env"
+          [[ -f "${env_file}" && "$(stat -c '%a' "${env_file}")" == 600 ]]
+          cd "${repo}"
+          git fetch --quiet origin "${commit_sha}"
+          git checkout --detach "${commit_sha}"
+          tls_email="$(sed -n 's/^TLS_EMAIL=//p' "${env_file}" | tail -1)"
+          [[ -n "${tls_email}" ]]
+          sudo API_DOMAIN="${public_domain}" TLS_EMAIL="${tls_email}" ./infrastructure/hetzner/provision-tls.sh
+          update_env() {
+            local key="$1" value="$2" temporary
+            temporary="$(mktemp "${env_file}.XXXXXX")"
+            awk -F= -v key="${key}" -v value="${value}" '
+              BEGIN { replaced=0 }
+              $1==key { if (!replaced) print key "=" value; replaced=1; next }
+              { print }
+              END { if (!replaced) print key "=" value }
+            ' "${env_file}" >"${temporary}"
+            chmod 600 "${temporary}"
+            mv "${temporary}" "${env_file}"
+          }
+          update_env API_DOMAIN "${public_domain}"
+          update_env PUBLIC_SCHEME https
+          update_env ADMIN_PORTAL_URL "https://${public_domain}"
+          update_env KEYCLOAK_SECURITY_MODE HTTPS_HOSTED
+          update_env CORS_ALLOWED_ORIGINS "https://${public_domain}"
+          ./infrastructure/hetzner/deploy.sh "${commit_sha}"
+          REMOTE
+      - name: Validate external OIDC metadata and Admin security headers
+        env:
+          PUBLIC_DOMAIN: ${{ inputs.public_domain }}
+        run: |
+          set -Eeuo pipefail
+          base="https://${PUBLIC_DOMAIN}"
+          curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 --output discovery.json \
+            "${base}/auth/realms/exam-platform/.well-known/openid-configuration"
+          jq -e --arg issuer "${base}/auth/realms/exam-platform" '
+            .issuer==$issuer and
+            (.authorization_endpoint|startswith($issuer+"/")) and
+            (.token_endpoint|startswith($issuer+"/")) and
+            (.jwks_uri|startswith($issuer+"/")) and
+            ([.[]|strings|select(test("localhost|onrender|keycloak:|46\\.224\\.221\\.7|http:"))]|length)==0' discovery.json
+          curl --fail --silent --show-error --proto '=https' "$(jq -r .jwks_uri discovery.json)" | jq -e '.keys|length>0'
+          curl --fail --silent --show-error --proto '=https' --dump-header headers.txt --output index.html "${base}/"
+          grep -qi '^content-security-policy:.*connect-src '\''self' headers.txt
+          if grep -Eqi 'onrender|46\.224\.221\.7|http://' index.html; then
+            echo 'Hosted Admin HTML leaked a stale or insecure endpoint.' >&2
+            exit 1
+          fi
+          rm -f discovery.json headers.txt index.html

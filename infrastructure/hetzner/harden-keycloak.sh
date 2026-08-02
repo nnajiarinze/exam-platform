@@ -10,7 +10,12 @@ require_command jq
 mode="${KEYCLOAK_SECURITY_MODE:-$(env_file_value KEYCLOAK_SECURITY_MODE "${PLATFORM_ENV_FILE}")}"
 mode="${mode:-BOOTSTRAP_HTTP}"
 admin_portal_url="${ADMIN_PORTAL_URL:-$(env_file_value ADMIN_PORTAL_URL "${PLATFORM_ENV_FILE}")}"
-admin_portal_url="${admin_portal_url:-https://citizenship-admin-abk5.onrender.com}"
+if [[ -z "${admin_portal_url}" ]]; then
+  api_domain="$(env_file_value API_DOMAIN "${PLATFORM_ENV_FILE}")"
+  public_scheme="$(env_file_value PUBLIC_SCHEME "${PLATFORM_ENV_FILE}")"
+  admin_portal_url="${public_scheme:-https}://${api_domain}"
+fi
+[[ "${admin_portal_url}" == https://* && "${admin_portal_url}" != *onrender.com* ]] || die "Hosted Admin URL must be the non-Render HTTPS gateway"
 container="${KEYCLOAK_CONTAINER:-citizenship-platform-keycloak-1}"
 internal_url="${KEYCLOAK_INTERNAL_URL:-http://127.0.0.1:8080/auth}"
 

@@ -30,7 +30,7 @@ describe('mobile API configuration',()=>{
   it('prevents production builds from targeting the local backend',()=>{
     const {assertSafeEnvironment,Environment,resolveEnvironment}=require('../config/environment') as typeof import('../config/environment');
     expect(()=>assertSafeEnvironment(resolveEnvironment(Environment.LOCAL),'production')).toThrow(/Production mobile builds/);
-    expect(()=>assertSafeEnvironment(resolveEnvironment(Environment.HOSTED,'http://46.224.221.7'),'production')).toThrow(/HTTPS/);
+    expect(()=>assertSafeEnvironment(resolveEnvironment(Environment.HOSTED,'http://insecure.example.test'),'production')).toThrow(/HTTPS/);
     expect(()=>assertSafeEnvironment(resolveEnvironment(Environment.HOSTED,'https://api.example.test'),'production')).not.toThrow();
   });
   it('uses the central hosted default and rejects invalid environment names',()=>{

@@ -10,8 +10,10 @@ require_var API_DOMAIN
 require_var TLS_EMAIL
 [[ "${API_DOMAIN}" != "api.example.com" ]] || die "Replace the placeholder API domain"
 
+install -d -m 755 /var/www/certbot
 certbot certonly \
-  --standalone \
+  --webroot \
+  --webroot-path /var/www/certbot \
   --non-interactive \
   --agree-tos \
   --email "${TLS_EMAIL}" \

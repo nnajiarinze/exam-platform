@@ -1,6 +1,19 @@
 import { readEnvironment } from './environment';
 
 describe('environment configuration', () => {
+  it('uses the serving HTTPS origin for hosted API and OIDC discovery in production', () => {
+    const originalLocation=globalThis.location;
+    Object.defineProperty(globalThis,'location',{configurable:true,value:{origin:'https://api.46-224-221-7.sslip.io'}});
+    try {
+      expect(readEnvironment({PROD:true,VITE_DEFAULT_APP_ENV:'HOSTED'})).toMatchObject({
+        gatewayBaseUrl:'https://api.46-224-221-7.sslip.io',
+        contentServiceBaseUrl:'https://api.46-224-221-7.sslip.io/content',
+        oidcAuthority:'https://api.46-224-221-7.sslip.io/auth/realms/exam-platform',
+      });
+    } finally {
+      Object.defineProperty(globalThis,'location',{configurable:true,value:originalLocation});
+    }
+  });
   it('normalizes the service URL and development roles', () => {
     expect(readEnvironment({ VITE_DEFAULT_APP_ENV: 'LOCAL', VITE_CONTENT_SERVICE_BASE_URL: 'https://content.example/', VITE_DEV_ADMIN_AUTH_ENABLED: 'true', VITE_DEV_ADMIN_ID: 'a', VITE_DEV_ADMIN_NAME: 'Admin', VITE_DEV_ADMIN_ROLES: 'CONTENT_AUTHOR', VITE_DEV_REVIEWER_ID: 'r', VITE_DEV_REVIEWER_NAME: 'Reviewer', VITE_DEV_REVIEWER_ROLES: 'CONTENT_REVIEWER' })).toMatchObject({ contentServiceBaseUrl: 'https://content.example', developmentAdminRoles: ['CONTENT_AUTHOR'], developmentReviewerRoles: ['CONTENT_REVIEWER'] });
   });
@@ -31,8 +44,8 @@ describe('environment configuration', () => {
 
   it('honors valid stored selection only when the switcher is enabled', () => {
     expect(readEnvironment({ VITE_DEFAULT_APP_ENV:'LOCAL', VITE_ENABLE_ENVIRONMENT_SWITCHER:'true', VITE_DEV_ADMIN_AUTH_ENABLED:'true' }, 'HOSTED')).toMatchObject({
-      appEnvironment:'HOSTED', contentServiceBaseUrl:'http://46.224.221.7/content',
-      oidcAuthority:'http://46.224.221.7/auth/realms/exam-platform',
+      appEnvironment:'HOSTED', contentServiceBaseUrl:'http://localhost:8088/content',
+      oidcAuthority:'http://localhost:8088/auth/realms/exam-platform',
       warning:'Hosted testing — insecure HTTP', developmentAuthEnabled:false,
     });
     expect(readEnvironment({ VITE_DEFAULT_APP_ENV:'LOCAL', VITE_ENABLE_ENVIRONMENT_SWITCHER:'false' }, 'HOSTED').appEnvironment).toBe('LOCAL');
@@ -50,8 +63,8 @@ describe('environment configuration', () => {
   it('never enables development authentication for HOSTED', () => {
     expect(readEnvironment({ VITE_DEFAULT_APP_ENV:'HOSTED', VITE_DEV_ADMIN_AUTH_ENABLED:'true' })).toMatchObject({
       developmentAuthEnabled:false,
-      contentServiceBaseUrl:'http://46.224.221.7/content',
-      oidcAuthority:'http://46.224.221.7/auth/realms/exam-platform',
+      contentServiceBaseUrl:'http://localhost:8088/content',
+      oidcAuthority:'http://localhost:8088/auth/realms/exam-platform',
     });
   });
 });

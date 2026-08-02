@@ -40,10 +40,14 @@ export function readEnvironment(
   const configuredDefault = value(source, 'VITE_DEFAULT_APP_ENV') || (source.DEV === true ? 'LOCAL' : 'HOSTED');
   if (!validEnvironment(configuredDefault)) throw new Error('VITE_DEFAULT_APP_ENV must be LOCAL or HOSTED');
   const appEnvironment = switcherEnabled && validEnvironment(storedSelection) ? storedSelection : configuredDefault;
+  const browserOrigin = typeof globalThis.location?.origin === 'string' && /^https?:\/\//.test(globalThis.location.origin)
+    ? globalThis.location.origin.replace(/\/+$/, '')
+    : '';
   const legacyGateway = value(source, 'VITE_API_BASE_URL');
   const gateway = appEnvironment === 'LOCAL'
     ? value(source, 'VITE_LOCAL_API_BASE_URL') || legacyGateway || 'http://localhost:8088'
-    : value(source, 'VITE_HOSTED_API_BASE_URL') || legacyGateway || 'http://46.224.221.7';
+    : value(source, 'VITE_HOSTED_API_BASE_URL') || legacyGateway || (source.PROD === true ? browserOrigin : 'http://localhost:8088');
+  if (!gateway) throw new Error('Hosted Admin requires an explicit gateway URL or browser origin');
   const directLegacy = value(source, 'VITE_CONTENT_SERVICE_BASE_URL');
   const contentServiceBaseUrl = appEnvironment === 'LOCAL' && directLegacy
     ? directLegacy

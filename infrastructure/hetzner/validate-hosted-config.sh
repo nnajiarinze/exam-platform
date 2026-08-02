@@ -23,10 +23,16 @@ for service in content-service learning-service ai-service keycloak; do
   }
 done
 
-if grep -R -n 'citizenship-.*\\.onrender\\.com' \
+if grep -R -nE 'citizenship-.*\\.onrender\\.com|http://46\\.224\\.221\\.7' \
   "${COMPOSE_FILE}" "${REPOSITORY_ROOT}/infrastructure/gateway/hosted.conf.template" \
   "${REPOSITORY_ROOT}/apps/mobile/src/config/environment.ts"; then
   printf 'Hosted runtime configuration still contains a Render backend URL.\n' >&2
   exit 1
 fi
+grep -q "connect-src 'self'" "${REPOSITORY_ROOT}/infrastructure/gateway/hosted.conf.template" || {
+  printf 'Hosted Admin CSP does not restrict browser connections to the gateway origin.\n' >&2; exit 1;
+}
+grep -q 'try_files \$uri \$uri/ /index.html' "${REPOSITORY_ROOT}/infrastructure/gateway/hosted.conf.template" || {
+  printf 'Hosted gateway does not serve the Admin SPA callback routes.\n' >&2; exit 1;
+}
 printf 'Hosted Compose security and routing validation passed.\n'
