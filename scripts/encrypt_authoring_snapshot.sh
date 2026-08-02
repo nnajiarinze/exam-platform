@@ -12,7 +12,7 @@ work="$(mktemp -d /tmp/authoring-encryption.XXXXXX)"; chmod 700 "${work}"
 cleanup(){ rm -rf -- "${work}"; }
 trap cleanup EXIT
 python3 scripts/authoring_snapshot.py verify --snapshot "${SNAPSHOT_DIR}" >/dev/null
-COPYFILE_DISABLE=1 tar -czf "${work}/snapshot.tar.gz" -C "$(dirname "${SNAPSHOT_DIR}")" authoring-snapshot
+COPYFILE_DISABLE=1 tar --no-xattrs -czf "${work}/snapshot.tar.gz" -C "$(dirname "${SNAPSHOT_DIR}")" authoring-snapshot
 plaintext_sha="$(shasum -a 256 "${work}/snapshot.tar.gz"|awk '{print $1}')"
 scripts/age_with_passphrase.exp encrypt "${work}/snapshot.tar.gz" "${OUTPUT}"
 encrypted_sha="$(shasum -a 256 "${OUTPUT}"|awk '{print $1}')"

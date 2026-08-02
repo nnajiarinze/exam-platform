@@ -38,6 +38,8 @@ if ! command -v psql >/dev/null 2>&1 || [[ "$(psql --version 2>/dev/null | sed -
   export POSTGRES_TOOL_DIR
 fi
 PSQL="$(postgres_tool psql)"; PG_DUMP="$(postgres_tool pg_dump)"; PG_RESTORE="$(postgres_tool pg_restore)"
+postgres_bin_dir="$(dirname "${PSQL}")"
+export PATH="${postgres_bin_dir}:${PATH}"
 
 normalize_url() {
   python3 -c 'import sys,urllib.parse
