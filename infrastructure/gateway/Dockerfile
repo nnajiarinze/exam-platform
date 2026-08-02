@@ -6,6 +6,7 @@ COPY apps/admin/ ./
 RUN npm run build
 
 FROM nginxinc/nginx-unprivileged:1.29-alpine
+LABEL se.medbo.gateway.runtime-mode="hosted-https-v1"
 USER root
 RUN apk upgrade --no-cache && apk add --no-cache su-exec && \
     sed -i \

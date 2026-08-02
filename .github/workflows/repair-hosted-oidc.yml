@@ -105,8 +105,17 @@ jobs:
           release_backup="$(mktemp "${release_env}.XXXXXX")"
           cp "${release_env}" "${release_backup}"
           rollback_gateway() {
-            cp "${release_backup}" "${release_env}"
-            "${compose[@]}" up -d --no-deps --wait --wait-timeout 60 api-gateway >/dev/null 2>&1 || true
+            previous_gateway_tag="$(sed -n 's/^GATEWAY_IMAGE_TAG=//p' "${release_backup}" | tail -1)"
+            previous_gateway_tag="${previous_gateway_tag:-$(sed -n 's/^IMAGE_TAG=//p' "${release_backup}" | tail -1)}"
+            previous_gateway_image="$(sed -n 's/^IMAGE_REGISTRY=//p' "${release_backup}" | tail -1)/citizenship-api-gateway:${previous_gateway_tag}"
+            previous_mode="$(docker image inspect -f '{{index .Config.Labels "se.medbo.gateway.runtime-mode"}}' \
+              "${previous_gateway_image}" 2>/dev/null || true)"
+            if [[ "${previous_mode}" == hosted-https-v1 ]]; then
+              cp "${release_backup}" "${release_env}"
+              "${compose[@]}" up -d --no-deps --wait --wait-timeout 60 api-gateway >/dev/null 2>&1 || true
+            else
+              echo "No compatible hosted-HTTPS gateway rollback image is available; preserving the attempted tag." >&2
+            fi
           }
           trap 'rollback_gateway; recover_gateway' EXIT
           update_release_env() {
@@ -137,6 +146,8 @@ jobs:
               echo 'Host firewall inspection privilege is not installed for the deployment identity.' >&2
             exit 1
           fi
+          deployed_image="$("${compose[@]}" ps -q api-gateway | xargs docker inspect -f '{{.Config.Image}}')"
+          [[ "${deployed_image}" == */citizenship-api-gateway:"${image_sha}" ]]
           rm -f "${release_backup}"
           trap recover_gateway EXIT
           gateway_stopped=false
