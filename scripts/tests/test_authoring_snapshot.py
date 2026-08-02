@@ -64,12 +64,19 @@ class AuthoringSnapshotTests(unittest.TestCase):
         self.assertIn("heartbeat_at",snapshot.EPHEMERAL_FIELDS["ai"]["ai_paid_request_accounting"])
 
     def test_runtime_normalization_is_exact_and_preserves_unknown_cost(self):
-        row={"lifecycle_state":"RESERVED","actual_cost_usd":None,"unknown_exposure":True,"worker_id":"old"}
+        row={"status":"SUCCEEDED","lifecycle_state":"RESERVED","actual_cost_usd":None,"unknown_exposure":True,"worker_id":"old"}
         normalized=snapshot.runtime_normalized_row("ai","ai_provider_attempt",row)
-        self.assertEqual(normalized["lifecycle_state"],"RECOVERED_STALE")
+        self.assertEqual(normalized["lifecycle_state"],"COMPLETED")
         self.assertIsNone(normalized["actual_cost_usd"])
         self.assertTrue(normalized["unknown_exposure"])
         self.assertEqual(row["lifecycle_state"],"RESERVED")
+
+    def test_provider_attempt_normalization_preserves_confirmed_or_unknown_outcome(self):
+        expected={"SUCCEEDED":"COMPLETED","FAILED":"FAILED_CONFIRMED","SKIPPED":"CANCELLED_CONFIRMED","STARTED":"RECONCILIATION_PENDING"}
+        for status,lifecycle in expected.items():
+            with self.subTest(status=status):
+                row=snapshot.runtime_normalized_row("ai","ai_provider_attempt",{"status":status,"lifecycle_state":"RESERVED"})
+                self.assertEqual(row["lifecycle_state"],lifecycle)
 
     def test_import_omits_ephemeral_columns_so_database_defaults_apply(self):
         table={"columns":[{"name":"id"},{"name":"heartbeat_at"},{"name":"lease_expires_at"},{"name":"owner_worker_id"},{"name":"process_instance_id"},{"name":"actual_cost_usd"}]}
@@ -96,8 +103,8 @@ class AuthoringSnapshotTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory); source=root/"source"; target=root/"target"; minimal_snapshot(source); minimal_snapshot(target)
             table={"table":"ai_provider_attempt","columns":[],"primaryKey":["id"],"uniqueKeys":[]}
-            (source/"ai"/"tables"/"ai_provider_attempt.ndjson").write_text(json.dumps({"id":"attempt","lifecycle_state":"RESERVED","actual_cost_usd":None})+"\n")
-            (target/"ai"/"tables"/"ai_provider_attempt.ndjson").write_text(json.dumps({"id":"attempt","lifecycle_state":"RECOVERED_STALE","actual_cost_usd":None})+"\n")
+            (source/"ai"/"tables"/"ai_provider_attempt.ndjson").write_text(json.dumps({"id":"attempt","status":"SUCCEEDED","lifecycle_state":"RESERVED","actual_cost_usd":None})+"\n")
+            (target/"ai"/"tables"/"ai_provider_attempt.ndjson").write_text(json.dumps({"id":"attempt","status":"SUCCEEDED","lifecycle_state":"COMPLETED","actual_cost_usd":None})+"\n")
             for snapshot_root in (source,target): replace_content_schema(snapshot_root,json.loads((snapshot_root/"content"/"schema.json").read_text())["tables"])
             for snapshot_root in (source,target):
                 (snapshot_root/"ai"/"schema.json").write_text(json.dumps({"tables":[table],"foreignKeys":[]})); manifest=json.loads((snapshot_root/"manifest.json").read_text()); path=snapshot_root/"ai"/"schema.json"; data=snapshot_root/"ai"/"tables"/"ai_provider_attempt.ndjson"; manifest["files"]["ai/schema.json"]={"sha256":snapshot.file_sha(path),"bytes":path.stat().st_size}; manifest["files"]["ai/tables/ai_provider_attempt.ndjson"]={"sha256":snapshot.file_sha(data),"bytes":data.stat().st_size}; rewrite_manifest(snapshot_root,manifest)

@@ -44,7 +44,7 @@ EPHEMERAL_FIELDS = {
 SECRET_MARKERS = ("api_key", "password", "access_token", "refresh_token", "client_secret", "openrouter_api_key", "groq_api_key")
 RUNTIME_RULES = {
     "ai_generation_job": {"status": ["RUNNING", "QUEUED"], "futureStatus": "FAILED", "reason": "STALE_AFTER_AUTHORING_SNAPSHOT_TRANSFER"},
-    "ai_provider_attempt": {"lifecycle_state": ["RUNNING", "LEASED", "RESERVED"], "futureState": "RECOVERED_STALE"},
+    "ai_provider_attempt": {"lifecycle_state": ["RUNNING", "LEASED", "RESERVED"], "futureState": "DERIVED_FROM_CONFIRMED_STATUS"},
     "ai_paid_request_accounting": {"reservation_state": ["RESERVED", "ACTIVE"], "futureState": "RECONCILIATION_PENDING"},
 }
 
@@ -281,7 +281,11 @@ def load_rows(snapshot:Path,role:str,table:str)->list[dict[str,Any]]:
 def runtime_normalized_row(role:str,table:str,row:dict[str,Any])->dict[str,Any]:
     result=dict(row); rule=RUNTIME_RULES.get(table,{}) if role=="ai" else {}
     field="status" if "status" in rule else "lifecycle_state" if "lifecycle_state" in rule else "reservation_state" if "reservation_state" in rule else None
-    if field and result.get(field) in rule[field]: result[field]=rule.get("futureStatus") or rule.get("futureState")
+    if field and result.get(field) in rule[field]:
+        if table=="ai_provider_attempt":
+            result[field]={"SUCCEEDED":"COMPLETED","FAILED":"FAILED_CONFIRMED","SKIPPED":"CANCELLED_CONFIRMED"}.get(result.get("status"),"RECONCILIATION_PENDING")
+        else:
+            result[field]=rule.get("futureStatus") or rule.get("futureState")
     return result
 
 def import_insert_statement(role:str,table:str,table_schema:dict[str,Any])->str:
@@ -404,7 +408,7 @@ def plan(source:Path,target:Path,output:Path)->dict[str,Any]:
                 if rule:
                     field="status" if "status" in rule else "lifecycle_state" if "lifecycle_state" in rule else "reservation_state"
                     states=rule.get(field,[])
-                    if row.get(field) in states: counts["NORMALIZE_RUNTIME_STATE"]+=1; normalizations.append({"database":role,"table":table,"id":row.get("id"),"from":row.get(field),"to":rule.get("futureStatus") or rule.get("futureState")})
+                    if row.get(field) in states: counts["NORMALIZE_RUNTIME_STATE"]+=1; normalizations.append({"database":role,"table":table,"id":row.get("id"),"from":row.get(field),"to":effective.get(field)})
             skipped=len(EPHEMERAL_FIELDS.get(role,{}).get(table,set()))*len(src); counts["SKIP_EPHEMERAL_FIELDS"]=skipped
             classifications[role][table]=dict(counts); final_counts[role][table]=len(dst)+counts["INSERT"]+counts["INSERT_CANONICAL_REVISION"]+counts["INSERT_HISTORICAL_REVISION"]
     fk={role:foreign_key_report(source,role,json.loads((source/role/"schema.json").read_text())) for role in DATABASES}; cross=cross_service_report(source)
