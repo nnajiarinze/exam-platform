@@ -51,7 +51,7 @@ learning_before="$(learning_state)"
 
 timestamp="$(date -u +%Y%m%dT%H%M%SZ)"; backup_id="content-v20-${timestamp}"; backup_dir="${PLATFORM_ROOT}/backups/${backup_id}"
 install -d -m 700 "${backup_dir}"; backup="${backup_dir}/content-public.dump"; temporary_backup="/tmp/${backup_id}.dump"
-PGPASSWORD="${CONTENT_PASSWORD}" "${PG_DUMP}" --schema=public --format=custom --no-owner --no-acl --username="${CONTENT_USER}" --dbname="${CONTENT_URL}" --file="${temporary_backup}"
+PGPASSWORD="${CONTENT_PASSWORD}" "${PG_DUMP}" --schema=public --format=custom --no-owner --no-acl --username="${CONTENT_USER}" --dbname="${CONTENT_URL}" >"${temporary_backup}"
 "${PG_RESTORE}" --list "${temporary_backup}" >"${backup_dir}/restore-list.txt"; backup_checksum="$(sha256sum "${temporary_backup}"|awk '{print $1}')"
 if [[ -n "${EXPECTED_BACKUP_CHECKSUM}" && "${EXPECTED_BACKUP_CHECKSUM}" != AUTO ]]; then [[ "${backup_checksum}" == "${EXPECTED_BACKUP_CHECKSUM}" ]] || die "Backup checksum mismatch"; fi
 install -m 600 "${temporary_backup}" "${backup}"
@@ -61,7 +61,7 @@ stage_container="content-v24-stage-${timestamp,,}"; stage_service="content-v24-s
 cleanup(){ docker rm -f "${stage_service}" "${stage_container}" >/dev/null 2>&1 || true; docker network rm "${stage_network}" >/dev/null 2>&1 || true; rm -f -- "${temporary_backup}"; }
 trap cleanup EXIT
 docker network create "${stage_network}" >/dev/null
-docker run -d --name "${stage_container}" --network "${stage_network}" -e POSTGRES_USER=content -e POSTGRES_PASSWORD=stage-only -e POSTGRES_DB=content postgres:16-alpine >/dev/null
+docker run -d --name "${stage_container}" --network "${stage_network}" -e POSTGRES_USER=content -e POSTGRES_PASSWORD=stage-only -e POSTGRES_DB=content postgres:18-alpine >/dev/null
 for _ in {1..30}; do docker exec "${stage_container}" pg_isready -U content >/dev/null 2>&1 && break; sleep 1; done
 docker exec -i "${stage_container}" pg_restore --exit-on-error --no-owner --no-acl -U content -d content <"${backup}"
 
