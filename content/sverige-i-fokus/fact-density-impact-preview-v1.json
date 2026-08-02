@@ -1,0 +1,774 @@
+{
+  "policy": {
+    "wordsPerMinute": 140,
+    "potentialPageWordRange": [
+      55,
+      90
+    ]
+  },
+  "previousFactTotal": 85,
+  "finalFactTotal": 134,
+  "newApprovedFactTotal": 49,
+  "topicsReadyForDeeperLesson": 14,
+  "topicsLimitedButUsable": 24,
+  "topicsRequiringSourceExpansion": 0,
+  "projectedAdditionalPages": 26,
+  "projectedCorpusWordCount": [
+    8742,
+    9652
+  ],
+  "projectedReadingTimeMinutes": [
+    62.4,
+    68.9
+  ],
+  "topics": [
+    {
+      "chapter": "Landet Sverige",
+      "topic": "Geografi, klimat och natur",
+      "objective": "Förstå huvuddragen i geografi, klimat och natur",
+      "previousApprovedFactCount": 1,
+      "newApprovedFactCount": 4,
+      "finalApprovedFactCount": 5,
+      "remainingUncoveredSourceConcepts": 11,
+      "maximumSafelySupportableLessonPages": 6,
+      "estimatedUsefulReadingTimeMinutes": [
+        2.4,
+        3.9
+      ],
+      "sufficiency": "READY_FOR_DEEPER_LESSON",
+      "potentialNewPages": 2,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att i Norden finns fem länder: Danmark, Finland, Island, Norge och Sverige?",
+        "Hur skulle du förklara att isen har påverkat hur fjällen ser ut i dag?",
+        "Hur skulle du förklara att norden är en del av norra Europa?",
+        "Hur skulle du förklara att sverige är ett avlångt land som sträcker sig cirka 1 600 kilometer från den nordligaste punkten, Treriksröset, till den sydligaste punkten, Smygehuk?"
+      ],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Landet Sverige",
+      "topic": "Sveriges indelning",
+      "objective": "Förstå huvuddragen i sveriges indelning",
+      "previousApprovedFactCount": 3,
+      "newApprovedFactCount": 2,
+      "finalApprovedFactCount": 5,
+      "remainingUncoveredSourceConcepts": 0,
+      "maximumSafelySupportableLessonPages": 6,
+      "estimatedUsefulReadingTimeMinutes": [
+        2.4,
+        3.9
+      ],
+      "sufficiency": "READY_FOR_DEEPER_LESSON",
+      "potentialNewPages": 2,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att idag har de ingen betydelse för hur Sverige styrs?",
+        "Hur skulle du förklara att landskapen var förr i tiden områden som hade egna lagar?"
+      ],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Landet Sverige",
+      "topic": "Befolkning",
+      "objective": "Förstå huvuddragen i befolkning",
+      "previousApprovedFactCount": 2,
+      "newApprovedFactCount": 1,
+      "finalApprovedFactCount": 3,
+      "remainingUncoveredSourceConcepts": 0,
+      "maximumSafelySupportableLessonPages": 4,
+      "estimatedUsefulReadingTimeMinutes": [
+        1.6,
+        2.6
+      ],
+      "sufficiency": "LIMITED_BUT_USABLE",
+      "potentialNewPages": 0,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att befolkningen är inte jämnt fördelad i landet?"
+      ],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Landet Sverige",
+      "topic": "Naturresurser",
+      "objective": "Förstå huvuddragen i naturresurser",
+      "previousApprovedFactCount": 3,
+      "newApprovedFactCount": 4,
+      "finalApprovedFactCount": 7,
+      "remainingUncoveredSourceConcepts": 2,
+      "maximumSafelySupportableLessonPages": 6,
+      "estimatedUsefulReadingTimeMinutes": [
+        2.4,
+        3.9
+      ],
+      "sufficiency": "READY_FOR_DEEPER_LESSON",
+      "potentialNewPages": 2,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att i flera älvar finns vattenkraftverk där rinnande vatten används för att producera el?",
+        "Hur skulle du förklara att järn och stål har länge varit viktiga för Sveriges ekonomi?",
+        "Hur skulle du förklara att sverige har mycket god tillgång till vatten i alla sjöar, vattendrag och älvar?",
+        "Hur skulle du förklara att sveriges jordbruk är anpassat till klimatet?"
+      ],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Landet Sverige",
+      "topic": "Klimatförändringar",
+      "objective": "Förstå huvuddragen i klimatförändringar",
+      "previousApprovedFactCount": 2,
+      "newApprovedFactCount": 3,
+      "finalApprovedFactCount": 5,
+      "remainingUncoveredSourceConcepts": 10,
+      "maximumSafelySupportableLessonPages": 6,
+      "estimatedUsefulReadingTimeMinutes": [
+        2.4,
+        3.9
+      ],
+      "sufficiency": "READY_FOR_DEEPER_LESSON",
+      "potentialNewPages": 2,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att fler och mer intensiva värmeperioder på sommaren kan leda till torka och skogsbränder?",
+        "Hur skulle du förklara att i Sverige finns en klimatlag med klimatpolitiska mål?",
+        "Hur skulle du förklara att sverige arbetar för att minska konsekvenserna av klimatförändringarna?"
+      ],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Sveriges demokratiska system",
+      "topic": "Demokrati betyder folkstyre",
+      "objective": "Förstå huvuddragen i demokrati betyder folkstyre",
+      "previousApprovedFactCount": 3,
+      "newApprovedFactCount": 3,
+      "finalApprovedFactCount": 6,
+      "remainingUncoveredSourceConcepts": 7,
+      "maximumSafelySupportableLessonPages": 6,
+      "estimatedUsefulReadingTimeMinutes": [
+        2.4,
+        3.9
+      ],
+      "sufficiency": "READY_FOR_DEEPER_LESSON",
+      "potentialNewPages": 2,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att alla människor, grupper och partier har rätt att försöka övertyga andra människor om sina politiska idéer?",
+        "Hur skulle du förklara att i en demokrati ska medborgarna kunna välja mellan flera olika politiska alternativ?",
+        "Hur skulle du förklara att valen ska vara hemliga så att ingen behöver avslöja hur de röstar?"
+      ],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Sveriges demokratiska system",
+      "topic": "Hot mot demokratin",
+      "objective": "Förstå huvuddragen i hot mot demokratin",
+      "previousApprovedFactCount": 1,
+      "newApprovedFactCount": 4,
+      "finalApprovedFactCount": 5,
+      "remainingUncoveredSourceConcepts": 8,
+      "maximumSafelySupportableLessonPages": 6,
+      "estimatedUsefulReadingTimeMinutes": [
+        2.4,
+        3.9
+      ],
+      "sufficiency": "READY_FOR_DEEPER_LESSON",
+      "potentialNewPages": 2,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att ett lågt valdeltagande kan bero på att människor inte litar på politiker eller känner att deras röst inte gör någon skillnad?",
+        "Hur skulle du förklara att ibland hotas politiker, journalister och andra som pratar om samhällsfrågor?",
+        "Hur skulle du förklara att politiker, journalister och andra som pratar om samhällsfrågor kan ibland hotas?",
+        "Hur skulle du förklara att vissa områden kan upplevas som mindre trygga?"
+      ],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Så här styrs Sverige",
+      "topic": "Landet styrs på olika nivåer",
+      "objective": "Förstå huvuddragen i landet styrs på olika nivåer",
+      "previousApprovedFactCount": 2,
+      "newApprovedFactCount": 6,
+      "finalApprovedFactCount": 8,
+      "remainingUncoveredSourceConcepts": 11,
+      "maximumSafelySupportableLessonPages": 6,
+      "estimatedUsefulReadingTimeMinutes": [
+        2.4,
+        3.9
+      ],
+      "sufficiency": "READY_FOR_DEEPER_LESSON",
+      "potentialNewPages": 2,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att budgeten visar vilken politik regeringen vill föra och vad staten ska prioritera?",
+        "Hur skulle du förklara att det politiska ansvaret i Sverige delas mellan nationell nivå (stat), regional nivå (regioner) och kommunal nivå (kommuner)?",
+        "Hur skulle du förklara att oppositionens uppgift är att granska regeringens arbete och att föreslå en annan politik?",
+        "Hur skulle du förklara att riksdagen väljer en statsminister som får i uppdrag att bilda regering?",
+        "Hur skulle du förklara att staten består av riksdag, regering, myndigheter och domstolar?",
+        "Hur skulle du förklara att sverige är en parlamentarisk representativ demokrati?"
+      ],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Så här styrs Sverige",
+      "topic": "Sveriges statsskick",
+      "objective": "Förstå huvuddragen i sveriges statsskick",
+      "previousApprovedFactCount": 3,
+      "newApprovedFactCount": 1,
+      "finalApprovedFactCount": 4,
+      "remainingUncoveredSourceConcepts": 0,
+      "maximumSafelySupportableLessonPages": 5,
+      "estimatedUsefulReadingTimeMinutes": [
+        2.0,
+        3.2
+      ],
+      "sufficiency": "READY_FOR_DEEPER_LESSON",
+      "potentialNewPages": 1,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att sveriges kung heter Carl XVI Gustaf och hans förstfödda dotter Victoria är kronprinsessa?"
+      ],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Politiska val och partier",
+      "topic": "Val och röstning",
+      "objective": "Förstå huvuddragen i val och röstning",
+      "previousApprovedFactCount": 3,
+      "newApprovedFactCount": 3,
+      "finalApprovedFactCount": 6,
+      "remainingUncoveredSourceConcepts": 6,
+      "maximumSafelySupportableLessonPages": 6,
+      "estimatedUsefulReadingTimeMinutes": [
+        2.4,
+        3.9
+      ],
+      "sufficiency": "READY_FOR_DEEPER_LESSON",
+      "potentialNewPages": 2,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att folkomröstningar är rådgivande och politikerna behöver inte följa resultatet?",
+        "Hur skulle du förklara att för att rösta i kommun- och regionvalen krävs inte svenskt medborgarskap, men man ska ha bott och varit folkbokförd i Sverige i sammanlagt tre år?",
+        "Hur skulle du förklara att för att rösta i riksdagsvalet måste man även vara svensk medborgare?"
+      ],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Politiska val och partier",
+      "topic": "Politiska partier",
+      "objective": "Förstå huvuddragen i politiska partier",
+      "previousApprovedFactCount": 2,
+      "newApprovedFactCount": 4,
+      "finalApprovedFactCount": 6,
+      "remainingUncoveredSourceConcepts": 1,
+      "maximumSafelySupportableLessonPages": 6,
+      "estimatedUsefulReadingTimeMinutes": [
+        2.4,
+        3.9
+      ],
+      "sufficiency": "READY_FOR_DEEPER_LESSON",
+      "potentialNewPages": 2,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att alla som vill kan bli medlemmar i ett politiskt parti för att påverka innehållet i politiken?",
+        "Hur skulle du förklara att i region- och kommunvalen brukar det finnas särskilda partier som endast har en politik för just sin region eller kommun – inte på riksnivå?",
+        "Hur skulle du förklara att regeln om fyra procent finns för att hindra att för många partier kommer in i riksdagen vilket skulle göra det svårare att skapa stabila majoriteter?",
+        "Hur skulle du förklara att vid proportionella val får partierna platser i riksdagen eller i region- och kommunfullmäktige utifrån den andel röster de fått?"
+      ],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Lag och rätt",
+      "topic": "Grundlagarna",
+      "objective": "Förstå huvuddragen i grundlagarna",
+      "previousApprovedFactCount": 3,
+      "newApprovedFactCount": 4,
+      "finalApprovedFactCount": 7,
+      "remainingUncoveredSourceConcepts": 5,
+      "maximumSafelySupportableLessonPages": 6,
+      "estimatedUsefulReadingTimeMinutes": [
+        2.4,
+        3.9
+      ],
+      "sufficiency": "READY_FOR_DEEPER_LESSON",
+      "potentialNewPages": 2,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att grundlagarna är svårare att ändra än andra lagar?",
+        "Hur skulle du förklara att tryckfrihetsförordningen och yttrandefrihetsgrundlagen skyddar rätten att uttrycka åsikter, men vissa yttranden är förbjudna i lag?",
+        "Hur skulle du förklara att tryckfrihetsförordningen skyddar det fria ordet i tryckt form?",
+        "Hur skulle du förklara att yttrandefrihetsgrundlagen ger alla rätt att uttrycka sina tankar och åsikter fritt, till exempel i radio, i tv och i dagstidningar?"
+      ],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Lag och rätt",
+      "topic": "Rättsväsendet",
+      "objective": "Förstå huvuddragen i rättsväsendet",
+      "previousApprovedFactCount": 1,
+      "newApprovedFactCount": 2,
+      "finalApprovedFactCount": 3,
+      "remainingUncoveredSourceConcepts": 20,
+      "maximumSafelySupportableLessonPages": 4,
+      "estimatedUsefulReadingTimeMinutes": [
+        1.6,
+        2.6
+      ],
+      "sufficiency": "LIMITED_BUT_USABLE",
+      "potentialNewPages": 0,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att domstolarna hjälper till när personer är oeniga, till exempel vid vårdnadstvister mellan föräldrar (tvistemål)?",
+        "Hur skulle du förklara att ingen ska dömas utan en process där bevis och fakta granskas noggrant?"
+      ],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Mediernas roll",
+      "topic": "Fria medier",
+      "objective": "Förstå huvuddragen i fria medier",
+      "previousApprovedFactCount": 1,
+      "newApprovedFactCount": 5,
+      "finalApprovedFactCount": 6,
+      "remainingUncoveredSourceConcepts": 6,
+      "maximumSafelySupportableLessonPages": 6,
+      "estimatedUsefulReadingTimeMinutes": [
+        2.4,
+        3.9
+      ],
+      "sufficiency": "READY_FOR_DEEPER_LESSON",
+      "potentialNewPages": 2,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att en person har rätt att lämna uppgifter till tidningar, radio och tv utan att straffas för det?",
+        "Hur skulle du förklara att grundlagarna tryckfrihets-\nförordningen och yttrandefrihetsgrundlagen skyddar rätten att fritt få\nsäga det vi tycker och att sprida åsikter?",
+        "Hur skulle du förklara att i en demokrati som Sverige är medierna fria?",
+        "Hur skulle du förklara att medierna informerar om nyheter och de fungerar som en plats där\nmänniskor fritt kan diskutera samhället och vad som händer där?",
+        "Hur skulle du förklara att staten ger därför ekonomiskt stöd till nyhetsmedier och dagstidningar?"
+      ],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Mediernas roll",
+      "topic": "Olika slags medier",
+      "objective": "Förstå huvuddragen i olika slags medier",
+      "previousApprovedFactCount": 3,
+      "newApprovedFactCount": 3,
+      "finalApprovedFactCount": 6,
+      "remainingUncoveredSourceConcepts": 7,
+      "maximumSafelySupportableLessonPages": 6,
+      "estimatedUsefulReadingTimeMinutes": [
+        2.4,
+        3.9
+      ],
+      "sufficiency": "READY_FOR_DEEPER_LESSON",
+      "potentialNewPages": 2,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att det finns en stor mängd olika tidningar och tidskrifter i Sverige?",
+        "Hur skulle du förklara att medier som finansieras med reklam drivs ofta av privata företag?",
+        "Hur skulle du förklara att tidningarna får också inkomster genom att sälja plats för reklam?"
+      ],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Mediernas roll",
+      "topic": "Källkritik",
+      "objective": "Förstå huvuddragen i källkritik",
+      "previousApprovedFactCount": 1,
+      "newApprovedFactCount": 0,
+      "finalApprovedFactCount": 1,
+      "remainingUncoveredSourceConcepts": 3,
+      "maximumSafelySupportableLessonPages": 2,
+      "estimatedUsefulReadingTimeMinutes": [
+        0.8,
+        1.3
+      ],
+      "sufficiency": "LIMITED_BUT_USABLE",
+      "potentialNewPages": 0,
+      "proposedLearnerQuestions": [],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Mänskliga rättigheter",
+      "topic": "Mänskliga rättigheter gäller alla",
+      "objective": "Förstå huvuddragen i mänskliga rättigheter gäller alla",
+      "previousApprovedFactCount": 2,
+      "newApprovedFactCount": 0,
+      "finalApprovedFactCount": 2,
+      "remainingUncoveredSourceConcepts": 9,
+      "maximumSafelySupportableLessonPages": 3,
+      "estimatedUsefulReadingTimeMinutes": [
+        1.2,
+        1.9
+      ],
+      "sufficiency": "LIMITED_BUT_USABLE",
+      "potentialNewPages": 0,
+      "proposedLearnerQuestions": [],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Mänskliga rättigheter",
+      "topic": "Jämställdhet mellan könen",
+      "objective": "Förstå huvuddragen i jämställdhet mellan könen",
+      "previousApprovedFactCount": 1,
+      "newApprovedFactCount": 0,
+      "finalApprovedFactCount": 1,
+      "remainingUncoveredSourceConcepts": 15,
+      "maximumSafelySupportableLessonPages": 2,
+      "estimatedUsefulReadingTimeMinutes": [
+        0.8,
+        1.3
+      ],
+      "sufficiency": "LIMITED_BUT_USABLE",
+      "potentialNewPages": 0,
+      "proposedLearnerQuestions": [],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Mänskliga rättigheter",
+      "topic": "Barns rättigheter",
+      "objective": "Förstå huvuddragen i barns rättigheter",
+      "previousApprovedFactCount": 2,
+      "newApprovedFactCount": 0,
+      "finalApprovedFactCount": 2,
+      "remainingUncoveredSourceConcepts": 11,
+      "maximumSafelySupportableLessonPages": 3,
+      "estimatedUsefulReadingTimeMinutes": [
+        1.2,
+        1.9
+      ],
+      "sufficiency": "LIMITED_BUT_USABLE",
+      "potentialNewPages": 0,
+      "proposedLearnerQuestions": [],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Mänskliga rättigheter",
+      "topic": "Minoriteters rättigheter",
+      "objective": "Förstå huvuddragen i minoriteters rättigheter",
+      "previousApprovedFactCount": 3,
+      "newApprovedFactCount": 0,
+      "finalApprovedFactCount": 3,
+      "remainingUncoveredSourceConcepts": 12,
+      "maximumSafelySupportableLessonPages": 4,
+      "estimatedUsefulReadingTimeMinutes": [
+        1.6,
+        2.6
+      ],
+      "sufficiency": "LIMITED_BUT_USABLE",
+      "potentialNewPages": 0,
+      "proposedLearnerQuestions": [],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Mänskliga rättigheter",
+      "topic": "Arbetet mot diskriminering",
+      "objective": "Förstå huvuddragen i arbetet mot diskriminering",
+      "previousApprovedFactCount": 2,
+      "newApprovedFactCount": 0,
+      "finalApprovedFactCount": 2,
+      "remainingUncoveredSourceConcepts": 4,
+      "maximumSafelySupportableLessonPages": 3,
+      "estimatedUsefulReadingTimeMinutes": [
+        1.2,
+        1.9
+      ],
+      "sufficiency": "LIMITED_BUT_USABLE",
+      "potentialNewPages": 0,
+      "proposedLearnerQuestions": [],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Arbetsmarknad och privatekonomi",
+      "topic": "Så fungerar arbetsmarknaden",
+      "objective": "Förstå huvuddragen i så fungerar arbetsmarknaden",
+      "previousApprovedFactCount": 2,
+      "newApprovedFactCount": 0,
+      "finalApprovedFactCount": 2,
+      "remainingUncoveredSourceConcepts": 4,
+      "maximumSafelySupportableLessonPages": 3,
+      "estimatedUsefulReadingTimeMinutes": [
+        1.2,
+        1.9
+      ],
+      "sufficiency": "LIMITED_BUT_USABLE",
+      "potentialNewPages": 0,
+      "proposedLearnerQuestions": [],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Arbetsmarknad och privatekonomi",
+      "topic": "Arbetsmarknadens parter",
+      "objective": "Förstå huvuddragen i arbetsmarknadens parter",
+      "previousApprovedFactCount": 3,
+      "newApprovedFactCount": 0,
+      "finalApprovedFactCount": 3,
+      "remainingUncoveredSourceConcepts": 5,
+      "maximumSafelySupportableLessonPages": 4,
+      "estimatedUsefulReadingTimeMinutes": [
+        1.6,
+        2.6
+      ],
+      "sufficiency": "LIMITED_BUT_USABLE",
+      "potentialNewPages": 0,
+      "proposedLearnerQuestions": [],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Arbetsmarknad och privatekonomi",
+      "topic": "Lagar och regler på arbetsmarknaden",
+      "objective": "Förstå huvuddragen i lagar och regler på arbetsmarknaden",
+      "previousApprovedFactCount": 1,
+      "newApprovedFactCount": 0,
+      "finalApprovedFactCount": 1,
+      "remainingUncoveredSourceConcepts": 7,
+      "maximumSafelySupportableLessonPages": 2,
+      "estimatedUsefulReadingTimeMinutes": [
+        0.8,
+        1.3
+      ],
+      "sufficiency": "LIMITED_BUT_USABLE",
+      "potentialNewPages": 0,
+      "proposedLearnerQuestions": [],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Arbetsmarknad och privatekonomi",
+      "topic": "Privatekonomi i Sverige",
+      "objective": "Förstå huvuddragen i privatekonomi i sverige",
+      "previousApprovedFactCount": 2,
+      "newApprovedFactCount": 0,
+      "finalApprovedFactCount": 2,
+      "remainingUncoveredSourceConcepts": 8,
+      "maximumSafelySupportableLessonPages": 3,
+      "estimatedUsefulReadingTimeMinutes": [
+        1.2,
+        1.9
+      ],
+      "sufficiency": "LIMITED_BUT_USABLE",
+      "potentialNewPages": 0,
+      "proposedLearnerQuestions": [],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Välfärdssamhället",
+      "topic": "Skatter för Sveriges välfärd",
+      "objective": "Förstå huvuddragen i skatter för sveriges välfärd",
+      "previousApprovedFactCount": 4,
+      "newApprovedFactCount": 0,
+      "finalApprovedFactCount": 4,
+      "remainingUncoveredSourceConcepts": 7,
+      "maximumSafelySupportableLessonPages": 5,
+      "estimatedUsefulReadingTimeMinutes": [
+        2.0,
+        3.2
+      ],
+      "sufficiency": "READY_FOR_DEEPER_LESSON",
+      "potentialNewPages": 1,
+      "proposedLearnerQuestions": [],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Välfärdssamhället",
+      "topic": "Stat, regioner och kommuner har olika ansvar",
+      "objective": "Förstå huvuddragen i stat, regioner och kommuner har olika ansvar",
+      "previousApprovedFactCount": 2,
+      "newApprovedFactCount": 0,
+      "finalApprovedFactCount": 2,
+      "remainingUncoveredSourceConcepts": 11,
+      "maximumSafelySupportableLessonPages": 3,
+      "estimatedUsefulReadingTimeMinutes": [
+        1.2,
+        1.9
+      ],
+      "sufficiency": "LIMITED_BUT_USABLE",
+      "potentialNewPages": 0,
+      "proposedLearnerQuestions": [],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Sveriges moderna historia",
+      "topic": "Från jordbrukssamhälle till industrisamhälle",
+      "objective": "Förstå huvuddragen i från jordbrukssamhälle till industrisamhälle",
+      "previousApprovedFactCount": 3,
+      "newApprovedFactCount": 0,
+      "finalApprovedFactCount": 3,
+      "remainingUncoveredSourceConcepts": 3,
+      "maximumSafelySupportableLessonPages": 4,
+      "estimatedUsefulReadingTimeMinutes": [
+        1.6,
+        2.6
+      ],
+      "sufficiency": "LIMITED_BUT_USABLE",
+      "potentialNewPages": 0,
+      "proposedLearnerQuestions": [],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Sveriges moderna historia",
+      "topic": "Sveriges väg till demokrati",
+      "objective": "Förstå huvuddragen i sveriges väg till demokrati",
+      "previousApprovedFactCount": 2,
+      "newApprovedFactCount": 0,
+      "finalApprovedFactCount": 2,
+      "remainingUncoveredSourceConcepts": 5,
+      "maximumSafelySupportableLessonPages": 3,
+      "estimatedUsefulReadingTimeMinutes": [
+        1.2,
+        1.9
+      ],
+      "sufficiency": "LIMITED_BUT_USABLE",
+      "potentialNewPages": 0,
+      "proposedLearnerQuestions": [],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Sveriges moderna historia",
+      "topic": "Modernisering och folkhem",
+      "objective": "Förstå huvuddragen i modernisering och folkhem",
+      "previousApprovedFactCount": 3,
+      "newApprovedFactCount": 0,
+      "finalApprovedFactCount": 3,
+      "remainingUncoveredSourceConcepts": 7,
+      "maximumSafelySupportableLessonPages": 4,
+      "estimatedUsefulReadingTimeMinutes": [
+        1.6,
+        2.6
+      ],
+      "sufficiency": "LIMITED_BUT_USABLE",
+      "potentialNewPages": 0,
+      "proposedLearnerQuestions": [],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Sveriges moderna historia",
+      "topic": "Rekordåren",
+      "objective": "Förstå huvuddragen i rekordåren",
+      "previousApprovedFactCount": 3,
+      "newApprovedFactCount": 0,
+      "finalApprovedFactCount": 3,
+      "remainingUncoveredSourceConcepts": 5,
+      "maximumSafelySupportableLessonPages": 4,
+      "estimatedUsefulReadingTimeMinutes": [
+        1.6,
+        2.6
+      ],
+      "sufficiency": "LIMITED_BUT_USABLE",
+      "potentialNewPages": 0,
+      "proposedLearnerQuestions": [],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Sveriges moderna historia",
+      "topic": "Informationssamhället och globalisering",
+      "objective": "Förstå huvuddragen i informationssamhället och globalisering",
+      "previousApprovedFactCount": 2,
+      "newApprovedFactCount": 0,
+      "finalApprovedFactCount": 2,
+      "remainingUncoveredSourceConcepts": 9,
+      "maximumSafelySupportableLessonPages": 3,
+      "estimatedUsefulReadingTimeMinutes": [
+        1.2,
+        1.9
+      ],
+      "sufficiency": "LIMITED_BUT_USABLE",
+      "potentialNewPages": 0,
+      "proposedLearnerQuestions": [],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Sverige och omvärlden",
+      "topic": "Nordiskt och europeiskt samarbete",
+      "objective": "Förstå huvuddragen i nordiskt och europeiskt samarbete",
+      "previousApprovedFactCount": 3,
+      "newApprovedFactCount": 0,
+      "finalApprovedFactCount": 3,
+      "remainingUncoveredSourceConcepts": 3,
+      "maximumSafelySupportableLessonPages": 4,
+      "estimatedUsefulReadingTimeMinutes": [
+        1.6,
+        2.6
+      ],
+      "sufficiency": "LIMITED_BUT_USABLE",
+      "potentialNewPages": 0,
+      "proposedLearnerQuestions": [],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Sverige och omvärlden",
+      "topic": "Globalt samarbete",
+      "objective": "Förstå huvuddragen i globalt samarbete",
+      "previousApprovedFactCount": 3,
+      "newApprovedFactCount": 0,
+      "finalApprovedFactCount": 3,
+      "remainingUncoveredSourceConcepts": 3,
+      "maximumSafelySupportableLessonPages": 4,
+      "estimatedUsefulReadingTimeMinutes": [
+        1.6,
+        2.6
+      ],
+      "sufficiency": "LIMITED_BUT_USABLE",
+      "potentialNewPages": 0,
+      "proposedLearnerQuestions": [],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Sverige och omvärlden",
+      "topic": "Försvars- och säkerhetspolitik",
+      "objective": "Förstå huvuddragen i försvars- och säkerhetspolitik",
+      "previousApprovedFactCount": 2,
+      "newApprovedFactCount": 0,
+      "finalApprovedFactCount": 2,
+      "remainingUncoveredSourceConcepts": 13,
+      "maximumSafelySupportableLessonPages": 3,
+      "estimatedUsefulReadingTimeMinutes": [
+        1.2,
+        1.9
+      ],
+      "sufficiency": "LIMITED_BUT_USABLE",
+      "potentialNewPages": 0,
+      "proposedLearnerQuestions": [],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "En sekulär stat och ett mångreligiöst land",
+      "topic": "Religionsfrihet",
+      "objective": "Förstå huvuddragen i religionsfrihet",
+      "previousApprovedFactCount": 1,
+      "newApprovedFactCount": 0,
+      "finalApprovedFactCount": 1,
+      "remainingUncoveredSourceConcepts": 12,
+      "maximumSafelySupportableLessonPages": 2,
+      "estimatedUsefulReadingTimeMinutes": [
+        0.8,
+        1.3
+      ],
+      "sufficiency": "LIMITED_BUT_USABLE",
+      "potentialNewPages": 0,
+      "proposedLearnerQuestions": [],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "En sekulär stat och ett mångreligiöst land",
+      "topic": "Religionens roll",
+      "objective": "Förstå huvuddragen i religionens roll",
+      "previousApprovedFactCount": 3,
+      "newApprovedFactCount": 0,
+      "finalApprovedFactCount": 3,
+      "remainingUncoveredSourceConcepts": 14,
+      "maximumSafelySupportableLessonPages": 4,
+      "estimatedUsefulReadingTimeMinutes": [
+        1.6,
+        2.6
+      ],
+      "sufficiency": "LIMITED_BUT_USABLE",
+      "potentialNewPages": 0,
+      "proposedLearnerQuestions": [],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Traditioner och högtider",
+      "topic": "Några traditionella högtider under året",
+      "objective": "Förstå huvuddragen i några traditionella högtider under året",
+      "previousApprovedFactCount": 2,
+      "newApprovedFactCount": 0,
+      "finalApprovedFactCount": 2,
+      "remainingUncoveredSourceConcepts": 22,
+      "maximumSafelySupportableLessonPages": 3,
+      "estimatedUsefulReadingTimeMinutes": [
+        1.2,
+        1.9
+      ],
+      "sufficiency": "LIMITED_BUT_USABLE",
+      "potentialNewPages": 0,
+      "proposedLearnerQuestions": [],
+      "existingLessonPagesMayRemain": true
+    }
+  ]
+}

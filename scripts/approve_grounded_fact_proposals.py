@@ -117,23 +117,47 @@ def main() -> None:
                     author_headers,
                 )
             if fact["reviewStatus"] in {"UNREVIEWED", "REJECTED", "REQUIRES_UPDATE"}:
-                submitted = request_json(
-                    "POST",
-                    f"{args.content_url}/api/v1/admin/knowledge-facts/{fact['id']}/submit",
-                    {"version": fact["version"], "reason": "Automated mandatory gates passed"},
-                    author_headers,
-                )
+                try:
+                    submitted = request_json(
+                        "POST",
+                        f"{args.content_url}/api/v1/admin/knowledge-facts/{fact['id']}/submit",
+                        {"version": fact["version"], "reason": "Automated mandatory gates passed"},
+                        author_headers,
+                    )
+                except RuntimeError as error:
+                    results.append(
+                        {
+                            "proposalId": proposal["id"],
+                            "classification": "GOOD",
+                            "result": "CONTENT_VALIDATION_PENDING",
+                            "knowledgeFactId": fact["id"],
+                            "diagnostic": str(error),
+                        }
+                    )
+                    continue
                 fact = submitted
             if fact["reviewStatus"] == "UNDER_REVIEW":
-                fact = request_json(
-                    "POST",
-                    f"{args.content_url}/api/v1/admin/knowledge-facts/{fact['id']}/approve",
-                    {
-                        "version": submitted["version"],
-                        "reason": "All automated Knowledge Fact validation gates passed",
-                    },
-                    reviewer_headers,
-                )
+                try:
+                    fact = request_json(
+                        "POST",
+                        f"{args.content_url}/api/v1/admin/knowledge-facts/{fact['id']}/approve",
+                        {
+                            "version": fact["version"],
+                            "reason": "All automated Knowledge Fact validation gates passed",
+                        },
+                        reviewer_headers,
+                    )
+                except RuntimeError as error:
+                    results.append(
+                        {
+                            "proposalId": proposal["id"],
+                            "classification": "GOOD",
+                            "result": "CONTENT_VALIDATION_PENDING",
+                            "knowledgeFactId": fact["id"],
+                            "diagnostic": str(error),
+                        }
+                    )
+                    continue
             results.append(
                 {
                     "proposalId": proposal["id"],

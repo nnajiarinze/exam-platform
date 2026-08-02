@@ -145,7 +145,7 @@ class AiEditorialIntegrationTest {
   @Test
   void migrationsCreateThePersistentEditorialWorkspace() {
     assertThat(jdbc.sql("SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank")
-        .query(String.class).list()).containsExactly("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31");
+        .query(String.class).list()).containsExactly("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32");
     assertThat(jdbc.sql("SELECT to_regclass('public.ai_editorial_target') IS NOT NULL AND to_regclass('public.ai_editorial_proposal') IS NOT NULL AND to_regclass('public.ai_editorial_finding') IS NOT NULL AND to_regclass('public.ai_editorial_validation_metric') IS NOT NULL AND to_regclass('public.ai_quota_profile') IS NOT NULL AND to_regclass('public.ai_quota_reservation') IS NOT NULL AND to_regclass('public.ai_provider_circuit') IS NOT NULL AND to_regclass('public.ai_provider_alert') IS NOT NULL AND to_regclass('public.ai_question_proposal') IS NOT NULL AND to_regclass('public.ai_question_proposal_option') IS NOT NULL")
         .query(Boolean.class).single()).isTrue();
     assertThat(jdbc.sql("SELECT to_regclass('public.ai_provider_attempt') IS NOT NULL AND to_regclass('public.ai_provider_routing_decision') IS NOT NULL AND to_regclass('public.ai_provider_capacity_snapshot') IS NOT NULL")
@@ -161,6 +161,8 @@ class AiEditorialIntegrationTest {
     assertThat(jdbc.sql("SELECT to_regclass('public.ai_question_target_generation_attempt') IS NOT NULL")
         .query(Boolean.class).single()).isTrue();
     assertThat(jdbc.sql("SELECT to_regclass('public.ai_question_target_source_snapshot_revision') IS NOT NULL")
+        .query(Boolean.class).single()).isTrue();
+    assertThat(jdbc.sql("SELECT to_regclass('public.ai_fact_density_audit') IS NOT NULL AND to_regclass('public.ai_fact_density_section_audit') IS NOT NULL AND to_regclass('public.ai_fact_density_teaching_concept') IS NOT NULL")
         .query(Boolean.class).single()).isTrue();
   }
 
