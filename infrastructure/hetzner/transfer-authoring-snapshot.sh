@@ -32,7 +32,7 @@ if ! command -v psql >/dev/null 2>&1 || [[ "$(psql --version 2>/dev/null | sed -
   install -d -m 700 "${POSTGRES_TOOL_DIR}"
   for tool in psql pg_dump pg_restore; do
     wrapper="${POSTGRES_TOOL_DIR}/${tool}"
-    printf '%s\n' '#!/usr/bin/env bash' "exec docker run --rm --network host -e PGHOST -e PGPORT -e PGUSER -e PGPASSWORD -e PGSSLMODE -v /tmp:/tmp postgres:18-alpine ${tool} \"\$@\"" >"${wrapper}"
+    printf '%s\n' '#!/usr/bin/env bash' "exec docker run --rm -i --network host -e PGHOST -e PGPORT -e PGUSER -e PGPASSWORD -e PGSSLMODE -v /tmp:/tmp postgres:18-alpine ${tool} \"\$@\"" >"${wrapper}"
     chmod 700 "${wrapper}"
   done
   export POSTGRES_TOOL_DIR
