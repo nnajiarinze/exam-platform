@@ -67,9 +67,15 @@ jobs:
             if [[ "${gateway_stopped}" == true ]]; then "${compose[@]}" up -d api-gateway >/dev/null 2>&1 || true; fi
           }
           trap recover_gateway EXIT
-          "${compose[@]}" stop api-gateway
-          gateway_stopped=true
-          API_DOMAIN="${public_domain}" TLS_EMAIL="${tls_email}" TLS_AUTHENTICATOR=standalone ./infrastructure/hetzner/provision-tls.sh
+          cert_dir="/etc/letsencrypt/live/${public_domain}"
+          if [[ ! -s "${cert_dir}/fullchain.pem" || ! -s "${cert_dir}/privkey.pem" ]]; then
+            "${compose[@]}" stop api-gateway
+            gateway_stopped=true
+            API_DOMAIN="${public_domain}" TLS_EMAIL="${tls_email}" TLS_AUTHENTICATOR=standalone \
+              ./infrastructure/hetzner/provision-tls.sh
+          else
+            echo "Using the existing certificate for ${public_domain}."
+          fi
           update_env() {
             local key="$1" value="$2" temporary
             temporary="$(mktemp "${env_file}.XXXXXX")"
