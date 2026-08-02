@@ -117,7 +117,6 @@ jobs:
               echo "No compatible hosted-HTTPS gateway rollback image is available; preserving the attempted tag." >&2
             fi
           }
-          trap 'rollback_gateway; recover_gateway' EXIT
           update_release_env() {
             local key="$1" value="$2" temporary
             temporary="$(mktemp "${release_env}.XXXXXX")"
@@ -146,14 +145,15 @@ jobs:
             timeout 5 openssl s_client -connect 127.0.0.1:443 -servername "${public_domain}" -brief </dev/null || true
             sudo -n /usr/local/sbin/citizenship-inspect-firewall || \
               echo 'Host firewall inspection privilege is not installed for the deployment identity.' >&2
+            rollback_gateway
+            recover_gateway
             exit 1
           fi
           deployed_image="$("${compose[@]}" ps -q api-gateway | xargs docker inspect -f '{{.Config.Image}}')"
           [[ "${deployed_image}" == */citizenship-api-gateway:"${image_sha}" ]]
           rm -f "${release_backup}"
-          # The deployment is now committed. Clear the rollback trap explicitly;
-          # leaving any EXIT handler installed risks restoring the previous image
-          # after the remote shell has already reported successful smoke tests.
+          # The deployment is now committed. Clear the certificate-recovery trap;
+          # rollback is invoked explicitly only by the guarded failure branch.
           trap - EXIT
           gateway_stopped=false
           REMOTE
