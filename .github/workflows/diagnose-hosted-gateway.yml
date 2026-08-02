@@ -1,0 +1,58 @@
+name: Diagnose hosted gateway networking
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    environment: hosted
+    steps:
+      - name: Configure protected Hetzner SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.HOSTED_SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ secrets.HOSTED_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "${SSH_PRIVATE_KEY}" >~/.ssh/id_ed25519
+          printf '%s\n' "${KNOWN_HOSTS}" >~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+      - name: Collect read-only gateway evidence
+        env:
+          HOSTED_HOST: ${{ secrets.HOSTED_HOST }}
+          HOSTED_USER: ${{ secrets.HOSTED_USER }}
+        run: |
+          ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          cd /opt/citizenship-platform/repo
+          env_file=/opt/citizenship-platform/.env
+          release_env=/opt/citizenship-platform/.release.env
+          compose=(docker compose --env-file "${env_file}" --env-file "${release_env}" -f docker-compose.hosted.yml)
+          container="$("${compose[@]}" ps -q api-gateway)"
+          [[ -n "${container}" ]]
+          printf '%s\n' '--- compose ps ---'
+          "${compose[@]}" ps api-gateway
+          printf '%s\n' '--- container state ---'
+          docker inspect -f 'image={{.Config.Image}} state={{.State.Status}} health={{.State.Health.Status}} ip={{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}} user={{.Config.User}}' "${container}"
+          docker inspect -f '{{json .NetworkSettings.Ports}}' "${container}"
+          printf '%s\n' '--- host listeners ---'
+          ss -lnt | grep -E ':(22|80|443)[[:space:]]' || true
+          printf '%s\n' '--- container listeners and identity ---'
+          docker exec -u 101:101 "${container}" sh -c 'id; netstat -lnt | grep -E ":(8080|8443)[[:space:]]"'
+          printf '%s\n' '--- direct container TLS ---'
+          docker exec -u 101:101 "${container}" wget --no-check-certificate -q -O - https://127.0.0.1:8443/healthz
+          printf '\n%s\n' '--- host loopback HTTP/TLS ---'
+          curl --fail --silent --show-error http://127.0.0.1:80/healthz
+          curl --fail --silent --show-error --resolve api.46-224-221-7.sslip.io:443:127.0.0.1 https://api.46-224-221-7.sslip.io/healthz
+          printf '\n%s\n' '--- Docker bridge and publish mode ---'
+          docker info --format 'rootless={{.SecurityOptions}} live_restore={{.LiveRestoreEnabled}}'
+          docker network inspect citizenship-platform_backend --format '{{json .IPAM.Config}}'
+          REMOTE
+      - name: Probe externally from runner
+        run: |
+          for port in 22 80 443; do
+            timeout 5 bash -c "</dev/tcp/46.224.221.7/${port}" && echo "${port}=reachable" || echo "${port}=blocked"
+          done
