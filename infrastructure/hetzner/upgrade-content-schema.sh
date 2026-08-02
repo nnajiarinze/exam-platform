@@ -10,13 +10,23 @@ EXPECTED_BACKUP_CHECKSUM="${4:-}"; CONFIRMATION="${5:-}"; IMAGE_TAG="${6:-}"
 [[ "${EXPECTED_ENDPOINT}" =~ ^[a-f0-9]{64}$ && "${EXPECTED_CURRENT}" == 20 && "${EXPECTED_TARGET}" == 24 ]]
 [[ "${CONFIRMATION}" == UPGRADE_CONTENT_V20_TO_V24 ]] || die "Explicit Content upgrade confirmation is missing"
 require_sha "${IMAGE_TAG}"; require_file "${PLATFORM_ENV_FILE}"; require_file "${PLATFORM_COMPOSE_FILE}"
-for tool in psql pg_dump pg_restore; do postgres_tool "${tool}" >/dev/null; done
 require_command docker; require_command jq; require_command sha256sum
+if ! command -v psql >/dev/null 2>&1 || [[ "$(psql --version 2>/dev/null | sed -E 's/.* ([0-9]+)(\..*)?$/\1/')" -lt 18 ]]; then
+  POSTGRES_TOOL_DIR="${PLATFORM_STATE_DIR}/postgres18-client"
+  install -d -m 700 "${POSTGRES_TOOL_DIR}"
+  for tool in psql pg_dump pg_restore; do
+    wrapper="${POSTGRES_TOOL_DIR}/${tool}"
+    printf '%s\n' '#!/usr/bin/env bash' "exec docker run --rm -i --network host -e PGHOST -e PGPORT -e PGUSER -e PGPASSWORD -e PGSSLMODE -v /tmp:/tmp postgres:18-alpine ${tool} \"\$@\"" >"${wrapper}"
+    chmod 700 "${wrapper}"
+  done
+  export POSTGRES_TOOL_DIR
+fi
 PSQL="$(postgres_tool psql)"; PG_DUMP="$(postgres_tool pg_dump)"; PG_RESTORE="$(postgres_tool pg_restore)"
 
 normalize_url(){ python3 -c 'import sys,urllib.parse
 u=urllib.parse.urlsplit(sys.stdin.read().strip().removeprefix("jdbc:")); q=dict(urllib.parse.parse_qsl(u.query,keep_blank_values=True)); q.pop("sslfactory",None)
 if q.pop("ssl",None)=="true" and "sslmode" not in q:q["sslmode"]="require"
+if "channelBinding" in q:q["channel_binding"]=q.pop("channelBinding")
 print(urllib.parse.urlunsplit((u.scheme,u.netloc,u.path,urllib.parse.urlencode(q),"")))'; }
 url_metadata(){ python3 -c 'import sys,urllib.parse,json
 u=urllib.parse.urlsplit(sys.stdin.read().strip()); print(json.dumps({"host":u.hostname or "","database":u.path.lstrip("/")}))'; }
@@ -40,14 +50,15 @@ before_counts="$(query "${CONTENT_URL}" "${CONTENT_USER}" "${CONTENT_PASSWORD}" 
 learning_before="$(learning_state)"
 
 timestamp="$(date -u +%Y%m%dT%H%M%SZ)"; backup_id="content-v20-${timestamp}"; backup_dir="${PLATFORM_ROOT}/backups/${backup_id}"
-install -d -m 700 "${backup_dir}"; backup="${backup_dir}/content-public.dump"
-PGPASSWORD="${CONTENT_PASSWORD}" "${PG_DUMP}" --schema=public --format=custom --no-owner --no-acl --username="${CONTENT_USER}" --dbname="${CONTENT_URL}" --file="${backup}"
-"${PG_RESTORE}" --list "${backup}" >"${backup_dir}/restore-list.txt"; backup_checksum="$(sha256sum "${backup}"|awk '{print $1}')"
+install -d -m 700 "${backup_dir}"; backup="${backup_dir}/content-public.dump"; temporary_backup="/tmp/${backup_id}.dump"
+PGPASSWORD="${CONTENT_PASSWORD}" "${PG_DUMP}" --schema=public --format=custom --no-owner --no-acl --username="${CONTENT_USER}" --dbname="${CONTENT_URL}" --file="${temporary_backup}"
+"${PG_RESTORE}" --list "${temporary_backup}" >"${backup_dir}/restore-list.txt"; backup_checksum="$(sha256sum "${temporary_backup}"|awk '{print $1}')"
 if [[ -n "${EXPECTED_BACKUP_CHECKSUM}" && "${EXPECTED_BACKUP_CHECKSUM}" != AUTO ]]; then [[ "${backup_checksum}" == "${EXPECTED_BACKUP_CHECKSUM}" ]] || die "Backup checksum mismatch"; fi
+install -m 600 "${temporary_backup}" "${backup}"
 chmod 600 "${backup}" "${backup_dir}/restore-list.txt"
 
 stage_container="content-v24-stage-${timestamp,,}"; stage_service="content-v24-service-${timestamp,,}"; stage_network="content-v24-network-${timestamp,,}"
-cleanup(){ docker rm -f "${stage_service}" "${stage_container}" >/dev/null 2>&1 || true; docker network rm "${stage_network}" >/dev/null 2>&1 || true; }
+cleanup(){ docker rm -f "${stage_service}" "${stage_container}" >/dev/null 2>&1 || true; docker network rm "${stage_network}" >/dev/null 2>&1 || true; rm -f -- "${temporary_backup}"; }
 trap cleanup EXIT
 docker network create "${stage_network}" >/dev/null
 docker run -d --name "${stage_container}" --network "${stage_network}" -e POSTGRES_USER=content -e POSTGRES_PASSWORD=stage-only -e POSTGRES_DB=content postgres:16-alpine >/dev/null
