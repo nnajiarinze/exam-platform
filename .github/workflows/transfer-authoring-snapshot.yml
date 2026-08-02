@@ -28,7 +28,7 @@ on:
         required: true
       expected_content_migration:
         required: true
-        default: "20"
+        default: "24"
       expected_ai_migration:
         required: true
         default: "32"
@@ -76,7 +76,7 @@ jobs:
           [[ "${MODE}" == DRY_RUN || "${MODE}" == IMPORT ]]
           [[ "${ASSET_URL}" == https://github.com/${{ github.repository }}/releases/download/* ]]
           [[ "${ENCRYPTED_SHA256}" =~ ^[a-f0-9]{64}$ && "${PLAINTEXT_SHA256}" =~ ^[a-f0-9]{64}$ && "${SNAPSHOT_SHA256}" =~ ^[a-f0-9]{64}$ && "${ENDPOINT_SHA256}" =~ ^[a-f0-9]{64}$ ]]
-          [[ "${CONTENT_MIGRATION}" == 20 && "${AI_MIGRATION}" == 32 ]]
+          [[ "${CONTENT_MIGRATION}" == 24 && "${AI_MIGRATION}" == 32 ]]
           [[ "${RELEASE_ID}" =~ ^[a-f0-9-]{36}$ ]]
           if [[ "${MODE}" == IMPORT ]]; then
             [[ "${BACKUP_CONFIRMED}" == true ]]

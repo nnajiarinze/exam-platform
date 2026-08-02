@@ -1,0 +1,63 @@
+name: Upgrade authoritative EU Content schema
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha: {description: Full immutable V24 application commit, required: true}
+      expected_endpoint_fingerprint: {description: Authoritative EU endpoint SHA-256, required: true}
+      expected_current_migration: {required: true, default: "20"}
+      expected_target_migration: {required: true, default: "24"}
+      expected_backup_checksum: {description: AUTO creates and verifies a fresh retained backup, required: true, default: AUTO}
+      confirmation: {required: true}
+
+permissions:
+  contents: read
+
+jobs:
+  upgrade-content-only:
+    runs-on: ubuntu-latest
+    environment: hosted
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: "${{ inputs.commit_sha }}"}
+      - name: Validate protected inputs
+        env:
+          SHA: "${{ inputs.commit_sha }}"
+          ENDPOINT: "${{ inputs.expected_endpoint_fingerprint }}"
+          CURRENT: "${{ inputs.expected_current_migration }}"
+          TARGET: "${{ inputs.expected_target_migration }}"
+          CONFIRMATION: "${{ inputs.confirmation }}"
+        run: |
+          [[ "${SHA}" =~ ^[a-f0-9]{40}$ && "${ENDPOINT}" =~ ^[a-f0-9]{64}$ ]]
+          [[ "${CURRENT}" == 20 && "${TARGET}" == 24 ]]
+          [[ "${CONFIRMATION}" == UPGRADE_CONTENT_V20_TO_V24 ]]
+      - name: Configure protected SSH
+        env:
+          SSH_PRIVATE_KEY: "${{ secrets.HOSTED_SSH_PRIVATE_KEY }}"
+          KNOWN_HOSTS: "${{ secrets.HOSTED_KNOWN_HOSTS }}"
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "${SSH_PRIVATE_KEY}" >~/.ssh/id_ed25519
+          printf '%s\n' "${KNOWN_HOSTS}" >~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+      - name: Audit, backup, rehearse, and upgrade Content only
+        env:
+          HOST: "${{ secrets.HOSTED_HOST }}"
+          USER: "${{ secrets.HOSTED_USER }}"
+          SHA: "${{ inputs.commit_sha }}"
+          ENDPOINT: "${{ inputs.expected_endpoint_fingerprint }}"
+          CURRENT: "${{ inputs.expected_current_migration }}"
+          TARGET: "${{ inputs.expected_target_migration }}"
+          BACKUP_CHECKSUM: "${{ inputs.expected_backup_checksum }}"
+          CONFIRMATION: "${{ inputs.confirmation }}"
+        run: |
+          ssh -o BatchMode=yes "${USER}@${HOST}" "cd /opt/citizenship-platform/repo && git fetch --quiet origin '${SHA}' && git checkout --detach '${SHA}' && ./infrastructure/hetzner/upgrade-content-schema.sh '${ENDPOINT}' '${CURRENT}' '${TARGET}' '${BACKUP_CHECKSUM}' '${CONFIRMATION}' '${SHA}'"
+          scp -q -o BatchMode=yes "${USER}@${HOST}:/opt/citizenship-platform/state/content-v24-upgrade-last.json" content-v24-upgrade-report.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: content-v24-upgrade-report
+          path: content-v24-upgrade-report.json
+          if-no-files-found: error
+          retention-days: 30
