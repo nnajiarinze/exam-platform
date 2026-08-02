@@ -4,6 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       commit_sha: {description: Full immutable V24 application commit, required: true}
+      content_image_sha: {description: Published immutable V24 Content image SHA, required: true}
       expected_endpoint_fingerprint: {description: Authoritative EU endpoint SHA-256, required: true}
       expected_current_migration: {required: true, default: "20"}
       expected_target_migration: {required: true, default: "24"}
@@ -24,12 +25,13 @@ jobs:
       - name: Validate protected inputs
         env:
           SHA: "${{ inputs.commit_sha }}"
+          IMAGE_SHA: "${{ inputs.content_image_sha }}"
           ENDPOINT: "${{ inputs.expected_endpoint_fingerprint }}"
           CURRENT: "${{ inputs.expected_current_migration }}"
           TARGET: "${{ inputs.expected_target_migration }}"
           CONFIRMATION: "${{ inputs.confirmation }}"
         run: |
-          [[ "${SHA}" =~ ^[a-f0-9]{40}$ && "${ENDPOINT}" =~ ^[a-f0-9]{64}$ ]]
+          [[ "${SHA}" =~ ^[a-f0-9]{40}$ && "${IMAGE_SHA}" =~ ^[a-f0-9]{40}$ && "${ENDPOINT}" =~ ^[a-f0-9]{64}$ ]]
           [[ "${CURRENT}" == 20 && "${TARGET}" == 24 ]]
           [[ "${CONFIRMATION}" == UPGRADE_CONTENT_V20_TO_V24 ]]
       - name: Configure protected SSH
@@ -46,13 +48,14 @@ jobs:
           HOST: "${{ secrets.HOSTED_HOST }}"
           USER: "${{ secrets.HOSTED_USER }}"
           SHA: "${{ inputs.commit_sha }}"
+          IMAGE_SHA: "${{ inputs.content_image_sha }}"
           ENDPOINT: "${{ inputs.expected_endpoint_fingerprint }}"
           CURRENT: "${{ inputs.expected_current_migration }}"
           TARGET: "${{ inputs.expected_target_migration }}"
           BACKUP_CHECKSUM: "${{ inputs.expected_backup_checksum }}"
           CONFIRMATION: "${{ inputs.confirmation }}"
         run: |
-          ssh -o BatchMode=yes "${USER}@${HOST}" "cd /opt/citizenship-platform/repo && git fetch --quiet origin '${SHA}' && git checkout --detach '${SHA}' && ./infrastructure/hetzner/upgrade-content-schema.sh '${ENDPOINT}' '${CURRENT}' '${TARGET}' '${BACKUP_CHECKSUM}' '${CONFIRMATION}' '${SHA}'"
+          ssh -o BatchMode=yes "${USER}@${HOST}" "cd /opt/citizenship-platform/repo && git fetch --quiet origin '${SHA}' && git checkout --detach '${SHA}' && ./infrastructure/hetzner/upgrade-content-schema.sh '${ENDPOINT}' '${CURRENT}' '${TARGET}' '${BACKUP_CHECKSUM}' '${CONFIRMATION}' '${IMAGE_SHA}'"
           scp -q -o BatchMode=yes "${USER}@${HOST}:/opt/citizenship-platform/state/content-v24-upgrade-last.json" content-v24-upgrade-report.json
       - uses: actions/upload-artifact@v4
         if: always()

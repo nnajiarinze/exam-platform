@@ -63,6 +63,7 @@ trap cleanup EXIT
 docker network create "${stage_network}" >/dev/null
 docker run -d --name "${stage_container}" --network "${stage_network}" -e POSTGRES_USER=content -e POSTGRES_PASSWORD=stage-only -e POSTGRES_DB=content postgres:18-alpine >/dev/null
 for _ in {1..30}; do docker exec "${stage_container}" pg_isready -U content >/dev/null 2>&1 && break; sleep 1; done
+docker exec "${stage_container}" psql -U content -d content -v ON_ERROR_STOP=1 -c 'DROP SCHEMA public CASCADE;'
 docker exec -i "${stage_container}" pg_restore --exit-on-error --no-owner --no-acl -U content -d content <"${backup}"
 
 registry="$(sed -n 's/^IMAGE_REGISTRY=//p' "${PLATFORM_RELEASE_ENV_FILE}"|tail -1)"; require_var registry
