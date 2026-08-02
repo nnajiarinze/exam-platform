@@ -51,4 +51,13 @@ class AuthoringSnapshotTests(unittest.TestCase):
         self.assertNotIn("actual_cost_usd",snapshot.EPHEMERAL_FIELDS["ai"]["ai_paid_request_accounting"])
         self.assertIn("heartbeat_at",snapshot.EPHEMERAL_FIELDS["ai"]["ai_paid_request_accounting"])
 
+    def test_source_payload_diagnostic_distinguishes_normalizations(self):
+        source={"content_text":"Rätts-\nväsendet  är öppet.","content_checksum":"a","file_checksum":"pdf"}
+        target={"content_text":"Rättsväsendet är öppet.","content_checksum":"b","file_checksum":"pdf"}
+        report=snapshot.source_payload_diagnostic(source,target)
+        self.assertFalse(report["equalities"]["raw"])
+        self.assertTrue(report["equalities"]["pdfLineBreak"])
+        self.assertTrue(report["differenceTypes"]["lineBreakHyphenationOnly"])
+        self.assertEqual(report["sourceDocumentChecksum"],report["targetDocumentChecksum"])
+
 if __name__=="__main__": unittest.main()

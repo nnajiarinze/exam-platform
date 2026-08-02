@@ -8,9 +8,11 @@ import datetime as dt
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
+import unicodedata
 from collections import defaultdict, deque
 from pathlib import Path
 from typing import Any
@@ -282,9 +284,39 @@ def structural_identity(row:dict[str,Any])->dict[str,Any]:
     operational={"id","created_at","updated_at","version","imported_at","reviewed_at"}
     return {key:value for key,value in row.items() if key not in operational}
 
+def source_payload_diagnostic(source:dict[str,Any],target:dict[str,Any])->dict[str,Any]:
+    left=source.get("content_text") or ""; right=target.get("content_text") or ""
+    def digest(value:str)->str: return hashlib.sha256(value.encode()).hexdigest()
+    def whitespace(value:str)->str: return re.sub(r"\s+"," ",value).strip()
+    def pdf_lines(value:str)->str:
+        value=unicodedata.normalize("NFC",value).replace("\u00ad","")
+        value=re.sub(r"(?<=\w)-[ \t]*\n[ \t]*(?=\w)","",value)
+        return whitespace(value)
+    def canonical(value:str)->str: return pdf_lines(value).casefold()
+    prefix=0
+    while prefix<min(len(left),len(right)) and left[prefix]==right[prefix]: prefix+=1
+    suffix=0
+    while suffix<min(len(left)-prefix,len(right)-prefix) and left[-1-suffix]==right[-1-suffix]: suffix+=1
+    excerpt=lambda value: whitespace(value[max(0,prefix-60):min(len(value),prefix+60)])
+    nfc_left=unicodedata.normalize("NFC",left); nfc_right=unicodedata.normalize("NFC",right)
+    ws_left=whitespace(nfc_left); ws_right=whitespace(nfc_right)
+    pdf_left=pdf_lines(left); pdf_right=pdf_lines(right); canonical_left=canonical(left); canonical_right=canonical(right)
+    return {
+        "sourceContentChecksum":source.get("content_checksum"),"targetContentChecksum":target.get("content_checksum"),
+        "sourceDocumentChecksum":source.get("file_checksum"),"targetDocumentChecksum":target.get("file_checksum"),
+        "rawLengths":{"source":len(left),"target":len(right)},
+        "normalizedLengths":{"source":len(canonical_left),"target":len(canonical_right)},
+        "firstDifferingOffset":None if left==right else prefix,
+        "lastDifferingOffsets":None if left==right else {"source":len(left)-suffix-1,"target":len(right)-suffix-1},
+        "equalities":{"raw":left==right,"unicodeNfc":nfc_left==nfc_right,"normalizedWhitespace":ws_left==ws_right,"pdfLineBreak":pdf_left==pdf_right,"canonical":canonical_left==canonical_right},
+        "differenceTypes":{"whitespaceOnly":left!=right and ws_left==ws_right,"unicodeNormalizationOnly":left!=right and nfc_left==nfc_right,"lineBreakHyphenationOnly":ws_left!=ws_right and pdf_left==pdf_right},
+        "checksums":{"raw":{"source":digest(left),"target":digest(right)},"unicodeNfc":{"source":digest(nfc_left),"target":digest(nfc_right)},"normalizedWhitespace":{"source":digest(ws_left),"target":digest(ws_right)},"pdfLineBreak":{"source":digest(pdf_left),"target":digest(pdf_right)},"canonical":{"source":digest(canonical_left),"target":digest(canonical_right)}},
+        "firstDifferenceExcerpt":{"source":excerpt(left),"target":excerpt(right)},
+    }
+
 def plan(source:Path,target:Path,output:Path)->dict[str,Any]:
     source_manifest=verify_snapshot(source); target_manifest=json.loads((target/"manifest.json").read_text())
-    classifications={}; conflicts=[]; invalid=[]; normalizations=[]; final_counts={}
+    classifications={}; conflicts=[]; invalid=[]; normalizations=[]; final_counts={}; conflict_diagnostics=[]
     for role in DATABASES:
         schema=json.loads((source/role/"schema.json").read_text()); classifications[role]={}; final_counts[role]={}
         for item in schema["tables"]:
@@ -309,6 +341,8 @@ def plan(source:Path,target:Path,output:Path)->dict[str,Any]:
                         "sourceFieldChecksums":{key:hashlib.sha256(canonical_json(row.get(key)).encode()).hexdigest() for key in different_fields},
                         "targetFieldChecksums":{key:hashlib.sha256(canonical_json(existing.get(key)).encode()).hexdigest() for key in different_fields},
                     })
+                    if role=="content" and table=="source_reference":
+                        conflict_diagnostics.append({"table":table,"key":record_key(row,pk),"analysis":source_payload_diagnostic(row,existing)})
                 rule=RUNTIME_RULES.get(table)
                 if rule:
                     field="status" if "status" in rule else "lifecycle_state" if "lifecycle_state" in rule else "reservation_state"
@@ -318,7 +352,7 @@ def plan(source:Path,target:Path,output:Path)->dict[str,Any]:
             classifications[role][table]=dict(counts); final_counts[role][table]=len(dst)+counts["INSERT"]
     fk={role:foreign_key_report(source,role,json.loads((source/role/"schema.json").read_text())) for role in DATABASES}; cross=cross_service_report(source)
     invalid=[failure for report in fk.values() for failure in report["failures"]]+cross["failures"]
-    report={"snapshotSemanticChecksum":source_manifest["semanticChecksum"],"classifications":classifications,"conflicts":conflicts,"invalidReferences":invalid,"runtimeNormalizations":normalizations,"finalCounts":final_counts,"crossService":cross,"foreignKeys":fk,"idempotency":{"secondRunInsert":0,"secondRunExpected":"REUSE_IDENTICAL or REUSE_CANONICAL only"},"blocking":bool(conflicts or invalid)}
+    report={"snapshotSemanticChecksum":source_manifest["semanticChecksum"],"classifications":classifications,"conflicts":conflicts,"conflictDiagnostics":conflict_diagnostics,"invalidReferences":invalid,"runtimeNormalizations":normalizations,"finalCounts":final_counts,"crossService":cross,"foreignKeys":fk,"idempotency":{"secondRunInsert":0,"secondRunExpected":"REUSE_IDENTICAL or REUSE_CANONICAL only"},"blocking":bool(conflicts or invalid)}
     output.write_text(json.dumps(report,indent=2,sort_keys=True)+"\n"); print(canonical_json({"event":"dry_run_planned","blocking":report["blocking"],"conflicts":len(conflicts),"invalidReferences":len(invalid)}))
     return report
 
