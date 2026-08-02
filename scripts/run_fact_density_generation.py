@@ -20,6 +20,15 @@ except ModuleNotFoundError:  # Direct execution places scripts/ on sys.path.
 TERMINAL = {"COMPLETED", "PARTIALLY_COMPLETED", "FAILED", "CANCELLED"}
 
 
+def next_attempt_key(base_key: str, jobs: list[dict]) -> str | None:
+    attempts = [job for job in jobs if job["idempotencyKey"] == base_key or job["idempotencyKey"].startswith(base_key + ":recovery:")]
+    if any(job.get("status") in {"COMPLETED", "PARTIALLY_COMPLETED", "CANCELLED"} for job in attempts):
+        return None
+    if len(attempts) >= 2:
+        return None
+    return base_key if not attempts else f"{base_key}:recovery:{len(attempts)}"
+
+
 def instruction(audit: dict, section: dict, targets: list[str]) -> str:
     return json.dumps(
         {
@@ -77,13 +86,24 @@ def main() -> None:
     }
     if state["auditId"] != audit["auditId"] or state["auditChecksum"] != audit["definitionChecksum"]:
         raise SystemExit("Generation state does not match immutable audit")
-    completed_keys = {job["idempotencyKey"] for job in state["jobs"] if job.get("status") in TERMINAL}
     for section in audit["sections"]:
         targets = section["generationTargets"]
         for offset in range(0, len(targets), 3):
             batch = targets[offset : offset + 3]
-            key_suffix = f"fact-density:{audit['definitionChecksum']}:{section['id']}:{offset // 3}"
-            if key_suffix in completed_keys:
+            base_key = f"fact-density:{audit['definitionChecksum']}:{section['id']}:{offset // 3}"
+            key_suffix = next_attempt_key(base_key, state["jobs"])
+            if key_suffix is None:
+                failed = [job for job in state["jobs"] if (job["idempotencyKey"] == base_key or job["idempotencyKey"].startswith(base_key + ":recovery:")) and job.get("status") == "FAILED"]
+                if len(failed) >= 2 and not any(value.get("baseKey") == base_key for value in state.get("deterministicExclusions", [])):
+                    state.setdefault("deterministicExclusions", []).append({
+                        "baseKey": base_key,
+                        "sectionId": section["id"],
+                        "targets": batch,
+                        "classification": "OUTSIDE_BOUNDED_SOURCE",
+                        "diagnostic": "Two provider attempts could not produce evidence passing the unchanged exact-evidence boundary.",
+                        "failedJobIds": [value["id"] for value in failed],
+                    })
+                    write_state(args.state, state)
                 continue
             current = source[section["id"]]
             payload = {

@@ -7,19 +7,19 @@
     ]
   },
   "previousFactTotal": 85,
-  "finalFactTotal": 134,
-  "newApprovedFactTotal": 49,
-  "topicsReadyForDeeperLesson": 14,
-  "topicsLimitedButUsable": 24,
+  "finalFactTotal": 209,
+  "newApprovedFactTotal": 124,
+  "topicsReadyForDeeperLesson": 33,
+  "topicsLimitedButUsable": 5,
   "topicsRequiringSourceExpansion": 0,
-  "projectedAdditionalPages": 26,
+  "projectedAdditionalPages": 61,
   "projectedCorpusWordCount": [
-    8742,
-    9652
+    10667,
+    12802
   ],
   "projectedReadingTimeMinutes": [
-    62.4,
-    68.9
+    76.2,
+    91.4
   ],
   "topics": [
     {
@@ -339,9 +339,9 @@
       "topic": "Olika slags medier",
       "objective": "Förstå huvuddragen i olika slags medier",
       "previousApprovedFactCount": 3,
-      "newApprovedFactCount": 3,
-      "finalApprovedFactCount": 6,
-      "remainingUncoveredSourceConcepts": 7,
+      "newApprovedFactCount": 5,
+      "finalApprovedFactCount": 8,
+      "remainingUncoveredSourceConcepts": 5,
       "maximumSafelySupportableLessonPages": 6,
       "estimatedUsefulReadingTimeMinutes": [
         2.4,
@@ -350,7 +350,9 @@
       "sufficiency": "READY_FOR_DEEPER_LESSON",
       "potentialNewPages": 2,
       "proposedLearnerQuestions": [
+        "Hur skulle du förklara att de flesta tidningar finns idag också på internet och uppdateras med nyheter flera gånger per dag?",
         "Hur skulle du förklara att det finns en stor mängd olika tidningar och tidskrifter i Sverige?",
+        "Hur skulle du förklara att det finns tre medieföretag med ett speciellt uppdrag i Sverige: Sveriges Radio, Sveriges Television och Utbildningsradion?",
         "Hur skulle du förklara att medier som finansieras med reklam drivs ofta av privata företag?",
         "Hur skulle du förklara att tidningarna får också inkomster genom att sälja plats för reklam?"
       ],
@@ -361,17 +363,20 @@
       "topic": "Källkritik",
       "objective": "Förstå huvuddragen i källkritik",
       "previousApprovedFactCount": 1,
-      "newApprovedFactCount": 0,
-      "finalApprovedFactCount": 1,
-      "remainingUncoveredSourceConcepts": 3,
-      "maximumSafelySupportableLessonPages": 2,
+      "newApprovedFactCount": 2,
+      "finalApprovedFactCount": 3,
+      "remainingUncoveredSourceConcepts": 1,
+      "maximumSafelySupportableLessonPages": 4,
       "estimatedUsefulReadingTimeMinutes": [
-        0.8,
-        1.3
+        1.6,
+        2.6
       ],
       "sufficiency": "LIMITED_BUT_USABLE",
       "potentialNewPages": 0,
-      "proposedLearnerQuestions": [],
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att att kontrollera och granska information kallas för att vara källkritisk?",
+        "Hur skulle du förklara att falska uppgifter kan spridas snabbt och påverka människors åsikter?"
+      ],
       "existingLessonPagesMayRemain": true
     },
     {
@@ -379,17 +384,21 @@
       "topic": "Mänskliga rättigheter gäller alla",
       "objective": "Förstå huvuddragen i mänskliga rättigheter gäller alla",
       "previousApprovedFactCount": 2,
-      "newApprovedFactCount": 0,
-      "finalApprovedFactCount": 2,
-      "remainingUncoveredSourceConcepts": 9,
-      "maximumSafelySupportableLessonPages": 3,
+      "newApprovedFactCount": 3,
+      "finalApprovedFactCount": 5,
+      "remainingUncoveredSourceConcepts": 6,
+      "maximumSafelySupportableLessonPages": 6,
       "estimatedUsefulReadingTimeMinutes": [
-        1.2,
-        1.9
+        2.4,
+        3.9
       ],
-      "sufficiency": "LIMITED_BUT_USABLE",
-      "potentialNewPages": 0,
-      "proposedLearnerQuestions": [],
+      "sufficiency": "READY_FOR_DEEPER_LESSON",
+      "potentialNewPages": 2,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att alla ska ha rätt att äta sig mätta och att vara medborgare i ett land?",
+        "Hur skulle du förklara att alla ska till exempel ha rätt till sjukvård och utbildning?",
+        "Hur skulle du förklara att mänskliga rättigheter gäller alla?"
+      ],
       "existingLessonPagesMayRemain": true
     },
     {
@@ -397,17 +406,20 @@
       "topic": "Jämställdhet mellan könen",
       "objective": "Förstå huvuddragen i jämställdhet mellan könen",
       "previousApprovedFactCount": 1,
-      "newApprovedFactCount": 0,
-      "finalApprovedFactCount": 1,
-      "remainingUncoveredSourceConcepts": 15,
-      "maximumSafelySupportableLessonPages": 2,
+      "newApprovedFactCount": 2,
+      "finalApprovedFactCount": 3,
+      "remainingUncoveredSourceConcepts": 13,
+      "maximumSafelySupportableLessonPages": 4,
       "estimatedUsefulReadingTimeMinutes": [
-        0.8,
-        1.3
+        1.6,
+        2.6
       ],
       "sufficiency": "LIMITED_BUT_USABLE",
       "potentialNewPages": 0,
-      "proposedLearnerQuestions": [],
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att hedersrelaterat våld innebär att en familj eller grupp försöker kontrollera hur människor inom familjen eller gruppen beter sig?",
+        "Hur skulle du förklara att våld i nära relationer och hedersrelaterat våld och förtryck är brottsligt enligt svensk lag?"
+      ],
       "existingLessonPagesMayRemain": true
     },
     {
@@ -415,17 +427,24 @@
       "topic": "Barns rättigheter",
       "objective": "Förstå huvuddragen i barns rättigheter",
       "previousApprovedFactCount": 2,
-      "newApprovedFactCount": 0,
-      "finalApprovedFactCount": 2,
-      "remainingUncoveredSourceConcepts": 11,
-      "maximumSafelySupportableLessonPages": 3,
+      "newApprovedFactCount": 6,
+      "finalApprovedFactCount": 8,
+      "remainingUncoveredSourceConcepts": 4,
+      "maximumSafelySupportableLessonPages": 6,
       "estimatedUsefulReadingTimeMinutes": [
-        1.2,
-        1.9
+        2.4,
+        3.9
       ],
-      "sufficiency": "LIMITED_BUT_USABLE",
-      "potentialNewPages": 0,
-      "proposedLearnerQuestions": [],
+      "sufficiency": "READY_FOR_DEEPER_LESSON",
+      "potentialNewPages": 2,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att barnkonventionen ska skydda alla barns mänskliga rättigheter?",
+        "Hur skulle du förklara att barnkonventionen säger att föräldrarna eller annan vårdnadshavare har ansvaret för barnets uppfostran, utveckling och välmående?",
+        "Hur skulle du förklara att fN har kommit överens om en konvention om barns rättigheter?",
+        "Hur skulle du förklara att idag har cirka 70 länder i världen förbjudit våld mot barn?",
+        "Hur skulle du förklara att myndigheter, domstolar, kommuner och regioner ska tillämpa barnkonventionen?",
+        "Hur skulle du förklara att sverige var det första landet i världen som beslutade att det är förbjudet att slå barn?"
+      ],
       "existingLessonPagesMayRemain": true
     },
     {
@@ -433,17 +452,22 @@
       "topic": "Minoriteters rättigheter",
       "objective": "Förstå huvuddragen i minoriteters rättigheter",
       "previousApprovedFactCount": 3,
-      "newApprovedFactCount": 0,
-      "finalApprovedFactCount": 3,
-      "remainingUncoveredSourceConcepts": 12,
-      "maximumSafelySupportableLessonPages": 4,
+      "newApprovedFactCount": 4,
+      "finalApprovedFactCount": 7,
+      "remainingUncoveredSourceConcepts": 8,
+      "maximumSafelySupportableLessonPages": 6,
       "estimatedUsefulReadingTimeMinutes": [
-        1.6,
-        2.6
+        2.4,
+        3.9
       ],
-      "sufficiency": "LIMITED_BUT_USABLE",
-      "potentialNewPages": 0,
-      "proposedLearnerQuestions": [],
+      "sufficiency": "READY_FOR_DEEPER_LESSON",
+      "potentialNewPages": 2,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att samer är också ett erkänt urfolk?",
+        "Hur skulle du förklara att samerna har en långvarig och mycket stark relation till ett stort landområde som sträcker sig över Sverige, Norge, Finland och Ryssland och som kallas för Sápmi?",
+        "Hur skulle du förklara att sverige ger särskilt skydd till vissa minoritetsgrupper?",
+        "Hur skulle du förklara att tidigare hade de ofta inte samma rättigheter som majoritetsbefolk-\nningen och blev diskriminerade?"
+      ],
       "existingLessonPagesMayRemain": true
     },
     {
@@ -451,45 +475,9 @@
       "topic": "Arbetet mot diskriminering",
       "objective": "Förstå huvuddragen i arbetet mot diskriminering",
       "previousApprovedFactCount": 2,
-      "newApprovedFactCount": 0,
-      "finalApprovedFactCount": 2,
-      "remainingUncoveredSourceConcepts": 4,
-      "maximumSafelySupportableLessonPages": 3,
-      "estimatedUsefulReadingTimeMinutes": [
-        1.2,
-        1.9
-      ],
-      "sufficiency": "LIMITED_BUT_USABLE",
-      "potentialNewPages": 0,
-      "proposedLearnerQuestions": [],
-      "existingLessonPagesMayRemain": true
-    },
-    {
-      "chapter": "Arbetsmarknad och privatekonomi",
-      "topic": "Så fungerar arbetsmarknaden",
-      "objective": "Förstå huvuddragen i så fungerar arbetsmarknaden",
-      "previousApprovedFactCount": 2,
-      "newApprovedFactCount": 0,
-      "finalApprovedFactCount": 2,
-      "remainingUncoveredSourceConcepts": 4,
-      "maximumSafelySupportableLessonPages": 3,
-      "estimatedUsefulReadingTimeMinutes": [
-        1.2,
-        1.9
-      ],
-      "sufficiency": "LIMITED_BUT_USABLE",
-      "potentialNewPages": 0,
-      "proposedLearnerQuestions": [],
-      "existingLessonPagesMayRemain": true
-    },
-    {
-      "chapter": "Arbetsmarknad och privatekonomi",
-      "topic": "Arbetsmarknadens parter",
-      "objective": "Förstå huvuddragen i arbetsmarknadens parter",
-      "previousApprovedFactCount": 3,
-      "newApprovedFactCount": 0,
+      "newApprovedFactCount": 1,
       "finalApprovedFactCount": 3,
-      "remainingUncoveredSourceConcepts": 5,
+      "remainingUncoveredSourceConcepts": 3,
       "maximumSafelySupportableLessonPages": 4,
       "estimatedUsefulReadingTimeMinutes": [
         1.6,
@@ -497,7 +485,54 @@
       ],
       "sufficiency": "LIMITED_BUT_USABLE",
       "potentialNewPages": 0,
-      "proposedLearnerQuestions": [],
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att ett brott som begås mot personer för att de tillhör en viss grupp kallas hatbrott?"
+      ],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Arbetsmarknad och privatekonomi",
+      "topic": "Så fungerar arbetsmarknaden",
+      "objective": "Förstå huvuddragen i så fungerar arbetsmarknaden",
+      "previousApprovedFactCount": 2,
+      "newApprovedFactCount": 3,
+      "finalApprovedFactCount": 5,
+      "remainingUncoveredSourceConcepts": 1,
+      "maximumSafelySupportableLessonPages": 6,
+      "estimatedUsefulReadingTimeMinutes": [
+        2.4,
+        3.9
+      ],
+      "sufficiency": "READY_FOR_DEEPER_LESSON",
+      "potentialNewPages": 2,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att i mindre städer och orter finns ofta industrier som stålverk, pappersbruk eller fabriker som ligger nära nödvändiga naturresurser?",
+        "Hur skulle du förklara att i stora städer finns många företag inom olika branscher, till exempel inom tjänster och handel?",
+        "Hur skulle du förklara att omkring 70 % av alla som jobbar i Sverige arbetar inom den privata sektorn?"
+      ],
+      "existingLessonPagesMayRemain": true
+    },
+    {
+      "chapter": "Arbetsmarknad och privatekonomi",
+      "topic": "Arbetsmarknadens parter",
+      "objective": "Förstå huvuddragen i arbetsmarknadens parter",
+      "previousApprovedFactCount": 3,
+      "newApprovedFactCount": 4,
+      "finalApprovedFactCount": 7,
+      "remainingUncoveredSourceConcepts": 1,
+      "maximumSafelySupportableLessonPages": 6,
+      "estimatedUsefulReadingTimeMinutes": [
+        2.4,
+        3.9
+      ],
+      "sufficiency": "READY_FOR_DEEPER_LESSON",
+      "potentialNewPages": 2,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att arbetsgivare anställer och betalar lön till arbetstagarna?",
+        "Hur skulle du förklara att fackförbunden arbetar för att de anställda ska få det bättre?",
+        "Hur skulle du förklara att inom varje facklig centralorganisation finns många olika fackförbund?",
+        "Hur skulle du förklara att på arbetsmarknaden finns arbetsgivare och arbetstagare?"
+      ],
       "existingLessonPagesMayRemain": true
     },
     {
@@ -505,17 +540,21 @@
       "topic": "Lagar och regler på arbetsmarknaden",
       "objective": "Förstå huvuddragen i lagar och regler på arbetsmarknaden",
       "previousApprovedFactCount": 1,
-      "newApprovedFactCount": 0,
-      "finalApprovedFactCount": 1,
-      "remainingUncoveredSourceConcepts": 7,
-      "maximumSafelySupportableLessonPages": 2,
+      "newApprovedFactCount": 3,
+      "finalApprovedFactCount": 4,
+      "remainingUncoveredSourceConcepts": 4,
+      "maximumSafelySupportableLessonPages": 5,
       "estimatedUsefulReadingTimeMinutes": [
-        0.8,
-        1.3
+        2.0,
+        3.2
       ],
-      "sufficiency": "LIMITED_BUT_USABLE",
-      "potentialNewPages": 0,
-      "proposedLearnerQuestions": [],
+      "sufficiency": "READY_FOR_DEEPER_LESSON",
+      "potentialNewPages": 1,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att a-kassan är en arbetslöshetsförsäkring som ger inkomst till arbetslösa personer?",
+        "Hur skulle du förklara att alla som arbetar betalar skatt på sin lön?",
+        "Hur skulle du förklara att arbetsgivaren måste betala avgifter till staten för de anställdas pension och sjukförsäkring?"
+      ],
       "existingLessonPagesMayRemain": true
     },
     {
@@ -523,17 +562,20 @@
       "topic": "Privatekonomi i Sverige",
       "objective": "Förstå huvuddragen i privatekonomi i sverige",
       "previousApprovedFactCount": 2,
-      "newApprovedFactCount": 0,
-      "finalApprovedFactCount": 2,
-      "remainingUncoveredSourceConcepts": 8,
-      "maximumSafelySupportableLessonPages": 3,
+      "newApprovedFactCount": 2,
+      "finalApprovedFactCount": 4,
+      "remainingUncoveredSourceConcepts": 6,
+      "maximumSafelySupportableLessonPages": 5,
       "estimatedUsefulReadingTimeMinutes": [
-        1.2,
-        1.9
+        2.0,
+        3.2
       ],
-      "sufficiency": "LIMITED_BUT_USABLE",
-      "potentialNewPages": 0,
-      "proposedLearnerQuestions": [],
+      "sufficiency": "READY_FOR_DEEPER_LESSON",
+      "potentialNewPages": 1,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att lönen i Sverige är ganska hög jämfört med många andra länder?",
+        "Hur skulle du förklara att människor kan spara pengar på bankkonton, i fonder eller aktier?"
+      ],
       "existingLessonPagesMayRemain": true
     },
     {
@@ -559,17 +601,21 @@
       "topic": "Stat, regioner och kommuner har olika ansvar",
       "objective": "Förstå huvuddragen i stat, regioner och kommuner har olika ansvar",
       "previousApprovedFactCount": 2,
-      "newApprovedFactCount": 0,
-      "finalApprovedFactCount": 2,
-      "remainingUncoveredSourceConcepts": 11,
-      "maximumSafelySupportableLessonPages": 3,
+      "newApprovedFactCount": 3,
+      "finalApprovedFactCount": 5,
+      "remainingUncoveredSourceConcepts": 9,
+      "maximumSafelySupportableLessonPages": 6,
       "estimatedUsefulReadingTimeMinutes": [
-        1.2,
-        1.9
+        2.4,
+        3.9
       ],
-      "sufficiency": "LIMITED_BUT_USABLE",
-      "potentialNewPages": 0,
-      "proposedLearnerQuestions": [],
+      "sufficiency": "READY_FOR_DEEPER_LESSON",
+      "potentialNewPages": 2,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att det finns även privata vårdgivare som finansieras med skattemedel?",
+        "Hur skulle du förklara att enligt svensk lag ska kommuner erbjuda äldre stöd och hjälp?",
+        "Hur skulle du förklara att staten finansierar också högre utbildning och forskning inom högskolor och universitet?"
+      ],
       "existingLessonPagesMayRemain": true
     },
     {
@@ -577,17 +623,21 @@
       "topic": "Från jordbrukssamhälle till industrisamhälle",
       "objective": "Förstå huvuddragen i från jordbrukssamhälle till industrisamhälle",
       "previousApprovedFactCount": 3,
-      "newApprovedFactCount": 0,
-      "finalApprovedFactCount": 3,
-      "remainingUncoveredSourceConcepts": 3,
-      "maximumSafelySupportableLessonPages": 4,
+      "newApprovedFactCount": 3,
+      "finalApprovedFactCount": 6,
+      "remainingUncoveredSourceConcepts": 0,
+      "maximumSafelySupportableLessonPages": 6,
       "estimatedUsefulReadingTimeMinutes": [
-        1.6,
-        2.6
+        2.4,
+        3.9
       ],
-      "sufficiency": "LIMITED_BUT_USABLE",
-      "potentialNewPages": 0,
-      "proposedLearnerQuestions": [],
+      "sufficiency": "READY_FOR_DEEPER_LESSON",
+      "potentialNewPages": 2,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att hundra år senare var befolkningen dubbelt så stor?",
+        "Hur skulle du förklara att jämfört med andra länder i Europa var Sverige vid den här tiden ett fattigt land?",
+        "Hur skulle du förklara att orsaken var bättre jordbruksmetoder som gav mer mat och medicinska framsteg som mins- kade risken att barn dog av sjukdomar?"
+      ],
       "existingLessonPagesMayRemain": true
     },
     {
@@ -595,17 +645,23 @@
       "topic": "Sveriges väg till demokrati",
       "objective": "Förstå huvuddragen i sveriges väg till demokrati",
       "previousApprovedFactCount": 2,
-      "newApprovedFactCount": 0,
-      "finalApprovedFactCount": 2,
-      "remainingUncoveredSourceConcepts": 5,
-      "maximumSafelySupportableLessonPages": 3,
+      "newApprovedFactCount": 5,
+      "finalApprovedFactCount": 7,
+      "remainingUncoveredSourceConcepts": 0,
+      "maximumSafelySupportableLessonPages": 6,
       "estimatedUsefulReadingTimeMinutes": [
-        1.2,
-        1.9
+        2.4,
+        3.9
       ],
-      "sufficiency": "LIMITED_BUT_USABLE",
-      "potentialNewPages": 0,
-      "proposedLearnerQuestions": [],
+      "sufficiency": "READY_FOR_DEEPER_LESSON",
+      "potentialNewPages": 2,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att arbetarrörelsen, frikyrkorörelsen, kvinnorörelsen och nykterhetsrörelsen var fyra av de största folkrörelserna i Sverige?",
+        "Hur skulle du förklara att bland männen var det endast de med en viss inkomst eller förmögenhet som fick rösta?",
+        "Hur skulle du förklara att folkrörelserna var en viktig faktor för övergången till verklig demokrati i Sverige?",
+        "Hur skulle du förklara att många av folkrörelserna finns fortfarande kvar?",
+        "Hur skulle du förklara att nykterhetsrörelsen var en tidig folkrörelse som arbetade för att människor skulle sluta dricka alkohol, då spritmissbruket var utbrett på 1800-talet?"
+      ],
       "existingLessonPagesMayRemain": true
     },
     {
@@ -613,17 +669,21 @@
       "topic": "Modernisering och folkhem",
       "objective": "Förstå huvuddragen i modernisering och folkhem",
       "previousApprovedFactCount": 3,
-      "newApprovedFactCount": 0,
-      "finalApprovedFactCount": 3,
-      "remainingUncoveredSourceConcepts": 7,
-      "maximumSafelySupportableLessonPages": 4,
+      "newApprovedFactCount": 3,
+      "finalApprovedFactCount": 6,
+      "remainingUncoveredSourceConcepts": 6,
+      "maximumSafelySupportableLessonPages": 6,
       "estimatedUsefulReadingTimeMinutes": [
-        1.6,
-        2.6
+        2.4,
+        3.9
       ],
-      "sufficiency": "LIMITED_BUT_USABLE",
-      "potentialNewPages": 0,
-      "proposedLearnerQuestions": [],
+      "sufficiency": "READY_FOR_DEEPER_LESSON",
+      "potentialNewPages": 2,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att bostäderna blev långsamt bättre även om många bodde trångt och saknade vattentoaletter?",
+        "Hur skulle du förklara att fler fick tillgång till elektrisk ström?",
+        "Hur skulle du förklara att flera personer dödades i Ådalen 1931 och händelsen skakade om Sverige och visade hur djupa konflikterna var?"
+      ],
       "existingLessonPagesMayRemain": true
     },
     {
@@ -631,17 +691,20 @@
       "topic": "Rekordåren",
       "objective": "Förstå huvuddragen i rekordåren",
       "previousApprovedFactCount": 3,
-      "newApprovedFactCount": 0,
-      "finalApprovedFactCount": 3,
-      "remainingUncoveredSourceConcepts": 5,
-      "maximumSafelySupportableLessonPages": 4,
+      "newApprovedFactCount": 2,
+      "finalApprovedFactCount": 5,
+      "remainingUncoveredSourceConcepts": 3,
+      "maximumSafelySupportableLessonPages": 6,
       "estimatedUsefulReadingTimeMinutes": [
-        1.6,
-        2.6
+        2.4,
+        3.9
       ],
-      "sufficiency": "LIMITED_BUT_USABLE",
-      "potentialNewPages": 0,
-      "proposedLearnerQuestions": [],
+      "sufficiency": "READY_FOR_DEEPER_LESSON",
+      "potentialNewPages": 2,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att ett viktigt mål under rekordåren var att förbättra människors levnadsstandard?",
+        "Hur skulle du förklara att sverige, som under 1800-talet hade varit ett utvandrarland, blev nu ett invandrarland?"
+      ],
       "existingLessonPagesMayRemain": true
     },
     {
@@ -649,17 +712,23 @@
       "topic": "Informationssamhället och globalisering",
       "objective": "Förstå huvuddragen i informationssamhället och globalisering",
       "previousApprovedFactCount": 2,
-      "newApprovedFactCount": 0,
-      "finalApprovedFactCount": 2,
-      "remainingUncoveredSourceConcepts": 9,
-      "maximumSafelySupportableLessonPages": 3,
+      "newApprovedFactCount": 5,
+      "finalApprovedFactCount": 7,
+      "remainingUncoveredSourceConcepts": 4,
+      "maximumSafelySupportableLessonPages": 6,
       "estimatedUsefulReadingTimeMinutes": [
-        1.2,
-        1.9
+        2.4,
+        3.9
       ],
-      "sufficiency": "LIMITED_BUT_USABLE",
-      "potentialNewPages": 0,
-      "proposedLearnerQuestions": [],
+      "sufficiency": "READY_FOR_DEEPER_LESSON",
+      "potentialNewPages": 2,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att behovet av ett livslångt lärande ökade, eftersom kunskap snabbt blev gammal när den tekniska utvecklingen gick allt fortare?",
+        "Hur skulle du förklara att bland annat som en reaktion på krisen fick Sverige 1976 en regering som inte var socialdemokratisk?",
+        "Hur skulle du förklara att den digitala revolutionen var en stor förändring från och med 1990‑talet?",
+        "Hur skulle du förklara att lagarna mot diskriminering blev fler i Sverige under 1980‑talet?",
+        "Hur skulle du förklara att ökad valfrihet blev därför en allt viktigare politisk fråga?"
+      ],
       "existingLessonPagesMayRemain": true
     },
     {
@@ -667,17 +736,19 @@
       "topic": "Nordiskt och europeiskt samarbete",
       "objective": "Förstå huvuddragen i nordiskt och europeiskt samarbete",
       "previousApprovedFactCount": 3,
-      "newApprovedFactCount": 0,
-      "finalApprovedFactCount": 3,
-      "remainingUncoveredSourceConcepts": 3,
-      "maximumSafelySupportableLessonPages": 4,
+      "newApprovedFactCount": 1,
+      "finalApprovedFactCount": 4,
+      "remainingUncoveredSourceConcepts": 2,
+      "maximumSafelySupportableLessonPages": 5,
       "estimatedUsefulReadingTimeMinutes": [
-        1.6,
-        2.6
+        2.0,
+        3.2
       ],
-      "sufficiency": "LIMITED_BUT_USABLE",
-      "potentialNewPages": 0,
-      "proposedLearnerQuestions": [],
+      "sufficiency": "READY_FOR_DEEPER_LESSON",
+      "potentialNewPages": 1,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att eU (Europeiska unionen) är ett politiskt och ekonomiskt samarbete mellan flera europeiska länder?"
+      ],
       "existingLessonPagesMayRemain": true
     },
     {
@@ -685,17 +756,20 @@
       "topic": "Globalt samarbete",
       "objective": "Förstå huvuddragen i globalt samarbete",
       "previousApprovedFactCount": 3,
-      "newApprovedFactCount": 0,
-      "finalApprovedFactCount": 3,
+      "newApprovedFactCount": 2,
+      "finalApprovedFactCount": 5,
       "remainingUncoveredSourceConcepts": 3,
-      "maximumSafelySupportableLessonPages": 4,
+      "maximumSafelySupportableLessonPages": 6,
       "estimatedUsefulReadingTimeMinutes": [
-        1.6,
-        2.6
+        2.4,
+        3.9
       ],
-      "sufficiency": "LIMITED_BUT_USABLE",
-      "potentialNewPages": 0,
-      "proposedLearnerQuestions": [],
+      "sufficiency": "READY_FOR_DEEPER_LESSON",
+      "potentialNewPages": 2,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att fN grundades 1946 efter andra världskriget?",
+        "Hur skulle du förklara att nästan alla världens länder är med i FN?"
+      ],
       "existingLessonPagesMayRemain": true
     },
     {
@@ -703,17 +777,22 @@
       "topic": "Försvars- och säkerhetspolitik",
       "objective": "Förstå huvuddragen i försvars- och säkerhetspolitik",
       "previousApprovedFactCount": 2,
-      "newApprovedFactCount": 0,
-      "finalApprovedFactCount": 2,
-      "remainingUncoveredSourceConcepts": 13,
-      "maximumSafelySupportableLessonPages": 3,
+      "newApprovedFactCount": 4,
+      "finalApprovedFactCount": 6,
+      "remainingUncoveredSourceConcepts": 9,
+      "maximumSafelySupportableLessonPages": 6,
       "estimatedUsefulReadingTimeMinutes": [
-        1.2,
-        1.9
+        2.4,
+        3.9
       ],
-      "sufficiency": "LIMITED_BUT_USABLE",
-      "potentialNewPages": 0,
-      "proposedLearnerQuestions": [],
+      "sufficiency": "READY_FOR_DEEPER_LESSON",
+      "potentialNewPages": 2,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att 1991 förändrades säkerhetsläget i Europa då Sovjetunionen föll och det kalla kriget var över?",
+        "Hur skulle du förklara att efter dessa händelser har politiken i Sverige varit inriktad på att undvika nya krig?",
+        "Hur skulle du förklara att norge blev en självständig stat på fredlig väg år 1905?",
+        "Hur skulle du förklara att sverige förde senast krig mot en annan stat i början av 1800-talet?"
+      ],
       "existingLessonPagesMayRemain": true
     },
     {
@@ -721,17 +800,24 @@
       "topic": "Religionsfrihet",
       "objective": "Förstå huvuddragen i religionsfrihet",
       "previousApprovedFactCount": 1,
-      "newApprovedFactCount": 0,
-      "finalApprovedFactCount": 1,
-      "remainingUncoveredSourceConcepts": 12,
-      "maximumSafelySupportableLessonPages": 2,
+      "newApprovedFactCount": 6,
+      "finalApprovedFactCount": 7,
+      "remainingUncoveredSourceConcepts": 6,
+      "maximumSafelySupportableLessonPages": 6,
       "estimatedUsefulReadingTimeMinutes": [
-        0.8,
-        1.3
+        2.4,
+        3.9
       ],
-      "sufficiency": "LIMITED_BUT_USABLE",
-      "potentialNewPages": 0,
-      "proposedLearnerQuestions": [],
+      "sufficiency": "READY_FOR_DEEPER_LESSON",
+      "potentialNewPages": 2,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att den protestantiska lutherska kyrkan var länge den enda tillåtna religionen i Sverige?",
+        "Hur skulle du förklara att människor kan fritt välja sin tro eller att inte tro?",
+        "Hur skulle du förklara att religionsfrihet har inte alltid varit en självklarhet?",
+        "Hur skulle du förklara att svenska kyrkan är fortfarande det största kristna samfundet i Sverige?",
+        "Hur skulle du förklara att sverige är en sekulär stat?",
+        "Hur skulle du förklara att år 1860 blev det för svenskar tillåtet att lämna Svenska kyrkan, men bara om de gick med i ett annat kristet samfund?"
+      ],
       "existingLessonPagesMayRemain": true
     },
     {
@@ -739,17 +825,22 @@
       "topic": "Religionens roll",
       "objective": "Förstå huvuddragen i religionens roll",
       "previousApprovedFactCount": 3,
-      "newApprovedFactCount": 0,
-      "finalApprovedFactCount": 3,
-      "remainingUncoveredSourceConcepts": 14,
-      "maximumSafelySupportableLessonPages": 4,
+      "newApprovedFactCount": 4,
+      "finalApprovedFactCount": 7,
+      "remainingUncoveredSourceConcepts": 10,
+      "maximumSafelySupportableLessonPages": 6,
       "estimatedUsefulReadingTimeMinutes": [
-        1.6,
-        2.6
+        2.4,
+        3.9
       ],
-      "sufficiency": "LIMITED_BUT_USABLE",
-      "potentialNewPages": 0,
-      "proposedLearnerQuestions": [],
+      "sufficiency": "READY_FOR_DEEPER_LESSON",
+      "potentialNewPages": 2,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att idag finns så gott som alla världens religioner representerade i Sverige?",
+        "Hur skulle du förklara att kristendom är i dag världens största religion?",
+        "Hur skulle du förklara att på samma vis är religi- ösa ritualer som till exempel dop, bröllop i kyrkan och en kristen begrav- ning fortfarande vanliga, även bland de medlemmar som inte beskriver sig som troende?",
+        "Hur skulle du förklara att religionens roll i samhället har minskat?"
+      ],
       "existingLessonPagesMayRemain": true
     },
     {
@@ -757,17 +848,23 @@
       "topic": "Några traditionella högtider under året",
       "objective": "Förstå huvuddragen i några traditionella högtider under året",
       "previousApprovedFactCount": 2,
-      "newApprovedFactCount": 0,
-      "finalApprovedFactCount": 2,
-      "remainingUncoveredSourceConcepts": 22,
-      "maximumSafelySupportableLessonPages": 3,
+      "newApprovedFactCount": 5,
+      "finalApprovedFactCount": 7,
+      "remainingUncoveredSourceConcepts": 17,
+      "maximumSafelySupportableLessonPages": 6,
       "estimatedUsefulReadingTimeMinutes": [
-        1.2,
-        1.9
+        2.4,
+        3.9
       ],
-      "sufficiency": "LIMITED_BUT_USABLE",
-      "potentialNewPages": 0,
-      "proposedLearnerQuestions": [],
+      "sufficiency": "READY_FOR_DEEPER_LESSON",
+      "potentialNewPages": 2,
+      "proposedLearnerQuestions": [
+        "Hur skulle du förklara att ibland är det också någon som håller ett tal till våren?",
+        "Hur skulle du förklara att många i Sverige uppfattar sådana traditioner som en viktig del av ett svenskt kulturarv även om de inte själva är troende?",
+        "Hur skulle du förklara att på påskafton är det vanligt att äta ägg, lamm, lax och sill?",
+        "Hur skulle du förklara att påsken är en kristen högtid?",
+        "Hur skulle du förklara att under påsken kan barn ibland klä ut sig till påskkärringar?"
+      ],
       "existingLessonPagesMayRemain": true
     }
   ]

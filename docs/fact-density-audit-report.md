@@ -1,34 +1,45 @@
-# Sverige i fokus source-v2 Fact-density audit
+# Sverige i fokus source-v2 Fact-density report
 
-Status: `FACT_DENSITY_PARTIAL`
+Status: `FACT_DENSITY_READY`
 
-The deterministic audit completed for all 38 authoritative source-v2 sections before any provider request. Its immutable ID is `ac32ab62-70eb-513d-be74-31c5ff6e1a1e`. Generation stopped at the configured hourly application limit after 30 requests; the checkpoint is persisted and is safe to resume.
+The immutable audit `ac32ab62-70eb-513d-be74-31c5ff6e1a1e` and all 72 planned batches are complete. Two failed jobs were recovered through new idempotent retry keys; one exact-evidence failure repeated and was deterministically excluded without weakening validation.
 
-## Results
+## Final outcomes
 
-- Starting commit: `7d702d9c5d0cf7815bc447ae2054b80a36961361`
-- Sections audited: 38/38
-- Audit classifications: 26 `SOURCE_STRUCTURALLY_COMPLEX`, 9 `UNDERUTILIZED_THREE_OR_MORE_FACTS`, 2 `UNDERUTILIZED_ONE_FACT`, 1 `UNDERUTILIZED_TWO_FACTS`
-- Missing teaching concepts identified: 179 safe candidate slots
-- Existing approved Facts preserved: 85/85
-- Provider proposals produced so far: 69
-- Newly approved Facts: 49
-- Pending Content validation: 2
-- Preserved non-approved proposals: 15 `NEEDS_SPLIT`, 3 `DUPLICATE`
-- Approved Fact total: 85 → 134
-- Evidence-span utilization: 10.03% → 15.44%
-- Lesson sufficiency: 14 `READY_FOR_DEEPER_LESSON`, 24 `LIMITED_BUT_USABLE`, 0 proven `SOURCE_EXPANSION_REQUIRED` at this partial checkpoint
-- Preview: up to 26 useful additional pages, projected 8,742–9,652 words and 62.4–68.9 minutes at 140 Swedish words/minute
+- Starting approved Facts: 85
+- Final approved Facts: 209
+- Planned teaching concepts processed: 179/179
+- New approved Facts: 124
+- Duplicate: 6
+- Non-atomic, too broad, or invalid declarative form: 39
+- Unsupported or outside the exact bounded-source evidence: 10
+- Existing approved Facts modified: 0
+- Provider proposals retained: 170
+- Evidence-span utilization: 10.03% → 22.97%
+- Topic sufficiency: 33 `READY_FOR_DEEPER_LESSON`, 5 `LIMITED_BUT_USABLE`, 0 proven `SOURCE_EXPANSION_REQUIRED`
 
-The full section inventory is in `content/sverige-i-fokus/fact-density-audit-v1.json`. Per-Topic before/after counts, page ceilings, Fact-derived learner questions, and reading-time projections are in `content/sverige-i-fokus/fact-density-impact-preview-v1.json`.
+The 39 non-atomic outcomes comprise 32 `NEEDS_SPLIT`, one `TOO_BROAD`, and six proposals stopped by Content text validation. The ten source-boundary outcomes comprise one automated `UNSUPPORTED`, eight structured candidates rejected for non-exact evidence, and one batch excluded after two evidence-boundary failures. Nothing was automatically rewritten.
+
+The full section inventory is in `content/sverige-i-fokus/fact-density-audit-v1.json`. Per-Topic before/after counts, Fact-derived learner questions, page ceilings, and reading-time projections are in `content/sverige-i-fokus/fact-density-impact-preview-v1.json`.
+
+## Lesson-readiness preview
+
+- Topics safely supporting 5–6 pages: 33
+- Topics safely supporting 4 pages: 5
+- Potential additional pages over the four-page baseline: 61
+- Projected corpus size: 10,667–12,802 words
+- Projected reading time: 76.2–91.4 minutes at 140 Swedish words/minute
+- Decision: deeper Lesson regeneration is justified, but it was not started by this task
 
 ## Provider and budget accounting
 
-- Groq FREE: 4 succeeded, 17 failed; 4,948 prompt and 2,721 completion tokens on successful attempts
+- Groq FREE (`openai/gpt-oss-120b`): 16 succeeded, 35 failed; 19,707 prompt and 12,339 completion tokens on successful attempts
 - OpenRouter FREE (`google/gemma-4-26b-a4b-it:free`): 21 succeeded; 28,356 prompt and 2,874 completion tokens
-- OpenRouter PAID (`openai/gpt-oss-120b`): 5 succeeded; 5,787 prompt, 3,059 completion, and 2,234 reasoning tokens
-- Paid spend attributable to this run: $0.00104474
-- Application budget state after the run: $14.00 configured, $0.05889758 spent corpus-wide, $0 reserved, $0.03236664 conservatively unknown, $13.90873578 available
+- OpenRouter PAID (`openai/gpt-oss-120b`): 37 succeeded; 46,619 prompt, 26,736 completion, and 21,231 reasoning tokens
+- Paid spend attributable to the complete expansion: $0.00864577
+- Application budget after completion: $14.00 configured, $0.06649861 spent corpus-wide, $0 reserved, $0.03236664 conservatively unknown, $13.90113475 available
+
+Paid fallback remained application-budgeted. Execution was sequential. Provider hard deadlines and recovery were preserved. The temporary local request ceiling used to finish the recoverable backlog was restored to the default 30 requests/hour.
 
 ## Preservation
 
@@ -36,13 +47,12 @@ No Lesson, Question, Mock Exam, release, projection, or learner-state mutation w
 
 ## Validation
 
-- Focused Python audit/generation/report/corpus tests: 28 passed
-- Migration v32 applied successfully and its focused integration test passed
-- Compose configuration: valid
-- `git diff --check`: passed
-- Full `./gradlew test --no-daemon`: assertions passed through AI and Content suites, then was bounded during the known Testcontainers/scheduled-worker shutdown hang
-- `./gradlew build --no-daemon`: deferred at this partial checkpoint because it executes the same hanging test lifecycle
+- Focused audit, generation, report, approval, and corpus tests: passed
+- Migration v32 integration test: passed
+- Compose validation: passed
+- JSON validation and `git diff --check`: passed
+- Gradle build reached the known Content/Testcontainers shutdown hang and was stopped by the configured five-minute bound; no assertion failure preceded the bound
 
-## Resume
+## Next action
 
-Resume the same audit at `Olika slags medier`, batch 1, using the persisted idempotency key in `fact-density-generation-v1.json` after the hourly limit resets. Do not recreate the audit or regenerate completed jobs. Then approve only `GOOD` proposals, regenerate the deterministic impact preview, run the bounded verification suite, and make the final readiness decision.
+Begin a separate reviewed Lesson-regeneration task from the immutable 209-Fact corpus. Use the Topic-specific page ceilings in the impact preview, retain shorter four-page Lessons for the five `LIMITED_BUT_USABLE` Topics, and do not create or activate a release until Lesson validation completes.
