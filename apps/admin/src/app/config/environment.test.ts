@@ -8,8 +8,17 @@ describe('environment configuration', () => {
   it('derives Content Service and OIDC routes from the public gateway', () => {
     expect(readEnvironment({ VITE_DEFAULT_APP_ENV:'HOSTED', VITE_API_BASE_URL: 'https://api.example.test/' })).toMatchObject({
       contentServiceBaseUrl: 'https://api.example.test/content',
+      aiServiceBaseUrl: 'https://api.example.test/content/api/v1/admin/ai',
+      learningServiceBaseUrl: 'https://api.example.test/content/api/v1/admin/reports',
       oidcAuthority: 'https://api.example.test/auth/realms/exam-platform',
+      requiredScopes: ['openid', 'profile', 'email'],
     });
+  });
+
+  it('selects capability-specific hosted endpoints without changing local endpoints', () => {
+    const source={VITE_DEFAULT_APP_ENV:'LOCAL',VITE_ENABLE_ENVIRONMENT_SWITCHER:'true',VITE_LOCAL_API_BASE_URL:'http://local.test',VITE_HOSTED_API_BASE_URL:'https://hosted.test',VITE_LOCAL_CONTENT_API_BASE_URL:'http://local.test/content',VITE_HOSTED_CONTENT_API_BASE_URL:'https://hosted.test/content',VITE_HOSTED_AI_API_BASE_URL:'https://hosted.test/content/api/v1/admin/ai',VITE_HOSTED_LEARNING_API_BASE_URL:'https://hosted.test/content/api/v1/admin/reports'};
+    expect(readEnvironment(source)).toMatchObject({appEnvironment:'LOCAL',contentServiceBaseUrl:'http://local.test/content'});
+    expect(readEnvironment(source,'HOSTED')).toMatchObject({appEnvironment:'HOSTED',contentServiceBaseUrl:'https://hosted.test/content',aiServiceBaseUrl:'https://hosted.test/content/api/v1/admin/ai',learningServiceBaseUrl:'https://hosted.test/content/api/v1/admin/reports'});
   });
 
   it('rejects localhost in production', () => {

@@ -7,6 +7,9 @@ export interface AdminEnvironment {
   warning?: string;
   environmentSwitcherEnabled: boolean;
   contentServiceBaseUrl?: string;
+  aiServiceBaseUrl: string;
+  learningServiceBaseUrl: string;
+  gatewayBaseUrl: string;
   developmentAuthEnabled: boolean;
   developmentAdminId?: string;
   developmentAdminName?: string;
@@ -16,6 +19,7 @@ export interface AdminEnvironment {
   developmentReviewerRoles: string[];
   oidcAuthority: string;
   oidcClientId: string;
+  requiredScopes: string[];
 }
 
 function value(source: Record<string, string | boolean | undefined>, key: string): string {
@@ -48,7 +52,12 @@ export function readEnvironment(
     ? value(source, 'VITE_LOCAL_OIDC_ISSUER') || value(source, 'VITE_OIDC_AUTHORITY')
     : value(source, 'VITE_HOSTED_OIDC_ISSUER');
   const oidcAuthority = explicitIssuer || `${gateway}/auth/realms/exam-platform`;
-  for (const url of [contentServiceBaseUrl, oidcAuthority]) {
+  const contentApiBaseUrl=value(source, appEnvironment === 'LOCAL' ? 'VITE_LOCAL_CONTENT_API_BASE_URL' : 'VITE_HOSTED_CONTENT_API_BASE_URL') || contentServiceBaseUrl;
+  // AI and Learning administration remain behind the Content Service BFF. These
+  // URLs describe the browser-reachable capability routes, never private service URLs.
+  const aiServiceBaseUrl=value(source, appEnvironment === 'LOCAL' ? 'VITE_LOCAL_AI_API_BASE_URL' : 'VITE_HOSTED_AI_API_BASE_URL') || `${contentApiBaseUrl}/api/v1/admin/ai`;
+  const learningServiceBaseUrl=value(source, appEnvironment === 'LOCAL' ? 'VITE_LOCAL_LEARNING_API_BASE_URL' : 'VITE_HOSTED_LEARNING_API_BASE_URL') || `${contentApiBaseUrl}/api/v1/admin/reports`;
+  for (const url of [contentApiBaseUrl, aiServiceBaseUrl, learningServiceBaseUrl, oidcAuthority]) {
     try {
       const parsed = new URL(url);
       if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error();
@@ -68,7 +77,10 @@ export function readEnvironment(
     displayLabel: appEnvironment === 'LOCAL' ? 'Local' : 'Hosted',
     warning: appEnvironment === 'HOSTED' && gateway.startsWith('http://') ? 'Hosted testing — insecure HTTP' : undefined,
     environmentSwitcherEnabled: switcherEnabled,
-    contentServiceBaseUrl,
+    gatewayBaseUrl: gateway,
+    contentServiceBaseUrl: contentApiBaseUrl,
+    aiServiceBaseUrl,
+    learningServiceBaseUrl,
     developmentAuthEnabled: enabled,
     developmentAdminId: typeof source.VITE_DEV_ADMIN_ID === 'string' ? source.VITE_DEV_ADMIN_ID : undefined,
     developmentAdminName: typeof source.VITE_DEV_ADMIN_NAME === 'string' ? source.VITE_DEV_ADMIN_NAME : undefined,
@@ -78,6 +90,7 @@ export function readEnvironment(
     developmentReviewerRoles: reviewerRoles,
     oidcAuthority,
     oidcClientId: value(source, 'VITE_OIDC_CLIENT_ID') || 'admin-portal',
+    requiredScopes: (value(source,'VITE_OIDC_SCOPES') || 'openid profile email').split(/\s+/).filter(Boolean),
   };
 }
 

@@ -7,7 +7,7 @@ export const userManager = new UserManager({
   client_id: environment.oidcClientId,
   redirect_uri: `${window.location.origin}/auth/callback`,
   post_logout_redirect_uri: `${window.location.origin}/login`,
-  response_type: 'code', scope: 'openid profile email',
+  response_type: 'code', scope: environment.requiredScopes.join(' '),
   automaticSilentRenew: true,
   userStore: new WebStorageStateStore({ store: sessionStorage, prefix: `oidc.${environment.appEnvironment}.` }),
 });
@@ -39,3 +39,7 @@ function accessTokenRealmAccess(token: string): { roles?: string[] } | undefined
 let currentUser:User|undefined;
 export function setOidcUser(user?:User){currentUser=user;}
 export function currentAccessToken(){return currentUser&&!currentUser.expired?currentUser.access_token:undefined;}
+export function currentOidcSummary(){
+  if(!currentUser||currentUser.expired)return null;
+  return {subject:currentUser.profile.sub,username:String(currentUser.profile.preferred_username??currentUser.profile.name??currentUser.profile.sub),scopes:currentUser.scopes};
+}

@@ -290,6 +290,12 @@ button.secondary,
   color: var(--danger);
   max-width: 9rem;
 }
+.environment-diagnostics { position: relative; font-size: .78rem; }
+.environment-diagnostics > summary { cursor: pointer; color: var(--color-text-secondary); white-space: nowrap; }
+.environment-diagnostics[open] { position: absolute; z-index: 20; top: 3.7rem; right: 1rem; width: min(46rem, calc(100vw - 2rem)); padding: 1rem; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: .75rem; box-shadow: 0 1rem 2rem rgb(15 23 42 / 18%); }
+.diagnostics-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .65rem 1rem; margin-top: .75rem; }
+.diagnostics-grid div { min-width: 0; }
+.diagnostics-grid small,.diagnostics-grid strong { display: block; overflow-wrap: anywhere; }
 .mobile-menu,
 .mobile-close {
   display: none;
