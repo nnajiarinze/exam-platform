@@ -301,7 +301,14 @@ def plan(source:Path,target:Path,output:Path)->dict[str,Any]:
                 if existing is None: counts["INSERT"]+=1
                 elif canonical_json(existing)==canonical_json(row): counts["REUSE_IDENTICAL"]+=1
                 elif table in STRUCTURAL_REUSE.get(role,set()) and canonical_json(structural_identity(existing))==canonical_json(structural_identity(row)): counts["REUSE_CANONICAL"]+=1
-                else: counts["CONFLICT_IMMUTABLE"]+=1; conflicts.append({"database":role,"table":table,"key":record_key(row,pk)})
+                else:
+                    counts["CONFLICT_IMMUTABLE"]+=1
+                    different_fields=sorted(key for key in set(row)|set(existing) if row.get(key)!=existing.get(key))
+                    conflicts.append({
+                        "database":role,"table":table,"key":record_key(row,pk),"differentFields":different_fields,
+                        "sourceFieldChecksums":{key:hashlib.sha256(canonical_json(row.get(key)).encode()).hexdigest() for key in different_fields},
+                        "targetFieldChecksums":{key:hashlib.sha256(canonical_json(existing.get(key)).encode()).hexdigest() for key in different_fields},
+                    })
                 rule=RUNTIME_RULES.get(table)
                 if rule:
                     field="status" if "status" in rule else "lifecycle_state" if "lifecycle_state" in rule else "reservation_state"
