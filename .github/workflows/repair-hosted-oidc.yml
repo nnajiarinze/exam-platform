@@ -91,7 +91,12 @@ jobs:
             echo 'Hosted deployment smoke failed; collecting non-secret reachability evidence.' >&2
             curl --fail --silent --show-error --resolve "${public_domain}:443:127.0.0.1" \
               "https://${public_domain}/healthz" >/dev/null && echo 'Gateway TLS is reachable on host loopback.'
-            sudo /usr/local/sbin/citizenship-inspect-firewall
+            "${compose[@]}" ps api-gateway
+            "${compose[@]}" logs --tail 80 api-gateway
+            ss -lnt | grep -E ':(80|443)[[:space:]]' || true
+            timeout 5 openssl s_client -connect 127.0.0.1:443 -servername "${public_domain}" -brief </dev/null || true
+            sudo -n /usr/local/sbin/citizenship-inspect-firewall || \
+              echo 'Host firewall inspection privilege is not installed for the deployment identity.' >&2
             exit 1
           fi
           gateway_stopped=false
