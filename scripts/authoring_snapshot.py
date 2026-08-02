@@ -284,6 +284,13 @@ def runtime_normalized_row(role:str,table:str,row:dict[str,Any])->dict[str,Any]:
     if field and result.get(field) in rule[field]: result[field]=rule.get("futureStatus") or rule.get("futureState")
     return result
 
+def import_insert_statement(role:str,table:str,table_schema:dict[str,Any])->str:
+    excluded=EPHEMERAL_FIELDS.get(role,{}).get(table,set())
+    columns=[column["name"] for column in table_schema["columns"] if column["name"] not in excluded]
+    column_sql=",".join(quote_ident(column) for column in columns)
+    value_sql=",".join(f"(jsonb_populate_record(NULL::public.{quote_ident(table)},raw::jsonb)).{quote_ident(column)}" for column in columns)
+    return f"INSERT INTO public.{quote_ident(table)} ({column_sql}) SELECT {value_sql} FROM _authoring_import_json ON CONFLICT DO NOTHING;"
+
 def import_role(snapshot:Path,role:str)->dict[str,Any]:
     manifest=verify_snapshot(snapshot); schema=json.loads((snapshot/role/"schema.json").read_text())
     if manifest["migrations"].get(role)!=EXPECTED_MIGRATIONS[role]: raise SystemExit(f"{role} snapshot migration mismatch")
@@ -295,7 +302,8 @@ def import_role(snapshot:Path,role:str)->dict[str,Any]:
         normalized=snapshot/role/"import"/f"{table}.ndjson"; normalized.parent.mkdir(exist_ok=True)
         normalized.write_text("".join(canonical_json(row)+"\n" for row in rows)); os.chmod(normalized,0o600)
         safe_path=str(normalized).replace("'","''")
-        statements += ["TRUNCATE _authoring_import_json;",f"\\copy _authoring_import_json(raw) FROM '{safe_path}' WITH (FORMAT csv, DELIMITER E'\\x02', QUOTE E'\\x01')",f"INSERT INTO public.{quote_ident(table)} SELECT (jsonb_populate_record(NULL::public.{quote_ident(table)},raw::jsonb)).* FROM _authoring_import_json ON CONFLICT DO NOTHING;"]
+        table_schema=next(item for item in schema["tables"] if item["table"]==table)
+        statements += ["TRUNCATE _authoring_import_json;",f"\\copy _authoring_import_json(raw) FROM '{safe_path}' WITH (FORMAT csv, DELIMITER E'\\x02', QUOTE E'\\x01')",import_insert_statement(role,table,table_schema)]
     statements.append("COMMIT;"); output=psql(role,"\n".join(statements)+"\n")
     inserted=sum(map(int,re.findall(r"INSERT 0 (\d+)",output))); result={"role":role,"snapshotRows":expected,"inserted":inserted,"reused":expected-inserted}
     print(canonical_json({"event":"snapshot_role_imported",**result})); return result

@@ -110,6 +110,8 @@ learning_before="$(learning_state)"
 
 work="$(mktemp -d /tmp/authoring-dry-run.XXXXXX)"; chmod 700 "${work}"
 ROLLBACK_REQUIRED=false
+CONTENT_COMMITTED=false
+AI_COMMITTED=false
 # shellcheck disable=SC2329 # Invoked by the EXIT trap.
 cleanup(){
   if [[ "${ROLLBACK_REQUIRED}" == true ]]; then
@@ -162,22 +164,34 @@ set -e
 
 if [[ "${MODE}" == IMPORT ]]; then
   restore_authoring() {
-    local prefix username_var password_var url_var backup_var
+    local prefix username_var password_var url_var backup_var extensions
     for prefix in CONTENT AI; do
       username_var="${prefix}_USERNAME"; password_var="${prefix}_PASSWORD"; url_var="${prefix}_MIGRATION_URL"; backup_var="${prefix}_BACKUP"
-      PGPASSWORD="${!password_var}" "${PG_RESTORE}" --clean --if-exists --exit-on-error --no-owner --no-acl --username="${!username_var}" --dbname="${!url_var}" "${!backup_var}"
+      extensions="$(PGPASSWORD="${!password_var}" "${PSQL}" -XAt -v ON_ERROR_STOP=1 --username="${!username_var}" --dbname="${!url_var}" --command="SELECT extname FROM pg_extension e JOIN pg_namespace n ON n.oid=e.extnamespace WHERE n.nspname='public' ORDER BY extname")"
+      [[ -z "${extensions}" || "${extensions}" == pgcrypto ]] || die "Recovery rejected unexpected extension in ${prefix,,}/public"
+      PGPASSWORD="${!password_var}" "${PSQL}" -X -v ON_ERROR_STOP=1 --username="${!username_var}" --dbname="${!url_var}" --command="DROP EXTENSION IF EXISTS pgcrypto CASCADE; DROP SCHEMA IF EXISTS public CASCADE;"
+      PGPASSWORD="${!password_var}" "${PG_RESTORE}" --exit-on-error --no-owner --no-acl --username="${!username_var}" --dbname="${!url_var}" "${!backup_var}"
+      if [[ "${extensions}" == pgcrypto ]]; then
+        PGPASSWORD="${!password_var}" "${PSQL}" -X -v ON_ERROR_STOP=1 --username="${!username_var}" --dbname="${!url_var}" --command="CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public;"
+      fi
     done
   }
   compose stop content-service ai-service
   ROLLBACK_REQUIRED=true
   set +e
   content_import="$(python3 scripts/authoring_snapshot.py import-role --snapshot "${snapshot}" --role content 2>&1)"; content_status=$?
-  if [[ "${content_status}" -eq 0 ]]; then ai_import="$(python3 scripts/authoring_snapshot.py import-role --snapshot "${snapshot}" --role ai 2>&1)"; ai_status=$?; else ai_import=''; ai_status=1; fi
+  if [[ "${content_status}" -eq 0 ]]; then CONTENT_COMMITTED=true; ai_import="$(python3 scripts/authoring_snapshot.py import-role --snapshot "${snapshot}" --role ai 2>&1)"; ai_status=$?; else ai_import=''; ai_status=1; fi
+  if [[ "${ai_status}" -eq 0 ]]; then AI_COMMITTED=true; fi
   set -e
   if [[ "${content_status}" -ne 0 || "${ai_status}" -ne 0 ]]; then
-    if restore_authoring; then ROLLBACK_REQUIRED=false; fi
+    printf 'Sanitized Content import failure: %s\n' "$(tail -n 4 <<<"${content_import}" | sed -E 's#(postgres(ql)?://)[^@[:space:]]+@#\1[REDACTED]@#g')" >&2
+    printf 'Sanitized AI import failure: %s\n' "$(tail -n 4 <<<"${ai_import}" | sed -E 's#(postgres(ql)?://)[^@[:space:]]+@#\1[REDACTED]@#g')" >&2
+    if [[ "${CONTENT_COMMITTED}" == true || "${AI_COMMITTED}" == true ]]; then
+      restore_authoring
+    fi
+    ROLLBACK_REQUIRED=false
     compose up -d content-service ai-service --wait --wait-timeout 240 || true
-    die "Coordinated authoring import failed and recovery restore was attempted"
+    die "Coordinated authoring import failed; committed roles were restored and transactional failures were rolled back"
   fi
   compose up -d content-service ai-service --wait --wait-timeout 240
 fi

@@ -70,6 +70,15 @@ class AuthoringSnapshotTests(unittest.TestCase):
         self.assertTrue(normalized["unknown_exposure"])
         self.assertEqual(row["lifecycle_state"],"RESERVED")
 
+    def test_import_omits_ephemeral_columns_so_database_defaults_apply(self):
+        table={"columns":[{"name":"id"},{"name":"heartbeat_at"},{"name":"lease_expires_at"},{"name":"owner_worker_id"},{"name":"process_instance_id"},{"name":"actual_cost_usd"}]}
+        statement=snapshot.import_insert_statement("ai","ai_paid_request_accounting",table)
+        self.assertIn('("id","actual_cost_usd")',statement)
+        self.assertNotIn('"heartbeat_at"',statement)
+        self.assertNotIn('"lease_expires_at"',statement)
+        self.assertNotIn('"owner_worker_id"',statement)
+        self.assertNotIn('"process_instance_id"',statement)
+
     def test_planner_treats_approved_runtime_normalization_as_idempotent_reuse(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory); source=root/"source"; target=root/"target"; minimal_snapshot(source); minimal_snapshot(target)
