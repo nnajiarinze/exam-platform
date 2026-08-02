@@ -2,6 +2,7 @@ import importlib.util
 import json
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 MODULE=Path(__file__).parents[1]/"authoring_snapshot.py"
@@ -78,6 +79,18 @@ class AuthoringSnapshotTests(unittest.TestCase):
         self.assertNotIn('"lease_expires_at"',statement)
         self.assertNotIn('"owner_worker_id"',statement)
         self.assertNotIn('"process_instance_id"',statement)
+
+    def test_import_defers_cycles_then_restores_foreign_key_mode(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory); minimal_snapshot(root)
+            manifest=json.loads((root/"manifest.json").read_text())
+            manifest["migrations"]={"content":"24","ai":"32"}; manifest["dependencyOrder"]={"content":["entity"],"ai":["entity"]}; rewrite_manifest(root,manifest)
+            with patch.object(snapshot,"psql",return_value="INSERT 0 1\n") as database:
+                snapshot.import_role(root,"content")
+            sql=database.call_args.args[1]
+            self.assertLess(sql.index("DEFERRABLE INITIALLY DEFERRED"),sql.index('INSERT INTO public."entity"'))
+            self.assertLess(sql.index("SET CONSTRAINTS ALL IMMEDIATE"),sql.index("NOT DEFERRABLE"))
+            self.assertLess(sql.index("NOT DEFERRABLE"),sql.index("COMMIT;"))
 
     def test_planner_treats_approved_runtime_normalization_as_idempotent_reuse(self):
         with tempfile.TemporaryDirectory() as directory:

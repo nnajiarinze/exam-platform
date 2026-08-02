@@ -294,7 +294,11 @@ def import_insert_statement(role:str,table:str,table_schema:dict[str,Any])->str:
 def import_role(snapshot:Path,role:str)->dict[str,Any]:
     manifest=verify_snapshot(snapshot); schema=json.loads((snapshot/role/"schema.json").read_text())
     if manifest["migrations"].get(role)!=EXPECTED_MIGRATIONS[role]: raise SystemExit(f"{role} snapshot migration mismatch")
-    known={item["table"] for item in schema["tables"]}; statements=["BEGIN;","SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;","CREATE TEMP TABLE _authoring_import_json(raw text) ON COMMIT DROP;"]; expected=0
+    known={item["table"] for item in schema["tables"]}; statements=[
+        "BEGIN;","SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;",
+        "DO $authoring$ DECLARE r record; BEGIN FOR r IN SELECT n.nspname,c.relname,p.conname FROM pg_constraint p JOIN pg_class c ON c.oid=p.conrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE p.contype='f' AND n.nspname='public' LOOP EXECUTE format('ALTER TABLE %I.%I ALTER CONSTRAINT %I DEFERRABLE INITIALLY DEFERRED',r.nspname,r.relname,r.conname); END LOOP; END $authoring$;",
+        "SET CONSTRAINTS ALL DEFERRED;","CREATE TEMP TABLE _authoring_import_json(raw text) ON COMMIT DROP;"
+    ]; expected=0
     for table in manifest["dependencyOrder"][role]:
         path=snapshot/role/"tables"/f"{table}.ndjson"
         if table not in known or not path.exists(): continue
@@ -304,7 +308,11 @@ def import_role(snapshot:Path,role:str)->dict[str,Any]:
         safe_path=str(normalized).replace("'","''")
         table_schema=next(item for item in schema["tables"] if item["table"]==table)
         statements += ["TRUNCATE _authoring_import_json;",f"\\copy _authoring_import_json(raw) FROM '{safe_path}' WITH (FORMAT csv, DELIMITER E'\\x02', QUOTE E'\\x01')",import_insert_statement(role,table,table_schema)]
-    statements.append("COMMIT;"); output=psql(role,"\n".join(statements)+"\n")
+    statements += [
+        "SET CONSTRAINTS ALL IMMEDIATE;",
+        "DO $authoring$ DECLARE r record; BEGIN FOR r IN SELECT n.nspname,c.relname,p.conname FROM pg_constraint p JOIN pg_class c ON c.oid=p.conrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE p.contype='f' AND n.nspname='public' LOOP EXECUTE format('ALTER TABLE %I.%I ALTER CONSTRAINT %I NOT DEFERRABLE',r.nspname,r.relname,r.conname); END LOOP; END $authoring$;",
+        "COMMIT;"
+    ]; output=psql(role,"\n".join(statements)+"\n")
     inserted=sum(map(int,re.findall(r"INSERT 0 (\d+)",output))); result={"role":role,"snapshotRows":expected,"inserted":inserted,"reused":expected-inserted}
     print(canonical_json({"event":"snapshot_role_imported",**result})); return result
 
