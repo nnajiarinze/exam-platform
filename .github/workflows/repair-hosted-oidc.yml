@@ -60,7 +60,16 @@ jobs:
           git fetch --quiet origin "${commit_sha}"
           git checkout --detach "${commit_sha}"
           tls_email="$(sed -n 's/^TLS_EMAIL=//p' "${env_file}" | tail -1)"
-          API_DOMAIN="${public_domain}" TLS_EMAIL="${tls_email}" ./infrastructure/hetzner/provision-tls.sh
+          release_env="${root}/.release.env"
+          compose=(docker compose --env-file "${env_file}" --env-file "${release_env}" -f docker-compose.hosted.yml)
+          gateway_stopped=false
+          recover_gateway() {
+            if [[ "${gateway_stopped}" == true ]]; then "${compose[@]}" up -d api-gateway >/dev/null 2>&1 || true; fi
+          }
+          trap recover_gateway EXIT
+          "${compose[@]}" stop api-gateway
+          gateway_stopped=true
+          API_DOMAIN="${public_domain}" TLS_EMAIL="${tls_email}" TLS_AUTHENTICATOR=standalone ./infrastructure/hetzner/provision-tls.sh
           update_env() {
             local key="$1" value="$2" temporary
             temporary="$(mktemp "${env_file}.XXXXXX")"
@@ -79,6 +88,7 @@ jobs:
           update_env KEYCLOAK_SECURITY_MODE HTTPS_HOSTED
           update_env CORS_ALLOWED_ORIGINS "https://${public_domain}"
           ./infrastructure/hetzner/deploy.sh "${image_sha}"
+          gateway_stopped=false
           REMOTE
       - name: Validate external OIDC metadata and Admin security headers
         env:
