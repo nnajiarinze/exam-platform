@@ -15,6 +15,8 @@ fi
 grep -q 'emailTheme=svea-study' "${harden}"
 grep -q 'defaultLocale=sv' "${harden}"
 grep -q 'starttls' "${harden}"
+grep -q 'smtp.login("resend"' "${harden}"
+grep -q 'lastSmtpTestAt' "${harden}"
 grep -q 'no-reply@tinkona.com' "${root}/.github/workflows/deploy-hosted-auth.yml"
 grep -q 'support@tinkona.com' "${root}/.github/workflows/deploy-hosted-auth.yml"
 grep -q 'Verifiera din e-post' "${theme}/messages/messages_sv.properties"

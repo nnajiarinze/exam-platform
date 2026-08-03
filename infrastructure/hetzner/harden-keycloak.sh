@@ -7,6 +7,7 @@ load_platform_paths
 require_command docker
 require_command jq
 require_command curl
+require_command python3
 
 mode="${KEYCLOAK_SECURITY_MODE:-$(env_file_value KEYCLOAK_SECURITY_MODE "${PLATFORM_ENV_FILE}")}"
 mode="${mode:-BOOTSTRAP_HTTP}"
@@ -222,14 +223,37 @@ if [[ "${smtp_host}" == smtp.resend.com && "${smtp_port:-587}" == 587 && "${smtp
   kcadm update realms/exam-platform -s "smtpServer=${smtp_json}" >/dev/null
   resend_domains="$(printf 'header = "Authorization: Bearer %s"\nheader = "User-Agent: SveaStudy-Keycloak-Provisioning/1.0"\n' "${smtp_password}" | curl --config - --fail --silent --show-error --max-time 15 https://api.resend.com/domains 2>/dev/null || printf '{"data":[]}')"
   resend_domain="$(jq -c '[.data[]? | select(.name=="tinkona.com")][0] // {}' <<<"${resend_domains}")"
+  resend_domain_id="$(jq -r '.id // empty' <<<"${resend_domain}")"
+  if [[ -n "${resend_domain_id}" ]]; then
+    resend_domain="$(printf 'header = "Authorization: Bearer %s"\nheader = "User-Agent: SveaStudy-Keycloak-Provisioning/1.0"\n' "${smtp_password}" | curl --config - --fail --silent --show-error --max-time 15 "https://api.resend.com/domains/${resend_domain_id}" 2>/dev/null || printf '{}')"
+  fi
   resend_domain_status="$(jq -r '.status // "unknown"' <<<"${resend_domain}")"
   resend_spf_status="$(jq -r '[.records[]? | select((.record // .type // "")|ascii_downcase|contains("spf")) | .status][0] // "unknown"' <<<"${resend_domain}")"
   resend_dkim_status="$(jq -r '[.records[]? | select((.record // .type // "")|ascii_downcase|contains("dkim")) | .status][0] // "unknown"' <<<"${resend_domain}")"
   email_dmarc_status="${KEYCLOAK_EMAIL_DMARC_STATUS:-$(env_file_value KEYCLOAK_EMAIL_DMARC_STATUS "${PLATFORM_ENV_FILE}")}"
-  realm_attributes="$(kcadm get realms/exam-platform | jq -c --arg domain "${resend_domain_status}" --arg spf "${resend_spf_status}" --arg dkim "${resend_dkim_status}" --arg dmarc "${email_dmarc_status:-present}" '(.attributes // {}) + {resendDomainStatus:$domain,resendSpfStatus:$spf,resendDkimStatus:$dkim,emailDmarcStatus:$dmarc}')"
+  if ! SMTP_PASSWORD="${smtp_password}" python3 - <<'PY'
+import os
+import smtplib
+import ssl
+
+try:
+    smtp = smtplib.SMTP("smtp.resend.com", 587, timeout=15)
+    smtp.ehlo()
+    smtp.starttls(context=ssl.create_default_context())
+    smtp.ehlo()
+    smtp.login("resend", os.environ["SMTP_PASSWORD"])
+    smtp.quit()
+except Exception:
+    raise SystemExit(1)
+PY
+  then
+    die "Resend SMTP STARTTLS authentication failed"
+  fi
+  smtp_test_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+  realm_attributes="$(kcadm get realms/exam-platform | jq -c --arg domain "${resend_domain_status}" --arg spf "${resend_spf_status}" --arg dkim "${resend_dkim_status}" --arg dmarc "${email_dmarc_status:-present}" --arg smtpTestAt "${smtp_test_at}" '(.attributes // {}) + {resendDomainStatus:$domain,resendSpfStatus:$spf,resendDkimStatus:$dkim,emailDmarcStatus:$dmarc,lastSmtpTestAt:$smtpTestAt}')"
   kcadm update realms/exam-platform -s "attributes=${realm_attributes}" >/dev/null
   smtp_configured=true
-  unset smtp_password smtp_json
+  unset smtp_password smtp_json smtp_test_at resend_domains resend_domain resend_domain_id
 fi
 if [[ "${mode}" == HTTPS_HOSTED && "${smtp_configured}" != true ]]; then
   die "Hosted Resend SMTP configuration is incomplete"
