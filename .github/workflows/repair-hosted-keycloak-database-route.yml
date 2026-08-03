@@ -53,13 +53,17 @@ jobs:
           value = os.environ["KEYCLOAK_DATABASE_URL"]
           prefix = "jdbc:" if value.startswith("jdbc:") else ""
           parsed = urlsplit(value.removeprefix("jdbc:"))
+          if parsed.username or not parsed.hostname:
+              raise SystemExit("Unexpected hosted identity JDBC authority")
+          hostname = parsed.hostname.replace("-pooler.", ".", 1)
+          netloc = hostname + ((":" + str(parsed.port)) if parsed.port else "")
           query = [(key, item) for key, item in parse_qsl(parsed.query, keep_blank_values=True)
                    if key.lower().replace("_", "") != "targetservertype"]
-          query.append(("targetServerType", "any"))
-          print(prefix + urlunsplit((parsed.scheme, parsed.netloc, parsed.path, urlencode(query), parsed.fragment)))
+          query.append(("targetServerType", "primary"))
+          print(prefix + urlunsplit((parsed.scheme, netloc, parsed.path, urlencode(query), parsed.fragment)))
           PY
           )"
-          [[ "${normalized_url}" == *targetServerType=any* ]]
+          [[ "${normalized_url}" == *targetServerType=primary* ]]
           temporary="$(mktemp "${env_file}.XXXXXX")"
           awk -F= -v value="${normalized_url}" '
             BEGIN { replaced=0 }
@@ -70,7 +74,7 @@ jobs:
           chmod "$(stat -c '%a' "${env_file}")" "${temporary}"
           mv "${temporary}" "${env_file}"
           docker compose --env-file "${env_file}" --env-file "${release_env}" -f docker-compose.hosted.yml \
-            up -d --no-deps --wait --wait-timeout 90 keycloak
+            up -d --no-deps --wait --wait-timeout 180 keycloak
           docker inspect --format '{{.State.Health.Status}}' citizenship-platform-keycloak-1 | grep -qx healthy
           REMOTE
       - name: Validate restored sslip.io issuer
