@@ -45,10 +45,20 @@ class SverigeIFokusCorpusTest(unittest.TestCase):
         self.assertNotIn("Välfärdssamhället", section["normalizedText"])
 
     def test_exactly_twelve_v2_sections_change_content(self):
-        old = json.loads(subprocess.run(
-            ["git", "show", "HEAD:content/sverige-i-fokus/source-sections.json"],
+        history = subprocess.run(
+            ["git", "log", "--format=%H", "--", "content/sverige-i-fokus/source-sections.json"],
             cwd=ROOT, check=True, capture_output=True, text=True,
-        ).stdout)
+        ).stdout.splitlines()
+        old = None
+        for commit in history:
+            candidate = json.loads(subprocess.run(
+                ["git", "show", f"{commit}:content/sverige-i-fokus/source-sections.json"],
+                cwd=ROOT, check=True, capture_output=True, text=True,
+            ).stdout)
+            if candidate and all(item.get("sourceRevisionVersion", 1) == 1 for item in candidate):
+                old = candidate
+                break
+        self.assertIsNotNone(old, "immutable source-v1 section artifact is missing from history")
         new = corpus.extract_sections(ROOT / "docs/sverige-i-fokus.pdf")
         old_by_logical = {item["id"]: item for item in old}
         changed = [item for item in new if item["exactText"] != old_by_logical[item["logicalSectionId"]]["exactText"]]

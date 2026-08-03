@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Svensk Citizenship - Exam Results</title>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+                  "secondary": "#745b00",
+                  "primary": "#02458b",
+                  "inverse-on-surface": "#e9f2fb",
+                  "surface-container-low": "#ecf5fe",
+                  "tertiary": "#444647",
+                  "error-container": "#ffdad6",
+                  "surface": "#f6faff",
+                  "on-error-container": "#93000a",
+                  "primary-fixed-dim": "#aac7ff",
+                  "on-tertiary-container": "#d6d7d8",
+                  "on-error": "#ffffff",
+                  "tertiary-container": "#5b5e5f",
+                  "on-secondary-fixed-variant": "#584400",
+                  "secondary-fixed-dim": "#ebc246",
+                  "outline-variant": "#c3c6d2",
+                  "inverse-surface": "#293138",
+                  "on-primary-container": "#c4d8ff",
+                  "surface-container-highest": "#dbe4ed",
+                  "error": "#ba1a1a",
+                  "on-primary-fixed": "#001b3e",
+                  "on-background": "#141d23",
+                  "surface-dim": "#d2dbe4",
+                  "on-secondary-container": "#735a00",
+                  "surface-variant": "#dbe4ed",
+                  "on-tertiary-fixed-variant": "#454748",
+                  "on-surface-variant": "#424751",
+                  "on-tertiary": "#ffffff",
+                  "on-primary": "#ffffff",
+                  "on-tertiary-fixed": "#191c1d",
+                  "on-secondary-fixed": "#241a00",
+                  "on-surface": "#141d23",
+                  "outline": "#737782",
+                  "surface-container-high": "#e0e9f2",
+                  "background": "#f6faff",
+                  "secondary-fixed": "#ffe08b",
+                  "surface-container-lowest": "#ffffff",
+                  "on-primary-fixed-variant": "#04468c",
+                  "secondary-container": "#fdd355",
+                  "surface-tint": "#2c5ea5",
+                  "primary-fixed": "#d6e3ff",
+                  "tertiary-fixed-dim": "#c5c7c8",
+                  "inverse-primary": "#aac7ff",
+                  "tertiary-fixed": "#e1e3e4",
+                  "surface-bright": "#f6faff",
+                  "primary-container": "#2b5da4",
+                  "on-secondary": "#ffffff",
+                  "surface-container": "#e6eff8"
+          },
+          "borderRadius": {
+                  "DEFAULT": "0.25rem",
+                  "lg": "0.5rem",
+                  "xl": "0.75rem",
+                  "full": "9999px"
+          },
+          "spacing": {
+                  "md": "16px",
+                  "lg": "24px",
+                  "container-max": "1200px",
+                  "xs": "4px",
+                  "unit": "8px",
+                  "xl": "32px",
+                  "3xl": "64px",
+                  "gutter": "24px",
+                  "sm": "8px",
+                  "2xl": "48px"
+          },
+          "fontFamily": {
+                  "headline-md": ["Hanken Grotesk"],
+                  "display-lg-mobile": ["Hanken Grotesk"],
+                  "body-md": ["Hanken Grotesk"],
+                  "body-lg": ["Hanken Grotesk"],
+                  "label-md": ["Hanken Grotesk"],
+                  "headline-lg": ["Hanken Grotesk"],
+                  "label-sm": ["Hanken Grotesk"],
+                  "display-lg": ["Hanken Grotesk"]
+          },
+          "fontSize": {
+                  "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                  "display-lg-mobile": ["36px", {"lineHeight": "42px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                  "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                  "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                  "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                  "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                  "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                  "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .glass-effect {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .custom-shadow {
+      box-shadow: 0 4px 12px rgba(43, 93, 164, 0.04);
+    }
+    .floating-shadow {
+      box-shadow: 0 8px 24px rgba(43, 93, 164, 0.08);
+    }
+    @keyframes progress-reveal {
+      from { stroke-dashoffset: 283; }
+      to { stroke-dashoffset: 56.6; } /* 80% of 283 */
+    }
+    .progress-circle-animate {
+      stroke-dasharray: 283;
+      animation: progress-reveal 1.5s ease-out forwards;
+    }
+    .stagger-1 { animation-delay: 100ms; }
+    .stagger-2 { animation-delay: 200ms; }
+    .stagger-3 { animation-delay: 300ms; }
+  </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center w-full px-md py-sm sticky top-0 z-50 bg-surface/90 backdrop-blur-md">
+<div class="flex items-center gap-md">
+<button class="active:scale-95 transition-transform duration-200 hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined text-primary">arrow_back</span>
+</button>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">Svensk Citizenship</h1>
+</div>
+<button class="material-symbols-outlined text-on-surface-variant hover:opacity-80 transition-opacity">share</button>
+</header>
+<main class="max-w-container-max mx-auto px-md md:px-lg mt-lg">
+<!-- Celebratory Header -->
+<section class="text-center mb-3xl">
+<div class="inline-block mb-md relative">
+<div class="absolute inset-0 scale-150 blur-3xl opacity-20 bg-secondary rounded-full"></div>
+<span class="material-symbols-outlined text-[64px] text-secondary" style="font-variation-settings: 'FILL' 1;">stars</span>
+</div>
+<h2 class="font-display-lg-mobile md:font-display-lg text-display-lg-mobile md:text-display-lg mb-xs">Bra jobbat! You passed.</h2>
+<p class="text-on-surface-variant font-body-lg">Excellent work on your Civics Practice Exam.</p>
+</section>
+<!-- Bento Grid Performance Breakdown -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-lg">
+<!-- Score Circle & Summary -->
+<div class="md:col-span-4 bg-surface-container-lowest rounded-xl p-lg custom-shadow flex flex-col items-center justify-center border border-[#E9ECEF] stagger-1">
+<div class="relative w-40 h-40 mb-md">
+<svg class="w-full h-full transform -rotate-90">
+<circle cx="80" cy="80" fill="transparent" r="70" stroke="#E9ECEF" stroke-width="12"></circle>
+<circle class="progress-circle-animate" cx="80" cy="80" fill="transparent" r="70" stroke="#745b00" stroke-linecap="round" stroke-width="12"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="font-headline-lg text-headline-lg text-primary">80%</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">ACCURACY</span>
+</div>
+</div>
+<p class="font-headline-md text-headline-md text-primary">8/10 Correct</p>
+</div>
+<!-- Comparison Chart (Mock Visualization) -->
+<div class="md:col-span-8 bg-surface-container-lowest rounded-xl p-lg custom-shadow border border-[#E9ECEF] stagger-2">
+<div class="flex justify-between items-center mb-lg">
+<h3 class="font-headline-md text-headline-md">Progress Trend</h3>
+<span class="text-secondary font-label-md bg-secondary-fixed/30 px-3 py-1 rounded-full">+12% from last attempt</span>
+</div>
+<div class="h-48 w-full flex items-end justify-between gap-xs px-md">
+<div class="flex-1 bg-surface-container-low rounded-t-lg transition-all hover:bg-surface-container-high" style="height: 40%"></div>
+<div class="flex-1 bg-surface-container-low rounded-t-lg transition-all hover:bg-surface-container-high" style="height: 55%"></div>
+<div class="flex-1 bg-surface-container-low rounded-t-lg transition-all hover:bg-surface-container-high" style="height: 48%"></div>
+<div class="flex-1 bg-surface-container-low rounded-t-lg transition-all hover:bg-surface-container-high" style="height: 65%"></div>
+<div class="flex-1 bg-secondary rounded-t-lg transition-all hover:opacity-90" style="height: 80%"></div>
+</div>
+<div class="flex justify-between mt-sm text-on-surface-variant font-label-sm px-md">
+<span>Attempt 1</span>
+<span>Attempt 2</span>
+<span>Attempt 3</span>
+<span>Attempt 4</span>
+<span>Current</span>
+</div>
+</div>
+<!-- Personalized Recommendations -->
+<div class="md:col-span-7 bg-primary text-on-primary rounded-xl p-lg floating-shadow border border-primary-container relative overflow-hidden stagger-3">
+<div class="relative z-10">
+<h3 class="font-headline-md text-headline-md mb-md flex items-center gap-sm">
+<span class="material-symbols-outlined">lightbulb</span>
+            Room for Improvement
+          </h3>
+<p class="mb-lg opacity-90 font-body-md">You're doing great, but you missed a couple of questions related to legislative processes.</p>
+<a class="inline-flex items-center gap-md bg-secondary-container text-on-secondary-container px-lg py-md rounded-xl font-label-md hover:opacity-90 transition-all active:scale-95" href="#">
+            Review: Democracy &amp; Government
+            <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</a>
+</div>
+<div class="absolute -right-12 -bottom-12 w-48 h-48 bg-primary-container rounded-full blur-3xl opacity-20"></div>
+</div>
+<!-- Achievement Badges -->
+<div class="md:col-span-5 bg-surface-container-lowest rounded-xl p-lg custom-shadow border border-[#E9ECEF] flex flex-col justify-center stagger-3">
+<h3 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-lg">Badges Earned</h3>
+<div class="flex items-center gap-lg">
+<div class="flex flex-col items-center gap-sm">
+<div class="w-20 h-20 bg-secondary-fixed rounded-full flex items-center justify-center floating-shadow">
+<span class="material-symbols-outlined text-[36px] text-on-secondary-fixed" style="font-variation-settings: 'FILL' 1;">bolt</span>
+</div>
+<span class="font-label-md text-label-md text-primary">Fast Learner</span>
+</div>
+<div class="flex flex-col items-center gap-sm opacity-40">
+<div class="w-20 h-20 bg-surface-container-high rounded-full flex items-center justify-center border-2 border-dashed border-outline">
+<span class="material-symbols-outlined text-[36px] text-outline">history_edu</span>
+</div>
+<span class="font-label-md text-label-md">Scholar</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Main CTA -->
+<div class="mt-3xl mb-lg">
+<button class="w-full py-lg bg-primary text-on-primary rounded-xl font-headline-md text-headline-md floating-shadow hover:opacity-95 transition-all active:scale-[0.98] relative overflow-hidden group">
+<span class="relative z-10">Return Home</span>
+<div class="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+</button>
+</div>
+<!-- Secondary Actions -->
+<div class="flex flex-col md:flex-row gap-md justify-center items-center">
+<button class="w-full md:w-auto px-2xl py-md text-primary font-label-md border-1.5 border-primary rounded-xl hover:bg-primary/5 transition-colors">
+        Retake Exam
+      </button>
+<button class="w-full md:w-auto px-2xl py-md text-on-surface-variant font-label-md hover:text-primary transition-colors">
+        View Question Breakdown
+      </button>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-md pb-safe pt-2 bg-surface dark:bg-inverse-surface shadow-[0_-4px_12px_rgba(43,93,164,0.04)] rounded-t-xl md:hidden">
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-tertiary-container px-4 py-2 hover:bg-surface-container-low transition-colors active:scale-90 duration-150">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-tertiary-container px-4 py-2 hover:bg-surface-container-low transition-colors active:scale-90 duration-150">
+<span class="material-symbols-outlined">library_books</span>
+<span class="font-label-sm text-label-sm">Topics</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary rounded-xl px-4 py-2 active:scale-90 duration-150">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">quiz</span>
+<span class="font-label-sm text-label-sm">Exam</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-tertiary-container px-4 py-2 hover:bg-surface-container-low transition-colors active:scale-90 duration-150">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-label-sm text-label-sm">Progress</span>
+</div>
+</nav>
+<script>
+    // Micro-interactions
+    document.querySelectorAll('button').forEach(button => {
+      button.addEventListener('mousedown', () => {
+        button.style.transform = 'scale(0.97)';
+      });
+      button.addEventListener('mouseup', () => {
+        button.style.transform = 'scale(1)';
+      });
+    });
+
+    // Simple scroll animation for bento boxes
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('opacity-100', 'translate-y-0');
+          entry.target.classList.remove('opacity-0', 'translate-y-4');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.stagger-1, .stagger-2, .stagger-3').forEach(el => {
+      el.classList.add('transition-all', 'duration-700', 'ease-out', 'opacity-0', 'translate-y-4');
+      observer.observe(el);
+    });
+  </script>
+</body></html>

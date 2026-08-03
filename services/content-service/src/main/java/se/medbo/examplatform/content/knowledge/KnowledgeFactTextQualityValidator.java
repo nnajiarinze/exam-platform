@@ -70,7 +70,7 @@ public final class KnowledgeFactTextQualityValidator {
       "gör", "ger", "går", "står", "ser", "säger", "vet", "vill", "bor", "sker", "utgör",
       "does", "means", "decides", "provides", "receives", "protects", "elects", "governs", "includes");
   private static final Set<String> PASSIVE_EXCEPTIONS = Set.of(
-      "sprids", "hålls", "styrs", "används", "ges", "görs", "ses", "fås", "tas", "nås", "slås");
+      "sprids", "hålls", "styrs", "används", "ges", "görs", "ses", "fås", "tas", "nås", "slås", "slöts");
   private static final Set<String> IMPERATIVES = Set.of(
       "läs", "välj", "skriv", "ange", "förklara", "beskriv", "jämför", "markera", "klicka",
       "öppna", "stäng", "svara", "studera", "diskutera", "kontrollera", "rewrite", "choose", "read");
@@ -106,10 +106,12 @@ public final class KnowledgeFactTextQualityValidator {
       issues.add(issue("PLACEHOLDER_TEXT_DETECTED", "Placeholder text is not valid factual content."));
 
     List<Token> tokens = tokens(lower);
+    Predicate predicate = findPredicate(tokens);
     boolean question = text.endsWith("?") || lower.matches("^(what|why|when|where|who|how|vad|varför|när|var|vem|hur)\\b.*");
     boolean imperative = !tokens.isEmpty() && IMPERATIVES.contains(tokens.getFirst().text());
     boolean incomplete = !tokens.isEmpty() && SUBORDINATORS.contains(tokens.getFirst().text());
-    boolean fragment = !tokens.isEmpty() && LEADING_FRAGMENT_WORDS.contains(tokens.getFirst().text());
+    boolean fragment = !tokens.isEmpty() && LEADING_FRAGMENT_WORDS.contains(tokens.getFirst().text())
+        && predicate == null;
     if (question) issues.add(issue("QUESTION_INSTEAD_OF_FACT", "Write the Knowledge Fact as a declarative statement, not a question."));
     if (imperative || INSTRUCTION.matcher(lower).find())
       issues.add(issue("INSTRUCTION_INSTEAD_OF_FACT", "Write factual content rather than an editorial instruction."));
@@ -117,7 +119,6 @@ public final class KnowledgeFactTextQualityValidator {
     if (fragment) issues.add(issue("FRAGMENT_INSTEAD_OF_FACT", "Write a complete declarative clause rather than a phrase or heading."));
     if (!issues.isEmpty()) return result(Quality.INVALID, List.copyOf(issues.stream().distinct().toList()), text, null, fragment, question, imperative, incomplete);
 
-    Predicate predicate = findPredicate(tokens);
     boolean subject = predicate != null && plausibleSubject(tokens, predicate.index());
     if (predicate == null || !subject || tokens.size() < 3)
       return suspicious("NO_PLAUSIBLE_FACTUAL_CLAIM", "The draft may not contain a clear subject and factual predicate.", text, predicate, true, false, false, false);

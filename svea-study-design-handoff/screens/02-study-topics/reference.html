@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+
+<html class="light" lang="sv"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Svenska Provet - Study Topics</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "surface-container-low": "#ecf5fe",
+                    "surface": "#f6faff",
+                    "background": "#f6faff",
+                    "secondary-fixed-dim": "#ebc246",
+                    "surface-container": "#e6eff8",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "secondary-container": "#fdd355",
+                    "tertiary-container": "#5b5e5f",
+                    "on-secondary-fixed": "#241a00",
+                    "outline": "#737782",
+                    "secondary": "#745b00",
+                    "on-primary-fixed": "#001b3e",
+                    "inverse-surface": "#293138",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "on-primary-container": "#c4d8ff",
+                    "primary-fixed": "#d6e3ff",
+                    "on-error": "#ffffff",
+                    "inverse-primary": "#aac7ff",
+                    "surface-container-highest": "#dbe4ed",
+                    "surface-variant": "#dbe4ed",
+                    "on-tertiary": "#ffffff",
+                    "tertiary": "#444647",
+                    "surface-tint": "#2c5ea5",
+                    "tertiary-fixed": "#e1e3e4",
+                    "inverse-on-surface": "#e9f2fb",
+                    "on-secondary": "#ffffff",
+                    "primary-container": "#2b5da4",
+                    "on-secondary-container": "#735a00",
+                    "on-surface": "#141d23",
+                    "surface-dim": "#d2dbe4",
+                    "primary-fixed-dim": "#aac7ff",
+                    "on-surface-variant": "#424751",
+                    "on-tertiary-fixed": "#191c1d",
+                    "on-primary-fixed-variant": "#04468c",
+                    "surface-container-high": "#e0e9f2",
+                    "on-secondary-fixed-variant": "#584400",
+                    "on-error-container": "#93000a",
+                    "secondary-fixed": "#ffe08b",
+                    "outline-variant": "#c3c6d2",
+                    "on-background": "#141d23",
+                    "surface-bright": "#f6faff",
+                    "error": "#ba1a1a",
+                    "primary": "#02458b",
+                    "on-tertiary-container": "#d6d7d8"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "2xl": "48px",
+                    "gutter": "24px",
+                    "xl": "32px",
+                    "unit": "8px",
+                    "md": "16px",
+                    "sm": "8px",
+                    "3xl": "64px",
+                    "xs": "4px",
+                    "lg": "24px",
+                    "container-max": "1200px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Hanken Grotesk"],
+                    "body-lg": ["Hanken Grotesk"],
+                    "display-lg": ["Hanken Grotesk"],
+                    "display-lg-mobile": ["Hanken Grotesk"],
+                    "body-md": ["Hanken Grotesk"],
+                    "headline-md": ["Hanken Grotesk"],
+                    "label-md": ["Hanken Grotesk"],
+                    "label-sm": ["Hanken Grotesk"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "display-lg-mobile": ["36px", {"lineHeight": "42px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #f6faff;
+            font-family: 'Hanken Grotesk', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .custom-card-shadow {
+            shadow: 0 4px 12px rgba(43,93,164,0.04);
+        }
+        .lesson-card:active {
+            transform: scale(0.98);
+        }
+        .search-container:focus-within {
+            box-shadow: 0 0 0 3px rgba(2, 69, 139, 0.15);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="w-full top-0 sticky z-50 bg-background flex justify-between items-center px-lg py-sm">
+<div class="flex items-center gap-md">
+<button class="material-symbols-outlined text-primary hover:opacity-80 transition-opacity active:scale-95 transition-transform" data-icon="menu">menu</button>
+<h1 class="font-headline-md text-headline-md-mobile font-bold text-primary">Svenska Provet</h1>
+</div>
+<button class="material-symbols-outlined text-primary hover:opacity-80 transition-opacity active:scale-95 transition-transform" data-icon="help">help</button>
+</header>
+<main class="max-w-[1200px] mx-auto px-md md:px-lg mt-md">
+<!-- Search Section -->
+<section class="mb-xl">
+<div class="search-container flex items-center bg-white border-[1.5px] border-outline-variant rounded-xl px-md py-3 transition-all duration-300">
+<span class="material-symbols-outlined text-outline mr-sm" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 w-full font-body-md text-on-surface placeholder:text-outline-variant" placeholder="Search topics, laws, or history..." type="text"/>
+</div>
+</section>
+<!-- Recommended Highlight -->
+<section class="mb-2xl">
+<h2 class="font-label-sm text-label-sm uppercase tracking-widest text-outline mb-md">Recommended Next Lesson</h2>
+<div class="relative group cursor-pointer overflow-hidden rounded-xl bg-primary-container p-lg flex flex-col md:flex-row items-center justify-between gap-lg transition-transform active:scale-[0.99]" data-interaction="lesson-primary">
+<div class="z-10 text-white flex-1">
+<h3 class="font-headline-lg text-headline-lg-mobile mb-xs text-on-primary">Democracy &amp; Government</h3>
+<p class="font-body-md text-on-primary-container opacity-90 mb-md max-w-md">Master the core principles of the Swedish Riksdag and the foundations of civic duty.</p>
+<div class="flex items-center gap-xl">
+<div class="flex flex-col">
+<span class="font-label-sm text-on-primary-container">Est. Completion</span>
+<span class="font-headline-md text-white">20 mins</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-on-primary-container">Difficulty</span>
+<span class="font-headline-md text-white">Advanced</span>
+</div>
+</div>
+</div>
+<div class="relative w-full md:w-48 h-32 md:h-48 rounded-lg overflow-hidden shrink-0 shadow-lg border-2 border-white/10">
+<div class="bg-cover bg-center w-full h-full" data-alt="A clean, minimalist 3D rendering of the Swedish Parliament building with soft focus, bathed in golden hour sunlight. The image uses a premium New Nordic aesthetic with high-end architectural clarity and deep navy shadows, perfectly complementing a professional educational interface." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBLaBYRJUIk8Ts4hQXrlGizcDk_jRCSnCsmKnIpMXHgF1HDxFuZVQLuG8h9AFOHFsh2lnxVBGoItlNpLDYvgPwyE2hDyzh0PcREaWbw2Sv-fcyr39blQIQqokMEP6sRc7BGGGrsJc9OjI6pkOJGtyVv3RXgizINIsXYXAjW5TrOsiNKZODd6oUWGtPxjogIHtYhZYOMlWzuVzUOR86y-fj_UYg59TsmRglHRPeCAUoHQhv9gHHtIdvZ')"></div>
+</div>
+<!-- Glassmorphism button -->
+<div class="absolute bottom-4 right-4 md:static">
+<button class="bg-secondary-container text-on-secondary-container px-lg py-md rounded-xl font-label-md flex items-center gap-sm hover:opacity-90 transition-opacity">
+                        Start Lesson
+                        <span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Bento Grid Topics -->
+<section>
+<div class="flex justify-between items-end mb-lg">
+<h2 class="font-headline-md text-on-surface">Curriculum Topics</h2>
+<button class="text-primary font-label-md hover:underline">View All</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-lg">
+<!-- Topic Card 1 -->
+<div class="lesson-card bg-white rounded-xl p-lg border border-surface-variant shadow-[0_4px_12px_rgba(43,93,164,0.04)] cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1">
+<div class="flex justify-between items-start mb-md">
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[32px]" data-icon="history_edu">history_edu</span>
+</div>
+<span class="font-label-sm text-outline">Last studied: Oct 12</span>
+</div>
+<h4 class="font-headline-md text-on-surface mb-xs">Swedish History</h4>
+<div class="flex justify-between items-center mb-sm">
+<span class="font-label-md text-on-surface-variant">Mastery</span>
+<span class="font-label-md text-primary">85%</span>
+</div>
+<div class="w-full h-2 bg-surface-variant rounded-full mb-md overflow-hidden">
+<div class="h-full bg-secondary-container rounded-full" style="width: 85%"></div>
+</div>
+<div class="flex items-center text-on-surface-variant font-label-sm gap-xs">
+<span class="material-symbols-outlined text-[18px]" data-icon="timer">timer</span>
+<span>12 mins left</span>
+</div>
+</div>
+<!-- Topic Card 2 -->
+<div class="lesson-card bg-white rounded-xl p-lg border border-surface-variant shadow-[0_4px_12px_rgba(43,93,164,0.04)] cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1">
+<div class="flex justify-between items-start mb-md">
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[32px]" data-icon="gavel">gavel</span>
+</div>
+<span class="font-label-sm text-outline">Last studied: Oct 10</span>
+</div>
+<h4 class="font-headline-md text-on-surface mb-xs">Legal System</h4>
+<div class="flex justify-between items-center mb-sm">
+<span class="font-label-md text-on-surface-variant">Mastery</span>
+<span class="font-label-md text-primary">42%</span>
+</div>
+<div class="w-full h-2 bg-surface-variant rounded-full mb-md overflow-hidden">
+<div class="h-full bg-secondary-container rounded-full" style="width: 42%"></div>
+</div>
+<div class="flex items-center text-on-surface-variant font-label-sm gap-xs">
+<span class="material-symbols-outlined text-[18px]" data-icon="timer">timer</span>
+<span>45 mins left</span>
+</div>
+</div>
+<!-- Topic Card 3 -->
+<div class="lesson-card bg-white rounded-xl p-lg border border-surface-variant shadow-[0_4px_12px_rgba(43,93,164,0.04)] cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1">
+<div class="flex justify-between items-start mb-md">
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[32px]" data-icon="groups">groups</span>
+</div>
+<span class="font-label-sm text-outline">Last studied: Today</span>
+</div>
+<h4 class="font-headline-md text-on-surface mb-xs">Social Welfare</h4>
+<div class="flex justify-between items-center mb-sm">
+<span class="font-label-md text-on-surface-variant">Mastery</span>
+<span class="font-label-md text-primary">92%</span>
+</div>
+<div class="w-full h-2 bg-surface-variant rounded-full mb-md overflow-hidden">
+<div class="h-full bg-secondary-container rounded-full" style="width: 92%"></div>
+</div>
+<div class="flex items-center text-on-surface-variant font-label-sm gap-xs">
+<span class="material-symbols-outlined text-[18px]" data-icon="timer">timer</span>
+<span>5 mins left</span>
+</div>
+</div>
+<!-- Topic Card 4 -->
+<div class="lesson-card bg-white rounded-xl p-lg border border-surface-variant shadow-[0_4px_12px_rgba(43,93,164,0.04)] cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1">
+<div class="flex justify-between items-start mb-md">
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[32px]" data-icon="language">language</span>
+</div>
+<span class="font-label-sm text-outline">New Topic</span>
+</div>
+<h4 class="font-headline-md text-on-surface mb-xs">Geography &amp; Climate</h4>
+<div class="flex justify-between items-center mb-sm">
+<span class="font-label-md text-on-surface-variant">Mastery</span>
+<span class="font-label-md text-primary">0%</span>
+</div>
+<div class="w-full h-2 bg-surface-variant rounded-full mb-md overflow-hidden">
+<div class="h-full bg-secondary-container rounded-full" style="width: 0%"></div>
+</div>
+<div class="flex items-center text-on-surface-variant font-label-sm gap-xs">
+<span class="material-symbols-outlined text-[18px]" data-icon="timer">timer</span>
+<span>35 mins left</span>
+</div>
+</div>
+<!-- Topic Card 5 -->
+<div class="lesson-card bg-white rounded-xl p-lg border border-surface-variant shadow-[0_4px_12px_rgba(43,93,164,0.04)] cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1">
+<div class="flex justify-between items-start mb-md">
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[32px]" data-icon="work">work</span>
+</div>
+<span class="font-label-sm text-outline">Last studied: Oct 05</span>
+</div>
+<h4 class="font-headline-md text-on-surface mb-xs">Labor Market</h4>
+<div class="flex justify-between items-center mb-sm">
+<span class="font-label-md text-on-surface-variant">Mastery</span>
+<span class="font-label-md text-primary">60%</span>
+</div>
+<div class="w-full h-2 bg-surface-variant rounded-full mb-md overflow-hidden">
+<div class="h-full bg-secondary-container rounded-full" style="width: 60%"></div>
+</div>
+<div class="flex items-center text-on-surface-variant font-label-sm gap-xs">
+<span class="material-symbols-outlined text-[18px]" data-icon="timer">timer</span>
+<span>25 mins left</span>
+</div>
+</div>
+<!-- Locked Topic Illustration -->
+<div class="lesson-card bg-surface-container rounded-xl p-lg border border-dashed border-outline-variant opacity-60 flex flex-col items-center justify-center text-center">
+<span class="material-symbols-outlined text-[48px] text-outline mb-md" data-icon="lock">lock</span>
+<h4 class="font-headline-md text-on-surface-variant mb-xs">European Integration</h4>
+<p class="font-label-sm text-on-tertiary-fixed-variant">Reach overall 50% mastery to unlock this module</p>
+</div>
+</div>
+</section>
+<!-- Quick Stats Bento Section -->
+<section class="mt-2xl grid grid-cols-1 md:grid-cols-4 gap-lg">
+<div class="md:col-span-2 bg-white p-lg rounded-xl shadow-[0_4px_12px_rgba(43,93,164,0.04)] border border-surface-variant">
+<h5 class="font-label-md text-on-surface-variant mb-lg">Weekly Progress</h5>
+<div class="flex items-end justify-between h-32 gap-sm">
+<div class="w-full bg-surface-container rounded-t-lg h-[20%]"></div>
+<div class="w-full bg-surface-container rounded-t-lg h-[45%]"></div>
+<div class="w-full bg-primary-container rounded-t-lg h-[85%]"></div>
+<div class="w-full bg-surface-container rounded-t-lg h-[30%]"></div>
+<div class="w-full bg-surface-container rounded-t-lg h-[60%]"></div>
+<div class="w-full bg-secondary-container rounded-t-lg h-[95%]"></div>
+<div class="w-full bg-surface-variant rounded-t-lg h-[10%]"></div>
+</div>
+<div class="flex justify-between mt-sm font-label-sm text-outline">
+<span>M</span><span>T</span><span class="text-primary font-bold">W</span><span>T</span><span>F</span><span class="text-secondary-fixed-variant font-bold">S</span><span>S</span>
+</div>
+</div>
+<div class="bg-secondary-container p-lg rounded-xl flex flex-col justify-between">
+<span class="material-symbols-outlined text-on-secondary-container" data-icon="local_fire_department">local_fire_department</span>
+<div>
+<span class="font-display-lg text-on-secondary-container leading-none">12</span>
+<p class="font-label-md text-on-secondary-container opacity-80">Day Streak</p>
+</div>
+</div>
+<div class="bg-primary-container p-lg rounded-xl flex flex-col justify-between">
+<span class="material-symbols-outlined text-on-primary-container" data-icon="auto_awesome">auto_awesome</span>
+<div>
+<span class="font-display-lg text-on-primary-container leading-none">4</span>
+<p class="font-label-md text-on-primary-container opacity-80">Topics Mastered</p>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-md pb-6 pt-2 bg-surface-container-lowest shadow-lg rounded-t-xl">
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:text-primary transition-colors active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-2xl px-4 py-1 active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span class="font-label-sm text-label-sm">Study</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:text-primary transition-colors active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="quiz">quiz</span>
+<span class="font-label-sm text-label-sm">Exam</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:text-primary transition-colors active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="font-label-sm text-label-sm">Progress</span>
+</a>
+</nav>
+<script>
+        // Micro-interactions for cards
+        document.querySelectorAll('.lesson-card').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                // Subtle lift handled by Tailwind hover classes
+            });
+            
+            card.addEventListener('click', () => {
+                card.style.transform = 'scale(0.96)';
+                setTimeout(() => {
+                    card.style.transform = '';
+                }, 150);
+            });
+        });
+
+        // Search highlight interaction
+        const searchInput = document.querySelector('input[type="text"]');
+        const searchContainer = document.querySelector('.search-container');
+        
+        searchInput.addEventListener('focus', () => {
+            searchContainer.classList.add('border-primary');
+        });
+        
+        searchInput.addEventListener('blur', () => {
+            searchContainer.classList.remove('border-primary');
+        });
+    </script>
+</body></html>

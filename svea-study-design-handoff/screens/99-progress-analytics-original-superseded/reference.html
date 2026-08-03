@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Svensk Citizenship - Progress &amp; Analytics</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary": "#745b00",
+                    "primary": "#02458b",
+                    "inverse-on-surface": "#e9f2fb",
+                    "surface-container-low": "#ecf5fe",
+                    "tertiary": "#444647",
+                    "error-container": "#ffdad6",
+                    "surface": "#f6faff",
+                    "on-error-container": "#93000a",
+                    "primary-fixed-dim": "#aac7ff",
+                    "on-tertiary-container": "#d6d7d8",
+                    "on-error": "#ffffff",
+                    "tertiary-container": "#5b5e5f",
+                    "on-secondary-fixed-variant": "#584400",
+                    "secondary-fixed-dim": "#ebc246",
+                    "outline-variant": "#c3c6d2",
+                    "inverse-surface": "#293138",
+                    "on-primary-container": "#c4d8ff",
+                    "surface-container-highest": "#dbe4ed",
+                    "error": "#ba1a1a",
+                    "on-primary-fixed": "#001b3e",
+                    "on-background": "#141d23",
+                    "surface-dim": "#d2dbe4",
+                    "on-secondary-container": "#735a00",
+                    "surface-variant": "#dbe4ed",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "on-surface-variant": "#424751",
+                    "on-tertiary": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "on-tertiary-fixed": "#191c1d",
+                    "on-secondary-fixed": "#241a00",
+                    "on-surface": "#141d23",
+                    "outline": "#737782",
+                    "surface-container-high": "#e0e9f2",
+                    "background": "#f6faff",
+                    "secondary-fixed": "#ffe08b",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary-fixed-variant": "#04468c",
+                    "secondary-container": "#fdd355",
+                    "surface-tint": "#2c5ea5",
+                    "primary-fixed": "#d6e3ff",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "inverse-primary": "#aac7ff",
+                    "tertiary-fixed": "#e1e3e4",
+                    "surface-bright": "#f6faff",
+                    "primary-container": "#2b5da4",
+                    "on-secondary": "#ffffff",
+                    "surface-container": "#e6eff8"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "md": "16px",
+                    "lg": "24px",
+                    "container-max": "1200px",
+                    "xs": "4px",
+                    "unit": "8px",
+                    "xl": "32px",
+                    "3xl": "64px",
+                    "gutter": "24px",
+                    "sm": "8px",
+                    "2xl": "48px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Hanken Grotesk"],
+                    "display-lg-mobile": ["Hanken Grotesk"],
+                    "body-md": ["Hanken Grotesk"],
+                    "body-lg": ["Hanken Grotesk"],
+                    "label-md": ["Hanken Grotesk"],
+                    "headline-lg": ["Hanken Grotesk"],
+                    "label-sm": ["Hanken Grotesk"],
+                    "display-lg": ["Hanken Grotesk"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "display-lg-mobile": ["36px", {"lineHeight": "42px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Hanken Grotesk', sans-serif;
+            background-color: #f6faff;
+            color: #141d23;
+            -webkit-font-smoothing: antialiased;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .card-shadow {
+            box-shadow: 0 4px 12px rgba(43, 93, 164, 0.04);
+        }
+        .heatmap-cell {
+            aspect-ratio: 1/1;
+            border-radius: 2px;
+        }
+        .circular-progress {
+            --progress: 78;
+            background: radial-gradient(closest-side, white 79%, transparent 80% 100%),
+                        conic-gradient(#fdd355 calc(var(--progress) * 1%), #e6eff8 0);
+        }
+    </style>
+</head>
+<body class="pb-24 md:pb-0 md:pt-16">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center w-full px-md py-sm sticky top-0 z-50 bg-surface/90 backdrop-blur-md">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary cursor-pointer active:scale-95 transition-transform">arrow_back</span>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">Svensk Citizenship</h1>
+</div>
+<div class="hidden md:flex gap-lg">
+<a class="text-on-surface-variant font-label-md hover:opacity-80 transition-opacity" href="#">Home</a>
+<a class="text-on-surface-variant font-label-md hover:opacity-80 transition-opacity" href="#">Topics</a>
+<a class="text-on-surface-variant font-label-md hover:opacity-80 transition-opacity" href="#">Exam</a>
+<a class="text-primary font-label-md hover:opacity-80 transition-opacity" href="#">Progress</a>
+</div>
+<div class="md:hidden">
+<span class="material-symbols-outlined text-on-surface-variant">account_circle</span>
+</div>
+</header>
+<main class="max-w-container-max mx-auto px-md py-lg space-y-2xl">
+<!-- Dashboard Header & Level Stats -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-lg">
+<div class="md:col-span-2 space-y-xs">
+<p class="font-label-md text-secondary tracking-widest uppercase">Overview</p>
+<h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg">Your Learning Journey</h2>
+</div>
+<div class="bg-white p-lg rounded-xl card-shadow flex items-center justify-between border border-[#E9ECEF]">
+<div>
+<p class="font-label-sm text-on-surface-variant">CURRENT LEVEL</p>
+<p class="font-headline-md text-primary">B2 Upper Int.</p>
+</div>
+<div class="w-12 h-12 bg-secondary-container rounded-full flex items-center justify-center text-on-secondary-container">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
+</div>
+</div>
+</section>
+<!-- Bento Grid Layout -->
+<section class="grid grid-cols-1 md:grid-cols-12 gap-lg">
+<!-- Exam Readiness Dial (Large) -->
+<div class="md:col-span-4 bg-white p-lg rounded-xl card-shadow border border-[#E9ECEF] flex flex-col items-center justify-center text-center space-y-md">
+<h3 class="font-label-md text-on-surface-variant">EXAM READINESS</h3>
+<div class="relative w-48 h-48 circular-progress rounded-full flex items-center justify-center">
+<div class="text-center">
+<span class="font-display-lg text-primary block leading-none">78%</span>
+<span class="font-label-sm text-on-surface-variant">High Confidence</span>
+</div>
+</div>
+<p class="font-body-md text-on-surface-variant px-md">You're nearly there! Review your weak spots to reach 85% readiness.</p>
+<button class="w-full bg-primary text-white py-md rounded-xl font-label-md active:scale-95 transition-transform shadow-[0_2px_0_#001b3e]">
+                    Take Practice Exam
+                </button>
+</div>
+<!-- Stats & Quick Metrics -->
+<div class="md:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-lg">
+<!-- Activity Heatmap -->
+<div class="bg-white p-lg rounded-xl card-shadow border border-[#E9ECEF] md:col-span-2">
+<div class="flex justify-between items-center mb-md">
+<h3 class="font-label-md text-on-surface-variant uppercase">30-Day Activity</h3>
+<span class="text-label-sm text-on-surface-variant">Last 30 Days</span>
+</div>
+<div class="grid grid-cols-7 gap-1 md:gap-2">
+<!-- Simulated Heatmap Grid -->
+<script>
+                            const colors = ['bg-surface-container', 'bg-primary-fixed', 'bg-primary-container', 'bg-primary'];
+                            for(let i=0; i<35; i++) {
+                                const level = Math.floor(Math.random() * 4);
+                                document.write(`<div class="heatmap-cell ${colors[level]} w-full h-8 md:h-12"></div>`);
+                            }
+                        </script>
+</div>
+<div class="flex justify-end mt-sm gap-sm items-center">
+<span class="text-label-sm text-on-surface-variant">Less</span>
+<div class="w-3 h-3 bg-surface-container rounded-xs"></div>
+<div class="w-3 h-3 bg-primary-fixed rounded-xs"></div>
+<div class="w-3 h-3 bg-primary-container rounded-xs"></div>
+<div class="w-3 h-3 bg-primary rounded-xs"></div>
+<span class="text-label-sm text-on-surface-variant">More</span>
+</div>
+</div>
+<!-- Secondary Stats -->
+<div class="bg-white p-lg rounded-xl card-shadow border border-[#E9ECEF] flex items-center gap-md">
+<div class="p-sm bg-surface-container-low rounded-lg text-primary">
+<span class="material-symbols-outlined">quiz</span>
+</div>
+<div>
+<p class="font-label-sm text-on-surface-variant uppercase">Questions Answered</p>
+<p class="font-headline-md text-on-surface">1,284</p>
+</div>
+</div>
+<div class="bg-white p-lg rounded-xl card-shadow border border-[#E9ECEF] flex items-center gap-md">
+<div class="p-sm bg-secondary-container/20 rounded-lg text-secondary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">bolt</span>
+</div>
+<div>
+<p class="font-label-sm text-on-surface-variant uppercase">Total XP Earned</p>
+<p class="font-headline-md text-on-surface">42,500</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Progress Chart & Topic Lists -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-lg">
+<!-- Weekly Progress Chart -->
+<div class="md:col-span-1 bg-white p-lg rounded-xl card-shadow border border-[#E9ECEF] space-y-lg">
+<h3 class="font-label-md text-on-surface-variant uppercase">Weekly Progress</h3>
+<div class="flex items-end justify-between h-48 gap-2 px-2">
+<div class="flex flex-col items-center gap-xs flex-1">
+<div class="w-full bg-primary-fixed rounded-t-lg transition-all duration-500" style="height: 40%"></div>
+<span class="text-label-sm text-on-surface-variant">M</span>
+</div>
+<div class="flex flex-col items-center gap-xs flex-1">
+<div class="w-full bg-primary-fixed rounded-t-lg" style="height: 70%"></div>
+<span class="text-label-sm text-on-surface-variant">T</span>
+</div>
+<div class="flex flex-col items-center gap-xs flex-1">
+<div class="w-full bg-secondary-container rounded-t-lg" style="height: 100%"></div>
+<span class="text-label-sm text-on-surface-variant">W</span>
+</div>
+<div class="flex flex-col items-center gap-xs flex-1">
+<div class="w-full bg-primary-fixed rounded-t-lg" style="height: 30%"></div>
+<span class="text-label-sm text-on-surface-variant">T</span>
+</div>
+<div class="flex flex-col items-center gap-xs flex-1">
+<div class="w-full bg-primary-fixed rounded-t-lg" style="height: 55%"></div>
+<span class="text-label-sm text-on-surface-variant">F</span>
+</div>
+<div class="flex flex-col items-center gap-xs flex-1">
+<div class="w-full bg-primary-fixed rounded-t-lg" style="height: 85%"></div>
+<span class="text-label-sm text-on-surface-variant">S</span>
+</div>
+<div class="flex flex-col items-center gap-xs flex-1">
+<div class="w-full bg-primary-fixed rounded-t-lg" style="height: 20%"></div>
+<span class="text-label-sm text-on-surface-variant">S</span>
+</div>
+</div>
+<div class="pt-sm border-t border-[#E9ECEF]">
+<p class="font-body-md text-on-surface-variant">Average study time: <span class="font-bold text-on-surface">1h 12m</span> / day</p>
+</div>
+</div>
+<!-- Topic Performance -->
+<div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-lg">
+<!-- Strongest Topics -->
+<div class="bg-white p-lg rounded-xl card-shadow border border-[#E9ECEF] space-y-md">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-[#2E7D32]">check_circle</span>
+<h3 class="font-label-md text-on-surface-variant uppercase">Strongest Topics</h3>
+</div>
+<ul class="space-y-sm">
+<li class="flex justify-between items-center p-sm hover:bg-surface-container-low rounded-lg transition-colors">
+<span class="font-body-md">History &amp; Roots</span>
+<span class="font-label-md text-primary">94%</span>
+</li>
+<li class="flex justify-between items-center p-sm hover:bg-surface-container-low rounded-lg transition-colors">
+<span class="font-body-md">Civic Duties</span>
+<span class="font-label-md text-primary">89%</span>
+</li>
+<li class="flex justify-between items-center p-sm hover:bg-surface-container-low rounded-lg transition-colors">
+<span class="font-body-md">Social Welfare</span>
+<span class="font-label-md text-primary">87%</span>
+</li>
+</ul>
+</div>
+<!-- Topics to Improve -->
+<div class="bg-white p-lg rounded-xl card-shadow border border-[#E9ECEF] space-y-md">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-error">trending_down</span>
+<h3 class="font-label-md text-on-surface-variant uppercase">Topics to Improve</h3>
+</div>
+<ul class="space-y-sm">
+<li class="flex justify-between items-center p-sm hover:bg-surface-container-low rounded-lg transition-colors">
+<span class="font-body-md">Legal Systems</span>
+<span class="font-label-md text-error">52%</span>
+</li>
+<li class="flex justify-between items-center p-sm hover:bg-surface-container-low rounded-lg transition-colors">
+<span class="font-body-md">Political Framework</span>
+<span class="font-label-md text-error">58%</span>
+</li>
+<li class="flex justify-between items-center p-sm hover:bg-surface-container-low rounded-lg transition-colors">
+<span class="font-body-md">Swedish Holidays</span>
+<span class="font-label-md text-error">64%</span>
+</li>
+</ul>
+</div>
+</div>
+</section>
+<!-- Motivational Footer -->
+<section class="bg-primary-container text-white p-xl rounded-2xl relative overflow-hidden">
+<div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-lg">
+<div class="space-y-sm text-center md:text-left">
+<h2 class="font-headline-md text-white">Keep the momentum going!</h2>
+<p class="font-body-md text-on-primary-container max-w-md">You've studied for 5 days in a row. Complete one more lesson today to extend your streak.</p>
+</div>
+<button class="bg-secondary-container text-on-secondary-container px-xl py-md rounded-xl font-bold hover:opacity-90 active:scale-95 transition-all">
+                    Resume Learning
+                </button>
+</div>
+<!-- Abstract background shape -->
+<div class="absolute -right-20 -top-20 w-64 h-64 bg-primary rounded-full opacity-20 blur-3xl"></div>
+<div class="absolute -left-20 -bottom-20 w-64 h-64 bg-secondary rounded-full opacity-10 blur-3xl"></div>
+</section>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 bg-surface dark:bg-inverse-surface shadow-lg flex justify-around items-center px-md pb-safe pt-2 rounded-t-xl">
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-2 hover:bg-surface-container-low transition-colors active:scale-90 duration-150">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-2 hover:bg-surface-container-low transition-colors active:scale-90 duration-150">
+<span class="material-symbols-outlined">library_books</span>
+<span class="font-label-sm text-label-sm">Topics</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-2 hover:bg-surface-container-low transition-colors active:scale-90 duration-150">
+<span class="material-symbols-outlined">quiz</span>
+<span class="font-label-sm text-label-sm">Exam</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-xl px-4 py-2 active:scale-90 duration-150">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">analytics</span>
+<span class="font-label-sm text-label-sm">Progress</span>
+</button>
+</nav>
+<script>
+        // Simple interactive effect for chart bars
+        document.querySelectorAll('.rounded-t-lg').forEach(bar => {
+            bar.addEventListener('mouseenter', () => {
+                bar.style.opacity = '0.8';
+                bar.style.transform = 'scaleY(1.02)';
+            });
+            bar.addEventListener('mouseleave', () => {
+                bar.style.opacity = '1';
+                bar.style.transform = 'scaleY(1)';
+            });
+        });
+    </script>
+</body></html>

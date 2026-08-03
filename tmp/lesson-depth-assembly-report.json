@@ -1,0 +1,357 @@
+{
+  "auditId": "8b206438-fdc9-5d0f-90e4-11208164b7bf",
+  "lessonsCreated": [
+    "e9b6cb67-bbb1-52f5-b887-09015e04da3c",
+    "57b40cb4-c2be-5be0-8633-047942db7a1b",
+    "9ed96005-ee0d-5acc-b7fe-87a43df73cab",
+    "7791c03c-bfdd-5828-971d-0379e46d8045",
+    "04562e25-16a5-551c-91a8-dd8766d22ae7",
+    "17db30ea-0597-5193-a42f-1534c9fc2d98",
+    "08b18b98-2462-5cb2-9706-139141de4fdb",
+    "b189e3bc-a4dc-549e-92a8-7f0f2852a06f",
+    "45d2f39f-1911-5f51-9d89-4b1567182170",
+    "6c6675b7-7918-5062-b0b7-319d940d77bd",
+    "50f8a5e9-212c-5d89-9312-53ac9f3c8036"
+  ],
+  "unchangedLessons": [
+    "376bf1db-c4f4-45e9-a9a8-fdc34dcee2ba",
+    "436693d5-88b2-48a2-8200-4f1bcdfbd0ac",
+    "11934831-4d36-4912-8540-7a84c835a66c",
+    "7080e805-6658-4cb9-acfc-955195b7cda8",
+    "0f710b8e-246a-43bb-9e9f-c59f028224e9",
+    "b86696c2-08eb-452f-b468-a566798f0edf",
+    "fd7bdfb5-8eb1-483f-a356-f410d998eee8",
+    "8fc9cc58-9eb6-4cc4-a1ba-fee388836301",
+    "1b8d857c-45ca-4a79-bd9c-e15331d3d6fb",
+    "68e45f14-7c23-4a8e-9b2f-5418cf40a4ba",
+    "16af77a8-bbb4-44ff-9d47-4c538bce10dd",
+    "5bd15894-89ad-4cf1-93f5-6475620857c4",
+    "92942660-9bfb-4d5b-ad2c-e699b9160b97",
+    "71ae5009-b4d0-4c5d-9aed-fce8840736e6",
+    "ecf8372f-cd0f-4158-bb3e-ba572e7461cf",
+    "a3c17ec4-4927-436e-83d0-0e9f6fd482c7",
+    "310ab237-50a0-41f7-91d4-9230e73d3a1c",
+    "c06d5051-8816-40d9-929c-cd25c2d51dc3",
+    "affa3e5f-97bb-4c9f-a86e-162becca96aa",
+    "95f99039-14a6-4819-b974-ed6a7d7e0b48",
+    "5ffa1b9f-b349-49ff-be0a-07af44ca830c",
+    "818788a8-93e3-4df2-b6f3-fbd99bcee7b9",
+    "64777ffc-6c18-4df8-a68b-ca146a41300f",
+    "bbebf1ea-3c4e-42d5-9cb0-4ef5196f57e0",
+    "865528eb-6a65-4bac-bd7c-e8f4195c6941",
+    "93b34139-9d50-4f9a-b2aa-e705e3b6e2d1",
+    "1c9fa456-62a6-4cd3-ba8d-7f0398ee352a"
+  ],
+  "pages": 134,
+  "retainedPages": 111,
+  "generatedPages": 23,
+  "topics": [
+    {
+      "topicId": "80528354-8a60-5a63-acb8-3ad9ce5b5a37",
+      "status": "UNCHANGED_SUFFICIENT",
+      "oldPages": 4,
+      "newPages": 4
+    },
+    {
+      "topicId": "74effdfc-6a9f-575f-a5d9-f21f07efc433",
+      "status": "UNCHANGED_SUFFICIENT",
+      "oldPages": 3,
+      "newPages": 3
+    },
+    {
+      "topicId": "0b9c2af0-ffd4-5045-89bc-31ce9bfded19",
+      "status": "UNCHANGED_SUFFICIENT",
+      "oldPages": 3,
+      "newPages": 3
+    },
+    {
+      "topicId": "0f117b35-9b87-503d-a721-42e453cf4892",
+      "status": "UNCHANGED_SUFFICIENT",
+      "oldPages": 4,
+      "newPages": 4
+    },
+    {
+      "topicId": "20baac8f-0cf1-5d61-aa9e-a28f8641596b",
+      "status": "UNCHANGED_SUFFICIENT",
+      "oldPages": 4,
+      "newPages": 4
+    },
+    {
+      "topicId": "7e13caf7-4785-52e3-80cc-cb1e8a4fa1d7",
+      "status": "UNCHANGED_SUFFICIENT",
+      "oldPages": 3,
+      "newPages": 3
+    },
+    {
+      "topicId": "6fd4ee7e-4588-58b2-9770-637e990f6831",
+      "status": "UNCHANGED_SUFFICIENT",
+      "oldPages": 3,
+      "newPages": 3
+    },
+    {
+      "topicId": "dc3f119b-7368-5244-bc74-76136e05260c",
+      "status": "UNCHANGED_SUFFICIENT",
+      "oldPages": 3,
+      "newPages": 3
+    },
+    {
+      "topicId": "9a979693-e051-570e-bb61-c70f591b3ff1",
+      "status": "UNCHANGED_SUFFICIENT",
+      "oldPages": 3,
+      "newPages": 3
+    },
+    {
+      "topicId": "0b6e615a-c19a-50f8-a037-b68139bac888",
+      "status": "UNCHANGED_SUFFICIENT",
+      "oldPages": 3,
+      "newPages": 3
+    },
+    {
+      "topicId": "7d9fe2a2-e299-5317-b58f-b47596aa86df",
+      "status": "UNCHANGED_SUFFICIENT",
+      "oldPages": 3,
+      "newPages": 3
+    },
+    {
+      "topicId": "cf21eb17-2365-5da2-bb65-076db4c78848",
+      "status": "UNCHANGED_SUFFICIENT",
+      "oldPages": 3,
+      "newPages": 3
+    },
+    {
+      "topicId": "19a92c04-0784-5cd3-b65a-636fdb77c2f0",
+      "status": "UNCHANGED_SUFFICIENT",
+      "oldPages": 3,
+      "newPages": 3
+    },
+    {
+      "topicId": "35a5ee40-c465-59cb-ae49-521c14217aa9",
+      "status": "UNCHANGED_SUFFICIENT",
+      "oldPages": 3,
+      "newPages": 3
+    },
+    {
+      "topicId": "ca2f8d9a-ec8a-5c2e-a547-7992e037bd8a",
+      "status": "UNCHANGED_SUFFICIENT",
+      "oldPages": 3,
+      "newPages": 3
+    },
+    {
+      "topicId": "b596f3cf-6c1d-5576-82dc-10cb2e8e3d59",
+      "status": "UNCHANGED_SUFFICIENT",
+      "oldPages": 3,
+      "newPages": 3
+    },
+    {
+      "topicId": "aa2f92ba-6ff0-5865-9319-4c044dd792e1",
+      "status": "UNCHANGED_SUFFICIENT",
+      "oldPages": 3,
+      "newPages": 3
+    },
+    {
+      "topicId": "8bd0594e-6a29-5a69-a1df-86b7f07eb6b7",
+      "status": "UNCHANGED_SUFFICIENT",
+      "oldPages": 3,
+      "newPages": 3
+    },
+    {
+      "topicId": "61d331da-ac89-5ddc-b8c1-7c26887d500b",
+      "status": "UNCHANGED_SUFFICIENT",
+      "oldPages": 3,
+      "newPages": 3
+    },
+    {
+      "topicId": "c642db94-d7d7-5fc2-a03c-8b805ce23b9c",
+      "status": "UNCHANGED_SUFFICIENT",
+      "oldPages": 3,
+      "newPages": 3
+    },
+    {
+      "topicId": "16c435f5-db9a-5518-9619-70422784c522",
+      "status": "UNCHANGED_SUFFICIENT",
+      "oldPages": 3,
+      "newPages": 3
+    },
+    {
+      "topicId": "26747389-3ecd-5318-b01a-88e4e7c34b79",
+      "status": "PASS_WITH_WARNING",
+      "oldPages": 3,
+      "newPages": 3,
+      "lessonId": "e9b6cb67-bbb1-52f5-b887-09015e04da3c",
+      "coherenceRejected": [
+        {
+          "planChecksum": "86bf5d9739db76a58d40840a46fda3aca4915278fdcdcb1dbecfbe78ec175bdf",
+          "reason": "DUPLICATES_SIBLING",
+          "overlap": 0.938
+        }
+      ]
+    },
+    {
+      "topicId": "e3540c2c-4bca-52b6-92f4-6ead895430a3",
+      "status": "UNCHANGED_SUFFICIENT",
+      "oldPages": 3,
+      "newPages": 3
+    },
+    {
+      "topicId": "4d5b7312-c2b6-52de-bafa-2461b5120a29",
+      "status": "UNCHANGED_SUFFICIENT",
+      "oldPages": 3,
+      "newPages": 3
+    },
+    {
+      "topicId": "655e479a-6f85-5448-ba5b-b92648ec577e",
+      "status": "UNCHANGED_SUFFICIENT",
+      "oldPages": 3,
+      "newPages": 3
+    },
+    {
+      "topicId": "9cc73b72-98bb-57df-9b34-c66f5739a02b",
+      "status": "PASS",
+      "oldPages": 3,
+      "newPages": 4,
+      "lessonId": "57b40cb4-c2be-5be0-8633-047942db7a1b",
+      "coherenceRejected": []
+    },
+    {
+      "topicId": "92949fd5-b4d9-58de-b93e-04a1ff52b77b",
+      "status": "PASS",
+      "oldPages": 3,
+      "newPages": 6,
+      "lessonId": "9ed96005-ee0d-5acc-b7fe-87a43df73cab",
+      "coherenceRejected": []
+    },
+    {
+      "topicId": "87ade674-0149-5a24-a06a-21f3a03d270e",
+      "status": "PASS_WITH_WARNING",
+      "oldPages": 3,
+      "newPages": 3,
+      "lessonId": "7791c03c-bfdd-5828-971d-0379e46d8045",
+      "coherenceRejected": [
+        {
+          "planChecksum": "e3f8f22b6062f55caadc333fe63d5b35a05e13679096e72cd0aa6a3a431db107",
+          "reason": "DUPLICATES_SIBLING",
+          "overlap": 1.0
+        },
+        {
+          "planChecksum": "009b7df339ee4a0fd45c5026e426543885a04d01352a9bcbcf1c98696ad3bdaf",
+          "reason": "DUPLICATES_SIBLING",
+          "overlap": 0.842
+        }
+      ]
+    },
+    {
+      "topicId": "00e8ba99-3fa3-5b2a-a4b8-a78ec178646d",
+      "status": "PASS_WITH_WARNING",
+      "oldPages": 3,
+      "newPages": 5,
+      "lessonId": "04562e25-16a5-551c-91a8-dd8766d22ae7",
+      "coherenceRejected": [
+        {
+          "planChecksum": "b874e6e731bd211c1806069a726cba0933308af280a1f2fe6f95179a8b629b2b",
+          "reason": "DUPLICATES_SIBLING",
+          "overlap": 0.8
+        }
+      ]
+    },
+    {
+      "topicId": "c2243e85-b3cb-5ae3-91bb-2d9091ef4fdd",
+      "status": "PASS",
+      "oldPages": 3,
+      "newPages": 6,
+      "lessonId": "17db30ea-0597-5193-a42f-1534c9fc2d98",
+      "coherenceRejected": []
+    },
+    {
+      "topicId": "991636c3-0e96-5c11-a77d-610f8e0a54e3",
+      "status": "PASS_WITH_WARNING",
+      "oldPages": 3,
+      "newPages": 5,
+      "lessonId": "08b18b98-2462-5cb2-9706-139141de4fdb",
+      "coherenceRejected": [
+        {
+          "planChecksum": "055f66fc13e27b818e1567f9b81fd251d08eab1edb568cd3fdd343119e68f12b",
+          "reason": "DUPLICATES_SIBLING",
+          "overlap": 0.84
+        }
+      ]
+    },
+    {
+      "topicId": "b52ada95-21a2-59cb-870b-60a16bcc63f2",
+      "status": "PASS_WITH_WARNING",
+      "oldPages": 3,
+      "newPages": 4,
+      "lessonId": "b189e3bc-a4dc-549e-92a8-7f0f2852a06f",
+      "coherenceRejected": [
+        {
+          "planChecksum": "2b614f32170fcf4aa744673777244b2fd6e5cc7e9dcee623fdb17c4fb5fbad19",
+          "reason": "DUPLICATES_SIBLING",
+          "overlap": 0.652
+        }
+      ]
+    },
+    {
+      "topicId": "0b5d3120-d1ab-58dc-b0bb-704ac166c289",
+      "status": "UNCHANGED_SUFFICIENT",
+      "oldPages": 3,
+      "newPages": 3
+    },
+    {
+      "topicId": "a4ef50a7-72a0-55ef-bd52-077b079d5f57",
+      "status": "UNCHANGED_SUFFICIENT",
+      "oldPages": 3,
+      "newPages": 3
+    },
+    {
+      "topicId": "1ccd5f25-7d48-54ab-9c99-be86fdd076c7",
+      "status": "PASS",
+      "oldPages": 3,
+      "newPages": 6,
+      "lessonId": "45d2f39f-1911-5f51-9d89-4b1567182170",
+      "coherenceRejected": []
+    },
+    {
+      "topicId": "273b123a-b991-579b-a3b4-1bb50769205b",
+      "status": "UNCHANGED_SUFFICIENT",
+      "oldPages": 3,
+      "newPages": 3
+    },
+    {
+      "topicId": "1a4e31bc-fcc3-53f7-a037-0b94ae0475c4",
+      "status": "PASS_WITH_WARNING",
+      "oldPages": 3,
+      "newPages": 4,
+      "lessonId": "6c6675b7-7918-5062-b0b7-319d940d77bd",
+      "coherenceRejected": [
+        {
+          "planChecksum": "9041a5b1fd31b04c5a3c517eaada5bd13d87b04080502d1ddff730a30e88368b",
+          "reason": "DUPLICATES_SIBLING",
+          "overlap": 1.0
+        },
+        {
+          "planChecksum": "40e1425b198b269eb49174e227ffa627c897e3ed454d9bb9f524f91648698ca8",
+          "reason": "DUPLICATES_SIBLING",
+          "overlap": 1.0
+        }
+      ]
+    },
+    {
+      "topicId": "6199ccd6-780f-53cb-8431-56adbe4f310c",
+      "status": "PASS_WITH_WARNING",
+      "oldPages": 3,
+      "newPages": 4,
+      "lessonId": "50f8a5e9-212c-5d89-9312-53ac9f3c8036",
+      "coherenceRejected": [
+        {
+          "planChecksum": "fe9bf720d0cb1a7730b654bec7d9bcebd1803605144cd5dce1adc31cd12a647f",
+          "reason": "DUPLICATES_SIBLING",
+          "overlap": 0.824
+        },
+        {
+          "planChecksum": "dff18fdab5645a8564238ef3c833269c0bc9c840dd5782773563a886c647b5c8",
+          "reason": "DUPLICATES_SIBLING",
+          "overlap": 1.0
+        }
+      ]
+    }
+  ]
+}

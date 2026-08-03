@@ -45,6 +45,11 @@ class KnowledgeFactTextQualityValidatorTest {
       "I ett demokratiskt samhälle har människor rätt att rösta i fria val.",
       "Demokrati betyder folkstyre.",
       "Falsk information och hat sprids ibland på sociala medier för att skapa konflikter i samhället.",
+      "Över en miljon svenskar utvandrade till USA mellan 1850 och 1920.",
+      "För tvåhundra år sedan var Sverige ett typiskt jordbruksland.",
+      "Under informationssamhällets period inleddes en snabb teknisk utveckling.",
+      "Från mitten av 1970-talet förändrades Sverige från ett industrisamhälle till ett informations- och kunskapssamhälle.",
+      "År 1938 slöts ett avtal mellan arbetsgivare och fackförbund i Saltsjöbaden.",
       "Sverige\n\tär   en demokrati."); }
 
   @Test void distinguishesVagueButMeaningfulText() {
