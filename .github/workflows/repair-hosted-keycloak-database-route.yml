@@ -31,6 +31,14 @@ jobs:
           repo="${root}/repo"
           env_file="${root}/.env"
           release_env="${root}/.release.env"
+          diagnose() {
+            local status="$?"
+            trap - ERR
+            docker inspect --format '{{json .State.Health}}' citizenship-platform-keycloak-1 >&2 || true
+            docker logs --tail 160 citizenship-platform-keycloak-1 >&2 || true
+            exit "${status}"
+          }
+          trap diagnose ERR
           deployed_commit="$(sed -n 's/^GATEWAY_IMAGE_TAG=//p' "${release_env}" | tail -1)"
           [[ "${deployed_commit}" =~ ^[0-9a-f]{40}$ ]]
           cd "${repo}"
@@ -62,7 +70,7 @@ jobs:
           chmod "$(stat -c '%a' "${env_file}")" "${temporary}"
           mv "${temporary}" "${env_file}"
           docker compose --env-file "${env_file}" --env-file "${release_env}" -f docker-compose.hosted.yml \
-            up -d --no-deps --wait --wait-timeout 180 keycloak
+            up -d --no-deps --wait --wait-timeout 90 keycloak
           docker inspect --format '{{.State.Health.Status}}' citizenship-platform-keycloak-1 | grep -qx healthy
           REMOTE
       - name: Validate restored sslip.io issuer
