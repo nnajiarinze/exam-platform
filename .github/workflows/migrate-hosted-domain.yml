@@ -68,8 +68,13 @@ jobs:
           [[ -f "${env_file}" && "$(stat -c '%a' "${env_file}")" == 600 ]]
           cd "${repo}"
           previous_commit="$(sed -n 's/^GATEWAY_IMAGE_TAG=//p' "${release_env}" | tail -1)"
+          previous_identity_tag="$(sed -n 's/^KEYCLOAK_IMAGE_TAG=//p' "${release_env}" | tail -1)"
           [[ "${previous_commit}" =~ ^[0-9a-f]{40}$ ]] || {
             echo 'Current immutable gateway tag cannot anchor rollback.' >&2
+            exit 1
+          }
+          [[ "${previous_identity_tag}" =~ ^[0-9a-f]{40}$ ]] || {
+            echo 'Current immutable identity tag cannot anchor the migration.' >&2
             exit 1
           }
           git fetch --quiet origin "${previous_commit}" "${commit_sha}"
@@ -122,9 +127,8 @@ jobs:
           update_file "${env_file}" CORS_ALLOWED_ORIGINS "https://${permanent_domain},https://${rollback_domain}"
           update_file "${env_file}" KEYCLOAK_SECURITY_MODE HTTPS_HOSTED
           update_file "${release_env}" GATEWAY_IMAGE_TAG "${commit_sha}"
-          update_file "${release_env}" KEYCLOAK_IMAGE_TAG "${commit_sha}"
           compose=(docker compose --env-file "${env_file}" --env-file "${release_env}" -f docker-compose.hosted.yml)
-          "${compose[@]}" pull api-gateway keycloak
+          "${compose[@]}" pull api-gateway
           # Stage B: switch identity first, then API validators, then the public gateway.
           "${compose[@]}" up -d --no-deps --wait --wait-timeout 120 keycloak
           KEYCLOAK_SECURITY_MODE=HTTPS_HOSTED ADMIN_PORTAL_URL="https://${permanent_domain}" \
@@ -142,7 +146,7 @@ jobs:
           permanent_image="$("${compose[@]}" ps -q api-gateway | xargs docker inspect -f '{{.Config.Image}}')"
           identity_image="$("${compose[@]}" ps -q keycloak | xargs docker inspect -f '{{.Config.Image}}')"
           [[ "${permanent_image}" == */citizenship-api-gateway:"${commit_sha}" ]]
-          [[ "${identity_image}" == */citizenship-keycloak:"${commit_sha}" ]]
+          [[ "${identity_image}" == */citizenship-keycloak:"${previous_identity_tag}" ]]
           jq -c '{content,learning,identity}' <<<"${after_state}"
           trap - ERR
           rm -f "${env_backup}" "${release_backup}"
