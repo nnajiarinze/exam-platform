@@ -40,7 +40,8 @@ diagnostic codes map to user-facing copy without exposing OAuth payloads.
 
 The versioned `svea-study` login theme is packaged in the immutable Keycloak
 image and applied by realm hardening. Registration, email verification, password
-reset, unique email, brute-force protection and PKCE remain required.
+reset, unique email, brute-force protection and PKCE remain required. Swedish is
+the realm default and English remains an explicitly supported locale.
 
 Google is configured only when both protected `KEYCLOAK_GOOGLE_CLIENT_ID` and
 `KEYCLOAK_GOOGLE_CLIENT_SECRET` exist. It is hidden from generic/Admin login and

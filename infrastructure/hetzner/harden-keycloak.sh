@@ -49,6 +49,9 @@ kcadm() {
 kcadm update realms/exam-platform \
   -s "sslRequired=${ssl_required}" \
   -s loginTheme=svea-study \
+  -s internationalizationEnabled=true \
+  -s 'supportedLocales=["sv","en"]' \
+  -s defaultLocale=sv \
   -s registrationAllowed=true \
   -s verifyEmail=true \
   -s resetPasswordAllowed=true \
@@ -122,6 +125,8 @@ fi
 kcadm get realms/exam-platform |
   jq -e --arg ssl "${ssl_required}" '
     .sslRequired == $ssl and .loginTheme == "svea-study" and
+    .internationalizationEnabled == true and .defaultLocale == "sv" and
+    (.supportedLocales | sort) == (["en","sv"] | sort) and
     .registrationAllowed == true and .verifyEmail == true and
     .resetPasswordAllowed == true and .duplicateEmailsAllowed == false and
     .bruteForceProtected == true and
