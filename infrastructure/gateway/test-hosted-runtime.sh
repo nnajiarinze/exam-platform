@@ -39,8 +39,8 @@ gateway_args=(
   --cap-add SETUID
   --security-opt no-new-privileges
   -e API_DOMAIN=test.local
-  -e LEGACY_API_DOMAIN=legacy.test.local
-  -e 'NGINX_ENVSUBST_FILTER=^(API_DOMAIN|LEGACY_API_DOMAIN)$'
+  -e ROLLBACK_HOSTNAME=legacy.test.local
+  -e 'NGINX_ENVSUBST_FILTER=^(API_DOMAIN|ROLLBACK_HOSTNAME)$'
   -v "${test_root}/www:/var/www/certbot:ro"
   -v "${PWD}/infrastructure/gateway/hosted.conf.template:/etc/nginx/templates/default.conf.template:ro"
 )

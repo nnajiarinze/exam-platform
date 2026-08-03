@@ -101,7 +101,7 @@ jobs:
           }
           trap rollback ERR
           update_file "${env_file}" API_DOMAIN "${permanent_domain}"
-          update_file "${env_file}" LEGACY_API_DOMAIN "${rollback_domain}"
+          update_file "${env_file}" ROLLBACK_HOSTNAME "${rollback_domain}"
           update_file "${env_file}" PUBLIC_SCHEME https
           update_file "${env_file}" ADMIN_PORTAL_URL "https://${permanent_domain}"
           update_file "${env_file}" LEGACY_ADMIN_PORTAL_URL "https://${rollback_domain}"

@@ -55,7 +55,7 @@ grep -q 'X-Forwarded-Port 443' "${GATEWAY_LOCATIONS}" || exit 1
 grep -q 'X-Forwarded-Proto https' "${GATEWAY_LOCATIONS}" || exit 1
 grep -q 'mode.*hosted-https' "${REPOSITORY_ROOT}/infrastructure/gateway/hosted.conf.template" || exit 1
 grep -q 'API_DOMAIN: api.tinkona.com' <<<"${rendered}" || exit 1
-grep -q 'LEGACY_API_DOMAIN: api.46-224-221-7.sslip.io' <<<"${rendered}" || exit 1
+grep -q 'ROLLBACK_HOSTNAME: api.46-224-221-7.sslip.io' <<<"${rendered}" || exit 1
 grep -q "https://api.tinkona.com" "${REPOSITORY_ROOT}/apps/mobile/src/config/environment.ts" || exit 1
 grep -q '/tmp/nginx-certs/primary/fullchain.pem' "${REPOSITORY_ROOT}/infrastructure/gateway/hosted.conf.template" || exit 1
 grep -q '/tmp/nginx-certs/legacy/fullchain.pem' "${REPOSITORY_ROOT}/infrastructure/gateway/hosted.conf.template" || exit 1

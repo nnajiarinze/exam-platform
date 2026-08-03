@@ -2,12 +2,12 @@
 set -eu
 
 : "${API_DOMAIN:?API_DOMAIN is required}"
-: "${LEGACY_API_DOMAIN:?LEGACY_API_DOMAIN is required during the permanent-domain transition}"
+: "${ROLLBACK_HOSTNAME:?ROLLBACK_HOSTNAME is required during the permanent-domain transition}"
 runtime_dir=/tmp/nginx-certs
 
 install -d -m 0750 "${runtime_dir}"
 for certificate in primary legacy; do
-  if [ "${certificate}" = primary ]; then domain="${API_DOMAIN}"; else domain="${LEGACY_API_DOMAIN}"; fi
+  if [ "${certificate}" = primary ]; then domain="${API_DOMAIN}"; else domain="${ROLLBACK_HOSTNAME}"; fi
   source_dir="/etc/letsencrypt/live/${domain}"
   install -d -m 0750 "${runtime_dir}/${certificate}"
   for file in fullchain.pem privkey.pem; do

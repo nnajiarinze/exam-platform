@@ -1,7 +1,7 @@
 map $host $public_host_allowed {
   default 0;
   ${API_DOMAIN} 1;
-  ${LEGACY_API_DOMAIN} 1;
+  ${ROLLBACK_HOSTNAME} 1;
   127.0.0.1 1;
   localhost 1;
 }
@@ -13,12 +13,12 @@ map $host $primary_host_allowed {
 }
 map $host $legacy_host_allowed {
   default 0;
-  ${LEGACY_API_DOMAIN} 1;
+  ${ROLLBACK_HOSTNAME} 1;
 }
 
 server {
   listen 8080 default_server;
-  server_name ${API_DOMAIN} ${LEGACY_API_DOMAIN};
+  server_name ${API_DOMAIN} ${ROLLBACK_HOSTNAME};
   server_tokens off;
   if ($public_host_allowed = 0) { return 421; }
 
@@ -43,7 +43,7 @@ server {
 
 server {
   listen 8443 ssl;
-  server_name ${LEGACY_API_DOMAIN};
+  server_name ${ROLLBACK_HOSTNAME};
   if ($legacy_host_allowed = 0) { return 421; }
   ssl_certificate /tmp/nginx-certs/legacy/fullchain.pem;
   ssl_certificate_key /tmp/nginx-certs/legacy/privkey.pem;
