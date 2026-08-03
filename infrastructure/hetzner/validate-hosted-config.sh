@@ -31,10 +31,11 @@ if grep -R -nE 'citizenship-.*\\.onrender\\.com|http://46\\.224\\.221\\.7' \
   printf 'Hosted runtime configuration still contains a Render backend URL.\n' >&2
   exit 1
 fi
-grep -q "connect-src 'self'" "${REPOSITORY_ROOT}/infrastructure/gateway/hosted.conf.template" || {
+GATEWAY_LOCATIONS="${REPOSITORY_ROOT}/infrastructure/gateway/hosted-locations.conf"
+grep -q "connect-src 'self'" "${GATEWAY_LOCATIONS}" || {
   printf 'Hosted Admin CSP does not restrict browser connections to the gateway origin.\n' >&2; exit 1;
 }
-grep -q 'try_files \$uri \$uri/ /index.html' "${REPOSITORY_ROOT}/infrastructure/gateway/hosted.conf.template" || {
+grep -q 'try_files \$uri \$uri/ /index.html' "${GATEWAY_LOCATIONS}" || {
   printf 'Hosted gateway does not serve the Admin SPA callback routes.\n' >&2; exit 1;
 }
 grep -qE '^[[:space:]]+source: .*infrastructure/gateway/hosted\.conf\.template$' <<<"${rendered}" || {
@@ -50,7 +51,12 @@ grep -qE 'source: .*infrastructure/gateway/hosted\.conf\.template$' <<<"${overri
 grep -q 'listen 8443 ssl;' "${REPOSITORY_ROOT}/infrastructure/gateway/hosted.conf.template" || {
   printf 'Hosted gateway has no TLS listener.\n' >&2; exit 1;
 }
-grep -q 'X-Forwarded-Port 443' "${REPOSITORY_ROOT}/infrastructure/gateway/hosted.conf.template" || exit 1
-grep -q 'X-Forwarded-Proto https' "${REPOSITORY_ROOT}/infrastructure/gateway/hosted.conf.template" || exit 1
+grep -q 'X-Forwarded-Port 443' "${GATEWAY_LOCATIONS}" || exit 1
+grep -q 'X-Forwarded-Proto https' "${GATEWAY_LOCATIONS}" || exit 1
 grep -q 'mode.*hosted-https' "${REPOSITORY_ROOT}/infrastructure/gateway/hosted.conf.template" || exit 1
+grep -q 'API_DOMAIN: api.tinkona.com' <<<"${rendered}" || exit 1
+grep -q 'LEGACY_API_DOMAIN: api.46-224-221-7.sslip.io' <<<"${rendered}" || exit 1
+grep -q "https://api.tinkona.com" "${REPOSITORY_ROOT}/apps/mobile/src/config/environment.ts" || exit 1
+grep -q '/tmp/nginx-certs/primary/fullchain.pem' "${REPOSITORY_ROOT}/infrastructure/gateway/hosted.conf.template" || exit 1
+grep -q '/tmp/nginx-certs/legacy/fullchain.pem' "${REPOSITORY_ROOT}/infrastructure/gateway/hosted.conf.template" || exit 1
 printf 'Hosted Compose security and routing validation passed.\n'

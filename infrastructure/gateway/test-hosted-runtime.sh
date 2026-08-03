@@ -18,10 +18,14 @@ cleanup() {
 }
 trap cleanup EXIT
 
-mkdir -p "${test_root}/certs/live/test.local" "${test_root}/empty-certs" "${test_root}/www"
+mkdir -p "${test_root}/certs/live/test.local" "${test_root}/certs/live/legacy.test.local" "${test_root}/empty-certs" "${test_root}/www"
 openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj /CN=test.local \
   -keyout "${test_root}/certs/live/test.local/privkey.pem" \
   -out "${test_root}/certs/live/test.local/fullchain.pem" >/dev/null 2>&1
+openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj /CN=legacy.test.local \
+  -addext 'subjectAltName=DNS:legacy.test.local' \
+  -keyout "${test_root}/certs/live/legacy.test.local/privkey.pem" \
+  -out "${test_root}/certs/live/legacy.test.local/fullchain.pem" >/dev/null 2>&1
 
 docker network create "${network}" >/dev/null
 docker run -d --name "${content}" --network "${network}" --network-alias content-service nginx:alpine >/dev/null
@@ -35,11 +39,12 @@ gateway_args=(
   --cap-add SETUID
   --security-opt no-new-privileges
   -e API_DOMAIN=test.local
-  -e 'NGINX_ENVSUBST_FILTER=^(API_DOMAIN)$'
+  -e LEGACY_API_DOMAIN=legacy.test.local
+  -e 'NGINX_ENVSUBST_FILTER=^(API_DOMAIN|LEGACY_API_DOMAIN)$'
   -v "${test_root}/www:/var/www/certbot:ro"
   -v "${PWD}/infrastructure/gateway/hosted.conf.template:/etc/nginx/templates/default.conf.template:ro"
 )
-docker run -d --name "${gateway}" "${gateway_args[@]}" \
+docker run -d --name "${gateway}" -p 127.0.0.1::8443 "${gateway_args[@]}" \
   -v "${test_root}/certs:/etc/letsencrypt:ro" "${image}" >/dev/null
 
 for _ in {1..60}; do
@@ -58,6 +63,10 @@ grep -qE '0\.0\.0\.0:8080[[:space:]]' <<<"${listeners}"
 grep -qE '0\.0\.0\.0:8443[[:space:]]' <<<"${listeners}"
 [[ "$(docker exec "${gateway}" wget --no-check-certificate -q -O - https://127.0.0.1:8443/healthz)" == \
   '{"status":"UP","mode":"hosted-https"}' ]]
+primary_subject="$(openssl s_client -connect 127.0.0.1:"$(docker port "${gateway}" 8443/tcp | sed 's/.*://')" -servername test.local </dev/null 2>/dev/null | openssl x509 -noout -subject)"
+legacy_subject="$(openssl s_client -connect 127.0.0.1:"$(docker port "${gateway}" 8443/tcp | sed 's/.*://')" -servername legacy.test.local </dev/null 2>/dev/null | openssl x509 -noout -subject)"
+[[ "${primary_subject}" == *CN\ =\ test.local* ]]
+[[ "${legacy_subject}" == *CN\ =\ legacy.test.local* ]]
 
 set +e
 docker run --name "${missing_gateway}" "${gateway_args[@]}" \

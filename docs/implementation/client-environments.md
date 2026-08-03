@@ -4,11 +4,11 @@ Both clients use the typed environments `LOCAL` and `HOSTED`. API and OIDC endpo
 
 ## Mobile
 
-Ordinary Expo development defaults to `LOCAL`. Use the `development-local` EAS profile for laptop services and `development-hosted` or `preview-hosted` for internal testing against `http://46.224.221.7`. The raw-IP HTTP endpoint is temporary and internal-only. The `production` profile is guarded: it rejects `LOCAL` and any non-HTTPS hosted endpoint.
+Ordinary Expo development defaults to `LOCAL`. Use the `development-local` EAS profile for laptop services and `development-hosted` or `preview-hosted` for `https://api.tinkona.com`. The `production` profile is guarded: it rejects `LOCAL` and every non-HTTPS hosted endpoint.
 
 Android permits cleartext only in debug manifests. iOS retains `NSAllowsArbitraryLoads=false` and local-network access; no global ATS exception is added. Replace `EXPO_PUBLIC_API_BASE_URL` with the future HTTPS gateway without changing source.
 
-For `HOSTED` plus `EXPO_PUBLIC_BUILD_KIND=internal`, Expo config adds an exact-host ATS exception for `46.224.221.7`; it is absent from local and production configurations. Remove this conditional exception when the hosted gateway moves to HTTPS. Apple documents ATS exception-domain keys as domains, so raw-IP handling must be verified on the physical device; a hostname with HTTPS is the durable solution.
+All hosted profiles use the permanent HTTPS hostname. No raw-IP or broad ATS exception is present; local-network permission remains limited to LOCAL development.
 
 ## Admin Portal
 

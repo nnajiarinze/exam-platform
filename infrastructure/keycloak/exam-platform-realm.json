@@ -42,11 +42,11 @@
     {
       "clientId": "admin-portal", "name": "Content Admin Portal", "publicClient": true,
       "standardFlowEnabled": true, "directAccessGrantsEnabled": false,
-      "redirectUris": ["http://localhost:5173/oidc/callback", "http://127.0.0.1:5173/oidc/callback", "https://api.46-224-221-7.sslip.io/oidc/callback"],
-      "webOrigins": ["http://localhost:5173", "http://127.0.0.1:5173", "https://api.46-224-221-7.sslip.io"],
+      "redirectUris": ["http://localhost:5173/oidc/callback", "http://127.0.0.1:5173/oidc/callback", "https://api.tinkona.com/oidc/callback", "https://api.46-224-221-7.sslip.io/oidc/callback"],
+      "webOrigins": ["http://localhost:5173", "http://127.0.0.1:5173", "https://api.tinkona.com", "https://api.46-224-221-7.sslip.io"],
       "attributes": {
         "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "http://localhost:5173/*##http://127.0.0.1:5173/*##https://api.46-224-221-7.sslip.io/*"
+        "post.logout.redirect.uris": "http://localhost:5173/*##http://127.0.0.1:5173/*##https://api.tinkona.com/*##https://api.46-224-221-7.sslip.io/*"
       },
       "protocolMappers": [{ "name": "content audience", "protocol": "openid-connect", "protocolMapper": "oidc-audience-mapper", "config": { "included.custom.audience": "content-api", "access.token.claim": "true" } }]
     }

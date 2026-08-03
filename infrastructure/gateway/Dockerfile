@@ -15,6 +15,7 @@ RUN apk upgrade --no-cache && apk add --no-cache su-exec && \
       /etc/nginx/nginx.conf
 COPY --chmod=0755 infrastructure/gateway/hosted-entrypoint.sh /usr/local/bin/hosted-entrypoint
 COPY infrastructure/gateway/default.conf.template /etc/nginx/templates/default.conf.template
+COPY infrastructure/gateway/hosted-tls.conf infrastructure/gateway/hosted-locations.conf /etc/nginx/snippets/
 COPY --from=admin-build --chown=101:101 /workspace/apps/admin/dist/ /usr/share/nginx/html/
 USER 0:101
 HEALTHCHECK --interval=15s --timeout=3s --start-period=10s --retries=3 \

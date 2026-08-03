@@ -24,7 +24,7 @@ still require backend validation when connectivity returns.
 
 LOCAL uses the local Keycloak issuer and permits email login/registration.
 HOSTED is pinned to
-`https://api.46-224-221-7.sslip.io/auth/realms/exam-platform`. Production builds
+`https://api.tinkona.com/auth/realms/exam-platform`. Production builds
 reject LOCAL or cleartext configuration.
 
 ## Native experience

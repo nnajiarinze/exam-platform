@@ -6,7 +6,4 @@ source "${SCRIPT_DIR}/lib.sh"
 load_platform_paths
 
 require_command certbot
-certbot renew --quiet
-if compose ps --status running --services | grep -qx api-gateway; then
-  compose exec -T api-gateway nginx -s reload
-fi
+certbot renew --quiet --deploy-hook "${SCRIPT_DIR}/reload-gateway-certificates.sh"

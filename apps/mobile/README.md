@@ -2,7 +2,7 @@
 
 Expo/React Native client for practice, progress, and timed mock examinations.
 
-Backend routing is centralized in `src/config/environment.ts`. Ordinary Expo development defaults to `LOCAL`, using the existing physical-device gateway; iOS simulator and Android emulator alternatives remain isolated there. Select `HOSTED` with an EAS profile or `EXPO_PUBLIC_APP_ENV=HOSTED`; it uses the TLS-protected Hetzner gateway `https://api.46-224-221-7.sslip.io`.
+Backend routing is centralized in `src/config/environment.ts`. Ordinary Expo development defaults to `LOCAL`, using the existing physical-device gateway; iOS simulator and Android emulator alternatives remain isolated there. Select `HOSTED` with an EAS profile or `EXPO_PUBLIC_APP_ENV=HOSTED`; it uses the permanent TLS-protected Hetzner gateway `https://api.tinkona.com`.
 
 Profiles `development-local`, `development-hosted`, and `preview-hosted` are internal builds. `production` deliberately fails while the hosted gateway is HTTP and must be changed to HTTPS before store publication. Android cleartext access remains limited to debug manifests; the main/release manifest is not weakened. iOS keeps `NSAllowsArbitraryLoads=false` and local networking support, so hosted HTTP may require an internal development build and is never accepted for production.
 

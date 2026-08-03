@@ -12,7 +12,7 @@ on:
       public_domain:
         description: Public HTTPS hostname resolving to the authoritative Hetzner host
         required: true
-        default: api.46-224-221-7.sslip.io
+        default: api.tinkona.com
 
 permissions:
   contents: read
@@ -30,7 +30,7 @@ jobs:
         run: |
           [[ "${COMMIT_SHA}" =~ ^[0-9a-f]{40}$ ]]
           [[ "${IMAGE_SHA}" =~ ^[0-9a-f]{40}$ ]]
-          [[ "${PUBLIC_DOMAIN}" == api.46-224-221-7.sslip.io ]]
+          [[ "${PUBLIC_DOMAIN}" == api.tinkona.com ]]
           [[ "$(getent ahostsv4 "${PUBLIC_DOMAIN}" | awk 'NR==1{print $1}')" == 46.224.221.7 ]]
       - name: Configure protected Hetzner SSH
         env:

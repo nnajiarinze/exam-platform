@@ -3,12 +3,12 @@ import { readEnvironment } from './environment';
 describe('environment configuration', () => {
   it('uses the serving HTTPS origin for hosted API and OIDC discovery in production', () => {
     const originalLocation=globalThis.location;
-    Object.defineProperty(globalThis,'location',{configurable:true,value:{origin:'https://api.46-224-221-7.sslip.io'}});
+    Object.defineProperty(globalThis,'location',{configurable:true,value:{origin:'https://api.tinkona.com'}});
     try {
       expect(readEnvironment({PROD:true,VITE_DEFAULT_APP_ENV:'HOSTED'})).toMatchObject({
-        gatewayBaseUrl:'https://api.46-224-221-7.sslip.io',
-        contentServiceBaseUrl:'https://api.46-224-221-7.sslip.io/content',
-        oidcAuthority:'https://api.46-224-221-7.sslip.io/auth/realms/exam-platform',
+        gatewayBaseUrl:'https://api.tinkona.com',
+        contentServiceBaseUrl:'https://api.tinkona.com/content',
+        oidcAuthority:'https://api.tinkona.com/auth/realms/exam-platform',
       });
     } finally {
       Object.defineProperty(globalThis,'location',{configurable:true,value:originalLocation});

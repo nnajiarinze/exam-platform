@@ -38,6 +38,12 @@ describe('mobile API configuration',()=>{
     expect(resolveEnvironment(Environment.HOSTED,'').apiBaseUrl).toBe(HOSTED_GATEWAY);
     expect(()=>parseEnvironment('REMOTE')).toThrow(/Unknown/);
   });
+  it('pins the permanent production hostname while preserving the mobile callback',()=>{
+    const {HOSTED_GATEWAY}=require('../config/environment') as typeof import('../config/environment');
+    const {providerAuthorizationUrl}=require('../features/auth/AuthContext') as typeof import('../features/auth/AuthContext');
+    expect(HOSTED_GATEWAY).toBe('https://api.tinkona.com');
+    expect(providerAuthorizationUrl('https://api.tinkona.com/auth/realms/exam-platform/protocol/openid-connect/auth?redirect_uri=sveastudy%3A%2F%2Fauth%2Fcallback','email')).toContain('redirect_uri=sveastudy%3A%2F%2Fauth%2Fcallback');
+  });
   it('joins endpoint paths without duplicate slashes',()=>{
     const {environmentConfig,joinBaseUrl}=require('../config/environment') as typeof import('../config/environment');
     expect(joinBaseUrl(`${environmentConfig.apiBaseUrl}/`,'/learning')).toBe(environmentConfig.learningBaseUrl);

@@ -44,7 +44,8 @@ services:
       - "443:8443"
     environment:
       API_DOMAIN: ${API_DOMAIN:?Set API_DOMAIN}
-      NGINX_ENVSUBST_FILTER: ^(API_DOMAIN)$
+      LEGACY_API_DOMAIN: ${LEGACY_API_DOMAIN:?Set temporary rollback hostname}
+      NGINX_ENVSUBST_FILTER: ^(API_DOMAIN|LEGACY_API_DOMAIN)$
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt:ro
       - /var/www/certbot:/var/www/certbot:ro

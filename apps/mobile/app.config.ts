@@ -2,7 +2,7 @@ import appJson from './app.json';
 
 const selectedEnvironment = process.env.EXPO_PUBLIC_APP_ENV || 'LOCAL';
 const buildKind = process.env.EXPO_PUBLIC_BUILD_KIND || 'development';
-const gateway = process.env.EXPO_PUBLIC_API_BASE_URL || 'https://api.46-224-221-7.sslip.io';
+const gateway = process.env.EXPO_PUBLIC_API_BASE_URL || 'https://api.tinkona.com';
 
 if (!['LOCAL', 'HOSTED'].includes(selectedEnvironment)) {
   throw new Error(`Unknown EXPO_PUBLIC_APP_ENV "${selectedEnvironment}". Expected LOCAL or HOSTED.`);

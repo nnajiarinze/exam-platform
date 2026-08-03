@@ -3,7 +3,7 @@ export enum Environment {
   HOSTED = 'HOSTED',
 }
 
-export const HOSTED_GATEWAY = 'https://api.46-224-221-7.sslip.io';
+export const HOSTED_GATEWAY = 'https://api.tinkona.com';
 
 export const LocalGateway = {
   physicalDevice: 'http://192.168.1.213:8080',

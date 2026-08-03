@@ -16,6 +16,10 @@ if [[ -z "${admin_portal_url}" ]]; then
   admin_portal_url="${public_scheme:-https}://${api_domain}"
 fi
 [[ "${admin_portal_url}" == https://* && "${admin_portal_url}" != *onrender.com* ]] || die "Hosted Admin URL must be the non-Render HTTPS gateway"
+legacy_admin_portal_url="${LEGACY_ADMIN_PORTAL_URL:-$(env_file_value LEGACY_ADMIN_PORTAL_URL "${PLATFORM_ENV_FILE}")}"
+if [[ -n "${legacy_admin_portal_url}" ]]; then
+  [[ "${legacy_admin_portal_url}" == https://* && "${legacy_admin_portal_url}" != *onrender.com* ]] || die "Legacy Admin rollback URL must use HTTPS"
+fi
 container="${KEYCLOAK_CONTAINER:-citizenship-platform-keycloak-1}"
 internal_url="${KEYCLOAK_INTERNAL_URL:-http://127.0.0.1:8080/auth}"
 
@@ -79,18 +83,18 @@ if [[ "${mode}" == "BOOTSTRAP_HTTP" ]]; then
   kcadm update "clients/${mobile_id}" -r exam-platform \
     -s 'redirectUris=["sveastudy://auth/callback","exp://192.168.1.213:8081/--/auth/callback"]' \
     -s 'webOrigins=[]' >/dev/null
-  admin_redirects="$(jq -cn --arg hosted "${admin_portal_url}/oidc/callback" \
-    '["http://localhost:5173/oidc/callback","http://127.0.0.1:5173/oidc/callback",$hosted]')"
-  admin_origins="$(jq -cn --arg hosted "${admin_portal_url}" \
-    '["http://localhost:5173","http://127.0.0.1:5173",$hosted]')"
-  logout_redirects="http://localhost:5173##http://127.0.0.1:5173##${admin_portal_url}"
+  admin_redirects="$(jq -cn --arg hosted "${admin_portal_url}/oidc/callback" --arg legacy "${legacy_admin_portal_url:+${legacy_admin_portal_url}/oidc/callback}" \
+    '["http://localhost:5173/oidc/callback","http://127.0.0.1:5173/oidc/callback",$hosted,$legacy] | map(select(length>0)) | unique')"
+  admin_origins="$(jq -cn --arg hosted "${admin_portal_url}" --arg legacy "${legacy_admin_portal_url}" \
+    '["http://localhost:5173","http://127.0.0.1:5173",$hosted,$legacy] | map(select(length>0)) | unique')"
+  logout_redirects="http://localhost:5173##http://127.0.0.1:5173##${admin_portal_url}${legacy_admin_portal_url:+##${legacy_admin_portal_url}}"
 else
   kcadm update "clients/${mobile_id}" -r exam-platform \
     -s 'redirectUris=["sveastudy://auth/callback"]' \
     -s 'webOrigins=[]' >/dev/null
-  admin_redirects="$(jq -cn --arg hosted "${admin_portal_url}/oidc/callback" '[$hosted]')"
-  admin_origins="$(jq -cn --arg hosted "${admin_portal_url}" '[$hosted]')"
-  logout_redirects="${admin_portal_url}"
+  admin_redirects="$(jq -cn --arg hosted "${admin_portal_url}/oidc/callback" --arg legacy "${legacy_admin_portal_url:+${legacy_admin_portal_url}/oidc/callback}" '[$hosted,$legacy] | map(select(length>0)) | unique')"
+  admin_origins="$(jq -cn --arg hosted "${admin_portal_url}" --arg legacy "${legacy_admin_portal_url}" '[$hosted,$legacy] | map(select(length>0)) | unique')"
+  logout_redirects="${admin_portal_url}${legacy_admin_portal_url:+##${legacy_admin_portal_url}}"
 fi
 kcadm update "clients/${admin_id}" -r exam-platform \
   -s "redirectUris=${admin_redirects}" \

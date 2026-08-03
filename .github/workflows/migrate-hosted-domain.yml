@@ -1,0 +1,168 @@
+name: Migrate hosted permanent domain
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: Full tested commit SHA with published gateway and Keycloak images
+        required: true
+      permanent_domain:
+        description: Permanent hosted API domain
+        required: true
+        default: api.tinkona.com
+      rollback_domain:
+        description: Temporary rollback domain retained after cutover
+        required: true
+        default: api.46-224-221-7.sslip.io
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    environment: hosted
+    steps:
+      - name: Validate immutable inputs and public DNS
+        env:
+          COMMIT_SHA: ${{ inputs.commit_sha }}
+          PERMANENT_DOMAIN: ${{ inputs.permanent_domain }}
+          ROLLBACK_DOMAIN: ${{ inputs.rollback_domain }}
+        run: |
+          [[ "${COMMIT_SHA}" =~ ^[0-9a-f]{40}$ ]]
+          [[ "${PERMANENT_DOMAIN}" == api.tinkona.com ]]
+          [[ "${ROLLBACK_DOMAIN}" == api.46-224-221-7.sslip.io ]]
+          [[ "$(getent ahostsv4 "${PERMANENT_DOMAIN}" | awk 'NR==1{print $1}')" == 46.224.221.7 ]]
+          if dig +short AAAA "${PERMANENT_DOMAIN}" | grep -q .; then
+            echo 'The permanent hostname has an unexpected AAAA record.' >&2
+            exit 1
+          fi
+          if dig +short CNAME "${PERMANENT_DOMAIN}" | grep -q .; then
+            echo 'The permanent hostname has an unexpected CNAME record.' >&2
+            exit 1
+          fi
+      - name: Configure protected Hetzner SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.HOSTED_SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ secrets.HOSTED_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "${SSH_PRIVATE_KEY}" >~/.ssh/id_ed25519
+          printf '%s\n' "${KNOWN_HOSTS}" >~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+      - name: Issue certificate and perform guarded issuer cutover
+        env:
+          COMMIT_SHA: ${{ inputs.commit_sha }}
+          PERMANENT_DOMAIN: ${{ inputs.permanent_domain }}
+          ROLLBACK_DOMAIN: ${{ inputs.rollback_domain }}
+          HOSTED_HOST: ${{ secrets.HOSTED_HOST }}
+          HOSTED_USER: ${{ secrets.HOSTED_USER }}
+        run: |
+          ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" "bash -s '${COMMIT_SHA}' '${PERMANENT_DOMAIN}' '${ROLLBACK_DOMAIN}'" <<'REMOTE'
+          set -Eeuo pipefail
+          commit_sha="$1" permanent_domain="$2" rollback_domain="$3"
+          root=/opt/citizenship-platform
+          repo="${root}/repo"
+          env_file="${root}/.env"
+          release_env="${root}/.release.env"
+          [[ -f "${env_file}" && "$(stat -c '%a' "${env_file}")" == 600 ]]
+          cd "${repo}"
+          git fetch --quiet origin "${commit_sha}"
+          git checkout --detach "${commit_sha}"
+          tls_email="$(sed -n 's/^TLS_EMAIL=//p' "${env_file}" | tail -1)"
+          before_state="$(./infrastructure/hetzner/snapshot-hosted-domain-state.sh)"
+          jq -e '.content.approvedActiveFacts==209 and .content.latestLessons==38 and
+            .content.latestPages==194 and .content.questions==139 and
+            .content.activeRelease.id!=null and .learning.activeReleaseId!=null' <<<"${before_state}" >/dev/null
+          # Stage A: the existing sslip.io gateway serves this webroot challenge.
+          API_DOMAIN="${permanent_domain}" TLS_EMAIL="${tls_email}" TLS_AUTHENTICATOR=webroot \
+            ./infrastructure/hetzner/provision-tls.sh
+          env_backup="$(mktemp "${env_file}.XXXXXX")"
+          release_backup="$(mktemp "${release_env}.XXXXXX")"
+          cp "${env_file}" "${env_backup}"
+          cp "${release_env}" "${release_backup}"
+          update_file() {
+            local file="$1" key="$2" value="$3" temporary
+            temporary="$(mktemp "${file}.XXXXXX")"
+            awk -F= -v key="${key}" -v value="${value}" '
+              BEGIN { replaced=0 }
+              $1==key { if (!replaced) print key "=" value; replaced=1; next }
+              { print }
+              END { if (!replaced) print key "=" value }
+            ' "${file}" >"${temporary}"
+            chmod "$(stat -c '%a' "${file}")" "${temporary}"
+            mv "${temporary}" "${file}"
+          }
+          rollback() {
+            cp "${env_backup}" "${env_file}"
+            cp "${release_backup}" "${release_env}"
+            docker compose --env-file "${env_file}" --env-file "${release_env}" -f docker-compose.hosted.yml \
+              up -d --no-deps keycloak content-service learning-service api-gateway >/dev/null 2>&1 || true
+          }
+          trap rollback ERR
+          update_file "${env_file}" API_DOMAIN "${permanent_domain}"
+          update_file "${env_file}" LEGACY_API_DOMAIN "${rollback_domain}"
+          update_file "${env_file}" PUBLIC_SCHEME https
+          update_file "${env_file}" ADMIN_PORTAL_URL "https://${permanent_domain}"
+          update_file "${env_file}" LEGACY_ADMIN_PORTAL_URL "https://${rollback_domain}"
+          update_file "${env_file}" CORS_ALLOWED_ORIGINS "https://${permanent_domain},https://${rollback_domain}"
+          update_file "${env_file}" KEYCLOAK_SECURITY_MODE HTTPS_HOSTED
+          update_file "${release_env}" GATEWAY_IMAGE_TAG "${commit_sha}"
+          update_file "${release_env}" KEYCLOAK_IMAGE_TAG "${commit_sha}"
+          compose=(docker compose --env-file "${env_file}" --env-file "${release_env}" -f docker-compose.hosted.yml)
+          "${compose[@]}" pull api-gateway keycloak
+          # Stage B: switch identity first, then API validators, then the public gateway.
+          "${compose[@]}" up -d --no-deps --wait --wait-timeout 120 keycloak
+          KEYCLOAK_SECURITY_MODE=HTTPS_HOSTED ADMIN_PORTAL_URL="https://${permanent_domain}" \
+            LEGACY_ADMIN_PORTAL_URL="https://${rollback_domain}" ./infrastructure/hetzner/harden-keycloak.sh
+          "${compose[@]}" up -d --no-deps --wait --wait-timeout 120 content-service learning-service
+          "${compose[@]}" up -d --no-deps --wait --wait-timeout 60 api-gateway
+          "${compose[@]}" exec -T --user 101:101 api-gateway nginx -t
+          API_DOMAIN="${permanent_domain}" ADMIN_PORTAL_URL="https://${permanent_domain}" \
+            ./infrastructure/hetzner/smoke-test.sh --internal
+          after_state="$(./infrastructure/hetzner/snapshot-hosted-domain-state.sh)"
+          [[ "${before_state}" == "${after_state}" ]] || {
+            echo 'Hosted content, identity, or learner state changed during domain migration.' >&2
+            exit 1
+          }
+          permanent_image="$("${compose[@]}" ps -q api-gateway | xargs docker inspect -f '{{.Config.Image}}')"
+          identity_image="$("${compose[@]}" ps -q keycloak | xargs docker inspect -f '{{.Config.Image}}')"
+          [[ "${permanent_image}" == */citizenship-api-gateway:"${commit_sha}" ]]
+          [[ "${identity_image}" == */citizenship-keycloak:"${commit_sha}" ]]
+          jq -c '{content,learning,identity}' <<<"${after_state}"
+          trap - ERR
+          rm -f "${env_backup}" "${release_backup}"
+          REMOTE
+      - name: Validate permanent issuer and dual-host SNI
+        env:
+          PERMANENT_DOMAIN: ${{ inputs.permanent_domain }}
+          ROLLBACK_DOMAIN: ${{ inputs.rollback_domain }}
+        run: |
+          set -Eeuo pipefail
+          issuer="https://${PERMANENT_DOMAIN}/auth/realms/exam-platform"
+          curl --fail --silent --show-error "https://${PERMANENT_DOMAIN}/healthz" >/dev/null
+          curl --fail --silent --show-error "${issuer}/.well-known/openid-configuration" >discovery.json
+          jq -e --arg issuer "${issuer}" '
+            .issuer==$issuer and (.authorization_endpoint|startswith($issuer+"/")) and
+            (.token_endpoint|startswith($issuer+"/")) and (.jwks_uri|startswith($issuer+"/"))' discovery.json
+          curl --fail --silent --show-error "$(jq -r .jwks_uri discovery.json)" | jq -e '.keys|length>0'
+          curl --fail --silent --show-error "https://${ROLLBACK_DOMAIN}/healthz" >/dev/null
+          for domain in "${PERMANENT_DOMAIN}" "${ROLLBACK_DOMAIN}"; do
+            certificate="$(echo | openssl s_client -connect "${domain}:443" -servername "${domain}" 2>/dev/null | openssl x509 -noout -ext subjectAltName -enddate)"
+            grep -Fq "DNS:${domain}" <<<"${certificate}"
+            grep -q '^notAfter=' <<<"${certificate}"
+          done
+          auth_url="$(jq -r .authorization_endpoint discovery.json)"
+          curl --fail --silent --show-error --get --output login.html \
+            --data-urlencode client_id=mobile-app \
+            --data-urlencode redirect_uri=sveastudy://auth/callback \
+            --data-urlencode response_type=code \
+            --data-urlencode scope='openid profile email' \
+            --data-urlencode code_challenge=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+            --data-urlencode code_challenge_method=S256 \
+            --data-urlencode ui_locales=sv "${auth_url}"
+          grep -q '<title>Logga in till Svea Study</title>' login.html
+          if rg -n 'sslip\.io|46\.224\.221\.7|onrender|localhost' discovery.json login.html; then
+            echo 'Permanent identity metadata or login page contains a stale hostname.' >&2
+            exit 1
+          fi

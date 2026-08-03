@@ -18,7 +18,7 @@
       "distribution": "internal",
       "env": {
         "EXPO_PUBLIC_APP_ENV": "HOSTED",
-        "EXPO_PUBLIC_API_BASE_URL": "https://api.46-224-221-7.sslip.io",
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.tinkona.com",
         "EXPO_PUBLIC_BUILD_KIND": "internal",
         "EXPO_PUBLIC_EXAM_ID": "sverige-i-fokus-v1"
       }
@@ -27,7 +27,7 @@
       "distribution": "internal",
       "env": {
         "EXPO_PUBLIC_APP_ENV": "HOSTED",
-        "EXPO_PUBLIC_API_BASE_URL": "https://api.46-224-221-7.sslip.io",
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.tinkona.com",
         "EXPO_PUBLIC_BUILD_KIND": "internal",
         "EXPO_PUBLIC_EXAM_ID": "sverige-i-fokus-v1"
       },
@@ -39,7 +39,7 @@
       "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_APP_ENV": "HOSTED",
-        "EXPO_PUBLIC_API_BASE_URL": "https://api.46-224-221-7.sslip.io",
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.tinkona.com",
         "EXPO_PUBLIC_BUILD_KIND": "production",
         "EXPO_PUBLIC_EXAM_ID": "sverige-i-fokus-v1"
       },

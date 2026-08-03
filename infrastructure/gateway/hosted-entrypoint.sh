@@ -2,19 +2,22 @@
 set -eu
 
 : "${API_DOMAIN:?API_DOMAIN is required}"
-source_dir="/etc/letsencrypt/live/${API_DOMAIN}"
+: "${LEGACY_API_DOMAIN:?LEGACY_API_DOMAIN is required during the permanent-domain transition}"
 runtime_dir=/tmp/nginx-certs
 
-for file in fullchain.pem privkey.pem; do
-  if [ ! -s "${source_dir}/${file}" ]; then
-    printf 'Required hosted TLS file is unavailable: %s\n' "${source_dir}/${file}" >&2
-    exit 1
-  fi
-done
-
 install -d -m 0750 "${runtime_dir}"
-install -m 0440 "${source_dir}/fullchain.pem" "${runtime_dir}/fullchain.pem"
-install -m 0440 "${source_dir}/privkey.pem" "${runtime_dir}/privkey.pem"
+for certificate in primary legacy; do
+  if [ "${certificate}" = primary ]; then domain="${API_DOMAIN}"; else domain="${LEGACY_API_DOMAIN}"; fi
+  source_dir="/etc/letsencrypt/live/${domain}"
+  install -d -m 0750 "${runtime_dir}/${certificate}"
+  for file in fullchain.pem privkey.pem; do
+    if [ ! -s "${source_dir}/${file}" ]; then
+      printf 'Required %s hosted TLS file is unavailable for %s.\n' "${certificate}" "${domain}" >&2
+      exit 1
+    fi
+    install -m 0440 "${source_dir}/${file}" "${runtime_dir}/${certificate}/${file}"
+  done
+done
 install -m 0660 /dev/null /tmp/nginx-error.log
 install -m 0660 /dev/null /tmp/nginx-access.log
 

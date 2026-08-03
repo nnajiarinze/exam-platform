@@ -9,7 +9,7 @@ on:
       public_domain:
         description: Authoritative hosted HTTPS hostname
         required: true
-        default: api.46-224-221-7.sslip.io
+        default: api.tinkona.com
 
 permissions:
   contents: read
@@ -25,7 +25,7 @@ jobs:
           PUBLIC_DOMAIN: ${{ inputs.public_domain }}
         run: |
           [[ "${COMMIT_SHA}" =~ ^[0-9a-f]{40}$ ]]
-          [[ "${PUBLIC_DOMAIN}" == api.46-224-221-7.sslip.io ]]
+          [[ "${PUBLIC_DOMAIN}" == api.tinkona.com ]]
       - name: Configure protected Hetzner SSH
         env:
           SSH_PRIVATE_KEY: ${{ secrets.HOSTED_SSH_PRIVATE_KEY }}

@@ -46,7 +46,7 @@ jobs:
           docker exec -u 101:101 "${container}" wget --no-check-certificate -q -O - https://127.0.0.1:8443/healthz
           printf '\n%s\n' '--- host loopback HTTP/TLS ---'
           curl --fail --silent --show-error http://127.0.0.1:80/healthz
-          curl --fail --silent --show-error --resolve api.46-224-221-7.sslip.io:443:127.0.0.1 https://api.46-224-221-7.sslip.io/healthz
+          curl --fail --silent --show-error --resolve api.tinkona.com:443:127.0.0.1 https://api.tinkona.com/healthz
           printf '\n%s\n' '--- Docker bridge and publish mode ---'
           docker info --format 'rootless={{.SecurityOptions}} live_restore={{.LiveRestoreEnabled}}'
           docker network inspect citizenship-platform_backend --format '{{json .IPAM.Config}}'
