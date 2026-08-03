@@ -8,6 +8,7 @@ RUN /opt/keycloak/bin/kc.sh build
 FROM quay.io/keycloak/keycloak:26.7.0
 
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
+COPY --chown=1000:0 infrastructure/keycloak/themes/svea-study/ /opt/keycloak/themes/svea-study/
 
 USER 1000
 ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]

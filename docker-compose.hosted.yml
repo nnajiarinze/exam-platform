@@ -210,7 +210,7 @@ services:
     cpus: 0.75
 
   keycloak:
-    image: ${IMAGE_REGISTRY:?Set IMAGE_REGISTRY}/citizenship-keycloak:${IMAGE_TAG:?Set immutable IMAGE_TAG}
+    image: ${IMAGE_REGISTRY:?Set IMAGE_REGISTRY}/citizenship-keycloak:${KEYCLOAK_IMAGE_TAG:-${IMAGE_TAG:?Set immutable IMAGE_TAG}}
     build:
       context: .
       dockerfile: infrastructure/keycloak/Dockerfile

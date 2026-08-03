@@ -81,6 +81,26 @@ describe('admin routing', () => {
     expect(await screen.findByText('No releases match these filters.')).toBeInTheDocument();
   });
 
+  it('shows redacted authentication readiness without requesting secrets', async () => {
+    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith('/.well-known/openid-configuration')) {
+        const issuer = url.replace('/.well-known/openid-configuration', '');
+        return Promise.resolve(statusResponse(200, {
+          issuer,
+          registration_endpoint: `${issuer}/protocol/openid-connect/registrations`,
+        }));
+      }
+      return Promise.resolve(new Response('', { status: 404 }));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    renderRouter('/identity/providers', { id: 'admin', displayName: 'Admin', roles: [AdminRole.Admin] });
+    expect(await screen.findByRole('heading', { name: 'Authentication readiness' })).toBeInTheDocument();
+    expect(screen.getByText('mobile-…-app')).toBeInTheDocument();
+    expect(screen.getAllByText('DISABLED_OR_UNAVAILABLE')).toHaveLength(2);
+    expect(fetchMock.mock.calls.some(([url]) => String(url).includes('secret'))).toBe(false);
+  });
+
   it('renders the not-found page safely', () => {
     renderRouter('/does-not-exist');
     expect(screen.getByRole('heading', { name: 'Route not found' })).toBeInTheDocument();

@@ -48,6 +48,12 @@ kcadm() {
 
 kcadm update realms/exam-platform \
   -s "sslRequired=${ssl_required}" \
+  -s loginTheme=svea-study \
+  -s registrationAllowed=true \
+  -s verifyEmail=true \
+  -s resetPasswordAllowed=true \
+  -s loginWithEmailAllowed=true \
+  -s duplicateEmailsAllowed=false \
   -s bruteForceProtected=true \
   -s permanentLockout=false \
   -s failureFactor=5 \
@@ -88,9 +94,36 @@ kcadm update "clients/${admin_id}" -r exam-platform \
   -s "webOrigins=${admin_origins}" \
   -s "attributes.\"post.logout.redirect.uris\"=${logout_redirects}" >/dev/null
 
+# Social provider secrets remain in the protected host environment. Providers
+# are hidden from the generic realm page so privileged Admin authentication is
+# not silently broadened; the mobile client selects them with kc_idp_hint.
+google_client_id="${KEYCLOAK_GOOGLE_CLIENT_ID:-$(env_file_value KEYCLOAK_GOOGLE_CLIENT_ID "${PLATFORM_ENV_FILE}")}"
+google_client_secret="${KEYCLOAK_GOOGLE_CLIENT_SECRET:-$(env_file_value KEYCLOAK_GOOGLE_CLIENT_SECRET "${PLATFORM_ENV_FILE}")}"
+google_exists="$(kcadm get identity-provider/instances -r exam-platform | jq -r 'any(.alias=="google")')"
+if [[ -n "${google_client_id}" && -n "${google_client_secret}" &&
+      "${google_client_id}" != CHANGE_ME && "${google_client_secret}" != CHANGE_ME ]]; then
+  google_json="$(jq -cn --arg client "${google_client_id}" --arg secret "${google_client_secret}" '{
+    alias:"google",providerId:"google",enabled:true,trustEmail:false,storeToken:false,
+    addReadTokenRoleOnCreate:false,authenticateByDefault:false,linkOnly:false,hideOnLogin:true,
+    firstBrokerLoginFlowAlias:"first broker login",config:{clientId:$client,clientSecret:$secret,
+    defaultScope:"openid profile email",syncMode:"IMPORT",useJwksUrl:"true"}}')"
+  if [[ "${google_exists}" == true ]]; then
+    printf '%s' "${google_json}" | docker exec -i "${container}" /opt/keycloak/bin/kcadm.sh update \
+      identity-provider/instances/google -r exam-platform --config /tmp/kcadm-hardening.config -f - >/dev/null
+  else
+    printf '%s' "${google_json}" | docker exec -i "${container}" /opt/keycloak/bin/kcadm.sh create \
+      identity-provider/instances -r exam-platform --config /tmp/kcadm-hardening.config -f - >/dev/null
+  fi
+elif [[ "${google_exists}" == true ]]; then
+  # Removing protected credentials must fail closed, including after a restart.
+  kcadm update identity-provider/instances/google -r exam-platform -s enabled=false >/dev/null
+fi
+
 kcadm get realms/exam-platform |
   jq -e --arg ssl "${ssl_required}" '
-    .sslRequired == $ssl and
+    .sslRequired == $ssl and .loginTheme == "svea-study" and
+    .registrationAllowed == true and .verifyEmail == true and
+    .resetPasswordAllowed == true and .duplicateEmailsAllowed == false and
     .bruteForceProtected == true and
     (.passwordPolicy | contains("length(10)"))' >/dev/null
 printf 'Keycloak realm hardening applied in %s mode.\n' "${mode}"

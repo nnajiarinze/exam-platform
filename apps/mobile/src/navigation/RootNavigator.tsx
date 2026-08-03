@@ -70,7 +70,7 @@ export function RootNavigator() {
         <Stack.Screen name="Splash" component={SplashScreen} />
       </Stack.Navigator>
     );
-  if (auth.status === "unauthenticated")
+  if (["unauthenticated", "authenticating", "error"].includes(auth.status))
     return (
       <Stack.Navigator
         screenOptions={{

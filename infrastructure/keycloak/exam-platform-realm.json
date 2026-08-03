@@ -3,6 +3,7 @@
   "enabled": true,
   "sslRequired": "none",
   "displayName": "Svea Study",
+  "loginTheme": "svea-study",
   "registrationAllowed": true,
   "verifyEmail": true,
   "resetPasswordAllowed": true,

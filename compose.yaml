@@ -6,7 +6,10 @@ services:
       - "8025:8025"
 
   identity-provider:
-    image: quay.io/keycloak/keycloak:26.7.0
+    image: citizenship-keycloak:local
+    build:
+      context: .
+      dockerfile: infrastructure/keycloak/Dockerfile
     command: start-dev --import-realm
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin

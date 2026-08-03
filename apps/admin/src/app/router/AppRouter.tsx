@@ -30,6 +30,7 @@ import { AiQuestionBatchListPage } from '../../features/ai/pages/AiQuestionBatch
 import { AiQuestionBatchDetailPage } from '../../features/ai/pages/AiQuestionBatchDetailPage';
 import { AiProvidersPage } from '../../features/ai/pages/AiProvidersPage';
 import { MockExamDefinitionPage } from '../../features/mockexam/MockExamDefinitionPage';
+import { IdentityProviderReadinessPage } from '../../features/identity/IdentityProviderReadinessPage';
 
 export function AppRouter() {
   return <Routes>
@@ -53,6 +54,7 @@ export function AppRouter() {
         <Route path="ai/question-batches" element={<AiQuestionBatchListPage />} />
         <Route path="ai/question-batches/:id" element={<AiQuestionBatchDetailPage />} />
         <Route path="ai/providers" element={<AiProvidersPage />} />
+        <Route path="identity/providers" element={<IdentityProviderReadinessPage />} />
         <Route path="knowledge" element={<KnowledgeFactListPage />} />
         <Route path="knowledge/facts/new" element={<KnowledgeFactEditorPage />} />
         <Route path="knowledge/facts/:id" element={<KnowledgeFactEditorPage />} />

@@ -1,0 +1,111 @@
+name: Deploy hosted authentication experience
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: Full tested commit SHA with published auth images
+        required: true
+      public_domain:
+        description: Authoritative hosted HTTPS hostname
+        required: true
+        default: api.46-224-221-7.sslip.io
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: hosted
+    steps:
+      - name: Validate immutable inputs
+        env:
+          COMMIT_SHA: ${{ inputs.commit_sha }}
+          PUBLIC_DOMAIN: ${{ inputs.public_domain }}
+        run: |
+          [[ "${COMMIT_SHA}" =~ ^[0-9a-f]{40}$ ]]
+          [[ "${PUBLIC_DOMAIN}" == api.46-224-221-7.sslip.io ]]
+      - name: Configure protected Hetzner SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.HOSTED_SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ secrets.HOSTED_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "${SSH_PRIVATE_KEY}" >~/.ssh/id_ed25519
+          printf '%s\n' "${KNOWN_HOSTS}" >~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+      - name: Deploy only gateway and identity provider
+        env:
+          COMMIT_SHA: ${{ inputs.commit_sha }}
+          PUBLIC_DOMAIN: ${{ inputs.public_domain }}
+          HOSTED_HOST: ${{ secrets.HOSTED_HOST }}
+          HOSTED_USER: ${{ secrets.HOSTED_USER }}
+        run: |
+          ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" "bash -s '${COMMIT_SHA}' '${PUBLIC_DOMAIN}'" <<'REMOTE'
+          set -Eeuo pipefail
+          commit_sha="$1" public_domain="$2"
+          root=/opt/citizenship-platform
+          repo="${root}/repo"
+          env_file="${root}/.env"
+          release_env="${root}/.release.env"
+          [[ -f "${env_file}" && "$(stat -c '%a' "${env_file}")" == 600 ]]
+          cd "${repo}"
+          git fetch --quiet origin "${commit_sha}"
+          git checkout --detach "${commit_sha}"
+          compose=(docker compose --env-file "${env_file}" --env-file "${release_env}" -f docker-compose.hosted.yml)
+          backup="$(mktemp "${release_env}.XXXXXX")"
+          cp "${release_env}" "${backup}"
+          update_release_env() {
+            local key="$1" value="$2" temporary
+            temporary="$(mktemp "${release_env}.XXXXXX")"
+            awk -F= -v key="${key}" -v value="${value}" '
+              BEGIN { replaced=0 }
+              $1==key { if (!replaced) print key "=" value; replaced=1; next }
+              { print }
+              END { if (!replaced) print key "=" value }
+            ' "${release_env}" >"${temporary}"
+            chmod 600 "${temporary}"
+            mv "${temporary}" "${release_env}"
+          }
+          rollback() {
+            cp "${backup}" "${release_env}"
+            "${compose[@]}" up -d --no-deps api-gateway keycloak >/dev/null 2>&1 || true
+          }
+          trap rollback ERR
+          update_release_env GATEWAY_IMAGE_TAG "${commit_sha}"
+          update_release_env KEYCLOAK_IMAGE_TAG "${commit_sha}"
+          "${compose[@]}" pull api-gateway keycloak
+          "${compose[@]}" up -d --no-deps --wait --wait-timeout 120 keycloak
+          KEYCLOAK_SECURITY_MODE=HTTPS_HOSTED ADMIN_PORTAL_URL="https://${public_domain}" \
+            ./infrastructure/hetzner/harden-keycloak.sh
+          "${compose[@]}" up -d --no-deps --wait --wait-timeout 60 api-gateway
+          "${compose[@]}" exec -T --user 101:101 api-gateway nginx -t
+          API_DOMAIN="${public_domain}" ./infrastructure/hetzner/smoke-test.sh --internal
+          gateway_image="$("${compose[@]}" ps -q api-gateway | xargs docker inspect -f '{{.Config.Image}}')"
+          keycloak_image="$("${compose[@]}" ps -q keycloak | xargs docker inspect -f '{{.Config.Image}}')"
+          [[ "${gateway_image}" == */citizenship-api-gateway:"${commit_sha}" ]]
+          [[ "${keycloak_image}" == */citizenship-keycloak:"${commit_sha}" ]]
+          trap - ERR
+          rm -f "${backup}"
+          REMOTE
+      - name: Verify public authentication surface
+        env:
+          PUBLIC_DOMAIN: ${{ inputs.public_domain }}
+        run: |
+          set -Eeuo pipefail
+          base="https://${PUBLIC_DOMAIN}"
+          issuer="${base}/auth/realms/exam-platform"
+          curl --fail --silent --show-error "${issuer}/.well-known/openid-configuration" >discovery.json
+          jq -e --arg issuer "${issuer}" '.issuer==$issuer and (.authorization_endpoint|startswith($issuer+"/"))' discovery.json
+          curl --fail --silent --show-error --get --output login.html \
+            --data-urlencode client_id=mobile-app \
+            --data-urlencode redirect_uri=sveastudy://auth/callback \
+            --data-urlencode response_type=code \
+            --data-urlencode scope='openid profile email' \
+            --data-urlencode code_challenge=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+            --data-urlencode code_challenge_method=S256 \
+            --data-urlencode ui_locales=sv \
+            "$(jq -r .authorization_endpoint discovery.json)"
+          grep -q '<title>Logga in på Svea Study</title>' login.html
+          curl --fail --silent --show-error "${base}/healthz" >/dev/null
