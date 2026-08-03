@@ -22,7 +22,9 @@ query() {
   url="$(env_file_value "${url_key}" "${PLATFORM_ENV_FILE}" | normalize_url)"
   user="$(env_file_value "${user_key}" "${PLATFORM_ENV_FILE}")"
   password="$(env_file_value "${password_key}" "${PLATFORM_ENV_FILE}")"
-  docker run --rm -i --network host -e PGPASSWORD="${password}" postgres:18-alpine +    psql -XqAt --no-psqlrc --set=ON_ERROR_STOP=1 --username="${user}" --dbname="${url}" +    --command="SET default_transaction_read_only=on; ${sql}"
+  docker run --rm -i --network host -e PGPASSWORD="${password}" postgres:18-alpine \
+    psql -XqAt --no-psqlrc --set=ON_ERROR_STOP=1 --username="${user}" --dbname="${url}" \
+    --command="SET default_transaction_read_only=on; ${sql}"
 }
 
 content="$(query CONTENT_MIGRATION_DATABASE_URL CONTENT_DATABASE_USERNAME CONTENT_DATABASE_PASSWORD "
@@ -54,4 +56,5 @@ SELECT json_build_object(
   'roleMappings',(SELECT count(*) FROM user_role_mapping)
 )::text;")"
 
-jq -cn --argjson content "${content}" --argjson learning "${learning}" --argjson identity "${identity}" +  '{content:$content,learning:$learning,identity:$identity}'
+jq -cn --argjson content "${content}" --argjson learning "${learning}" --argjson identity "${identity}" \
+  '{content:$content,learning:$learning,identity:$identity}'

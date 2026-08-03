@@ -59,4 +59,12 @@ grep -q 'ROLLBACK_HOSTNAME: api.46-224-221-7.sslip.io' <<<"${rendered}" || exit 
 grep -q "https://api.tinkona.com" "${REPOSITORY_ROOT}/apps/mobile/src/config/environment.ts" || exit 1
 grep -q '/tmp/nginx-certs/primary/fullchain.pem' "${REPOSITORY_ROOT}/infrastructure/gateway/hosted.conf.template" || exit 1
 grep -q '/tmp/nginx-certs/legacy/fullchain.pem' "${REPOSITORY_ROOT}/infrastructure/gateway/hosted.conf.template" || exit 1
+SNAPSHOT_SCRIPT="${REPOSITORY_ROOT}/infrastructure/hetzner/snapshot-hosted-domain-state.sh"
+bash -n "${SNAPSHOT_SCRIPT}"
+! grep -qF 'postgres:18-alpine +' "${SNAPSHOT_SCRIPT}" || {
+  printf 'Hosted state snapshot contains an invalid PostgreSQL container command.\n' >&2; exit 1;
+}
+grep -qF 'default_transaction_read_only=on' "${SNAPSHOT_SCRIPT}" || {
+  printf 'Hosted state snapshot does not enforce read-only SQL transactions.\n' >&2; exit 1;
+}
 printf 'Hosted Compose security and routing validation passed.\n'
