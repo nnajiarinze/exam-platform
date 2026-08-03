@@ -95,6 +95,9 @@ jobs:
             mv "${temporary}" "${file}"
           }
           rollback() {
+            local status="$?"
+            trap - ERR
+            printf 'Domain migration failed; restoring deployment commit %s.\n' "${previous_commit}" >&2
             cp "${env_backup}" "${env_file}"
             cp "${release_backup}" "${release_env}"
             # The previous images must be restarted with their matching Compose,
@@ -102,6 +105,7 @@ jobs:
             git checkout --detach "${previous_commit}" >/dev/null 2>&1 || true
             docker compose --env-file "${env_file}" --env-file "${release_env}" -f docker-compose.hosted.yml \
               up -d --no-deps keycloak content-service learning-service api-gateway >/dev/null 2>&1 || true
+            exit "${status}"
           }
           trap rollback ERR
           update_file "${env_file}" API_DOMAIN "${permanent_domain}"
