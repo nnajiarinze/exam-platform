@@ -67,6 +67,7 @@ jobs:
           release_env="${root}/.release.env"
           [[ -f "${env_file}" && "$(stat -c '%a' "${env_file}")" == 600 ]]
           cd "${repo}"
+          previous_commit="$(git rev-parse HEAD)"
           git fetch --quiet origin "${commit_sha}"
           git checkout --detach "${commit_sha}"
           tls_email="$(sed -n 's/^TLS_EMAIL=//p' "${env_file}" | tail -1)"
@@ -96,6 +97,9 @@ jobs:
           rollback() {
             cp "${env_backup}" "${env_file}"
             cp "${release_backup}" "${release_env}"
+            # The previous images must be restarted with their matching Compose,
+            # gateway template, and certificate bootstrap contract.
+            git checkout --detach "${previous_commit}" >/dev/null 2>&1 || true
             docker compose --env-file "${env_file}" --env-file "${release_env}" -f docker-compose.hosted.yml \
               up -d --no-deps keycloak content-service learning-service api-gateway >/dev/null 2>&1 || true
           }
