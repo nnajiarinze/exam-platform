@@ -119,7 +119,9 @@ jobs:
             exit "${status}"
           }
           trap rollback ERR
-          keycloak_database_url="$(sed -n 's/^KEYCLOAK_DATABASE_URL=//p' "${env_file}" | tail -1)"
+          # shellcheck source=infrastructure/hetzner/lib.sh
+          source ./infrastructure/hetzner/lib.sh
+          keycloak_database_url="$(env_file_value KEYCLOAK_DATABASE_URL "${env_file}")"
           normalized_keycloak_database_url="$(KEYCLOAK_DATABASE_URL="${keycloak_database_url}" python3 - <<'PY'
           import os
           from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
