@@ -11,10 +11,23 @@ contact_args=(--register-unsafely-without-email)
 if [[ -n "${TLS_EMAIL:-}" ]]; then contact_args=(--email "${TLS_EMAIL}"); fi
 authenticator="${TLS_AUTHENTICATOR:-webroot}"
 case "${authenticator}" in
-  webroot) authenticator_args=(--webroot --webroot-path /var/www/certbot); docker_port_args=() ;;
+  webroot)
+    authenticator_args=(--webroot --webroot-path /var/www/certbot)
+    docker_port_args=()
+    ;;
   standalone) authenticator_args=(--standalone); docker_port_args=(-p 80:80) ;;
   *) die "TLS_AUTHENTICATOR must be webroot or standalone" ;;
 esac
+if [[ "${authenticator}" == webroot ]]; then
+  if [[ "${EUID}" -eq 0 ]]; then
+    install -d -m 755 /var/www/certbot /var/www/certbot/.well-known \
+      /var/www/certbot/.well-known/acme-challenge
+  else
+    require_command docker
+    docker run --rm -v /var/www/certbot:/webroot --entrypoint sh certbot/certbot:latest \
+      -c 'mkdir -p /webroot/.well-known/acme-challenge && chmod 755 /webroot /webroot/.well-known /webroot/.well-known/acme-challenge'
+  fi
+fi
 certbot_args=(certonly "${authenticator_args[@]}" --non-interactive --agree-tos "${contact_args[@]}" --domain "${API_DOMAIN}")
 if [[ "${EUID}" -eq 0 ]] && command -v certbot >/dev/null 2>&1; then
   install -d -m 755 /var/www/certbot

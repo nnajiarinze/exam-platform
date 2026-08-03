@@ -67,8 +67,12 @@ jobs:
           release_env="${root}/.release.env"
           [[ -f "${env_file}" && "$(stat -c '%a' "${env_file}")" == 600 ]]
           cd "${repo}"
-          previous_commit="$(git rev-parse HEAD)"
-          git fetch --quiet origin "${commit_sha}"
+          previous_commit="$(sed -n 's/^GATEWAY_IMAGE_TAG=//p' "${release_env}" | tail -1)"
+          [[ "${previous_commit}" =~ ^[0-9a-f]{40}$ ]] || {
+            echo 'Current immutable gateway tag cannot anchor rollback.' >&2
+            exit 1
+          }
+          git fetch --quiet origin "${previous_commit}" "${commit_sha}"
           git checkout --detach "${commit_sha}"
           tls_email="$(sed -n 's/^TLS_EMAIL=//p' "${env_file}" | tail -1)"
           before_state="$(./infrastructure/hetzner/snapshot-hosted-domain-state.sh)"
