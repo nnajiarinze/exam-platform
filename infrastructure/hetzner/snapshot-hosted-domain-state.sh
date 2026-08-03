@@ -12,6 +12,7 @@ normalize_url() {
 u=urllib.parse.urlsplit(sys.stdin.read().strip().removeprefix("jdbc:"))
 q=dict(urllib.parse.parse_qsl(u.query,keep_blank_values=True))
 q.pop("sslfactory",None)
+q.pop("targetServerType",None)
 if q.pop("ssl",None)=="true" and "sslmode" not in q:q["sslmode"]="require"
 if "channelBinding" in q:q["channel_binding"]=q.pop("channelBinding")
 print(urllib.parse.urlunsplit((u.scheme,u.netloc,u.path,urllib.parse.urlencode(q),"")))'
