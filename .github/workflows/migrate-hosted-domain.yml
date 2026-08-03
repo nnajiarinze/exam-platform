@@ -202,7 +202,7 @@ jobs:
             --data-urlencode code_challenge_method=S256 \
             --data-urlencode ui_locales=sv "${auth_url}"
           grep -q '<title>Logga in till Svea Study</title>' login.html
-          if rg -n 'sslip\.io|46\.224\.221\.7|onrender|localhost' discovery.json login.html; then
+          if grep -En 'sslip\.io|46\.224\.221\.7|onrender|localhost' discovery.json login.html; then
             echo 'Permanent identity metadata or login page contains a stale hostname.' >&2
             exit 1
           fi
