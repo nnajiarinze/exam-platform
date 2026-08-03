@@ -6,6 +6,7 @@ source "${SCRIPT_DIR}/lib.sh"
 load_platform_paths
 require_command docker
 require_command jq
+require_command curl
 
 mode="${KEYCLOAK_SECURITY_MODE:-$(env_file_value KEYCLOAK_SECURITY_MODE "${PLATFORM_ENV_FILE}")}"
 mode="${mode:-BOOTSTRAP_HTTP}"
@@ -53,6 +54,7 @@ kcadm() {
 kcadm update realms/exam-platform \
   -s "sslRequired=${ssl_required}" \
   -s loginTheme=svea-study \
+  -s emailTheme=svea-study \
   -s internationalizationEnabled=true \
   -s 'supportedLocales=["sv","en"]' \
   -s defaultLocale=sv \
@@ -133,7 +135,7 @@ if [[ "${identity_management_enabled}" == true && -n "${identity_bff_client_secr
   fi
   service_account_user="$(kcadm get "clients/${identity_bff_id}/service-account-user" -r exam-platform | jq -er .id)"
   realm_management_id="$(client_id realm-management)"
-  for role in view-users manage-users; do
+  for role in view-users manage-users view-realm; do
     role_json="$(kcadm get "clients/${realm_management_id}/roles/${role}" -r exam-platform)"
     if ! kcadm get "users/${service_account_user}/role-mappings/clients/${realm_management_id}" -r exam-platform | jq -e --arg role "${role}" 'any(.name==$role)' >/dev/null; then
       printf '[%s]' "${role_json}" | docker exec -i "${container}" /opt/keycloak/bin/kcadm.sh create \
@@ -205,14 +207,32 @@ fi
 smtp_host="${KEYCLOAK_SMTP_HOST:-$(env_file_value KEYCLOAK_SMTP_HOST "${PLATFORM_ENV_FILE}")}"
 smtp_port="${KEYCLOAK_SMTP_PORT:-$(env_file_value KEYCLOAK_SMTP_PORT "${PLATFORM_ENV_FILE}")}"
 smtp_username="${KEYCLOAK_SMTP_USERNAME:-$(env_file_value KEYCLOAK_SMTP_USERNAME "${PLATFORM_ENV_FILE}")}"
-smtp_password="${KEYCLOAK_SMTP_PASSWORD:-$(env_file_value KEYCLOAK_SMTP_PASSWORD "${PLATFORM_ENV_FILE}")}"
+smtp_password="${RESEND_API_KEY:-$(env_file_value RESEND_API_KEY "${PLATFORM_ENV_FILE}")}"
 smtp_from="${KEYCLOAK_SMTP_FROM:-$(env_file_value KEYCLOAK_SMTP_FROM "${PLATFORM_ENV_FILE}")}"
 smtp_from_name="${KEYCLOAK_SMTP_FROM_DISPLAY_NAME:-$(env_file_value KEYCLOAK_SMTP_FROM_DISPLAY_NAME "${PLATFORM_ENV_FILE}")}"
+smtp_reply_to="${KEYCLOAK_SMTP_REPLY_TO:-$(env_file_value KEYCLOAK_SMTP_REPLY_TO "${PLATFORM_ENV_FILE}")}"
+smtp_reply_to_name="${KEYCLOAK_SMTP_REPLY_TO_DISPLAY_NAME:-$(env_file_value KEYCLOAK_SMTP_REPLY_TO_DISPLAY_NAME "${PLATFORM_ENV_FILE}")}"
 smtp_starttls="${KEYCLOAK_SMTP_STARTTLS:-$(env_file_value KEYCLOAK_SMTP_STARTTLS "${PLATFORM_ENV_FILE}")}"
 smtp_ssl="${KEYCLOAK_SMTP_SSL:-$(env_file_value KEYCLOAK_SMTP_SSL "${PLATFORM_ENV_FILE}")}"
-if [[ -n "${smtp_host}" && -n "${smtp_from}" && "${smtp_host}" != CHANGE_ME && "${smtp_from}" != CHANGE_ME ]]; then
-  smtp_json="$(jq -cn --arg host "${smtp_host}" --arg port "${smtp_port:-587}" --arg user "${smtp_username}" --arg password "${smtp_password}" --arg from "${smtp_from}" --arg fromName "${smtp_from_name:-Svea Study}" --arg starttls "${smtp_starttls:-true}" --arg ssl "${smtp_ssl:-false}" '{host:$host,port:$port,from:$from,fromDisplayName:$fromName,starttls:$starttls,ssl:$ssl,auth:($user|length>0|tostring),user:$user,password:$password}')"
+smtp_configured=false
+if [[ "${smtp_host}" == smtp.resend.com && "${smtp_port:-587}" == 587 && "${smtp_username}" == resend &&
+      -n "${smtp_password}" && "${smtp_password}" != CHANGE_ME && "${smtp_from}" == no-reply@tinkona.com &&
+      "${smtp_reply_to}" == support@tinkona.com && "${smtp_starttls:-true}" == true && "${smtp_ssl:-false}" == false ]]; then
+  smtp_json="$(jq -cn --arg host "${smtp_host}" --arg port "${smtp_port:-587}" --arg user "${smtp_username}" --arg password "${smtp_password}" --arg from "${smtp_from}" --arg fromName "${smtp_from_name:-Svea Study}" --arg replyTo "${smtp_reply_to}" --arg replyToName "${smtp_reply_to_name}" --arg starttls "${smtp_starttls:-true}" --arg ssl "${smtp_ssl:-false}" '{host:$host,port:$port,from:$from,fromDisplayName:$fromName,replyTo:$replyTo,replyToDisplayName:$replyToName,starttls:$starttls,ssl:$ssl,auth:"true",user:$user,password:$password}')"
   kcadm update realms/exam-platform -s "smtpServer=${smtp_json}" >/dev/null
+  resend_domains="$(printf 'header = "Authorization: Bearer %s"\nheader = "User-Agent: SveaStudy-Keycloak-Provisioning/1.0"\n' "${smtp_password}" | curl --config - --fail --silent --show-error --max-time 15 https://api.resend.com/domains 2>/dev/null || printf '{"data":[]}')"
+  resend_domain="$(jq -c '[.data[]? | select(.name=="tinkona.com")][0] // {}' <<<"${resend_domains}")"
+  resend_domain_status="$(jq -r '.status // "unknown"' <<<"${resend_domain}")"
+  resend_spf_status="$(jq -r '[.records[]? | select((.record // .type // "")|ascii_downcase|contains("spf")) | .status][0] // "unknown"' <<<"${resend_domain}")"
+  resend_dkim_status="$(jq -r '[.records[]? | select((.record // .type // "")|ascii_downcase|contains("dkim")) | .status][0] // "unknown"' <<<"${resend_domain}")"
+  email_dmarc_status="${KEYCLOAK_EMAIL_DMARC_STATUS:-$(env_file_value KEYCLOAK_EMAIL_DMARC_STATUS "${PLATFORM_ENV_FILE}")}"
+  realm_attributes="$(kcadm get realms/exam-platform | jq -c --arg domain "${resend_domain_status}" --arg spf "${resend_spf_status}" --arg dkim "${resend_dkim_status}" --arg dmarc "${email_dmarc_status:-present}" '(.attributes // {}) + {resendDomainStatus:$domain,resendSpfStatus:$spf,resendDkimStatus:$dkim,emailDmarcStatus:$dmarc}')"
+  kcadm update realms/exam-platform -s "attributes=${realm_attributes}" >/dev/null
+  smtp_configured=true
+  unset smtp_password smtp_json
+fi
+if [[ "${mode}" == HTTPS_HOSTED && "${smtp_configured}" != true ]]; then
+  die "Hosted Resend SMTP configuration is incomplete"
 fi
 
 # Fail closed if the realm's first-broker flow contains the unsafe automatic
@@ -222,13 +242,21 @@ if kcadm get "authentication/flows/${first_broker_flow_id}/executions" -r exam-p
   die "Unsafe automatic first-broker email linking is configured"
 fi
 
-kcadm get realms/exam-platform |
-  jq -e --arg ssl "${ssl_required}" '
-    .sslRequired == $ssl and .loginTheme == "svea-study" and
+realm_configuration="$(kcadm get realms/exam-platform)"
+jq -e --arg ssl "${ssl_required}" '
+    .sslRequired == $ssl and .loginTheme == "svea-study" and .emailTheme == "svea-study" and
     .internationalizationEnabled == true and .defaultLocale == "sv" and
     (.supportedLocales | sort) == (["en","sv"] | sort) and
     .registrationAllowed == true and .verifyEmail == true and
     .resetPasswordAllowed == true and .duplicateEmailsAllowed == false and
     .bruteForceProtected == true and
-    (.passwordPolicy | contains("length(10)"))' >/dev/null
+    (.passwordPolicy | contains("length(10)"))' <<<"${realm_configuration}" >/dev/null
+if [[ "${mode}" == HTTPS_HOSTED ]]; then
+  jq -e '.smtpServer.host=="smtp.resend.com" and .smtpServer.port=="587" and
+    .smtpServer.starttls=="true" and .smtpServer.ssl=="false" and .smtpServer.auth=="true" and
+    .smtpServer.user=="resend" and .smtpServer.from=="no-reply@tinkona.com" and
+    .smtpServer.replyTo=="support@tinkona.com" and (.smtpServer.password|length)>0' \
+    <<<"${realm_configuration}" >/dev/null
+fi
+unset realm_configuration
 printf 'Keycloak realm hardening applied in %s mode.\n' "${mode}"

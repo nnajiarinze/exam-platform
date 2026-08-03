@@ -32,7 +32,11 @@ The image contains `klausbetz/apple-identity-provider-keycloak` 1.17.0 from its 
 
 ## SMTP
 
-Use a transactional sender verified for `tinkona.com`, preferably `Svea Study <no-reply@tinkona.com>`. Provision `KEYCLOAK_SMTP_HOST`, port, TLS/auth settings, username, password/API key, and from address in protected hosted configuration. Publish and verify the provider's SPF and DKIM records and a DMARC policy before setting `KEYCLOAK_SMTP_CONFIGURED=true`. Exercise registration verification, resend, reset, expired reset, and required-action mail. Never log message bodies or action URLs. Do not use personal mailbox credentials.
+Keycloak and Learning Service share the one authoritative `RESEND_API_KEY` in `/opt/citizenship-platform/.env`. Keycloak uses Resend's SMTP gateway at `smtp.resend.com:587` with authentication, STARTTLS, username `resend`, sender `Svea Study <no-reply@tinkona.com>`, and reply-to `Svea Study Support <support@tinkona.com>`. The versioned hardening step reads that existing key directly; there is deliberately no `KEYCLOAK_SMTP_PASSWORD` copy. Non-secret SMTP settings are pinned in the deployment release environment, while the key remains only in the protected host environment and is never supplied as a command argument or image build input.
+
+Before enabling delivery, verify Resend reports `tinkona.com` and its SPF/DKIM records as verified. `_dmarc.tinkona.com` must exist; its current policy may be reported independently from Resend because DMARC is DNS-owned. The Admin readiness view reads only redacted realm metadata and can never return the SMTP password. Exercise registration verification, resend, reset, expired reset, and required-action mail with disposable accounts. Never log message bodies, recipient addresses, action URLs, or full SMTP exchanges.
+
+The existing key is broad and also powers application transactional messages. A future least-privilege rotation can reduce blast radius after both HTTP API and SMTP usage are migrated atomically; it is not a reason to create a second secret during this rollout.
 
 ## Linking and first login
 

@@ -85,7 +85,11 @@ describe('admin routing', () => {
     const fetchMock = vi.fn().mockResolvedValue(statusResponse(200, {
       issuer: 'https://api.example.test/realms/citizenship', mobileCallback: 'sveastudy://auth/callback',
       bffReady: true, accountDeletionEnabled: true,
-      email: { enabled: true, verificationRequired: true, smtpConfigured: false },
+      email: { enabled: true, verificationRequired: true, smtpConfigured: true, provider: 'Resend',
+        sender: 'no-reply@tinkona.com', replyTo: 'support@tinkona.com', domain: 'tinkona.com',
+        domainStatus: 'verified', spfStatus: 'verified', dkimStatus: 'verified', dmarcStatus: 'present',
+        lastSmtpTestAt: '2026-08-03T09:00:00Z', lastVerificationEmailAt: null, lastResetEmailAt: null,
+        passwordResetEnabled: true },
       providers: [
         { alias: 'apple', enabled: false, callback: 'https://api.example.test/realms/citizenship/broker/apple/endpoint', extensionVersion: '1.17.0', clientSecretExpiry: 'GENERATED_ON_DEMAND' },
         { alias: 'google', enabled: false, callback: 'https://api.example.test/realms/citizenship/broker/google/endpoint' },
@@ -96,7 +100,10 @@ describe('admin routing', () => {
     renderRouter('/identity/providers', { id: 'admin', displayName: 'Admin', roles: [AdminRole.Admin] });
     expect(await screen.findByRole('heading', { name: 'Authentication readiness' })).toBeInTheDocument();
     expect(screen.getByText('sveastudy://auth/callback')).toBeInTheDocument();
+    expect(screen.getByText('no-reply@tinkona.com')).toBeInTheDocument();
+    expect(screen.getByText('support@tinkona.com')).toBeInTheDocument();
     expect(screen.getAllByText('DISABLED')).toHaveLength(2);
+    expect(screen.queryByText(/API key|SMTP password/i)).not.toBeInTheDocument();
     expect(fetchMock.mock.calls.some(([url]) => String(url).includes('secret'))).toBe(false);
   });
 

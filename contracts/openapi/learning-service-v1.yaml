@@ -672,11 +672,23 @@ components:
     AuthenticationEmailReadiness:
       type: object
       additionalProperties: false
-      required: [enabled,verificationRequired,smtpConfigured]
+      required: [enabled,verificationRequired,smtpConfigured,provider,sender,replyTo,domain,domainStatus,spfStatus,dkimStatus,dmarcStatus,passwordResetEnabled]
       properties:
         enabled: {type: boolean}
         verificationRequired: {type: boolean}
         smtpConfigured: {type: boolean}
+        provider: {type: string}
+        sender: {type: string}
+        replyTo: {type: string}
+        domain: {type: string}
+        domainStatus: {type: string}
+        spfStatus: {type: string}
+        dkimStatus: {type: string}
+        dmarcStatus: {type: string}
+        lastSmtpTestAt: {type: [string,"null"]}
+        lastVerificationEmailAt: {type: [string,"null"]}
+        lastResetEmailAt: {type: [string,"null"]}
+        passwordResetEnabled: {type: boolean}
     AuthenticationReadiness:
       type: object
       additionalProperties: false

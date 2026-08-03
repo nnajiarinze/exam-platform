@@ -35,7 +35,7 @@ jobs:
           printf '%s\n' "${SSH_PRIVATE_KEY}" >~/.ssh/id_ed25519
           printf '%s\n' "${KNOWN_HOSTS}" >~/.ssh/known_hosts
           chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
-      - name: Deploy only gateway and identity provider
+      - name: Deploy only gateway, identity provider, and identity readiness backend
         env:
           COMMIT_SHA: ${{ inputs.commit_sha }}
           PUBLIC_DOMAIN: ${{ inputs.public_domain }}
@@ -50,6 +50,7 @@ jobs:
           env_file="${root}/.env"
           release_env="${root}/.release.env"
           [[ -f "${env_file}" && "$(stat -c '%a' "${env_file}")" == 600 ]]
+          grep -q '^RESEND_API_KEY=.' "${env_file}" || { echo 'Protected RESEND_API_KEY is not provisioned' >&2; exit 1; }
           cd "${repo}"
           git fetch --quiet origin "${commit_sha}"
           git checkout --detach "${commit_sha}"
@@ -70,22 +71,41 @@ jobs:
           }
           rollback() {
             cp "${backup}" "${release_env}"
-            "${compose[@]}" up -d --no-deps api-gateway keycloak >/dev/null 2>&1 || true
+            "${compose[@]}" up -d --no-deps api-gateway learning-service keycloak >/dev/null 2>&1 || true
           }
           trap rollback ERR
           update_release_env GATEWAY_IMAGE_TAG "${commit_sha}"
           update_release_env KEYCLOAK_IMAGE_TAG "${commit_sha}"
-          "${compose[@]}" pull api-gateway keycloak
+          update_release_env LEARNING_IMAGE_TAG "${commit_sha}"
+          update_release_env KEYCLOAK_SMTP_HOST smtp.resend.com
+          update_release_env KEYCLOAK_SMTP_PORT 587
+          update_release_env KEYCLOAK_SMTP_USERNAME resend
+          update_release_env KEYCLOAK_SMTP_FROM no-reply@tinkona.com
+          update_release_env KEYCLOAK_SMTP_FROM_DISPLAY_NAME 'Svea Study'
+          update_release_env KEYCLOAK_SMTP_REPLY_TO support@tinkona.com
+          update_release_env KEYCLOAK_SMTP_REPLY_TO_DISPLAY_NAME 'Svea Study Support'
+          update_release_env KEYCLOAK_SMTP_STARTTLS true
+          update_release_env KEYCLOAK_SMTP_SSL false
+          update_release_env KEYCLOAK_SMTP_CONFIGURED true
+          update_release_env KEYCLOAK_EMAIL_DMARC_STATUS present
+          "${compose[@]}" pull api-gateway learning-service keycloak
           "${compose[@]}" up -d --no-deps --wait --wait-timeout 120 keycloak
           KEYCLOAK_SECURITY_MODE=HTTPS_HOSTED ADMIN_PORTAL_URL="https://${public_domain}" \
+            KEYCLOAK_SMTP_HOST=smtp.resend.com KEYCLOAK_SMTP_PORT=587 KEYCLOAK_SMTP_USERNAME=resend \
+            KEYCLOAK_SMTP_FROM=no-reply@tinkona.com KEYCLOAK_SMTP_FROM_DISPLAY_NAME='Svea Study' \
+            KEYCLOAK_SMTP_REPLY_TO=support@tinkona.com KEYCLOAK_SMTP_REPLY_TO_DISPLAY_NAME='Svea Study Support' \
+            KEYCLOAK_SMTP_STARTTLS=true KEYCLOAK_SMTP_SSL=false KEYCLOAK_EMAIL_DMARC_STATUS=present \
             ./infrastructure/hetzner/harden-keycloak.sh
+          "${compose[@]}" up -d --no-deps --wait --wait-timeout 120 learning-service
           "${compose[@]}" up -d --no-deps --wait --wait-timeout 60 api-gateway
           "${compose[@]}" exec -T --user 101:101 api-gateway nginx -t
           API_DOMAIN="${public_domain}" ./infrastructure/hetzner/smoke-test.sh --internal
           gateway_image="$("${compose[@]}" ps -q api-gateway | xargs docker inspect -f '{{.Config.Image}}')"
           keycloak_image="$("${compose[@]}" ps -q keycloak | xargs docker inspect -f '{{.Config.Image}}')"
+          learning_image="$("${compose[@]}" ps -q learning-service | xargs docker inspect -f '{{.Config.Image}}')"
           [[ "${gateway_image}" == */citizenship-api-gateway:"${commit_sha}" ]]
           [[ "${keycloak_image}" == */citizenship-keycloak:"${commit_sha}" ]]
+          [[ "${learning_image}" == */citizenship-learning-service:"${commit_sha}" ]]
           trap - ERR
           rm -f "${backup}"
           REMOTE

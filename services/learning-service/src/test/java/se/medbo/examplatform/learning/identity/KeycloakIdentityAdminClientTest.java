@@ -28,6 +28,13 @@ class KeycloakIdentityAdminClientTest {
             respond(exchange, 200, "[{\"identityProvider\":\"google\"}]");
         });
         server.createContext("/admin/realms/exam-platform/users/user-123/credentials", exchange -> respond(exchange, 200, "[{\"type\":\"password\"}]"));
+        server.createContext("/admin/realms/exam-platform", exchange -> respond(exchange, 200, """
+                {"smtpServer":{"host":"smtp.resend.com","port":"587","starttls":"true","ssl":"false",
+                "auth":"true","user":"resend","password":"protected-smtp-secret",
+                "from":"no-reply@tinkona.com","replyTo":"support@tinkona.com"},
+                "attributes":{"resendDomainStatus":"verified","resendSpfStatus":"verified",
+                "resendDkimStatus":"verified","emailDmarcStatus":"present","lastSmtpTestAt":"2026-08-03T10:00:00Z"}}
+                """));
         server.start();
     }
 
@@ -51,6 +58,19 @@ class KeycloakIdentityAdminClientTest {
                 .hasMessage("IDENTITY_MANAGEMENT_NOT_CONFIGURED");
     }
 
+    @Test void derivesRedactedResendReadinessWithoutReturningThePassword() {
+        var configured = client(true, "protected-secret").emailConfiguration();
+
+        assertThat(configured.configured()).isTrue();
+        assertThat(configured.sender()).isEqualTo("no-reply@tinkona.com");
+        assertThat(configured.replyTo()).isEqualTo("support@tinkona.com");
+        assertThat(configured.domainStatus()).isEqualTo("verified");
+        assertThat(configured.spfStatus()).isEqualTo("verified");
+        assertThat(configured.dkimStatus()).isEqualTo("verified");
+        assertThat(configured.dmarcStatus()).isEqualTo("present");
+        assertThat(configured.toString()).doesNotContain("protected-smtp-secret");
+    }
+
     private KeycloakIdentityAdminClient client(boolean enabled, String secret) {
         return new KeycloakIdentityAdminClient(new ObjectMapper(), "http://127.0.0.1:" + server.getAddress().getPort(),
                 "exam-platform", "identity-management-bff", secret, enabled);
@@ -64,4 +84,3 @@ class KeycloakIdentityAdminClientTest {
         exchange.close();
     }
 }
-

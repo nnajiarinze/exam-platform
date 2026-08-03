@@ -22,6 +22,8 @@ jobs:
             dockerfile: infrastructure/gateway/Dockerfile
           - image: citizenship-keycloak
             dockerfile: infrastructure/keycloak/Dockerfile
+          - image: citizenship-learning-service
+            dockerfile: services/learning-service/Dockerfile
     steps:
       - name: Validate immutable input
         env:

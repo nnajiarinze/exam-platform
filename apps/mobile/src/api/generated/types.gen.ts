@@ -58,6 +58,18 @@ export type AuthenticationEmailReadiness = {
     enabled: boolean;
     verificationRequired: boolean;
     smtpConfigured: boolean;
+    provider: string;
+    sender: string;
+    replyTo: string;
+    domain: string;
+    domainStatus: string;
+    spfStatus: string;
+    dkimStatus: string;
+    dmarcStatus: string;
+    lastSmtpTestAt?: string | null;
+    lastVerificationEmailAt?: string | null;
+    lastResetEmailAt?: string | null;
+    passwordResetEnabled: boolean;
 };
 
 export type AuthenticationReadiness = {

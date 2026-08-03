@@ -107,7 +107,7 @@ services:
 
   learning-service:
     <<: *java-security
-    image: ${IMAGE_REGISTRY:?Set IMAGE_REGISTRY}/citizenship-learning-service:${IMAGE_TAG:?Set immutable IMAGE_TAG}
+    image: ${IMAGE_REGISTRY:?Set IMAGE_REGISTRY}/citizenship-learning-service:${LEARNING_IMAGE_TAG:-${IMAGE_TAG:?Set immutable IMAGE_TAG}}
     build:
       context: .
       dockerfile: services/learning-service/Dockerfile

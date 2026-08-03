@@ -44,6 +44,21 @@ final class KeycloakIdentityAdminClient {
 
     boolean ready() { return enabled; }
 
+    EmailConfiguration emailConfiguration() {
+        JsonNode realmConfiguration = json("GET", "admin/realms/" + encode(realm), null, Set.of(200));
+        JsonNode smtp = realmConfiguration.path("smtpServer");
+        JsonNode attributes = realmConfiguration.path("attributes");
+        boolean configured = "smtp.resend.com".equals(smtp.path("host").asText())
+                && "587".equals(smtp.path("port").asText()) && "true".equals(smtp.path("starttls").asText())
+                && "true".equals(smtp.path("auth").asText()) && "resend".equals(smtp.path("user").asText())
+                && !smtp.path("password").asText().isBlank();
+        return new EmailConfiguration(configured, smtp.path("from").asText(), smtp.path("replyTo").asText(),
+                attributes.path("resendDomainStatus").asText("UNKNOWN"), attributes.path("resendSpfStatus").asText("UNKNOWN"),
+                attributes.path("resendDkimStatus").asText("UNKNOWN"), attributes.path("emailDmarcStatus").asText("UNKNOWN"),
+                nullable(attributes.path("lastSmtpTestAt").asText()), nullable(attributes.path("lastVerificationEmailAt").asText()),
+                nullable(attributes.path("lastResetEmailAt").asText()));
+    }
+
     Methods methods(String userId) {
         JsonNode identities = json("GET", adminUser(userId) + "/federated-identity", null, Set.of(200));
         JsonNode credentials = json("GET", adminUser(userId) + "/credentials", null, Set.of(200));
@@ -113,6 +128,14 @@ final class KeycloakIdentityAdminClient {
     private static String encode(String value) { return URLEncoder.encode(value, StandardCharsets.UTF_8).replace("+", "%20"); }
 
     record Methods(boolean password, List<String> providers) {}
+    record EmailConfiguration(boolean configured, String sender, String replyTo, String domainStatus, String spfStatus,
+                              String dkimStatus, String dmarcStatus, String lastSmtpTestAt,
+                              String lastVerificationEmailAt, String lastResetEmailAt) {
+        static EmailConfiguration unavailable() {
+            return new EmailConfiguration(false, "", "", "UNKNOWN", "UNKNOWN", "UNKNOWN", "UNKNOWN", null, null, null);
+        }
+    }
+    private static String nullable(String value) { return value == null || value.isBlank() ? null : value; }
     private record AccessToken(String value, Instant expiresAt) {}
     static final class IdentityAdminException extends RuntimeException {
         private final String code;
@@ -121,4 +144,3 @@ final class KeycloakIdentityAdminClient {
         String code() { return code; }
     }
 }
-
