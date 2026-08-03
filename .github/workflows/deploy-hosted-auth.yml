@@ -107,5 +107,5 @@ jobs:
             --data-urlencode code_challenge_method=S256 \
             --data-urlencode ui_locales=sv \
             "$(jq -r .authorization_endpoint discovery.json)"
-          grep -q '<title>Logga in på Svea Study</title>' login.html
+          grep -q '<title>Logga in till Svea Study</title>' login.html
           curl --fail --silent --show-error "${base}/healthz" >/dev/null
