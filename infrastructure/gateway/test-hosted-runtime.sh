@@ -26,6 +26,12 @@ openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj /CN=legacy.test.local \
   -addext 'subjectAltName=DNS:legacy.test.local' \
   -keyout "${test_root}/certs/live/legacy.test.local/privkey.pem" \
   -out "${test_root}/certs/live/legacy.test.local/fullchain.pem" >/dev/null 2>&1
+# These are disposable fixture keys. GitHub's bind mount keeps the runner UID,
+# while the hardened container drops DAC_OVERRIDE; production keys are root-owned.
+chmod 0755 "${test_root}" "${test_root}/certs" "${test_root}/certs/live" \
+  "${test_root}/certs/live/test.local" "${test_root}/certs/live/legacy.test.local"
+chmod 0644 "${test_root}/certs/live/test.local/"*.pem \
+  "${test_root}/certs/live/legacy.test.local/"*.pem
 
 docker network create "${network}" >/dev/null
 docker run -d --name "${content}" --network "${network}" --network-alias content-service nginx:alpine >/dev/null
