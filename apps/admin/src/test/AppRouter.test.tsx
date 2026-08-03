@@ -82,22 +82,21 @@ describe('admin routing', () => {
   });
 
   it('shows redacted authentication readiness without requesting secrets', async () => {
-    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
-      const url = String(input);
-      if (url.endsWith('/.well-known/openid-configuration')) {
-        const issuer = url.replace('/.well-known/openid-configuration', '');
-        return Promise.resolve(statusResponse(200, {
-          issuer,
-          registration_endpoint: `${issuer}/protocol/openid-connect/registrations`,
-        }));
-      }
-      return Promise.resolve(new Response('', { status: 404 }));
-    });
+    const fetchMock = vi.fn().mockResolvedValue(statusResponse(200, {
+      issuer: 'https://api.example.test/realms/citizenship', mobileCallback: 'sveastudy://auth/callback',
+      bffReady: true, accountDeletionEnabled: true,
+      email: { enabled: true, verificationRequired: true, smtpConfigured: false },
+      providers: [
+        { alias: 'apple', enabled: false, callback: 'https://api.example.test/realms/citizenship/broker/apple/endpoint', extensionVersion: '1.17.0', clientSecretExpiry: 'GENERATED_ON_DEMAND' },
+        { alias: 'google', enabled: false, callback: 'https://api.example.test/realms/citizenship/broker/google/endpoint' },
+      ],
+      providerErrorCount24h: 0, accountLinkingConflictCount24h: 0, checkedAt: '2026-08-03T10:00:00Z',
+    }));
     vi.stubGlobal('fetch', fetchMock);
     renderRouter('/identity/providers', { id: 'admin', displayName: 'Admin', roles: [AdminRole.Admin] });
     expect(await screen.findByRole('heading', { name: 'Authentication readiness' })).toBeInTheDocument();
-    expect(screen.getByText('mobile-…-app')).toBeInTheDocument();
-    expect(screen.getAllByText('DISABLED_OR_UNAVAILABLE')).toHaveLength(2);
+    expect(screen.getByText('sveastudy://auth/callback')).toBeInTheDocument();
+    expect(screen.getAllByText('DISABLED')).toHaveLength(2);
     expect(fetchMock.mock.calls.some(([url]) => String(url).includes('secret'))).toBe(false);
   });
 

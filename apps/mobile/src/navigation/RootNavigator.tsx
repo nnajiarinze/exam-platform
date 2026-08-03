@@ -37,6 +37,7 @@ import {
   NotificationPreferencesScreen,
   PrivacyLegalScreen,
   StudyGoalsScreen,
+  LinkedLoginsScreen,
 } from "../features/settings/SettingsDetailScreens";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
@@ -183,6 +184,11 @@ export function RootNavigator() {
         name="ChangePassword"
         component={ChangePasswordScreen}
         options={{ title: "Change Password" }}
+      />
+      <Stack.Screen
+        name="LinkedLogins"
+        component={LinkedLoginsScreen}
+        options={{ title: "Sign-in methods" }}
       />
       <Stack.Screen
         name="StudyGoals"

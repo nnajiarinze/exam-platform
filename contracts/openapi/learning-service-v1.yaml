@@ -30,13 +30,95 @@ paths:
         "401": {$ref: "#/components/responses/Unauthorized"}
         "422": {$ref: "#/components/responses/Unprocessable"}
     delete:
+      deprecated: true
       operationId: deleteMyLearnerAccount
-      summary: Anonymise and disable the current learner account
+      summary: Legacy deletion entry point; use the confirmed identity deletion flow
       tags: [Learner account]
       security: [{ learnerBearer: [] }]
       responses:
-        "204": {description: Account anonymised and disabled}
+        "409": {$ref: "#/components/responses/Conflict"}
         "401": {$ref: "#/components/responses/Unauthorized"}
+  /api/v1/me/identity/methods:
+    get:
+      operationId: getMyLinkedLoginMethods
+      tags: [Identity management]
+      security: [{learnerBearer: []}]
+      responses:
+        "200": {description: Linked and available login methods without provider tokens,content: {application/json: {schema: {$ref: "#/components/schemas/LinkedLoginMethods"}}}}
+        "401": {$ref: "#/components/responses/Unauthorized"}
+        "503": {$ref: "#/components/responses/Unavailable"}
+  /api/v1/me/identity/links/{provider}:
+    parameters:
+      - {name: provider,in: path,required: true,schema: {type: string,enum: [google,apple]}}
+    post:
+      operationId: initiateMyIdentityProviderLink
+      tags: [Identity management]
+      security: [{learnerBearer: []}]
+      responses:
+        "200": {description: Keycloak application-initiated action to open with the existing PKCE client,content: {application/json: {schema: {$ref: "#/components/schemas/IdentityLinkInitiation"}}}}
+        "403": {$ref: "#/components/responses/Forbidden"}
+        "503": {$ref: "#/components/responses/Unavailable"}
+    delete:
+      operationId: unlinkMyIdentityProvider
+      tags: [Identity management]
+      security: [{learnerBearer: []}]
+      responses:
+        "200": {description: Login methods after unlinking,content: {application/json: {schema: {$ref: "#/components/schemas/LinkedLoginMethods"}}}}
+        "403": {$ref: "#/components/responses/Forbidden"}
+        "409": {$ref: "#/components/responses/Conflict"}
+        "503": {$ref: "#/components/responses/Unavailable"}
+  /api/v1/me/identity/sessions/current/logout:
+    post:
+      operationId: logoutMyCurrentIdentitySession
+      tags: [Identity management]
+      security: [{learnerBearer: []}]
+      responses:
+        "204": {description: Current Keycloak session revoked}
+        "409": {$ref: "#/components/responses/Conflict"}
+        "503": {$ref: "#/components/responses/Unavailable"}
+  /api/v1/me/identity/sessions/logout-all:
+    post:
+      operationId: logoutAllMyIdentitySessions
+      tags: [Identity management]
+      security: [{learnerBearer: []}]
+      responses:
+        "204": {description: All Keycloak sessions revoked}
+        "403": {$ref: "#/components/responses/Forbidden"}
+        "503": {$ref: "#/components/responses/Unavailable"}
+  /api/v1/me/identity/deletion:
+    post:
+      operationId: beginMyIdentityDeletion
+      tags: [Identity management]
+      security: [{learnerBearer: []}]
+      responses:
+        "200": {description: Time-bounded deletion confirmation request,content: {application/json: {schema: {$ref: "#/components/schemas/IdentityDeletionStatus"}}}}
+        "403": {$ref: "#/components/responses/Forbidden"}
+        "503": {$ref: "#/components/responses/Unavailable"}
+    get:
+      operationId: getMyIdentityDeletionStatus
+      tags: [Identity management]
+      security: [{learnerBearer: []}]
+      responses:
+        "200": {description: Current deletion status,content: {application/json: {schema: {$ref: "#/components/schemas/IdentityDeletionStatus"}}}}
+  /api/v1/me/identity/deletion/confirm:
+    post:
+      operationId: confirmMyIdentityDeletion
+      tags: [Identity management]
+      security: [{learnerBearer: []}]
+      requestBody: {required: true,content: {application/json: {schema: {$ref: "#/components/schemas/ConfirmIdentityDeletion"}}}}
+      responses:
+        "200": {description: Completed identity deletion and learner anonymisation status,content: {application/json: {schema: {$ref: "#/components/schemas/IdentityDeletionStatus"}}}}
+        "403": {$ref: "#/components/responses/Forbidden"}
+        "409": {$ref: "#/components/responses/Conflict"}
+        "422": {$ref: "#/components/responses/Unprocessable"}
+        "503": {$ref: "#/components/responses/Unavailable"}
+  /api/v1/me/identity/readiness:
+    get:
+      operationId: getMyIdentityManagementReadiness
+      tags: [Identity management]
+      security: [{learnerBearer: []}]
+      responses:
+        "200": {description: Non-secret identity-management readiness,content: {application/json: {schema: {$ref: "#/components/schemas/IdentityManagementReadiness"}}}}
   /api/v1/me/settings:
     get:
       operationId: getMyLearnerSettings
@@ -59,6 +141,14 @@ paths:
         "403": {$ref: "#/components/responses/Forbidden"}
         "409": {$ref: "#/components/responses/Conflict"}
         "422": {$ref: "#/components/responses/Unprocessable"}
+  /api/v1/auth/readiness:
+    get:
+      operationId: getAuthenticationReadiness
+      summary: Read non-secret production authentication capability health
+      tags: [Identity management]
+      security: []
+      responses:
+        "200": {description: Aggregate readiness without secrets or learner identifiers,content: {application/json: {schema: {$ref: "#/components/schemas/AuthenticationReadiness"}}}}
   /internal/v1/reports/learner-health:
     get:
       operationId: getInternalLearnerHealth
@@ -511,7 +601,96 @@ components:
     Unprocessable:
       description: Structurally valid request violates content or selection rules.
       content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    Unavailable:
+      description: Protected identity-management integration is not configured or temporarily unavailable.
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
   schemas:
+    LoginMethod:
+      type: object
+      additionalProperties: false
+      required: [id,displayName,linked,available]
+      properties:
+        id: {type: string,enum: [password,google,apple]}
+        displayName: {type: string}
+        linked: {type: boolean}
+        available: {type: boolean}
+    LinkedLoginMethods:
+      type: object
+      additionalProperties: false
+      required: [ready,methods,usableMethodCount]
+      properties:
+        ready: {type: boolean}
+        methods: {type: array,items: {$ref: "#/components/schemas/LoginMethod"}}
+        usableMethodCount: {type: integer,minimum: 0}
+    IdentityLinkInitiation:
+      type: object
+      additionalProperties: false
+      required: [provider,keycloakAction,correlationId]
+      properties:
+        provider: {type: string,enum: [google,apple]}
+        keycloakAction: {type: string,pattern: '^idp_link:(google|apple)$'}
+        correlationId: {type: string,format: uuid}
+    ConfirmIdentityDeletion:
+      type: object
+      additionalProperties: false
+      required: [requestId,confirmation]
+      properties:
+        requestId: {type: string,format: uuid}
+        confirmation: {type: string,enum: [DELETE]}
+    IdentityDeletionStatus:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        requestId: {type: [string,"null"],format: uuid}
+        status: {type: string,enum: [NOT_REQUESTED,PENDING_CONFIRMATION,PROCESSING,COMPLETED,FAILED]}
+        requestedAt: {type: [string,"null"],format: date-time}
+        expiresAt: {type: [string,"null"],format: date-time}
+        completedAt: {type: [string,"null"],format: date-time}
+        failureCode: {type: [string,"null"]}
+    IdentityManagementReadiness:
+      type: object
+      additionalProperties: false
+      required: [bffReady,googleEnabled,appleEnabled,linkingProtocol,finalMethodProtection,deletionEnabled]
+      properties:
+        bffReady: {type: boolean}
+        googleEnabled: {type: boolean}
+        appleEnabled: {type: boolean}
+        linkingProtocol: {type: string,enum: [KEYCLOAK_AIA]}
+        finalMethodProtection: {type: boolean}
+        deletionEnabled: {type: boolean}
+    AuthenticationProviderReadiness:
+      type: object
+      additionalProperties: false
+      required: [alias,enabled,callback]
+      properties:
+        alias: {type: string,enum: [google,apple]}
+        enabled: {type: boolean}
+        callback: {type: string,format: uri}
+        extensionVersion: {type: [string,"null"]}
+        clientSecretExpiry: {type: [string,"null"]}
+    AuthenticationEmailReadiness:
+      type: object
+      additionalProperties: false
+      required: [enabled,verificationRequired,smtpConfigured]
+      properties:
+        enabled: {type: boolean}
+        verificationRequired: {type: boolean}
+        smtpConfigured: {type: boolean}
+    AuthenticationReadiness:
+      type: object
+      additionalProperties: false
+      required: [issuer,mobileCallback,bffReady,accountDeletionEnabled,email,providers,providerErrorCount24h,accountLinkingConflictCount24h,checkedAt]
+      properties:
+        issuer: {type: string,format: uri}
+        mobileCallback: {type: string}
+        bffReady: {type: boolean}
+        accountDeletionEnabled: {type: boolean}
+        email: {$ref: "#/components/schemas/AuthenticationEmailReadiness"}
+        providers: {type: array,items: {$ref: "#/components/schemas/AuthenticationProviderReadiness"}}
+        providerErrorCount24h: {type: integer,minimum: 0}
+        accountLinkingConflictCount24h: {type: integer,minimum: 0}
+        checkedAt: {type: string,format: date-time}
     LearnerProfile:
       type: object
       required: [id,emailVerified,displayName,interfaceLanguage,explanationLanguage,accountStatus,onboardingCompleted,createdAt,updatedAt]

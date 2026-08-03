@@ -39,6 +39,17 @@ learning:
   identity:
     development-header-enabled: ${LEARNING_DEV_IDENTITY_ENABLED:false}
     allowed-origins: ${CORS_ALLOWED_ORIGINS:${LEARNING_ALLOWED_ORIGINS:http://localhost:*,http://127.0.0.1:*}}
+    management:
+      enabled: ${IDENTITY_MANAGEMENT_ENABLED:false}
+      keycloak-base-url: ${IDENTITY_KEYCLOAK_BASE_URL:http://localhost:8090}
+      realm: ${IDENTITY_KEYCLOAK_REALM:exam-platform}
+      client-id: ${IDENTITY_BFF_CLIENT_ID:}
+      client-secret: ${IDENTITY_BFF_CLIENT_SECRET:}
+      recent-authentication-seconds: ${IDENTITY_RECENT_AUTHENTICATION_SECONDS:300}
+      deletion-recovery-ms: ${IDENTITY_DELETION_RECOVERY_MS:60000}
+      google-enabled: ${KEYCLOAK_GOOGLE_ENABLED:false}
+      apple-enabled: ${KEYCLOAK_APPLE_ENABLED:false}
+      smtp-configured: ${KEYCLOAK_SMTP_CONFIGURED:false}
   security:
     audience: ${LEARNING_OIDC_AUDIENCE:learning-api}
   practice:

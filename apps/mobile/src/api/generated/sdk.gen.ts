@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ActivateImportedContentReleaseData, ActivateImportedContentReleaseErrors, ActivateImportedContentReleaseResponses, CreateMockExamData, CreateMockExamErrors, CreateMockExamResponses, CreatePracticeSessionData, CreatePracticeSessionErrors, CreatePracticeSessionResponses, DeleteMyLearnerAccountData, DeleteMyLearnerAccountErrors, DeleteMyLearnerAccountResponses, FlagMockExamQuestionData, FlagMockExamQuestionErrors, FlagMockExamQuestionResponses, GetContinueLearningData, GetContinueLearningErrors, GetContinueLearningResponses, GetInternalLearnerHealthData, GetInternalLearnerHealthErrors, GetInternalLearnerHealthResponses, GetMockExamConfigurationData, GetMockExamConfigurationErrors, GetMockExamConfigurationResponses, GetMockExamData, GetMockExamErrors, GetMockExamHistoryData, GetMockExamHistoryErrors, GetMockExamHistoryResponses, GetMockExamQuestionData, GetMockExamQuestionErrors, GetMockExamQuestionResponses, GetMockExamQuestionReviewData, GetMockExamQuestionReviewErrors, GetMockExamQuestionReviewResponses, GetMockExamResponses, GetMockExamResultsData, GetMockExamResultsErrors, GetMockExamResultsResponses, GetMyLearnerProfileData, GetMyLearnerProfileErrors, GetMyLearnerProfileResponses, GetMyLearnerSettingsData, GetMyLearnerSettingsErrors, GetMyLearnerSettingsResponses, GetNextPracticeQuestionData, GetNextPracticeQuestionErrors, GetNextPracticeQuestionResponses, GetPracticeSessionData, GetPracticeSessionErrors, GetPracticeSessionResponses, GetStudySubjectsData, GetStudySubjectsErrors, GetStudySubjectsResponses, GetStudyTopicsData, GetStudyTopicsErrors, GetStudyTopicsResponses, GetSubjectsData, GetSubjectsErrors, GetSubjectsResponses, GetTopicLessonData, GetTopicLessonErrors, GetTopicLessonResponses, GetTopicProgressData, GetTopicProgressErrors, GetTopicProgressResponses, ImportContentReleaseData, ImportContentReleaseErrors, ImportContentReleaseResponses, SubmitMockExamData, SubmitMockExamErrors, SubmitMockExamResponseData, SubmitMockExamResponseErrors, SubmitMockExamResponseResponses, SubmitMockExamResponses, SubmitPracticeResponseData, SubmitPracticeResponseErrors, SubmitPracticeResponseResponses, UpdateLessonProgressData, UpdateLessonProgressErrors, UpdateLessonProgressResponses, UpdateMyLearnerProfileData, UpdateMyLearnerProfileErrors, UpdateMyLearnerProfileResponses, UpdateMyLearnerSettingsData, UpdateMyLearnerSettingsErrors, UpdateMyLearnerSettingsResponses } from './types.gen';
+import type { ActivateImportedContentReleaseData, ActivateImportedContentReleaseErrors, ActivateImportedContentReleaseResponses, BeginMyIdentityDeletionData, BeginMyIdentityDeletionErrors, BeginMyIdentityDeletionResponses, ConfirmMyIdentityDeletionData, ConfirmMyIdentityDeletionErrors, ConfirmMyIdentityDeletionResponses, CreateMockExamData, CreateMockExamErrors, CreateMockExamResponses, CreatePracticeSessionData, CreatePracticeSessionErrors, CreatePracticeSessionResponses, DeleteMyLearnerAccountData, DeleteMyLearnerAccountErrors, FlagMockExamQuestionData, FlagMockExamQuestionErrors, FlagMockExamQuestionResponses, GetAuthenticationReadinessData, GetAuthenticationReadinessResponses, GetContinueLearningData, GetContinueLearningErrors, GetContinueLearningResponses, GetInternalLearnerHealthData, GetInternalLearnerHealthErrors, GetInternalLearnerHealthResponses, GetMockExamConfigurationData, GetMockExamConfigurationErrors, GetMockExamConfigurationResponses, GetMockExamData, GetMockExamErrors, GetMockExamHistoryData, GetMockExamHistoryErrors, GetMockExamHistoryResponses, GetMockExamQuestionData, GetMockExamQuestionErrors, GetMockExamQuestionResponses, GetMockExamQuestionReviewData, GetMockExamQuestionReviewErrors, GetMockExamQuestionReviewResponses, GetMockExamResponses, GetMockExamResultsData, GetMockExamResultsErrors, GetMockExamResultsResponses, GetMyIdentityDeletionStatusData, GetMyIdentityDeletionStatusResponses, GetMyIdentityManagementReadinessData, GetMyIdentityManagementReadinessResponses, GetMyLearnerProfileData, GetMyLearnerProfileErrors, GetMyLearnerProfileResponses, GetMyLearnerSettingsData, GetMyLearnerSettingsErrors, GetMyLearnerSettingsResponses, GetMyLinkedLoginMethodsData, GetMyLinkedLoginMethodsErrors, GetMyLinkedLoginMethodsResponses, GetNextPracticeQuestionData, GetNextPracticeQuestionErrors, GetNextPracticeQuestionResponses, GetPracticeSessionData, GetPracticeSessionErrors, GetPracticeSessionResponses, GetStudySubjectsData, GetStudySubjectsErrors, GetStudySubjectsResponses, GetStudyTopicsData, GetStudyTopicsErrors, GetStudyTopicsResponses, GetSubjectsData, GetSubjectsErrors, GetSubjectsResponses, GetTopicLessonData, GetTopicLessonErrors, GetTopicLessonResponses, GetTopicProgressData, GetTopicProgressErrors, GetTopicProgressResponses, ImportContentReleaseData, ImportContentReleaseErrors, ImportContentReleaseResponses, InitiateMyIdentityProviderLinkData, InitiateMyIdentityProviderLinkErrors, InitiateMyIdentityProviderLinkResponses, LogoutAllMyIdentitySessionsData, LogoutAllMyIdentitySessionsErrors, LogoutAllMyIdentitySessionsResponses, LogoutMyCurrentIdentitySessionData, LogoutMyCurrentIdentitySessionErrors, LogoutMyCurrentIdentitySessionResponses, SubmitMockExamData, SubmitMockExamErrors, SubmitMockExamResponseData, SubmitMockExamResponseErrors, SubmitMockExamResponseResponses, SubmitMockExamResponses, SubmitPracticeResponseData, SubmitPracticeResponseErrors, SubmitPracticeResponseResponses, UnlinkMyIdentityProviderData, UnlinkMyIdentityProviderErrors, UnlinkMyIdentityProviderResponses, UpdateLessonProgressData, UpdateLessonProgressErrors, UpdateLessonProgressResponses, UpdateMyLearnerProfileData, UpdateMyLearnerProfileErrors, UpdateMyLearnerProfileResponses, UpdateMyLearnerSettingsData, UpdateMyLearnerSettingsErrors, UpdateMyLearnerSettingsResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -19,9 +19,11 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
 };
 
 /**
- * Anonymise and disable the current learner account
+ * Legacy deletion entry point; use the confirmed identity deletion flow
+ *
+ * @deprecated
  */
-export const deleteMyLearnerAccount = <ThrowOnError extends boolean = false>(options?: Options<DeleteMyLearnerAccountData, ThrowOnError>): RequestResult<DeleteMyLearnerAccountResponses, DeleteMyLearnerAccountErrors, ThrowOnError> => (options?.client ?? client).delete<DeleteMyLearnerAccountResponses, DeleteMyLearnerAccountErrors, ThrowOnError>({
+export const deleteMyLearnerAccount = <ThrowOnError extends boolean = false>(options?: Options<DeleteMyLearnerAccountData, ThrowOnError>): RequestResult<unknown, DeleteMyLearnerAccountErrors, ThrowOnError> => (options?.client ?? client).delete<unknown, DeleteMyLearnerAccountErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/me',
     ...options
@@ -49,6 +51,64 @@ export const updateMyLearnerProfile = <ThrowOnError extends boolean = false>(opt
     }
 });
 
+export const getMyLinkedLoginMethods = <ThrowOnError extends boolean = false>(options?: Options<GetMyLinkedLoginMethodsData, ThrowOnError>): RequestResult<GetMyLinkedLoginMethodsResponses, GetMyLinkedLoginMethodsErrors, ThrowOnError> => (options?.client ?? client).get<GetMyLinkedLoginMethodsResponses, GetMyLinkedLoginMethodsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/me/identity/methods',
+    ...options
+});
+
+export const unlinkMyIdentityProvider = <ThrowOnError extends boolean = false>(options: Options<UnlinkMyIdentityProviderData, ThrowOnError>): RequestResult<UnlinkMyIdentityProviderResponses, UnlinkMyIdentityProviderErrors, ThrowOnError> => (options.client ?? client).delete<UnlinkMyIdentityProviderResponses, UnlinkMyIdentityProviderErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/me/identity/links/{provider}',
+    ...options
+});
+
+export const initiateMyIdentityProviderLink = <ThrowOnError extends boolean = false>(options: Options<InitiateMyIdentityProviderLinkData, ThrowOnError>): RequestResult<InitiateMyIdentityProviderLinkResponses, InitiateMyIdentityProviderLinkErrors, ThrowOnError> => (options.client ?? client).post<InitiateMyIdentityProviderLinkResponses, InitiateMyIdentityProviderLinkErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/me/identity/links/{provider}',
+    ...options
+});
+
+export const logoutMyCurrentIdentitySession = <ThrowOnError extends boolean = false>(options?: Options<LogoutMyCurrentIdentitySessionData, ThrowOnError>): RequestResult<LogoutMyCurrentIdentitySessionResponses, LogoutMyCurrentIdentitySessionErrors, ThrowOnError> => (options?.client ?? client).post<LogoutMyCurrentIdentitySessionResponses, LogoutMyCurrentIdentitySessionErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/me/identity/sessions/current/logout',
+    ...options
+});
+
+export const logoutAllMyIdentitySessions = <ThrowOnError extends boolean = false>(options?: Options<LogoutAllMyIdentitySessionsData, ThrowOnError>): RequestResult<LogoutAllMyIdentitySessionsResponses, LogoutAllMyIdentitySessionsErrors, ThrowOnError> => (options?.client ?? client).post<LogoutAllMyIdentitySessionsResponses, LogoutAllMyIdentitySessionsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/me/identity/sessions/logout-all',
+    ...options
+});
+
+export const getMyIdentityDeletionStatus = <ThrowOnError extends boolean = false>(options?: Options<GetMyIdentityDeletionStatusData, ThrowOnError>): RequestResult<GetMyIdentityDeletionStatusResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetMyIdentityDeletionStatusResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/me/identity/deletion',
+    ...options
+});
+
+export const beginMyIdentityDeletion = <ThrowOnError extends boolean = false>(options?: Options<BeginMyIdentityDeletionData, ThrowOnError>): RequestResult<BeginMyIdentityDeletionResponses, BeginMyIdentityDeletionErrors, ThrowOnError> => (options?.client ?? client).post<BeginMyIdentityDeletionResponses, BeginMyIdentityDeletionErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/me/identity/deletion',
+    ...options
+});
+
+export const confirmMyIdentityDeletion = <ThrowOnError extends boolean = false>(options: Options<ConfirmMyIdentityDeletionData, ThrowOnError>): RequestResult<ConfirmMyIdentityDeletionResponses, ConfirmMyIdentityDeletionErrors, ThrowOnError> => (options.client ?? client).post<ConfirmMyIdentityDeletionResponses, ConfirmMyIdentityDeletionErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/me/identity/deletion/confirm',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const getMyIdentityManagementReadiness = <ThrowOnError extends boolean = false>(options?: Options<GetMyIdentityManagementReadinessData, ThrowOnError>): RequestResult<GetMyIdentityManagementReadinessResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetMyIdentityManagementReadinessResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/me/identity/readiness',
+    ...options
+});
+
 /**
  * Retrieve goals, notification preferences, and current goal progress
  */
@@ -70,6 +130,11 @@ export const updateMyLearnerSettings = <ThrowOnError extends boolean = false>(op
         ...options.headers
     }
 });
+
+/**
+ * Read non-secret production authentication capability health
+ */
+export const getAuthenticationReadiness = <ThrowOnError extends boolean = false>(options?: Options<GetAuthenticationReadinessData, ThrowOnError>): RequestResult<GetAuthenticationReadinessResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetAuthenticationReadinessResponses, unknown, ThrowOnError>({ url: '/api/v1/auth/readiness', ...options });
 
 /**
  * Aggregate learner runtime health for trusted operational reporting

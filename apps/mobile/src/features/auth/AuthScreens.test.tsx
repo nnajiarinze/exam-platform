@@ -10,7 +10,7 @@ function auth(overrides: Record<string, unknown> = {}) {
     status: 'unauthenticated', claims: undefined, activeIntent: undefined, diagnosticCode: undefined,
     requestReady: true, appleEnabled: true, googleEnabled: true,
     login: jest.fn(async () => undefined), register: jest.fn(async () => undefined), forgotPassword: jest.fn(async () => undefined),
-    changePassword: jest.fn(async () => undefined), logout: jest.fn(async () => undefined), clearError: jest.fn(), ...overrides,
+    changePassword: jest.fn(async () => undefined), linkProvider: jest.fn(async () => true), reauthenticate: jest.fn(async () => true), logout: jest.fn(async () => undefined), clearError: jest.fn(), ...overrides,
   } as ReturnType<typeof useAuth>;
 }
 

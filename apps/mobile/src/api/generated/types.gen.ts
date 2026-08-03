@@ -4,6 +4,74 @@ export type ClientOptions = {
     baseUrl: `${string}://${string}` | (string & {});
 };
 
+export type LoginMethod = {
+    id: 'password' | 'google' | 'apple';
+    displayName: string;
+    linked: boolean;
+    available: boolean;
+};
+
+export type LinkedLoginMethods = {
+    ready: boolean;
+    methods: Array<LoginMethod>;
+    usableMethodCount: number;
+};
+
+export type IdentityLinkInitiation = {
+    provider: 'google' | 'apple';
+    keycloakAction: string;
+    correlationId: string;
+};
+
+export type ConfirmIdentityDeletion = {
+    requestId: string;
+    confirmation: 'DELETE';
+};
+
+export type IdentityDeletionStatus = {
+    requestId?: string | null;
+    status: 'NOT_REQUESTED' | 'PENDING_CONFIRMATION' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+    requestedAt?: string | null;
+    expiresAt?: string | null;
+    completedAt?: string | null;
+    failureCode?: string | null;
+};
+
+export type IdentityManagementReadiness = {
+    bffReady: boolean;
+    googleEnabled: boolean;
+    appleEnabled: boolean;
+    linkingProtocol: 'KEYCLOAK_AIA';
+    finalMethodProtection: boolean;
+    deletionEnabled: boolean;
+};
+
+export type AuthenticationProviderReadiness = {
+    alias: 'google' | 'apple';
+    enabled: boolean;
+    callback: string;
+    extensionVersion?: string | null;
+    clientSecretExpiry?: string | null;
+};
+
+export type AuthenticationEmailReadiness = {
+    enabled: boolean;
+    verificationRequired: boolean;
+    smtpConfigured: boolean;
+};
+
+export type AuthenticationReadiness = {
+    issuer: string;
+    mobileCallback: string;
+    bffReady: boolean;
+    accountDeletionEnabled: boolean;
+    email: AuthenticationEmailReadiness;
+    providers: Array<AuthenticationProviderReadiness>;
+    providerErrorCount24h: number;
+    accountLinkingConflictCount24h: number;
+    checkedAt: string;
+};
+
 export type LearnerProfile = {
     id: string;
     email?: string | null;
@@ -486,18 +554,13 @@ export type DeleteMyLearnerAccountErrors = {
      * Authentication is absent or invalid.
      */
     401: Error;
+    /**
+     * Request conflicts with current or previously accepted state.
+     */
+    409: Error;
 };
 
 export type DeleteMyLearnerAccountError = DeleteMyLearnerAccountErrors[keyof DeleteMyLearnerAccountErrors];
-
-export type DeleteMyLearnerAccountResponses = {
-    /**
-     * Account anonymised and disabled
-     */
-    204: void;
-};
-
-export type DeleteMyLearnerAccountResponse = DeleteMyLearnerAccountResponses[keyof DeleteMyLearnerAccountResponses];
 
 export type GetMyLearnerProfileData = {
     body?: never;
@@ -556,6 +619,257 @@ export type UpdateMyLearnerProfileResponses = {
 };
 
 export type UpdateMyLearnerProfileResponse = UpdateMyLearnerProfileResponses[keyof UpdateMyLearnerProfileResponses];
+
+export type GetMyLinkedLoginMethodsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/me/identity/methods';
+};
+
+export type GetMyLinkedLoginMethodsErrors = {
+    /**
+     * Authentication is absent or invalid.
+     */
+    401: Error;
+    /**
+     * Protected identity-management integration is not configured or temporarily unavailable.
+     */
+    503: Error;
+};
+
+export type GetMyLinkedLoginMethodsError = GetMyLinkedLoginMethodsErrors[keyof GetMyLinkedLoginMethodsErrors];
+
+export type GetMyLinkedLoginMethodsResponses = {
+    /**
+     * Linked and available login methods without provider tokens
+     */
+    200: LinkedLoginMethods;
+};
+
+export type GetMyLinkedLoginMethodsResponse = GetMyLinkedLoginMethodsResponses[keyof GetMyLinkedLoginMethodsResponses];
+
+export type UnlinkMyIdentityProviderData = {
+    body?: never;
+    path: {
+        provider: 'google' | 'apple';
+    };
+    query?: never;
+    url: '/api/v1/me/identity/links/{provider}';
+};
+
+export type UnlinkMyIdentityProviderErrors = {
+    /**
+     * The authenticated account is not allowed to perform this operation.
+     */
+    403: Error;
+    /**
+     * Request conflicts with current or previously accepted state.
+     */
+    409: Error;
+    /**
+     * Protected identity-management integration is not configured or temporarily unavailable.
+     */
+    503: Error;
+};
+
+export type UnlinkMyIdentityProviderError = UnlinkMyIdentityProviderErrors[keyof UnlinkMyIdentityProviderErrors];
+
+export type UnlinkMyIdentityProviderResponses = {
+    /**
+     * Login methods after unlinking
+     */
+    200: LinkedLoginMethods;
+};
+
+export type UnlinkMyIdentityProviderResponse = UnlinkMyIdentityProviderResponses[keyof UnlinkMyIdentityProviderResponses];
+
+export type InitiateMyIdentityProviderLinkData = {
+    body?: never;
+    path: {
+        provider: 'google' | 'apple';
+    };
+    query?: never;
+    url: '/api/v1/me/identity/links/{provider}';
+};
+
+export type InitiateMyIdentityProviderLinkErrors = {
+    /**
+     * The authenticated account is not allowed to perform this operation.
+     */
+    403: Error;
+    /**
+     * Protected identity-management integration is not configured or temporarily unavailable.
+     */
+    503: Error;
+};
+
+export type InitiateMyIdentityProviderLinkError = InitiateMyIdentityProviderLinkErrors[keyof InitiateMyIdentityProviderLinkErrors];
+
+export type InitiateMyIdentityProviderLinkResponses = {
+    /**
+     * Keycloak application-initiated action to open with the existing PKCE client
+     */
+    200: IdentityLinkInitiation;
+};
+
+export type InitiateMyIdentityProviderLinkResponse = InitiateMyIdentityProviderLinkResponses[keyof InitiateMyIdentityProviderLinkResponses];
+
+export type LogoutMyCurrentIdentitySessionData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/me/identity/sessions/current/logout';
+};
+
+export type LogoutMyCurrentIdentitySessionErrors = {
+    /**
+     * Request conflicts with current or previously accepted state.
+     */
+    409: Error;
+    /**
+     * Protected identity-management integration is not configured or temporarily unavailable.
+     */
+    503: Error;
+};
+
+export type LogoutMyCurrentIdentitySessionError = LogoutMyCurrentIdentitySessionErrors[keyof LogoutMyCurrentIdentitySessionErrors];
+
+export type LogoutMyCurrentIdentitySessionResponses = {
+    /**
+     * Current Keycloak session revoked
+     */
+    204: void;
+};
+
+export type LogoutMyCurrentIdentitySessionResponse = LogoutMyCurrentIdentitySessionResponses[keyof LogoutMyCurrentIdentitySessionResponses];
+
+export type LogoutAllMyIdentitySessionsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/me/identity/sessions/logout-all';
+};
+
+export type LogoutAllMyIdentitySessionsErrors = {
+    /**
+     * The authenticated account is not allowed to perform this operation.
+     */
+    403: Error;
+    /**
+     * Protected identity-management integration is not configured or temporarily unavailable.
+     */
+    503: Error;
+};
+
+export type LogoutAllMyIdentitySessionsError = LogoutAllMyIdentitySessionsErrors[keyof LogoutAllMyIdentitySessionsErrors];
+
+export type LogoutAllMyIdentitySessionsResponses = {
+    /**
+     * All Keycloak sessions revoked
+     */
+    204: void;
+};
+
+export type LogoutAllMyIdentitySessionsResponse = LogoutAllMyIdentitySessionsResponses[keyof LogoutAllMyIdentitySessionsResponses];
+
+export type GetMyIdentityDeletionStatusData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/me/identity/deletion';
+};
+
+export type GetMyIdentityDeletionStatusResponses = {
+    /**
+     * Current deletion status
+     */
+    200: IdentityDeletionStatus;
+};
+
+export type GetMyIdentityDeletionStatusResponse = GetMyIdentityDeletionStatusResponses[keyof GetMyIdentityDeletionStatusResponses];
+
+export type BeginMyIdentityDeletionData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/me/identity/deletion';
+};
+
+export type BeginMyIdentityDeletionErrors = {
+    /**
+     * The authenticated account is not allowed to perform this operation.
+     */
+    403: Error;
+    /**
+     * Protected identity-management integration is not configured or temporarily unavailable.
+     */
+    503: Error;
+};
+
+export type BeginMyIdentityDeletionError = BeginMyIdentityDeletionErrors[keyof BeginMyIdentityDeletionErrors];
+
+export type BeginMyIdentityDeletionResponses = {
+    /**
+     * Time-bounded deletion confirmation request
+     */
+    200: IdentityDeletionStatus;
+};
+
+export type BeginMyIdentityDeletionResponse = BeginMyIdentityDeletionResponses[keyof BeginMyIdentityDeletionResponses];
+
+export type ConfirmMyIdentityDeletionData = {
+    body: ConfirmIdentityDeletion;
+    path?: never;
+    query?: never;
+    url: '/api/v1/me/identity/deletion/confirm';
+};
+
+export type ConfirmMyIdentityDeletionErrors = {
+    /**
+     * The authenticated account is not allowed to perform this operation.
+     */
+    403: Error;
+    /**
+     * Request conflicts with current or previously accepted state.
+     */
+    409: Error;
+    /**
+     * Structurally valid request violates content or selection rules.
+     */
+    422: Error;
+    /**
+     * Protected identity-management integration is not configured or temporarily unavailable.
+     */
+    503: Error;
+};
+
+export type ConfirmMyIdentityDeletionError = ConfirmMyIdentityDeletionErrors[keyof ConfirmMyIdentityDeletionErrors];
+
+export type ConfirmMyIdentityDeletionResponses = {
+    /**
+     * Completed identity deletion and learner anonymisation status
+     */
+    200: IdentityDeletionStatus;
+};
+
+export type ConfirmMyIdentityDeletionResponse = ConfirmMyIdentityDeletionResponses[keyof ConfirmMyIdentityDeletionResponses];
+
+export type GetMyIdentityManagementReadinessData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/me/identity/readiness';
+};
+
+export type GetMyIdentityManagementReadinessResponses = {
+    /**
+     * Non-secret identity-management readiness
+     */
+    200: IdentityManagementReadiness;
+};
+
+export type GetMyIdentityManagementReadinessResponse = GetMyIdentityManagementReadinessResponses[keyof GetMyIdentityManagementReadinessResponses];
 
 export type GetMyLearnerSettingsData = {
     body?: never;
@@ -622,6 +936,22 @@ export type UpdateMyLearnerSettingsResponses = {
 };
 
 export type UpdateMyLearnerSettingsResponse = UpdateMyLearnerSettingsResponses[keyof UpdateMyLearnerSettingsResponses];
+
+export type GetAuthenticationReadinessData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/readiness';
+};
+
+export type GetAuthenticationReadinessResponses = {
+    /**
+     * Aggregate readiness without secrets or learner identifiers
+     */
+    200: AuthenticationReadiness;
+};
+
+export type GetAuthenticationReadinessResponse = GetAuthenticationReadinessResponses[keyof GetAuthenticationReadinessResponses];
 
 export type GetInternalLearnerHealthData = {
     body?: never;

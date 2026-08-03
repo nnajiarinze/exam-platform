@@ -32,6 +32,7 @@ export type RootStackParamList = {
   Profile: undefined;
   EditProfile: undefined;
   ChangePassword: undefined;
+  LinkedLogins: undefined;
   StudyGoals: undefined;
   NotificationPreferences: undefined;
   PrivacyLegal: undefined;

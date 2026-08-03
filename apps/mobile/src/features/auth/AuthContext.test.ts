@@ -15,4 +15,12 @@ describe('provider-specific authorization routing', () => {
     expect(new URL(providerAuthorizationUrl(base, 'register')).pathname).toMatch(/\/protocol\/openid-connect\/registrations$/);
     expect(new URL(providerAuthorizationUrl(base, 'password-reset')).searchParams.get('kc_action')).toBe('UPDATE_PASSWORD');
   });
+
+  it('uses explicit account-link actions and forces recent authentication', () => {
+    expect(new URL(providerAuthorizationUrl(base, 'link-google')).searchParams.get('kc_action')).toBe('idp_link:google');
+    expect(new URL(providerAuthorizationUrl(base, 'link-apple')).searchParams.get('kc_action')).toBe('idp_link:apple');
+    const recent = new URL(providerAuthorizationUrl(base, 'reauthenticate'));
+    expect(recent.searchParams.get('prompt')).toBe('login');
+    expect(recent.searchParams.get('max_age')).toBe('0');
+  });
 });

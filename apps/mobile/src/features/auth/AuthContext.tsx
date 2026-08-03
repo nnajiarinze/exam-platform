@@ -21,7 +21,7 @@ const SESSION_KEY = `${KEY_PREFIX}.session`;
 const AUTH_TIMEOUT_MS = 10 * 60_000;
 
 export type AuthStatus = 'restoring' | 'unauthenticated' | 'authenticating' | 'authenticated' | 'verification-required' | 'expired' | 'error';
-export type AuthIntent = 'apple' | 'google' | 'email' | 'register' | 'password-reset' | 'change-password';
+export type AuthIntent = 'apple' | 'google' | 'email' | 'register' | 'password-reset' | 'change-password' | 'link-apple' | 'link-google' | 'reauthenticate';
 export type AuthDiagnosticCode =
   | 'AUTH_CANCELLED' | 'AUTH_NETWORK_UNAVAILABLE' | 'AUTH_PROVIDER_UNAVAILABLE' | 'AUTH_CALLBACK_INVALID'
   | 'AUTH_TOKEN_EXCHANGE_FAILED' | 'AUTH_SESSION_EXPIRED' | 'AUTH_CONFIGURATION_INVALID';
@@ -38,6 +38,8 @@ type Context = {
   register: () => Promise<void>;
   forgotPassword: () => Promise<void>;
   changePassword: () => Promise<void>;
+  linkProvider: (provider: 'apple' | 'google') => Promise<boolean>;
+  reauthenticate: () => Promise<boolean>;
   logout: () => Promise<void>;
   clearError: () => void;
 };
@@ -74,6 +76,9 @@ export function providerAuthorizationUrl(url: string, intent: AuthIntent): strin
   const parsed = new URL(url);
   if (intent === 'apple') parsed.searchParams.set('kc_idp_hint', appConfig.appleIdentityProvider);
   if (intent === 'google') parsed.searchParams.set('kc_idp_hint', appConfig.googleIdentityProvider);
+  if (intent === 'link-apple') parsed.searchParams.set('kc_action', `idp_link:${appConfig.appleIdentityProvider}`);
+  if (intent === 'link-google') parsed.searchParams.set('kc_action', `idp_link:${appConfig.googleIdentityProvider}`);
+  if (intent === 'reauthenticate') { parsed.searchParams.set('prompt', 'login'); parsed.searchParams.set('max_age', '0'); }
   if (intent === 'password-reset' || intent === 'change-password') parsed.searchParams.set('kc_action', 'UPDATE_PASSWORD');
   if (intent === 'register') parsed.pathname = parsed.pathname.replace(/\/protocol\/openid-connect\/auth$/, '/protocol/openid-connect/registrations');
   return parsed.toString();
@@ -98,6 +103,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshInFlight = useRef<Promise<string | undefined> | undefined>(undefined);
   const authInFlight = useRef(false);
   const exchangedCode = useRef<string | undefined>(undefined);
+  const expectedLinkedSubject = useRef<string | undefined>(undefined);
+  const authCompletion = useRef<((completed: boolean) => void) | undefined>(undefined);
   const queryClient = useQueryClient();
 
   const rotateNonce = useCallback(() => { setNonce(Crypto.randomUUID().replaceAll('-', '')); }, []);
@@ -107,9 +114,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await Promise.all([SecureStore.deleteItemAsync(REFRESH_KEY), SecureStore.deleteItemAsync(SESSION_KEY)]);
   }, []);
 
-  const setSession = useCallback(async (tokenResponse: AuthSession.TokenResponse, expectedNonce?: string) => {
+  const setSession = useCallback(async (tokenResponse: AuthSession.TokenResponse, expectedNonce?: string, expectedSubject?: string) => {
     if (!tokenResponse.accessToken) throw new AuthValidationError('AUTH_TOKEN_MALFORMED');
     const accessClaims = validateAccessToken(tokenResponse.accessToken, appConfig.oidcIssuer, appConfig.oidcAudience);
+    if (expectedSubject && accessClaims.sub !== expectedSubject) throw new AuthValidationError('AUTH_SUBJECT_CHANGED');
     if (expectedNonce) {
       if (!tokenResponse.idToken) throw new AuthValidationError('AUTH_ID_TOKEN_MISSING');
       validateIdToken(tokenResponse.idToken, appConfig.oidcIssuer, appConfig.oidcClientId, expectedNonce, accessClaims.sub!);
@@ -166,38 +174,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (response?.type === 'success' && request?.codeVerifier && nonce && response.params.code && exchangedCode.current !== response.params.code) {
       exchangedCode.current = response.params.code;
-      setStatus('authenticating');
+      if (!currentClaims) setStatus('authenticating');
       void AuthSession.exchangeCodeAsync({ clientId: appConfig.oidcClientId, code: response.params.code, redirectUri, extraParams: { code_verifier: request.codeVerifier } }, discovery)
-        .then(result => setSession(result, nonce))
-        .catch(error => { setDiagnosticCode(safeDiagnostic(error)); setStatus('error'); })
-        .finally(() => { authInFlight.current = false; setActiveIntent(undefined); rotateNonce(); });
+        .then(result => setSession(result, nonce, expectedLinkedSubject.current))
+        .then(() => authCompletion.current?.(true))
+        .catch(error => { setDiagnosticCode(safeDiagnostic(error)); setStatus('error'); authCompletion.current?.(false); })
+        .finally(() => { authCompletion.current = undefined; authInFlight.current = false; expectedLinkedSubject.current = undefined; setActiveIntent(undefined); rotateNonce(); });
     } else if (response?.type === 'error') {
-      authInFlight.current = false; setActiveIntent(undefined); setDiagnosticCode('AUTH_CALLBACK_INVALID'); setStatus('error'); rotateNonce();
+      authCompletion.current?.(false); authCompletion.current = undefined; authInFlight.current = false; setActiveIntent(undefined); setDiagnosticCode('AUTH_CALLBACK_INVALID'); setStatus('error'); rotateNonce();
     }
-  }, [response, discovery, request, redirectUri, nonce, rotateNonce, setSession]);
+  }, [response, currentClaims, discovery, request, redirectUri, nonce, rotateNonce, setSession]);
 
   const start = useCallback(async (intent: AuthIntent) => {
-    if (authInFlight.current) return;
-    if ((intent === 'apple' && !appConfig.appleSignInEnabled) || (intent === 'google' && !appConfig.googleSignInEnabled)) {
-      setDiagnosticCode('AUTH_PROVIDER_UNAVAILABLE'); setStatus('error'); return;
+    if (authInFlight.current) return false;
+    if (((intent === 'apple' || intent === 'link-apple') && !appConfig.appleSignInEnabled) || ((intent === 'google' || intent === 'link-google') && !appConfig.googleSignInEnabled)) {
+      setDiagnosticCode('AUTH_PROVIDER_UNAVAILABLE'); setStatus('error'); return false;
     }
     if (!request?.url || !nonce) {
-      setDiagnosticCode('AUTH_CONFIGURATION_INVALID'); setStatus('error'); return;
+      setDiagnosticCode('AUTH_CONFIGURATION_INVALID'); setStatus('error'); return false;
     }
-    authInFlight.current = true; setActiveIntent(intent); setDiagnosticCode(undefined); setStatus('authenticating');
+    authInFlight.current = true;
+    expectedLinkedSubject.current = intent.startsWith('link-') ? currentClaims?.sub : undefined;
+    if (intent.startsWith('link-') && !expectedLinkedSubject.current) {
+      authInFlight.current = false; setDiagnosticCode('AUTH_CONFIGURATION_INVALID'); setStatus('error'); return false;
+    }
+    setActiveIntent(intent); setDiagnosticCode(undefined); if (!currentClaims) setStatus('authenticating');
     if (!await identityAvailable(appConfig.oidcIssuer)) {
-      authInFlight.current = false; setActiveIntent(undefined); setDiagnosticCode('AUTH_NETWORK_UNAVAILABLE'); setStatus('error'); return;
+      authInFlight.current = false; setActiveIntent(undefined); setDiagnosticCode('AUTH_NETWORK_UNAVAILABLE'); setStatus('error'); return false;
     }
-    const timeout = setTimeout(() => { authInFlight.current = false; setActiveIntent(undefined); setDiagnosticCode('AUTH_NETWORK_UNAVAILABLE'); setStatus('error'); }, AUTH_TIMEOUT_MS);
+    const completion = new Promise<boolean>(resolve => { authCompletion.current = resolve; });
+    const timeout = setTimeout(() => { authCompletion.current?.(false); authCompletion.current = undefined; authInFlight.current = false; expectedLinkedSubject.current = undefined; setActiveIntent(undefined); setDiagnosticCode('AUTH_NETWORK_UNAVAILABLE'); setStatus('error'); }, AUTH_TIMEOUT_MS);
     try {
       const result = await promptAsync({ url: providerAuthorizationUrl(request.url, intent), preferEphemeralSession: false });
       if (result.type === 'cancel' || result.type === 'dismiss' || result.type === 'locked') {
-        authInFlight.current = false; setActiveIntent(undefined); setDiagnosticCode(result.type === 'locked' ? 'AUTH_PROVIDER_UNAVAILABLE' : undefined); setStatus('unauthenticated'); rotateNonce();
+        clearTimeout(timeout);
+        authCompletion.current?.(false); authCompletion.current = undefined; authInFlight.current = false; expectedLinkedSubject.current = undefined; setActiveIntent(undefined); setDiagnosticCode(result.type === 'locked' ? 'AUTH_PROVIDER_UNAVAILABLE' : undefined); setStatus(currentClaims ? 'authenticated' : 'unauthenticated'); rotateNonce();
+        return false;
       }
     } catch {
-      authInFlight.current = false; setActiveIntent(undefined); setDiagnosticCode('AUTH_PROVIDER_UNAVAILABLE'); setStatus('error'); rotateNonce();
-    } finally { clearTimeout(timeout); }
-  }, [nonce, promptAsync, request?.url, rotateNonce]);
+      clearTimeout(timeout);
+      authCompletion.current?.(false); authCompletion.current = undefined; authInFlight.current = false; expectedLinkedSubject.current = undefined; setActiveIntent(undefined); setDiagnosticCode('AUTH_PROVIDER_UNAVAILABLE'); setStatus('error'); rotateNonce(); return false;
+    }
+    const completed = await completion;
+    clearTimeout(timeout);
+    return completed;
+  }, [currentClaims?.sub, nonce, promptAsync, request?.url, rotateNonce]);
 
   const logout = useCallback(async () => {
     const refreshToken = await SecureStore.getItemAsync(REFRESH_KEY);
@@ -210,8 +231,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo<Context>(() => ({
     status, claims: currentClaims, activeIntent, diagnosticCode, requestReady: Boolean(request?.url && nonce),
     appleEnabled: appConfig.appleSignInEnabled, googleEnabled: appConfig.googleSignInEnabled,
-    login: method => start(method ?? 'email'), register: () => start('register'), forgotPassword: () => start('password-reset'),
-    changePassword: () => start('change-password'), logout,
+    login: async method => { await start(method ?? 'email'); }, register: async () => { await start('register'); }, forgotPassword: async () => { await start('password-reset'); },
+    changePassword: async () => { await start('change-password'); }, linkProvider: provider => start(provider === 'apple' ? 'link-apple' : 'link-google'),
+    reauthenticate: () => start('reauthenticate'), logout,
     clearError: () => { setDiagnosticCode(undefined); setStatus('unauthenticated'); },
   }), [activeIntent, currentClaims, diagnosticCode, logout, nonce, request?.url, start, status]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -79,6 +79,7 @@ client_id() {
 
 mobile_id="$(client_id mobile-app)"
 admin_id="$(client_id admin-portal)"
+account_id="$(client_id account)"
 if [[ "${mode}" == "BOOTSTRAP_HTTP" ]]; then
   kcadm update "clients/${mobile_id}" -r exam-platform \
     -s 'redirectUris=["sveastudy://auth/callback","exp://192.168.1.213:8081/--/auth/callback"]' \
@@ -101,16 +102,61 @@ kcadm update "clients/${admin_id}" -r exam-platform \
   -s "webOrigins=${admin_origins}" \
   -s "attributes.\"post.logout.redirect.uris\"=${logout_redirects}" >/dev/null
 
+# Keycloak's supported application-initiated action for account linking needs
+# only the narrow account.manage-account-links client role in mobile tokens.
+manage_links_role="$(kcadm get "clients/${account_id}/roles/manage-account-links" -r exam-platform)"
+if ! kcadm get "clients/${mobile_id}/scope-mappings/clients/${account_id}" -r exam-platform | jq -e 'any(.name=="manage-account-links")' >/dev/null; then
+  printf '[%s]' "${manage_links_role}" | docker exec -i "${container}" /opt/keycloak/bin/kcadm.sh create \
+    "clients/${mobile_id}/scope-mappings/clients/${account_id}" -r exam-platform \
+    --config /tmp/kcadm-hardening.config -f - >/dev/null
+fi
+
+# Provision the least-privilege confidential client used only by Learning
+# Service's identity-management BFF. It is disabled when protected inputs are
+# absent; no Admin credential is ever exposed to a public client.
+identity_management_enabled="${IDENTITY_MANAGEMENT_ENABLED:-$(env_file_value IDENTITY_MANAGEMENT_ENABLED "${PLATFORM_ENV_FILE}")}"
+identity_bff_client_id="${IDENTITY_BFF_CLIENT_ID:-$(env_file_value IDENTITY_BFF_CLIENT_ID "${PLATFORM_ENV_FILE}")}"
+identity_bff_client_secret="${IDENTITY_BFF_CLIENT_SECRET:-$(env_file_value IDENTITY_BFF_CLIENT_SECRET "${PLATFORM_ENV_FILE}")}"
+identity_bff_client_id="${identity_bff_client_id:-identity-management-bff}"
+identity_bff_matches="$(kcadm get clients -r exam-platform -q "clientId=${identity_bff_client_id}")"
+identity_bff_exists="$(jq -r 'length==1' <<<"${identity_bff_matches}")"
+if [[ "${identity_management_enabled}" == true && -n "${identity_bff_client_secret}" && "${identity_bff_client_secret}" != CHANGE_ME ]]; then
+  identity_bff_json="$(jq -cn --arg id "${identity_bff_client_id}" --arg secret "${identity_bff_client_secret}" '{clientId:$id,name:"Svea Study identity management BFF",enabled:true,publicClient:false,serviceAccountsEnabled:true,standardFlowEnabled:false,directAccessGrantsEnabled:false,implicitFlowEnabled:false,bearerOnly:false,secret:$secret,protocol:"openid-connect",attributes:{"client.secret.creation.time":"0"}}')"
+  if [[ "${identity_bff_exists}" == true ]]; then
+    identity_bff_id="$(jq -er '.[0].id' <<<"${identity_bff_matches}")"
+    printf '%s' "${identity_bff_json}" | docker exec -i "${container}" /opt/keycloak/bin/kcadm.sh update \
+      "clients/${identity_bff_id}" -r exam-platform --config /tmp/kcadm-hardening.config -f - >/dev/null
+  else
+    printf '%s' "${identity_bff_json}" | docker exec -i "${container}" /opt/keycloak/bin/kcadm.sh create \
+      clients -r exam-platform --config /tmp/kcadm-hardening.config -f - >/dev/null
+    identity_bff_id="$(client_id "${identity_bff_client_id}")"
+  fi
+  service_account_user="$(kcadm get "clients/${identity_bff_id}/service-account-user" -r exam-platform | jq -er .id)"
+  realm_management_id="$(client_id realm-management)"
+  for role in view-users manage-users; do
+    role_json="$(kcadm get "clients/${realm_management_id}/roles/${role}" -r exam-platform)"
+    if ! kcadm get "users/${service_account_user}/role-mappings/clients/${realm_management_id}" -r exam-platform | jq -e --arg role "${role}" 'any(.name==$role)' >/dev/null; then
+      printf '[%s]' "${role_json}" | docker exec -i "${container}" /opt/keycloak/bin/kcadm.sh create \
+        "users/${service_account_user}/role-mappings/clients/${realm_management_id}" -r exam-platform \
+        --config /tmp/kcadm-hardening.config -f - >/dev/null
+    fi
+  done
+elif [[ "${identity_bff_exists}" == true ]]; then
+  identity_bff_id="$(jq -er '.[0].id' <<<"${identity_bff_matches}")"
+  kcadm update "clients/${identity_bff_id}" -r exam-platform -s enabled=false >/dev/null
+fi
+
 # Social provider secrets remain in the protected host environment. Providers
 # are hidden from the generic realm page so privileged Admin authentication is
 # not silently broadened; the mobile client selects them with kc_idp_hint.
 google_client_id="${KEYCLOAK_GOOGLE_CLIENT_ID:-$(env_file_value KEYCLOAK_GOOGLE_CLIENT_ID "${PLATFORM_ENV_FILE}")}"
 google_client_secret="${KEYCLOAK_GOOGLE_CLIENT_SECRET:-$(env_file_value KEYCLOAK_GOOGLE_CLIENT_SECRET "${PLATFORM_ENV_FILE}")}"
+google_enabled="${KEYCLOAK_GOOGLE_ENABLED:-$(env_file_value KEYCLOAK_GOOGLE_ENABLED "${PLATFORM_ENV_FILE}")}"
 google_exists="$(kcadm get identity-provider/instances -r exam-platform | jq -r 'any(.alias=="google")')"
-if [[ -n "${google_client_id}" && -n "${google_client_secret}" &&
+if [[ "${google_enabled}" == true && -n "${google_client_id}" && -n "${google_client_secret}" &&
       "${google_client_id}" != CHANGE_ME && "${google_client_secret}" != CHANGE_ME ]]; then
   google_json="$(jq -cn --arg client "${google_client_id}" --arg secret "${google_client_secret}" '{
-    alias:"google",providerId:"google",enabled:true,trustEmail:false,storeToken:false,
+    alias:"google",displayName:"Fortsätt med Google",providerId:"google",enabled:true,trustEmail:true,storeToken:false,
     addReadTokenRoleOnCreate:false,authenticateByDefault:false,linkOnly:false,hideOnLogin:true,
     firstBrokerLoginFlowAlias:"first broker login",config:{clientId:$client,clientSecret:$secret,
     defaultScope:"openid profile email",syncMode:"IMPORT",useJwksUrl:"true"}}')"
@@ -124,6 +170,56 @@ if [[ -n "${google_client_id}" && -n "${google_client_secret}" &&
 elif [[ "${google_exists}" == true ]]; then
   # Removing protected credentials must fail closed, including after a restart.
   kcadm update identity-provider/instances/google -r exam-platform -s enabled=false >/dev/null
+fi
+
+apple_enabled="${KEYCLOAK_APPLE_ENABLED:-$(env_file_value KEYCLOAK_APPLE_ENABLED "${PLATFORM_ENV_FILE}")}"
+apple_services_id="${KEYCLOAK_APPLE_SERVICES_ID:-$(env_file_value KEYCLOAK_APPLE_SERVICES_ID "${PLATFORM_ENV_FILE}")}"
+apple_team_id="${KEYCLOAK_APPLE_TEAM_ID:-$(env_file_value KEYCLOAK_APPLE_TEAM_ID "${PLATFORM_ENV_FILE}")}"
+apple_key_id="${KEYCLOAK_APPLE_KEY_ID:-$(env_file_value KEYCLOAK_APPLE_KEY_ID "${PLATFORM_ENV_FILE}")}"
+apple_private_key_base64="${KEYCLOAK_APPLE_PRIVATE_KEY_BASE64:-$(env_file_value KEYCLOAK_APPLE_PRIVATE_KEY_BASE64 "${PLATFORM_ENV_FILE}")}"
+apple_exists="$(kcadm get identity-provider/instances -r exam-platform | jq -r 'any(.alias=="apple")')"
+if [[ "${apple_enabled}" == true && -n "${apple_services_id}" && -n "${apple_team_id}" && -n "${apple_key_id}" &&
+      -n "${apple_private_key_base64}" && "${apple_private_key_base64}" != CHANGE_ME ]]; then
+  apple_private_key="$(printf '%s' "${apple_private_key_base64}" | base64 -d)"
+  grep -q '^-----BEGIN PRIVATE KEY-----$' <<<"${apple_private_key}"
+  grep -q '^-----END PRIVATE KEY-----$' <<<"${apple_private_key}"
+  apple_json="$(jq -cn --arg client "${apple_services_id}" --arg secret "${apple_private_key}" --arg team "${apple_team_id}" --arg key "${apple_key_id}" '{
+    alias:"apple",displayName:"Fortsätt med Apple",providerId:"apple",enabled:true,trustEmail:true,storeToken:false,
+    addReadTokenRoleOnCreate:false,authenticateByDefault:false,linkOnly:false,hideOnLogin:true,
+    firstBrokerLoginFlowAlias:"first broker login",config:{clientId:$client,clientSecret:$secret,teamId:$team,keyId:$key,
+    defaultScope:"name%20email",syncMode:"IMPORT",tokenExchangeAccountLinkingEnabled:"false"}}')"
+  if [[ "${apple_exists}" == true ]]; then
+    printf '%s' "${apple_json}" | docker exec -i "${container}" /opt/keycloak/bin/kcadm.sh update \
+      identity-provider/instances/apple -r exam-platform --config /tmp/kcadm-hardening.config -f - >/dev/null
+  else
+    printf '%s' "${apple_json}" | docker exec -i "${container}" /opt/keycloak/bin/kcadm.sh create \
+      identity-provider/instances -r exam-platform --config /tmp/kcadm-hardening.config -f - >/dev/null
+  fi
+  unset apple_private_key apple_json
+elif [[ "${apple_exists}" == true ]]; then
+  kcadm update identity-provider/instances/apple -r exam-platform -s enabled=false >/dev/null
+fi
+
+# Configure realm SMTP only when a complete protected sender configuration is
+# present. Password and action-link bodies are never printed by this script.
+smtp_host="${KEYCLOAK_SMTP_HOST:-$(env_file_value KEYCLOAK_SMTP_HOST "${PLATFORM_ENV_FILE}")}"
+smtp_port="${KEYCLOAK_SMTP_PORT:-$(env_file_value KEYCLOAK_SMTP_PORT "${PLATFORM_ENV_FILE}")}"
+smtp_username="${KEYCLOAK_SMTP_USERNAME:-$(env_file_value KEYCLOAK_SMTP_USERNAME "${PLATFORM_ENV_FILE}")}"
+smtp_password="${KEYCLOAK_SMTP_PASSWORD:-$(env_file_value KEYCLOAK_SMTP_PASSWORD "${PLATFORM_ENV_FILE}")}"
+smtp_from="${KEYCLOAK_SMTP_FROM:-$(env_file_value KEYCLOAK_SMTP_FROM "${PLATFORM_ENV_FILE}")}"
+smtp_from_name="${KEYCLOAK_SMTP_FROM_DISPLAY_NAME:-$(env_file_value KEYCLOAK_SMTP_FROM_DISPLAY_NAME "${PLATFORM_ENV_FILE}")}"
+smtp_starttls="${KEYCLOAK_SMTP_STARTTLS:-$(env_file_value KEYCLOAK_SMTP_STARTTLS "${PLATFORM_ENV_FILE}")}"
+smtp_ssl="${KEYCLOAK_SMTP_SSL:-$(env_file_value KEYCLOAK_SMTP_SSL "${PLATFORM_ENV_FILE}")}"
+if [[ -n "${smtp_host}" && -n "${smtp_from}" && "${smtp_host}" != CHANGE_ME && "${smtp_from}" != CHANGE_ME ]]; then
+  smtp_json="$(jq -cn --arg host "${smtp_host}" --arg port "${smtp_port:-587}" --arg user "${smtp_username}" --arg password "${smtp_password}" --arg from "${smtp_from}" --arg fromName "${smtp_from_name:-Svea Study}" --arg starttls "${smtp_starttls:-true}" --arg ssl "${smtp_ssl:-false}" '{host:$host,port:$port,from:$from,fromDisplayName:$fromName,starttls:$starttls,ssl:$ssl,auth:($user|length>0|tostring),user:$user,password:$password}')"
+  kcadm update realms/exam-platform -s "smtpServer=${smtp_json}" >/dev/null
+fi
+
+# Fail closed if the realm's first-broker flow contains the unsafe automatic
+# email-link authenticator.
+first_broker_flow_id="$(kcadm get authentication/flows -r exam-platform | jq -er '.[]|select(.alias=="first broker login")|.id')"
+if kcadm get "authentication/flows/${first_broker_flow_id}/executions" -r exam-platform | jq -e 'any(.providerId=="idp-auto-link")' >/dev/null; then
+  die "Unsafe automatic first-broker email linking is configured"
 fi
 
 kcadm get realms/exam-platform |

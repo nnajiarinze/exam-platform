@@ -1,7 +1,8 @@
 import { client } from './generated/client.gen';
-import { createMockExam, createPracticeSession, deleteMyLearnerAccount, flagMockExamQuestion, getMockExam, getMockExamConfiguration, getMockExamHistory,
+import { beginMyIdentityDeletion, confirmMyIdentityDeletion, createMockExam, createPracticeSession, flagMockExamQuestion, getMockExam, getMockExamConfiguration, getMockExamHistory,
   getMockExamQuestion, getMockExamQuestionReview, getMockExamResults, getNextPracticeQuestion, getSubjects, getTopicProgress, getStudySubjects,
-  getStudyTopics, getTopicLesson, getContinueLearning, updateLessonProgress,
+  getStudyTopics, getTopicLesson, getContinueLearning, getMyLinkedLoginMethods, initiateMyIdentityProviderLink, logoutAllMyIdentitySessions,
+  unlinkMyIdentityProvider, updateLessonProgress,
   getMyLearnerProfile, getMyLearnerSettings, submitMockExam, submitMockExamResponse, submitPracticeResponse, updateMyLearnerProfile, updateMyLearnerSettings } from './generated/sdk.gen';
 import type { CreatePracticeSessionRequest, SubmitAnswerRequest, UpdateLearnerProfile, UpdateLearnerSettings } from './generated/types.gen';
 import { appConfig } from './config';
@@ -29,7 +30,12 @@ export const learningApi = {
   updateProfile: async (identity: string, body: UpdateLearnerProfile) => (await updateMyLearnerProfile({ body, headers: headers(identity), throwOnError: true })).data,
   settings: async (identity: string) => (await getMyLearnerSettings({ headers: headers(identity), throwOnError: true })).data,
   updateSettings: async (identity: string, body: UpdateLearnerSettings) => (await updateMyLearnerSettings({ body, headers: headers(identity), throwOnError: true })).data,
-  deleteAccount: async (identity: string) => (await deleteMyLearnerAccount({ headers: headers(identity), throwOnError: true })).data,
+  linkedLoginMethods: async (identity: string) => (await getMyLinkedLoginMethods({ headers: headers(identity), throwOnError: true })).data,
+  initiateIdentityLink: async (identity: string, provider: 'google' | 'apple') => (await initiateMyIdentityProviderLink({ path: { provider }, headers: headers(identity), throwOnError: true })).data,
+  unlinkIdentityProvider: async (identity: string, provider: 'google' | 'apple') => (await unlinkMyIdentityProvider({ path: { provider }, headers: headers(identity), throwOnError: true })).data,
+  logoutAllSessions: async (identity: string) => (await logoutAllMyIdentitySessions({ headers: headers(identity), throwOnError: true })).data,
+  beginAccountDeletion: async (identity: string) => (await beginMyIdentityDeletion({ headers: headers(identity), throwOnError: true })).data,
+  confirmAccountDeletion: async (identity: string, requestId: string, confirmation: 'DELETE') => (await confirmMyIdentityDeletion({ body: { requestId, confirmation }, headers: headers(identity), throwOnError: true })).data,
   subjects: async (identity: string) => (await getSubjects({ query: { examId: appConfig.examId }, headers: headers(identity), throwOnError: true })).data,
   studySubjects: async (identity: string) => (await getStudySubjects({ path: { examId: appConfig.examId }, headers: headers(identity), throwOnError: true })).data,
   studyTopics: async (identity: string, subjectId: string) => (await getStudyTopics({ path: { subjectId }, query: { examId: appConfig.examId }, headers: headers(identity), throwOnError: true })).data,
