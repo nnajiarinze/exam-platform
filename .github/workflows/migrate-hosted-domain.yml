@@ -102,6 +102,8 @@ jobs:
             local status="$?"
             trap - ERR
             printf 'Domain migration failed; restoring deployment commit %s.\n' "${previous_commit}" >&2
+            docker inspect --format '{{json .State.Health}}' citizenship-platform-keycloak-1 >&2 || true
+            docker logs --tail 120 citizenship-platform-keycloak-1 >&2 || true
             cp "${env_backup}" "${env_file}"
             cp "${release_backup}" "${release_env}"
             # The previous images must be restarted with their matching Compose,
