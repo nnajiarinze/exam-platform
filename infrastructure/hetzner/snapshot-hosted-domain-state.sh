@@ -22,7 +22,7 @@ query() {
   url="$(env_file_value "${url_key}" "${PLATFORM_ENV_FILE}" | normalize_url)"
   user="$(env_file_value "${user_key}" "${PLATFORM_ENV_FILE}")"
   password="$(env_file_value "${password_key}" "${PLATFORM_ENV_FILE}")"
-  docker run --rm -i --network host -e PGPASSWORD="${password}" postgres:18-alpine \
+  docker run --rm --network host -e PGPASSWORD="${password}" postgres:18-alpine \
     psql -XqAt --no-psqlrc --set=ON_ERROR_STOP=1 --username="${user}" --dbname="${url}" \
     --command="SET default_transaction_read_only=on; ${sql}"
 }

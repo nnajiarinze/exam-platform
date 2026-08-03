@@ -64,6 +64,9 @@ bash -n "${SNAPSHOT_SCRIPT}"
 ! grep -qF 'postgres:18-alpine +' "${SNAPSHOT_SCRIPT}" || {
   printf 'Hosted state snapshot contains an invalid PostgreSQL container command.\n' >&2; exit 1;
 }
+! grep -qE 'docker run .* -i([[:space:]]|$)' "${SNAPSHOT_SCRIPT}" || {
+  printf 'Hosted state snapshot may not consume the parent deployment stdin.\n' >&2; exit 1;
+}
 grep -qF 'default_transaction_read_only=on' "${SNAPSHOT_SCRIPT}" || {
   printf 'Hosted state snapshot does not enforce read-only SQL transactions.\n' >&2; exit 1;
 }
