@@ -1,0 +1,72 @@
+name: Repair hosted Keycloak database route
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    environment: hosted
+    steps:
+      - name: Configure protected Hetzner SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.HOSTED_SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ secrets.HOSTED_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "${SSH_PRIVATE_KEY}" >~/.ssh/id_ed25519
+          printf '%s\n' "${KNOWN_HOSTS}" >~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+      - name: Restore identity readiness without changing data
+        env:
+          HOSTED_HOST: ${{ secrets.HOSTED_HOST }}
+          HOSTED_USER: ${{ secrets.HOSTED_USER }}
+        run: |
+          ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          root=/opt/citizenship-platform
+          repo="${root}/repo"
+          env_file="${root}/.env"
+          release_env="${root}/.release.env"
+          deployed_commit="$(sed -n 's/^GATEWAY_IMAGE_TAG=//p' "${release_env}" | tail -1)"
+          [[ "${deployed_commit}" =~ ^[0-9a-f]{40}$ ]]
+          cd "${repo}"
+          git checkout --detach "${deployed_commit}"
+          # shellcheck source=infrastructure/hetzner/lib.sh
+          source ./infrastructure/hetzner/lib.sh
+          current_url="$(env_file_value KEYCLOAK_DATABASE_URL "${env_file}")"
+          normalized_url="$(KEYCLOAK_DATABASE_URL="${current_url}" python3 - <<'PY'
+          import os
+          from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+
+          value = os.environ["KEYCLOAK_DATABASE_URL"]
+          prefix = "jdbc:" if value.startswith("jdbc:") else ""
+          parsed = urlsplit(value.removeprefix("jdbc:"))
+          query = [(key, item) for key, item in parse_qsl(parsed.query, keep_blank_values=True)
+                   if key.lower().replace("_", "") != "targetservertype"]
+          query.append(("targetServerType", "any"))
+          print(prefix + urlunsplit((parsed.scheme, parsed.netloc, parsed.path, urlencode(query), parsed.fragment)))
+          PY
+          )"
+          [[ "${normalized_url}" == *targetServerType=any* ]]
+          temporary="$(mktemp "${env_file}.XXXXXX")"
+          awk -F= -v value="${normalized_url}" '
+            BEGIN { replaced=0 }
+            $1=="KEYCLOAK_DATABASE_URL" { if (!replaced) print "KEYCLOAK_DATABASE_URL=" value; replaced=1; next }
+            { print }
+            END { if (!replaced) print "KEYCLOAK_DATABASE_URL=" value }
+          ' "${env_file}" >"${temporary}"
+          chmod "$(stat -c '%a' "${env_file}")" "${temporary}"
+          mv "${temporary}" "${env_file}"
+          docker compose --env-file "${env_file}" --env-file "${release_env}" -f docker-compose.hosted.yml \
+            up -d --no-deps --wait --wait-timeout 180 keycloak
+          docker inspect --format '{{.State.Health.Status}}' citizenship-platform-keycloak-1 | grep -qx healthy
+          REMOTE
+      - name: Validate restored sslip.io issuer
+        run: |
+          issuer=https://api.46-224-221-7.sslip.io/auth/realms/exam-platform
+          curl --fail --silent --show-error "${issuer}/.well-known/openid-configuration" |
+            jq -e --arg issuer "${issuer}" '.issuer==$issuer'
