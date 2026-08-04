@@ -1,6 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { ReactNode } from 'react';
-import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Screen } from '../../components/Screen';
 import { Body, Button, Card, Title } from '../../components/ui';
 import { appConfig } from '../../api/config';
@@ -38,11 +38,12 @@ export function WelcomeScreen(_: NativeStackScreenProps<RootStackParamList, 'Wel
   const auth = useAuth();
   const busy = auth.status === 'authenticating';
   const active = auth.activeIntent;
+  const isApplePlatform = Platform.OS === 'ios';
   const invoke = (intent: AuthIntent) => intent === 'register' ? auth.register() : auth.login(intent as 'apple' | 'google' | 'email');
   return <AuthLayout><Card style={styles.authCard}><Text style={styles.cardTitle}>Fortsätt till Svea Study</Text><Text style={styles.secureNote}>Ett säkert inloggningsfönster öppnas och återvänder automatiskt till appen.</Text>
     {auth.diagnosticCode ? <View accessibilityRole="alert" style={styles.errorBox}><Text style={styles.errorText}>{errorCopy[auth.diagnosticCode]}</Text><Pressable onPress={auth.clearError}><Text style={styles.retry}>Försök igen</Text></Pressable></View> : null}
     <View style={styles.actions}>
-      <ProviderButton kind="apple" label={auth.appleEnabled ? 'Fortsätt med Apple' : 'Apple är inte konfigurerat'} disabled={busy || !auth.requestReady || !auth.appleEnabled} busy={active === 'apple'} onPress={() => void invoke('apple')}/>
+      {isApplePlatform ? <ProviderButton kind="apple" label={auth.appleEnabled ? 'Fortsätt med Apple' : 'Apple är inte konfigurerat'} disabled={busy || !auth.requestReady || !auth.appleEnabled} busy={active === 'apple'} onPress={() => void invoke('apple')}/> : null}
       <ProviderButton kind="google" label={auth.googleEnabled ? 'Fortsätt med Google' : 'Google är inte konfigurerat'} disabled={busy || !auth.requestReady || !auth.googleEnabled} busy={active === 'google'} onPress={() => void invoke('google')}/>
       <ProviderButton kind="email" label="Fortsätt med e-post" disabled={busy || !auth.requestReady} busy={active === 'email'} onPress={() => void invoke('email')}/>
       <View style={styles.divider}><View style={styles.line}/><Text style={styles.or}>eller</Text><View style={styles.line}/></View>

@@ -88,6 +88,32 @@ class KeycloakIdentityAdminClientTest {
         assertThat(status.unsafeAutoLinkPresent()).isFalse();
     }
 
+    @Test void flagsUnsafeAutoLinkWhenFirstBrokerFlowContainsIdpAutoLink() {
+        server.removeContext("/authentication/flows/flow-1/executions");
+        server.createContext("/authentication/flows/flow-1/executions", exchange -> respond(exchange, 200,
+                "[{\"providerId\":\"idp-auto-link\"}]"));
+
+        var status = client(true, "protected-secret").providerStatus("google");
+
+        assertThat(status.unsafeAutoLinkPresent()).isTrue();
+    }
+
+    @Test void mapsAppleProviderStatusWithoutUsingEmailAsIdentitySignal() {
+        server.removeContext("/admin/realms/exam-platform/identity-provider/instances");
+        server.createContext("/admin/realms/exam-platform/identity-provider/instances", exchange -> respond(exchange, 200, """
+            [{"alias":"apple","enabled":true,"config":{"clientId":"apple-services-id","clientSecret":"apple-private-key"}}]
+            """));
+
+        var status = client(true, "protected-secret").providerStatus("apple");
+
+        assertThat(status.alias()).isEqualTo("apple");
+        assertThat(status.present()).isTrue();
+        assertThat(status.enabled()).isTrue();
+        assertThat(status.clientIdConfigured()).isTrue();
+        assertThat(status.clientSecretConfigured()).isTrue();
+        assertThat(status.unsafeAutoLinkPresent()).isFalse();
+    }
+
     private KeycloakIdentityAdminClient client(boolean enabled, String secret) {
         return new KeycloakIdentityAdminClient(new ObjectMapper(), "http://127.0.0.1:" + server.getAddress().getPort(),
                 "exam-platform", "identity-management-bff", secret, enabled);

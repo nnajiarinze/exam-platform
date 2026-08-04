@@ -40,9 +40,20 @@ chmod 600 "${payload_file}"
 google_client_id="$(jq -er '.keycloak_google_client_id' "${payload_file}")"
 google_client_secret="$(jq -er '.keycloak_google_client_secret' "${payload_file}")"
 google_enabled="$(jq -er '.keycloak_google_enabled' "${payload_file}")"
+apple_enabled="$(jq -er '.keycloak_apple_enabled' "${payload_file}")"
+apple_services_id="$(jq -er '.keycloak_apple_services_id' "${payload_file}")"
+apple_team_id="$(jq -er '.keycloak_apple_team_id' "${payload_file}")"
+apple_key_id="$(jq -er '.keycloak_apple_key_id' "${payload_file}")"
+apple_private_key_base64="$(jq -er '.keycloak_apple_private_key_base64' "${payload_file}")"
 [[ -n "${google_client_id}" ]] || die "Protected KEYCLOAK_GOOGLE_CLIENT_ID is not provisioned"
 [[ -n "${google_client_secret}" ]] || die "Protected KEYCLOAK_GOOGLE_CLIENT_SECRET is not provisioned"
 [[ "${google_enabled}" == "true" ]] || die "KEYCLOAK_GOOGLE_ENABLED must be true in hosted vars/secrets"
+if [[ "${apple_enabled}" == "true" ]]; then
+  [[ -n "${apple_services_id}" ]] || die "KEYCLOAK_APPLE_ENABLED=true requires KEYCLOAK_APPLE_SERVICES_ID"
+  [[ -n "${apple_team_id}" ]] || die "KEYCLOAK_APPLE_ENABLED=true requires KEYCLOAK_APPLE_TEAM_ID"
+  [[ -n "${apple_key_id}" ]] || die "KEYCLOAK_APPLE_ENABLED=true requires KEYCLOAK_APPLE_KEY_ID"
+  [[ -n "${apple_private_key_base64}" ]] || die "KEYCLOAK_APPLE_ENABLED=true requires KEYCLOAK_APPLE_PRIVATE_KEY_BASE64"
+fi
 
 env_file="${PLATFORM_ENV_FILE}"
 release_env="${PLATFORM_RELEASE_ENV_FILE}"
@@ -109,6 +120,13 @@ update_release KEYCLOAK_EMAIL_DMARC_STATUS present
 update_env KEYCLOAK_GOOGLE_CLIENT_ID "${google_client_id}"
 update_env KEYCLOAK_GOOGLE_CLIENT_SECRET "${google_client_secret}"
 update_env KEYCLOAK_GOOGLE_ENABLED "${google_enabled}"
+update_env KEYCLOAK_APPLE_ENABLED "${apple_enabled}"
+if [[ "${apple_enabled}" == "true" ]]; then
+  update_env KEYCLOAK_APPLE_SERVICES_ID "${apple_services_id}"
+  update_env KEYCLOAK_APPLE_TEAM_ID "${apple_team_id}"
+  update_env KEYCLOAK_APPLE_KEY_ID "${apple_key_id}"
+  update_env KEYCLOAK_APPLE_PRIVATE_KEY_BASE64 "${apple_private_key_base64}"
+fi
 
 require_single_key "${pending_release}" IMAGE_TAG
 require_single_key "${pending_release}" GATEWAY_IMAGE_TAG

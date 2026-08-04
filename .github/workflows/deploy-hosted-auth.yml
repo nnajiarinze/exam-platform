@@ -47,13 +47,32 @@ jobs:
           KEYCLOAK_GOOGLE_CLIENT_ID: ${{ secrets.KEYCLOAK_GOOGLE_CLIENT_ID }}
           KEYCLOAK_GOOGLE_CLIENT_SECRET: ${{ secrets.KEYCLOAK_GOOGLE_CLIENT_SECRET }}
           KEYCLOAK_GOOGLE_ENABLED: ${{ vars.KEYCLOAK_GOOGLE_ENABLED != '' && vars.KEYCLOAK_GOOGLE_ENABLED || secrets.KEYCLOAK_GOOGLE_ENABLED }}
+          KEYCLOAK_APPLE_ENABLED: ${{ vars.KEYCLOAK_APPLE_ENABLED != '' && vars.KEYCLOAK_APPLE_ENABLED || secrets.KEYCLOAK_APPLE_ENABLED }}
+          KEYCLOAK_APPLE_SERVICES_ID: ${{ vars.KEYCLOAK_APPLE_SERVICES_ID != '' && vars.KEYCLOAK_APPLE_SERVICES_ID || secrets.KEYCLOAK_APPLE_SERVICES_ID }}
+          KEYCLOAK_APPLE_TEAM_ID: ${{ vars.KEYCLOAK_APPLE_TEAM_ID != '' && vars.KEYCLOAK_APPLE_TEAM_ID || secrets.KEYCLOAK_APPLE_TEAM_ID }}
+          KEYCLOAK_APPLE_KEY_ID: ${{ vars.KEYCLOAK_APPLE_KEY_ID != '' && vars.KEYCLOAK_APPLE_KEY_ID || secrets.KEYCLOAK_APPLE_KEY_ID }}
+          KEYCLOAK_APPLE_PRIVATE_KEY_BASE64: ${{ secrets.KEYCLOAK_APPLE_PRIVATE_KEY_BASE64 }}
           IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
         run: |
           payload_json="$(jq -cn \
             --arg cid "${KEYCLOAK_GOOGLE_CLIENT_ID}" \
             --arg csecret "${KEYCLOAK_GOOGLE_CLIENT_SECRET}" \
             --arg enabled "${KEYCLOAK_GOOGLE_ENABLED}" \
-            '{keycloak_google_client_id:$cid,keycloak_google_client_secret:$csecret,keycloak_google_enabled:$enabled}')"
+            --arg apple_enabled "${KEYCLOAK_APPLE_ENABLED}" \
+            --arg apple_services_id "${KEYCLOAK_APPLE_SERVICES_ID}" \
+            --arg apple_team_id "${KEYCLOAK_APPLE_TEAM_ID}" \
+            --arg apple_key_id "${KEYCLOAK_APPLE_KEY_ID}" \
+            --arg apple_private_key_base64 "${KEYCLOAK_APPLE_PRIVATE_KEY_BASE64}" \
+            '{
+              keycloak_google_client_id:$cid,
+              keycloak_google_client_secret:$csecret,
+              keycloak_google_enabled:$enabled,
+              keycloak_apple_enabled:$apple_enabled,
+              keycloak_apple_services_id:$apple_services_id,
+              keycloak_apple_team_id:$apple_team_id,
+              keycloak_apple_key_id:$apple_key_id,
+              keycloak_apple_private_key_base64:$apple_private_key_base64
+            }')"
           printf '%s' "${payload_json}" | \
             ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" \
             "set -Eeuo pipefail; cd /opt/citizenship-platform/repo; git fetch --quiet origin '${COMMIT_SHA}'; git checkout --detach '${COMMIT_SHA}'; ./infrastructure/hetzner/deploy-hosted-auth.sh '${COMMIT_SHA}' '${PUBLIC_DOMAIN}' '${IMAGE_REGISTRY}'"

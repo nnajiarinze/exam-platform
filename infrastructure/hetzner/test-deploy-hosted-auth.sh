@@ -31,6 +31,11 @@ RESEND_API_KEY=protected-resend
 KEYCLOAK_GOOGLE_ENABLED=false
 KEYCLOAK_GOOGLE_CLIENT_ID=placeholder-id
 KEYCLOAK_GOOGLE_CLIENT_SECRET=placeholder-secret
+KEYCLOAK_APPLE_ENABLED=false
+KEYCLOAK_APPLE_SERVICES_ID=placeholder-services-id
+KEYCLOAK_APPLE_TEAM_ID=placeholder-team-id
+KEYCLOAK_APPLE_KEY_ID=placeholder-key-id
+KEYCLOAK_APPLE_PRIVATE_KEY_BASE64=placeholder-private-key
 EOF
   chmod 600 "${ENV_FILE}"
 
@@ -233,8 +238,70 @@ seed_running_images_old_sha() {
 
 payload_for() {
   local secret="$1"
-  jq -cn --arg cid 'client-id-value' --arg sec "${secret}" --arg enabled true \
-    '{keycloak_google_client_id:$cid,keycloak_google_client_secret:$sec,keycloak_google_enabled:$enabled}'
+  jq -cn \
+    --arg cid 'client-id-value' \
+    --arg sec "${secret}" \
+    --arg enabled true \
+    --arg apple_enabled false \
+    --arg apple_services_id '' \
+    --arg apple_team_id '' \
+    --arg apple_key_id '' \
+    --arg apple_private_key_base64 '' \
+    '{
+      keycloak_google_client_id:$cid,
+      keycloak_google_client_secret:$sec,
+      keycloak_google_enabled:$enabled,
+      keycloak_apple_enabled:$apple_enabled,
+      keycloak_apple_services_id:$apple_services_id,
+      keycloak_apple_team_id:$apple_team_id,
+      keycloak_apple_key_id:$apple_key_id,
+      keycloak_apple_private_key_base64:$apple_private_key_base64
+    }'
+}
+
+payload_for_apple_enabled() {
+  local google_secret="$1" apple_private_key="$2"
+  jq -cn \
+    --arg cid 'client-id-value' \
+    --arg sec "${google_secret}" \
+    --arg enabled true \
+    --arg apple_enabled true \
+    --arg apple_services_id 'com.tinkona.mobile.signin' \
+    --arg apple_team_id 'TEAMID1234' \
+    --arg apple_key_id 'APPLEKEY01' \
+    --arg apple_private_key_base64 "${apple_private_key}" \
+    '{
+      keycloak_google_client_id:$cid,
+      keycloak_google_client_secret:$sec,
+      keycloak_google_enabled:$enabled,
+      keycloak_apple_enabled:$apple_enabled,
+      keycloak_apple_services_id:$apple_services_id,
+      keycloak_apple_team_id:$apple_team_id,
+      keycloak_apple_key_id:$apple_key_id,
+      keycloak_apple_private_key_base64:$apple_private_key_base64
+    }'
+}
+
+payload_for_apple_incomplete() {
+  jq -cn \
+    --arg cid 'client-id-value' \
+    --arg sec 'safe-secret' \
+    --arg enabled true \
+    --arg apple_enabled true \
+    --arg apple_services_id '' \
+    --arg apple_team_id 'TEAMID1234' \
+    --arg apple_key_id 'APPLEKEY01' \
+    --arg apple_private_key_base64 'cHJpdmF0ZS1rZXk=' \
+    '{
+      keycloak_google_client_id:$cid,
+      keycloak_google_client_secret:$sec,
+      keycloak_google_enabled:$enabled,
+      keycloak_apple_enabled:$apple_enabled,
+      keycloak_apple_services_id:$apple_services_id,
+      keycloak_apple_team_id:$apple_team_id,
+      keycloak_apple_key_id:$apple_key_id,
+      keycloak_apple_private_key_base64:$apple_private_key_base64
+    }'
 }
 
 run_test_candidate_images_exist_old_release_points_old_sha() {
@@ -389,6 +456,68 @@ EOF
   teardown_fake_env
 }
 
+run_test_apple_credentials_written_when_enabled() {
+  setup_fake_env
+  local commit_sha='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+  cat >"${FAKE_DOCKER_STATE_DIR}/available-images.txt" <<EOF
+ghcr.io/nnajiarinze/citizenship-api-gateway:${commit_sha}
+ghcr.io/nnajiarinze/citizenship-learning-service:${commit_sha}
+ghcr.io/nnajiarinze/citizenship-keycloak:${commit_sha}
+EOF
+  seed_running_images_old_sha
+  run_script "${commit_sha}" "$(payload_for_apple_enabled 'safe-secret' 'YXBwbGUtcHJpdmF0ZS1rZXk=')" ghcr.io/nnajiarinze >/dev/null
+  assert_file_contains "${ENV_FILE}" "KEYCLOAK_APPLE_ENABLED=true" "apple enabled must be persisted"
+  assert_file_contains "${ENV_FILE}" "KEYCLOAK_APPLE_SERVICES_ID=com.tinkona.mobile.signin" "apple services id must be persisted"
+  assert_file_contains "${ENV_FILE}" "KEYCLOAK_APPLE_TEAM_ID=TEAMID1234" "apple team id must be persisted"
+  assert_file_contains "${ENV_FILE}" "KEYCLOAK_APPLE_KEY_ID=APPLEKEY01" "apple key id must be persisted"
+  assert_file_contains "${ENV_FILE}" "KEYCLOAK_APPLE_PRIVATE_KEY_BASE64=YXBwbGUtcHJpdmF0ZS1rZXk=" "apple private key must be persisted"
+  teardown_fake_env
+}
+
+run_test_apple_enabled_requires_complete_credentials() {
+  setup_fake_env
+  local commit_sha='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+  local env_before release_before stderr_file
+  env_before="$(cat "${ENV_FILE}")"
+  release_before="$(cat "${RELEASE_FILE}")"
+  stderr_file="${WORK_DIR}/stderr.log"
+  cat >"${FAKE_DOCKER_STATE_DIR}/available-images.txt" <<EOF
+ghcr.io/nnajiarinze/citizenship-api-gateway:${commit_sha}
+ghcr.io/nnajiarinze/citizenship-learning-service:${commit_sha}
+ghcr.io/nnajiarinze/citizenship-keycloak:${commit_sha}
+EOF
+  seed_running_images_old_sha
+  if run_script "${commit_sha}" "$(payload_for_apple_incomplete)" ghcr.io/nnajiarinze >"${WORK_DIR}/stdout.log" 2>"${stderr_file}"; then
+    fail "script should fail when apple is enabled with incomplete credentials"
+  fi
+  assert_file_contains "${stderr_file}" "KEYCLOAK_APPLE_ENABLED=true requires KEYCLOAK_APPLE_SERVICES_ID" "apple missing field failure must be explicit"
+  assert_eq "${env_before}" "$(cat "${ENV_FILE}")" "env must not mutate when apple credentials are incomplete"
+  assert_eq "${release_before}" "$(cat "${RELEASE_FILE}")" "release must not mutate when apple credentials are incomplete"
+  [[ ! -f "${FAKE_DOCKER_STATE_DIR}/pulls.log" ]] || fail "no image pulls should occur when apple credential validation fails"
+  teardown_fake_env
+}
+
+run_test_apple_private_key_not_leaked_to_logs_or_state() {
+  setup_fake_env
+  local commit_sha='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+  local apple_private_key='bXktYXBwbGUtc2VjcmV0LXByaXZhdGUta2V5'
+  local stdout_file stderr_file
+  stdout_file="${WORK_DIR}/stdout.log"
+  stderr_file="${WORK_DIR}/stderr.log"
+  cat >"${FAKE_DOCKER_STATE_DIR}/available-images.txt" <<EOF
+ghcr.io/nnajiarinze/citizenship-api-gateway:${commit_sha}
+ghcr.io/nnajiarinze/citizenship-learning-service:${commit_sha}
+ghcr.io/nnajiarinze/citizenship-keycloak:${commit_sha}
+EOF
+  seed_running_images_old_sha
+  run_script "${commit_sha}" "$(payload_for_apple_enabled 'safe-secret' "${apple_private_key}")" ghcr.io/nnajiarinze >"${stdout_file}" 2>"${stderr_file}"
+  assert_file_not_contains "${stdout_file}" "${apple_private_key}" "apple private key must not appear in stdout"
+  assert_file_not_contains "${stderr_file}" "${apple_private_key}" "apple private key must not appear in stderr"
+  assert_file_not_contains "${STATE_DIR}/candidate-auth-images-${commit_sha}.txt" "${apple_private_key}" "apple private key must not appear in rendered image files"
+  assert_file_not_contains "${STATE_DIR}/candidate-auth-services-${commit_sha}.txt" "${apple_private_key}" "apple private key must not appear in service scope files"
+  teardown_fake_env
+}
+
 run_test_failure_after_replacement_restores_files_and_images() {
   setup_fake_env
   local commit_sha='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
@@ -467,6 +596,20 @@ run_test_full_platform_deploy_contract_unchanged() {
   assert_file_contains "${deploy_script}" "compose up -d --remove-orphans --wait --wait-timeout 240" "full-platform deploy behavior must still restart compose project"
 }
 
+run_test_hosted_auth_workflow_wires_apple_payload() {
+  local workflow_file="${REPO_ROOT}/.github/workflows/deploy-hosted-auth.yml"
+  assert_file_contains "${workflow_file}" "KEYCLOAK_APPLE_ENABLED" "workflow must inject apple enabled flag"
+  assert_file_contains "${workflow_file}" "KEYCLOAK_APPLE_PRIVATE_KEY_BASE64" "workflow must inject apple private key"
+  assert_file_contains "${workflow_file}" "keycloak_apple_enabled" "payload json must include apple enabled"
+  assert_file_contains "${workflow_file}" "keycloak_apple_private_key_base64" "payload json must include apple private key"
+}
+
+run_test_mobile_preview_hosted_enables_apple() {
+  local eas_file="${REPO_ROOT}/apps/mobile/eas.json"
+  assert_file_contains "${eas_file}" '"preview-hosted"' "preview-hosted profile must exist"
+  assert_file_contains "${eas_file}" '"EXPO_PUBLIC_APPLE_SIGN_IN_ENABLED": "true"' "preview-hosted must enable apple sign in"
+}
+
 run_test_candidate_images_exist_old_release_points_old_sha
 run_test_duplicate_image_tag_old_value_cannot_win
 run_test_missing_candidate_image_zero_mutation
@@ -474,8 +617,13 @@ run_test_missing_api_gateway_image_blocks_without_mutation
 run_test_missing_learning_service_image_blocks_without_mutation
 run_test_missing_keycloak_image_blocks_without_mutation
 run_test_secret_metacharacters_safe_transfer
+run_test_apple_credentials_written_when_enabled
+run_test_apple_enabled_requires_complete_credentials
+run_test_apple_private_key_not_leaked_to_logs_or_state
 run_test_failure_after_replacement_restores_files_and_images
 run_test_success_retains_backups_and_idempotent_second_run
 run_test_placeholder_registry_rejected_without_mutation
 run_test_full_platform_deploy_contract_unchanged
+run_test_hosted_auth_workflow_wires_apple_payload
+run_test_mobile_preview_hosted_enables_apple
 printf 'deploy-hosted-auth transactional tests passed.\n'
