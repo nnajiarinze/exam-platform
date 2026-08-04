@@ -147,9 +147,10 @@ jobs:
           COMMIT_SHA: ${{ inputs.commit_sha }}
           HOSTED_HOST: ${{ secrets.HOSTED_HOST }}
           HOSTED_USER: ${{ secrets.HOSTED_USER }}
+          IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
         run: |
           ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" \
-            "cd /opt/citizenship-platform/repo && git fetch --quiet origin '${COMMIT_SHA}' && git checkout --detach '${COMMIT_SHA}' && ./infrastructure/hetzner/deploy.sh '${COMMIT_SHA}'"
+            "cd /opt/citizenship-platform/repo && git fetch --quiet origin '${COMMIT_SHA}' && git checkout --detach '${COMMIT_SHA}' && IMAGE_REGISTRY='${IMAGE_REGISTRY}' ./infrastructure/hetzner/deploy.sh '${COMMIT_SHA}'"
       - name: Activate corrected Sverige i fokus source revision
         if: ${{ inputs.activate_source_revision }}
         env:

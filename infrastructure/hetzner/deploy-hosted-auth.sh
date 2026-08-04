@@ -7,6 +7,7 @@ load_platform_paths
 
 COMMIT_SHA="${1:-}"
 PUBLIC_DOMAIN="${2:-}"
+AUTHORITATIVE_IMAGE_REGISTRY="${3:-${IMAGE_REGISTRY:-}}"
 require_sha "${COMMIT_SHA}"
 [[ "${PUBLIC_DOMAIN}" == "api.tinkona.com" ]] || die "PUBLIC_DOMAIN must be api.tinkona.com"
 
@@ -46,6 +47,7 @@ google_enabled="$(jq -er '.keycloak_google_enabled' "${payload_file}")"
 env_file="${PLATFORM_ENV_FILE}"
 release_env="${PLATFORM_RELEASE_ENV_FILE}"
 compose_file="${PLATFORM_COMPOSE_FILE}"
+AUTH_SERVICES=(api-gateway learning-service keycloak)
 
 pending_env="$(mktemp "${env_file}.pending.XXXXXX")"
 pending_release="$(mktemp "${release_env}.pending.XXXXXX")"
@@ -71,9 +73,23 @@ require_single_key() {
   [[ "${count}" == "1" ]] || die "${file} must contain exactly one ${key} entry"
 }
 
+validate_image_registry() {
+  local registry="$1" owner
+  [[ -n "${registry}" ]] || die "INVALID_IMAGE_REGISTRY: value is empty"
+  [[ "${registry}" =~ ^ghcr\.io/[A-Za-z0-9][A-Za-z0-9-]*$ ]] || \
+    die "INVALID_IMAGE_REGISTRY: '${registry}' must match ghcr.io/<owner>"
+  owner="${registry#ghcr.io/}"
+  [[ "${owner}" != "owner" ]] || die "INVALID_IMAGE_REGISTRY: placeholder registry '${registry}' is not allowed"
+}
+
 update_release() { update_file_env "${pending_release}" "$1" "$2"; }
 update_env() { update_file_env "${pending_env}" "$1" "$2"; }
 
+release_registry="$(awk -F= '$1=="IMAGE_REGISTRY"{print $2}' "${pending_release}" | tail -n 1)"
+AUTHORITATIVE_IMAGE_REGISTRY="${AUTHORITATIVE_IMAGE_REGISTRY:-${release_registry}}"
+validate_image_registry "${AUTHORITATIVE_IMAGE_REGISTRY}"
+
+update_release IMAGE_REGISTRY "${AUTHORITATIVE_IMAGE_REGISTRY}"
 update_release IMAGE_TAG "${COMMIT_SHA}"
 update_release GATEWAY_IMAGE_TAG "${COMMIT_SHA}"
 update_release KEYCLOAK_IMAGE_TAG "${COMMIT_SHA}"
@@ -105,16 +121,29 @@ current_compose=(docker compose --env-file "${env_file}" --env-file "${release_e
 
 "${candidate_compose[@]}" config >/dev/null
 candidate_images_file="${PLATFORM_STATE_DIR}/candidate-auth-images-${COMMIT_SHA}.txt"
-"${candidate_compose[@]}" config --images api-gateway learning-service keycloak | awk 'NF>0' | sort -u >"${candidate_images_file}"
+candidate_services_file="${PLATFORM_STATE_DIR}/candidate-auth-services-${COMMIT_SHA}.txt"
+printf '%s\n' "${AUTH_SERVICES[@]}" >"${candidate_services_file}"
+"${candidate_compose[@]}" config --images "${AUTH_SERVICES[@]}" |
+  awk 'NF>0' |
+  grep -E '/citizenship-(api-gateway|learning-service|keycloak):' |
+  sort -u >"${candidate_images_file}"
 [[ -s "${candidate_images_file}" ]] || die "Candidate image list is empty"
+[[ "$(awk 'END{print NR+0}' "${candidate_images_file}")" == "3" ]] || \
+  die "Auth preflight must resolve exactly three unique auth images"
 
 while IFS= read -r image; do
   docker manifest inspect "${image}" >/dev/null 2>&1 || die "Required immutable image missing: ${image}"
 done <"${candidate_images_file}"
 
+pulled_images_file="${PLATFORM_STATE_DIR}/candidate-auth-pulled-images-${COMMIT_SHA}.txt"
+: >"${pulled_images_file}"
 while IFS= read -r image; do
   docker pull "${image}" >/dev/null
+  printf '%s\n' "${image}" >>"${pulled_images_file}"
 done <"${candidate_images_file}"
+sort -u "${pulled_images_file}" -o "${pulled_images_file}"
+cmp -s "${candidate_images_file}" "${pulled_images_file}" || \
+  die "Rendered candidate images differ from pulled images"
 
 timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
 env_backup="${BACKUP_DIR}/.env.${timestamp}.bak"

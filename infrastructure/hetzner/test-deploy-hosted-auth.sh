@@ -8,6 +8,11 @@ fail() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
 assert_eq() { [[ "$1" == "$2" ]] || fail "$3 (expected '$1' got '$2')"; }
 assert_file_contains() { grep -Fq -- "$2" "$1" || fail "$3"; }
 assert_file_not_contains() { ! grep -Fq -- "$2" "$1" || fail "$3"; }
+assert_line_count() {
+  local expected="$1" file="$2" message="$3" count
+  count="$(awk 'END{print NR+0}' "${file}")"
+  [[ "${count}" == "${expected}" ]] || fail "${message} (expected ${expected}, got ${count})"
+}
 
 setup_fake_env() {
   WORK_DIR="$(mktemp -d /tmp/deploy-auth-test.XXXXXX)"
@@ -98,6 +103,7 @@ service_image() {
 
 if [[ "$1" == "manifest" && "$2" == "inspect" ]]; then
   image="$3"
+  printf '%s\n' "${image}" >>"${state}/manifest-inspects.log"
   grep -Fxq "${image}" "${state}/available-images.txt"
   echo '{}'
   exit 0
@@ -141,8 +147,10 @@ if [[ "$1" == "compose" ]]; then
     config)
       if [[ "${1:-}" == "--images" ]]; then
         shift
+        : >"${state}/compose-images-services.log"
         while [[ $# -gt 0 ]]; do
           service="$1"
+          printf '%s\n' "${service}" >>"${state}/compose-images-services.log"
           service_image "${service}" "${env_file}" "${release_file}"
           shift
         done
@@ -199,7 +207,11 @@ teardown_fake_env() {
 }
 
 run_script() {
-  local commit_sha="$1" payload="$2"
+  local commit_sha="$1" payload="$2" image_registry="${3:-}"
+  local script_args=("${commit_sha}" api.tinkona.com)
+  if [[ -n "${image_registry}" ]]; then
+    script_args+=("${image_registry}")
+  fi
   printf '%s' "${payload}" | \
     PLATFORM_ROOT="${ROOT_DIR}" \
     PLATFORM_REPOSITORY="${REPO_DIR}" \
@@ -209,7 +221,7 @@ run_script() {
     PLATFORM_STATE_DIR="${STATE_DIR}" \
     HARDEN_KEYCLOAK_SCRIPT="${REPO_DIR}/infrastructure/hetzner/harden-keycloak.sh" \
     SMOKE_TEST_SCRIPT="${REPO_DIR}/infrastructure/hetzner/smoke-test.sh" \
-    bash "${SCRIPT_UNDER_TEST}" "${commit_sha}" api.tinkona.com
+    bash "${SCRIPT_UNDER_TEST}" "${script_args[@]}"
 }
 
 seed_running_images_old_sha() {
@@ -234,9 +246,30 @@ ghcr.io/nnajiarinze/citizenship-learning-service:${commit_sha}
 ghcr.io/nnajiarinze/citizenship-keycloak:${commit_sha}
 EOF
   seed_running_images_old_sha
-  run_script "${commit_sha}" "$(payload_for 'safe-secret')" >/dev/null
+  run_script "${commit_sha}" "$(payload_for 'safe-secret')" ghcr.io/nnajiarinze >/dev/null
   assert_file_contains "${RELEASE_FILE}" "IMAGE_TAG=${commit_sha}" "release IMAGE_TAG must move to candidate SHA"
+  assert_file_contains "${RELEASE_FILE}" "IMAGE_REGISTRY=ghcr.io/nnajiarinze" "release IMAGE_REGISTRY must use authoritative namespace"
+  assert_file_contains "${STATE_DIR}/candidate-auth-images-${commit_sha}.txt" "ghcr.io/nnajiarinze/citizenship-api-gateway:${commit_sha}" "candidate render must use authoritative namespace"
+  assert_file_contains "${STATE_DIR}/candidate-auth-images-${commit_sha}.txt" "ghcr.io/nnajiarinze/citizenship-learning-service:${commit_sha}" "candidate render must include learning-service"
+  assert_file_contains "${STATE_DIR}/candidate-auth-images-${commit_sha}.txt" "ghcr.io/nnajiarinze/citizenship-keycloak:${commit_sha}" "candidate render must include keycloak"
+  assert_file_not_contains "${STATE_DIR}/candidate-auth-images-${commit_sha}.txt" "citizenship-ai-service" "auth preflight must not require ai-service image"
+  assert_file_not_contains "${STATE_DIR}/candidate-auth-images-${commit_sha}.txt" "citizenship-content-service" "auth preflight must not require content-service image"
+  assert_line_count 3 "${STATE_DIR}/candidate-auth-images-${commit_sha}.txt" "manifest list must contain exactly three unique auth images"
   assert_file_contains "${FAKE_DOCKER_STATE_DIR}/pulls.log" "${commit_sha}" "candidate SHA images must be pulled"
+  sort -u "${FAKE_DOCKER_STATE_DIR}/pulls.log" >"${STATE_DIR}/pulls.unique"
+  cmp -s "${STATE_DIR}/candidate-auth-images-${commit_sha}.txt" "${STATE_DIR}/pulls.unique" || \
+    fail "rendered and pulled candidate images must be identical"
+  assert_line_count 3 "${FAKE_DOCKER_STATE_DIR}/manifest-inspects.log" "manifest inspection must execute for exactly three images"
+  sort -u "${FAKE_DOCKER_STATE_DIR}/manifest-inspects.log" -o "${STATE_DIR}/manifest-inspects.unique"
+  cmp -s "${STATE_DIR}/candidate-auth-images-${commit_sha}.txt" "${STATE_DIR}/manifest-inspects.unique" || \
+    fail "manifest-inspection list must equal rendered auth image list"
+  cat >"${STATE_DIR}/expected-services.txt" <<'EOF'
+api-gateway
+learning-service
+keycloak
+EOF
+  cmp -s "${STATE_DIR}/expected-services.txt" "${FAKE_DOCKER_STATE_DIR}/compose-images-services.log" || \
+    fail "compose --images service scope must be exactly api-gateway learning-service keycloak"
   teardown_fake_env
 }
 
@@ -253,7 +286,7 @@ ghcr.io/nnajiarinze/citizenship-learning-service:${commit_sha}
 ghcr.io/nnajiarinze/citizenship-keycloak:${commit_sha}
 EOF
   seed_running_images_old_sha
-  run_script "${commit_sha}" "$(payload_for 'safe-secret')" >/dev/null
+  run_script "${commit_sha}" "$(payload_for 'safe-secret')" ghcr.io/nnajiarinze >/dev/null
   image_tag_count="$(awk -F= '$1=="IMAGE_TAG"{count++} END{print count+0}' "${RELEASE_FILE}")"
   assert_eq "1" "${image_tag_count}" "release file must be normalized to one IMAGE_TAG"
   assert_file_contains "${RELEASE_FILE}" "IMAGE_TAG=${commit_sha}" "normalized IMAGE_TAG must use candidate SHA"
@@ -273,12 +306,69 @@ ghcr.io/nnajiarinze/citizenship-api-gateway:${commit_sha}
 ghcr.io/nnajiarinze/citizenship-learning-service:${commit_sha}
 EOF
   seed_running_images_old_sha
-  if run_script "${commit_sha}" "$(payload_for 'safe-secret')" >/dev/null 2>&1; then
+  if run_script "${commit_sha}" "$(payload_for 'safe-secret')" ghcr.io/nnajiarinze >/dev/null 2>&1; then
     fail "script should fail when candidate image is missing"
   fi
   assert_eq "${env_before}" "$(cat "${ENV_FILE}")" "env must not mutate when preflight fails"
   assert_eq "${release_before}" "$(cat "${RELEASE_FILE}")" "release must not mutate when preflight fails"
   [[ ! -d "${STATE_DIR}/backups/auth-deploy" || -z "$(ls -A "${STATE_DIR}/backups/auth-deploy" 2>/dev/null)" ]] || fail "no backups should be created on preflight failure"
+  teardown_fake_env
+}
+
+run_test_missing_api_gateway_image_blocks_without_mutation() {
+  setup_fake_env
+  local commit_sha='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+  local env_before release_before
+  env_before="$(cat "${ENV_FILE}")"
+  release_before="$(cat "${RELEASE_FILE}")"
+  cat >"${FAKE_DOCKER_STATE_DIR}/available-images.txt" <<EOF
+ghcr.io/nnajiarinze/citizenship-learning-service:${commit_sha}
+ghcr.io/nnajiarinze/citizenship-keycloak:${commit_sha}
+EOF
+  seed_running_images_old_sha
+  if run_script "${commit_sha}" "$(payload_for 'safe-secret')" ghcr.io/nnajiarinze >/dev/null 2>&1; then
+    fail "script should fail when api-gateway image is missing"
+  fi
+  assert_eq "${env_before}" "$(cat "${ENV_FILE}")" "env must not mutate when api-gateway image is missing"
+  assert_eq "${release_before}" "$(cat "${RELEASE_FILE}")" "release must not mutate when api-gateway image is missing"
+  teardown_fake_env
+}
+
+run_test_missing_learning_service_image_blocks_without_mutation() {
+  setup_fake_env
+  local commit_sha='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+  local env_before release_before
+  env_before="$(cat "${ENV_FILE}")"
+  release_before="$(cat "${RELEASE_FILE}")"
+  cat >"${FAKE_DOCKER_STATE_DIR}/available-images.txt" <<EOF
+ghcr.io/nnajiarinze/citizenship-api-gateway:${commit_sha}
+ghcr.io/nnajiarinze/citizenship-keycloak:${commit_sha}
+EOF
+  seed_running_images_old_sha
+  if run_script "${commit_sha}" "$(payload_for 'safe-secret')" ghcr.io/nnajiarinze >/dev/null 2>&1; then
+    fail "script should fail when learning-service image is missing"
+  fi
+  assert_eq "${env_before}" "$(cat "${ENV_FILE}")" "env must not mutate when learning-service image is missing"
+  assert_eq "${release_before}" "$(cat "${RELEASE_FILE}")" "release must not mutate when learning-service image is missing"
+  teardown_fake_env
+}
+
+run_test_missing_keycloak_image_blocks_without_mutation() {
+  setup_fake_env
+  local commit_sha='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+  local env_before release_before
+  env_before="$(cat "${ENV_FILE}")"
+  release_before="$(cat "${RELEASE_FILE}")"
+  cat >"${FAKE_DOCKER_STATE_DIR}/available-images.txt" <<EOF
+ghcr.io/nnajiarinze/citizenship-api-gateway:${commit_sha}
+ghcr.io/nnajiarinze/citizenship-learning-service:${commit_sha}
+EOF
+  seed_running_images_old_sha
+  if run_script "${commit_sha}" "$(payload_for 'safe-secret')" ghcr.io/nnajiarinze >/dev/null 2>&1; then
+    fail "script should fail when keycloak image is missing"
+  fi
+  assert_eq "${env_before}" "$(cat "${ENV_FILE}")" "env must not mutate when keycloak image is missing"
+  assert_eq "${release_before}" "$(cat "${RELEASE_FILE}")" "release must not mutate when keycloak image is missing"
   teardown_fake_env
 }
 
@@ -294,7 +384,7 @@ EOF
   secret='x$y"z'
   secret+="'"
   secret+=";()[]{}<>!"
-  run_script "${commit_sha}" "$(payload_for "${secret}")" >/dev/null
+  run_script "${commit_sha}" "$(payload_for "${secret}")" ghcr.io/nnajiarinze >/dev/null
   assert_file_contains "${ENV_FILE}" "KEYCLOAK_GOOGLE_CLIENT_SECRET=${secret}" "secret with shell metacharacters must persist exactly"
   teardown_fake_env
 }
@@ -312,7 +402,7 @@ EOF
   env_before="$(cat "${ENV_FILE}")"
   release_before="$(cat "${RELEASE_FILE}")"
   export FAKE_HARDEN_FAIL=true
-  if run_script "${commit_sha}" "$(payload_for 'safe-secret')" >/dev/null 2>&1; then
+  if run_script "${commit_sha}" "$(payload_for 'safe-secret')" ghcr.io/nnajiarinze >/dev/null 2>&1; then
     fail "script should fail when harden-keycloak fails"
   fi
   unset FAKE_HARDEN_FAIL
@@ -334,22 +424,58 @@ ghcr.io/nnajiarinze/citizenship-keycloak:${commit_sha}
 EOF
   seed_running_images_old_sha
 
-  run_script "${commit_sha}" "$(payload_for 'safe-secret')" >/dev/null
+  run_script "${commit_sha}" "$(payload_for 'safe-secret')" ghcr.io/nnajiarinze >/dev/null
   first_env="$(cat "${ENV_FILE}")"
   first_release="$(cat "${RELEASE_FILE}")"
   backups_after_first="$(find "${STATE_DIR}/backups/auth-deploy" -type f | wc -l | tr -d ' ')"
   [[ "${backups_after_first}" -ge 2 ]] || fail "successful deploy must retain protected backups"
 
-  run_script "${commit_sha}" "$(payload_for 'safe-secret')" >/dev/null
+  run_script "${commit_sha}" "$(payload_for 'safe-secret')" ghcr.io/nnajiarinze >/dev/null
   assert_eq "${first_env}" "$(cat "${ENV_FILE}")" "second run must keep env idempotent"
   assert_eq "${first_release}" "$(cat "${RELEASE_FILE}")" "second run must keep release idempotent"
   teardown_fake_env
 }
 
+run_test_placeholder_registry_rejected_without_mutation() {
+  setup_fake_env
+  local commit_sha='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+  local env_before release_before stderr_file
+  env_before="$(cat "${ENV_FILE}")"
+  release_before="$(cat "${RELEASE_FILE}")"
+  stderr_file="${WORK_DIR}/stderr.log"
+  cat >"${FAKE_DOCKER_STATE_DIR}/available-images.txt" <<EOF
+ghcr.io/nnajiarinze/citizenship-api-gateway:${commit_sha}
+ghcr.io/nnajiarinze/citizenship-learning-service:${commit_sha}
+ghcr.io/nnajiarinze/citizenship-keycloak:${commit_sha}
+EOF
+  seed_running_images_old_sha
+  if run_script "${commit_sha}" "$(payload_for 'safe-secret')" ghcr.io/owner >"${WORK_DIR}/stdout.log" 2>"${stderr_file}"; then
+    fail "script should fail when placeholder registry is provided"
+  fi
+  assert_file_contains "${stderr_file}" "INVALID_IMAGE_REGISTRY" "placeholder registry failure must be classified"
+  assert_eq "${env_before}" "$(cat "${ENV_FILE}")" "env must not mutate on invalid registry"
+  assert_eq "${release_before}" "$(cat "${RELEASE_FILE}")" "release must not mutate on invalid registry"
+  [[ ! -f "${FAKE_DOCKER_STATE_DIR}/pulls.log" ]] || fail "no image pulls should occur on invalid registry"
+  teardown_fake_env
+}
+
+run_test_full_platform_deploy_contract_unchanged() {
+  local deploy_workflow="${REPO_ROOT}/.github/workflows/deploy-hosted.yml"
+  local deploy_script="${REPO_ROOT}/infrastructure/hetzner/deploy.sh"
+  assert_file_contains "${deploy_workflow}" "./infrastructure/hetzner/deploy.sh" "full-platform hosted workflow must still use deploy.sh"
+  assert_file_contains "${deploy_script}" "compose pull" "full-platform deploy behavior must still pull compose project images"
+  assert_file_contains "${deploy_script}" "compose up -d --remove-orphans --wait --wait-timeout 240" "full-platform deploy behavior must still restart compose project"
+}
+
 run_test_candidate_images_exist_old_release_points_old_sha
 run_test_duplicate_image_tag_old_value_cannot_win
 run_test_missing_candidate_image_zero_mutation
+run_test_missing_api_gateway_image_blocks_without_mutation
+run_test_missing_learning_service_image_blocks_without_mutation
+run_test_missing_keycloak_image_blocks_without_mutation
 run_test_secret_metacharacters_safe_transfer
 run_test_failure_after_replacement_restores_files_and_images
 run_test_success_retains_backups_and_idempotent_second_run
+run_test_placeholder_registry_rejected_without_mutation
+run_test_full_platform_deploy_contract_unchanged
 printf 'deploy-hosted-auth transactional tests passed.\n'

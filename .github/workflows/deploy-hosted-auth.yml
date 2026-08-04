@@ -23,9 +23,12 @@ jobs:
         env:
           COMMIT_SHA: ${{ inputs.commit_sha }}
           PUBLIC_DOMAIN: ${{ inputs.public_domain }}
+          IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
         run: |
           [[ "${COMMIT_SHA}" =~ ^[0-9a-f]{40}$ ]]
           [[ "${PUBLIC_DOMAIN}" == api.tinkona.com ]]
+          [[ "${IMAGE_REGISTRY}" =~ ^ghcr\.io/[A-Za-z0-9][A-Za-z0-9-]*$ ]]
+          [[ "${IMAGE_REGISTRY}" != ghcr.io/owner ]]
       - name: Configure protected Hetzner SSH
         env:
           SSH_PRIVATE_KEY: ${{ secrets.HOSTED_SSH_PRIVATE_KEY }}
@@ -44,6 +47,7 @@ jobs:
           KEYCLOAK_GOOGLE_CLIENT_ID: ${{ secrets.KEYCLOAK_GOOGLE_CLIENT_ID }}
           KEYCLOAK_GOOGLE_CLIENT_SECRET: ${{ secrets.KEYCLOAK_GOOGLE_CLIENT_SECRET }}
           KEYCLOAK_GOOGLE_ENABLED: ${{ vars.KEYCLOAK_GOOGLE_ENABLED != '' && vars.KEYCLOAK_GOOGLE_ENABLED || secrets.KEYCLOAK_GOOGLE_ENABLED }}
+          IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
         run: |
           payload_json="$(jq -cn \
             --arg cid "${KEYCLOAK_GOOGLE_CLIENT_ID}" \
@@ -52,7 +56,7 @@ jobs:
             '{keycloak_google_client_id:$cid,keycloak_google_client_secret:$csecret,keycloak_google_enabled:$enabled}')"
           printf '%s' "${payload_json}" | \
             ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" \
-            "set -Eeuo pipefail; cd /opt/citizenship-platform/repo; git fetch --quiet origin '${COMMIT_SHA}'; git checkout --detach '${COMMIT_SHA}'; ./infrastructure/hetzner/deploy-hosted-auth.sh '${COMMIT_SHA}' '${PUBLIC_DOMAIN}'"
+            "set -Eeuo pipefail; cd /opt/citizenship-platform/repo; git fetch --quiet origin '${COMMIT_SHA}'; git checkout --detach '${COMMIT_SHA}'; ./infrastructure/hetzner/deploy-hosted-auth.sh '${COMMIT_SHA}' '${PUBLIC_DOMAIN}' '${IMAGE_REGISTRY}'"
       - name: Verify public authentication surface
         env:
           PUBLIC_DOMAIN: ${{ inputs.public_domain }}
