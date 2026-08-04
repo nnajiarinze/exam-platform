@@ -43,8 +43,9 @@ jobs:
           HOSTED_USER: ${{ secrets.HOSTED_USER }}
           KEYCLOAK_GOOGLE_CLIENT_ID: ${{ secrets.KEYCLOAK_GOOGLE_CLIENT_ID }}
           KEYCLOAK_GOOGLE_CLIENT_SECRET: ${{ secrets.KEYCLOAK_GOOGLE_CLIENT_SECRET }}
+          KEYCLOAK_GOOGLE_ENABLED: ${{ vars.KEYCLOAK_GOOGLE_ENABLED != '' && vars.KEYCLOAK_GOOGLE_ENABLED || secrets.KEYCLOAK_GOOGLE_ENABLED }}
         run: |
-          ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" "KEYCLOAK_GOOGLE_CLIENT_ID='${KEYCLOAK_GOOGLE_CLIENT_ID}' KEYCLOAK_GOOGLE_CLIENT_SECRET='${KEYCLOAK_GOOGLE_CLIENT_SECRET}' bash -s '${COMMIT_SHA}' '${PUBLIC_DOMAIN}'" <<'REMOTE'
+          ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" "KEYCLOAK_GOOGLE_CLIENT_ID='${KEYCLOAK_GOOGLE_CLIENT_ID}' KEYCLOAK_GOOGLE_CLIENT_SECRET='${KEYCLOAK_GOOGLE_CLIENT_SECRET}' KEYCLOAK_GOOGLE_ENABLED='${KEYCLOAK_GOOGLE_ENABLED}' bash -s '${COMMIT_SHA}' '${PUBLIC_DOMAIN}'" <<'REMOTE'
           set -Eeuo pipefail
           commit_sha="$1" public_domain="$2"
           root=/opt/citizenship-platform
@@ -104,9 +105,10 @@ jobs:
           }
           [[ -n "${KEYCLOAK_GOOGLE_CLIENT_ID:-}" ]] || { echo 'Protected KEYCLOAK_GOOGLE_CLIENT_ID is not provisioned' >&2; exit 1; }
           [[ -n "${KEYCLOAK_GOOGLE_CLIENT_SECRET:-}" ]] || { echo 'Protected KEYCLOAK_GOOGLE_CLIENT_SECRET is not provisioned' >&2; exit 1; }
+          [[ "${KEYCLOAK_GOOGLE_ENABLED:-}" == true ]] || { echo 'KEYCLOAK_GOOGLE_ENABLED must be true in hosted vars/secrets' >&2; exit 1; }
           update_env KEYCLOAK_GOOGLE_CLIENT_ID "${KEYCLOAK_GOOGLE_CLIENT_ID}"
           update_env KEYCLOAK_GOOGLE_CLIENT_SECRET "${KEYCLOAK_GOOGLE_CLIENT_SECRET}"
-          update_env KEYCLOAK_GOOGLE_ENABLED true
+          update_env KEYCLOAK_GOOGLE_ENABLED "${KEYCLOAK_GOOGLE_ENABLED}"
           "${compose[@]}" pull api-gateway learning-service keycloak
           "${compose[@]}" up -d --no-deps --wait --wait-timeout 120 keycloak
           KEYCLOAK_SECURITY_MODE=HTTPS_HOSTED ADMIN_PORTAL_URL="https://${public_domain}" \
