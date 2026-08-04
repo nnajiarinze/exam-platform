@@ -41,8 +41,10 @@ jobs:
           PUBLIC_DOMAIN: ${{ inputs.public_domain }}
           HOSTED_HOST: ${{ secrets.HOSTED_HOST }}
           HOSTED_USER: ${{ secrets.HOSTED_USER }}
+          KEYCLOAK_GOOGLE_CLIENT_ID: ${{ secrets.KEYCLOAK_GOOGLE_CLIENT_ID }}
+          KEYCLOAK_GOOGLE_CLIENT_SECRET: ${{ secrets.KEYCLOAK_GOOGLE_CLIENT_SECRET }}
         run: |
-          ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" "bash -s '${COMMIT_SHA}' '${PUBLIC_DOMAIN}'" <<'REMOTE'
+          ssh -o BatchMode=yes "${HOSTED_USER}@${HOSTED_HOST}" "KEYCLOAK_GOOGLE_CLIENT_ID='${KEYCLOAK_GOOGLE_CLIENT_ID}' KEYCLOAK_GOOGLE_CLIENT_SECRET='${KEYCLOAK_GOOGLE_CLIENT_SECRET}' bash -s '${COMMIT_SHA}' '${PUBLIC_DOMAIN}'" <<'REMOTE'
           set -Eeuo pipefail
           commit_sha="$1" public_domain="$2"
           root=/opt/citizenship-platform
@@ -88,6 +90,23 @@ jobs:
           update_release_env KEYCLOAK_SMTP_SSL false
           update_release_env KEYCLOAK_SMTP_CONFIGURED true
           update_release_env KEYCLOAK_EMAIL_DMARC_STATUS present
+          update_env() {
+            local key="$1" value="$2" temporary
+            temporary="$(mktemp "${env_file}.XXXXXX")"
+            awk -F= -v key="${key}" -v value="${value}" '
+              BEGIN { replaced=0 }
+              $1==key { if (!replaced) print key "=" value; replaced=1; next }
+              { print }
+              END { if (!replaced) print key "=" value }
+            ' "${env_file}" >"${temporary}"
+            chmod 600 "${temporary}"
+            mv "${temporary}" "${env_file}"
+          }
+          [[ -n "${KEYCLOAK_GOOGLE_CLIENT_ID:-}" ]] || { echo 'Protected KEYCLOAK_GOOGLE_CLIENT_ID is not provisioned' >&2; exit 1; }
+          [[ -n "${KEYCLOAK_GOOGLE_CLIENT_SECRET:-}" ]] || { echo 'Protected KEYCLOAK_GOOGLE_CLIENT_SECRET is not provisioned' >&2; exit 1; }
+          update_env KEYCLOAK_GOOGLE_CLIENT_ID "${KEYCLOAK_GOOGLE_CLIENT_ID}"
+          update_env KEYCLOAK_GOOGLE_CLIENT_SECRET "${KEYCLOAK_GOOGLE_CLIENT_SECRET}"
+          update_env KEYCLOAK_GOOGLE_ENABLED true
           "${compose[@]}" pull api-gateway learning-service keycloak
           "${compose[@]}" up -d --no-deps --wait --wait-timeout 120 keycloak
           KEYCLOAK_SECURITY_MODE=HTTPS_HOSTED ADMIN_PORTAL_URL="https://${public_domain}" \
