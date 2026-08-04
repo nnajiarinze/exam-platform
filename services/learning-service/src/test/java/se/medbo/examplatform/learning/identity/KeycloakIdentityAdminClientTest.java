@@ -35,6 +35,13 @@ class KeycloakIdentityAdminClientTest {
                 "attributes":{"resendDomainStatus":"verified","resendSpfStatus":"verified",
                 "resendDkimStatus":"verified","emailDmarcStatus":"present","lastSmtpTestAt":"2026-08-03T10:00:00Z"}}
                 """));
+        server.createContext("/admin/realms/exam-platform/identity-provider/instances", exchange -> respond(exchange, 200, """
+            [{"alias":"google","enabled":true,"config":{"clientId":"configured-google-client","clientSecret":"configured-google-secret"}}]
+            """));
+        server.createContext("/authentication/flows", exchange -> respond(exchange, 200, """
+            [{"id":"flow-1","alias":"first broker login"}]
+            """));
+        server.createContext("/authentication/flows/flow-1/executions", exchange -> respond(exchange, 200, "[]"));
         server.start();
     }
 
@@ -69,6 +76,16 @@ class KeycloakIdentityAdminClientTest {
         assertThat(configured.dkimStatus()).isEqualTo("verified");
         assertThat(configured.dmarcStatus()).isEqualTo("present");
         assertThat(configured.toString()).doesNotContain("protected-smtp-secret");
+    }
+
+    @Test void returnsProviderStatusWithSafeConfigurationFlags() {
+        var status = client(true, "protected-secret").providerStatus("google");
+
+        assertThat(status.present()).isTrue();
+        assertThat(status.enabled()).isTrue();
+        assertThat(status.clientIdConfigured()).isTrue();
+        assertThat(status.clientSecretConfigured()).isTrue();
+        assertThat(status.unsafeAutoLinkPresent()).isFalse();
     }
 
     private KeycloakIdentityAdminClient client(boolean enabled, String secret) {

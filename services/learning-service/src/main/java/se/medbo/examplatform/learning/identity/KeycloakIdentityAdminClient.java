@@ -59,6 +59,26 @@ final class KeycloakIdentityAdminClient {
                 nullable(attributes.path("lastResetEmailAt").asText()));
     }
 
+    ProviderStatus providerStatus(String alias) {
+        JsonNode providers = json("GET", "admin/realms/" + encode(realm) + "/identity-provider/instances", null, Set.of(200));
+        JsonNode provider = null;
+        for (JsonNode candidate : providers) {
+            if (alias.equals(candidate.path("alias").asText())) {
+                provider = candidate;
+                break;
+            }
+        }
+        if (provider == null || provider.isNull()) {
+            return new ProviderStatus(alias, false, false, false, false, false);
+        }
+        JsonNode config = provider.path("config");
+        String clientId = config.path("clientId").asText("");
+        String clientSecret = config.path("clientSecret").asText("");
+        boolean unsafeAutoLinkPresent = firstBrokerAutoLinkPresent();
+        return new ProviderStatus(alias, true, provider.path("enabled").asBoolean(false),
+                isProtectedValue(clientId), isProtectedValue(clientSecret), unsafeAutoLinkPresent);
+    }
+
     Methods methods(String userId) {
         JsonNode identities = json("GET", adminUser(userId) + "/federated-identity", null, Set.of(200));
         JsonNode credentials = json("GET", adminUser(userId) + "/credentials", null, Set.of(200));
@@ -80,6 +100,27 @@ final class KeycloakIdentityAdminClient {
     }
 
     void deleteUser(String userId) { request("DELETE", adminUser(userId), null, Set.of(204, 404)); }
+
+    private boolean firstBrokerAutoLinkPresent() {
+        JsonNode flows = json("GET", "authentication/flows", null, Set.of(200));
+        String flowId = null;
+        for (JsonNode flow : flows) {
+            if ("first broker login".equals(flow.path("alias").asText())) {
+                flowId = flow.path("id").asText();
+                break;
+            }
+        }
+        if (flowId == null || flowId.isBlank()) {
+            return true;
+        }
+        JsonNode executions = json("GET", "authentication/flows/" + encode(flowId) + "/executions", null, Set.of(200));
+        for (JsonNode execution : executions) {
+            if ("idp-auto-link".equals(execution.path("providerId").asText())) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     private String adminUser(String userId) { return "admin/realms/" + encode(realm) + "/users/" + encode(userId); }
 
@@ -126,6 +167,7 @@ final class KeycloakIdentityAdminClient {
 
     private void ensureReady() { if (!enabled) throw new IdentityAdminException("IDENTITY_MANAGEMENT_NOT_CONFIGURED"); }
     private static String encode(String value) { return URLEncoder.encode(value, StandardCharsets.UTF_8).replace("+", "%20"); }
+    private static boolean isProtectedValue(String value) { return value != null && !value.isBlank() && !"CHANGE_ME".equals(value); }
 
     record Methods(boolean password, List<String> providers) {}
     record EmailConfiguration(boolean configured, String sender, String replyTo, String domainStatus, String spfStatus,
@@ -135,6 +177,8 @@ final class KeycloakIdentityAdminClient {
             return new EmailConfiguration(false, "", "", "UNKNOWN", "UNKNOWN", "UNKNOWN", "UNKNOWN", null, null, null);
         }
     }
+    record ProviderStatus(String alias, boolean present, boolean enabled, boolean clientIdConfigured,
+                          boolean clientSecretConfigured, boolean unsafeAutoLinkPresent) {}
     private static String nullable(String value) { return value == null || value.isBlank() ? null : value; }
     private record AccessToken(String value, Instant expiresAt) {}
     static final class IdentityAdminException extends RuntimeException {

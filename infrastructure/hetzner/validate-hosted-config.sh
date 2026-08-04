@@ -4,9 +4,12 @@ REPOSITORY_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 COMPOSE_FILE="${REPOSITORY_ROOT}/docker-compose.hosted.yml"
 ENV_FILE="${1:-${REPOSITORY_ROOT}/.env.hosted.example}"
 
-docker compose --env-file "${ENV_FILE}" -f "${COMPOSE_FILE}" config --quiet
-rendered="$(docker compose --env-file "${ENV_FILE}" -f "${COMPOSE_FILE}" config)"
-override_rendered="$(GATEWAY_CONFIG_TEMPLATE=./infrastructure/gateway/bootstrap-http.conf.template \
+compose_config() {
+  env -i PATH="${PATH}" HOME="${HOME}" COMPOSE_DISABLE_ENV_FILE=1 "$@"
+}
+compose_config docker compose --env-file "${ENV_FILE}" -f "${COMPOSE_FILE}" config --quiet
+rendered="$(compose_config docker compose --env-file "${ENV_FILE}" -f "${COMPOSE_FILE}" config)"
+override_rendered="$(compose_config env GATEWAY_CONFIG_TEMPLATE=./infrastructure/gateway/bootstrap-http.conf.template \
   docker compose --env-file "${ENV_FILE}" -f "${COMPOSE_FILE}" config)"
 
 [[ "$(grep -cE '^[[:space:]]+published:' <<<"${rendered}")" -eq 2 ]] || {
