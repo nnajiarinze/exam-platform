@@ -17,6 +17,9 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 
 class AuthenticationReadinessServiceTest {
     private HttpServer server;
+    private final java.util.concurrent.atomic.AtomicReference<String> instancesResponse = new java.util.concurrent.atomic.AtomicReference<>("""
+            [{"alias":"google","enabled":true,"config":{"clientId":"configured-google-client","clientSecret":"configured-google-secret"}}]
+            """);
 
     @BeforeEach void start() throws IOException {
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
@@ -29,9 +32,7 @@ class AuthenticationReadinessServiceTest {
                 "attributes":{"resendDomainStatus":"verified","resendSpfStatus":"verified",
                 "resendDkimStatus":"verified","emailDmarcStatus":"present","lastSmtpTestAt":"2026-08-03T10:00:00Z"}}
                 """, "application/json"));
-        server.createContext("/admin/realms/exam-platform/identity-provider/instances", exchange -> respond(exchange, 200, """
-                [{"alias":"google","enabled":true,"config":{"clientId":"configured-google-client","clientSecret":"configured-google-secret"}}]
-                """, "application/json"));
+        server.createContext("/admin/realms/exam-platform/identity-provider/instances", exchange -> respond(exchange, 200, instancesResponse.get(), "application/json"));
         server.createContext("/authentication/flows", exchange -> respond(exchange, 200, "[{\"id\":\"flow-1\",\"alias\":\"first broker login\"}]", "application/json"));
         server.createContext("/authentication/flows/flow-1/executions", exchange -> respond(exchange, 200, "[]", "application/json"));
         server.start();
@@ -66,6 +67,80 @@ class AuthenticationReadinessServiceTest {
         assertThat(google.failureClassification()).isEqualTo("BROKER_RETURNED_INTERACTIVE_LOGIN");
     }
 
+    @Test void reportsOperationalWhenAppleRedirectIsReached() {
+        server.createContext("/realms/exam-platform/protocol/openid-connect/auth", exchange ->
+                redirect(exchange, "https://appleid.apple.com/auth/authorize?client_id=test-services-id&redirect_uri=" +
+                        urlEncode(issuer() + "/broker/apple/endpoint")));
+
+        var service = appleService(true, true, true);
+        var readiness = service.get();
+        var apple = readiness.providers().stream().filter(provider -> provider.alias().equals("apple")).findFirst().orElseThrow();
+
+        assertThat(apple.configurationState()).isEqualTo("CONFIGURED");
+        assertThat(apple.operationalState()).isEqualTo("OPERATIONAL");
+        assertThat(apple.failureClassification()).isEqualTo("APPLE_REDIRECT_REACHED");
+        assertThat(apple.redirectHost()).isEqualTo("appleid.apple.com");
+    }
+
+    @Test void reportsDegradedWhenAppleBrokerReturnsBadRequest() {
+        server.createContext("/realms/exam-platform/protocol/openid-connect/auth", exchange ->
+                respond(exchange, 400, "{\"error\":\"invalid_request\"}", "application/json"));
+
+        var service = appleService(true, true, true);
+        var readiness = service.get();
+        var apple = readiness.providers().stream().filter(provider -> provider.alias().equals("apple")).findFirst().orElseThrow();
+
+        assertThat(apple.configurationState()).isEqualTo("CONFIGURED");
+        assertThat(apple.operationalState()).isEqualTo("DEGRADED");
+        assertThat(apple.failureClassification()).isEqualTo("BROKER_SESSION_FAILED");
+    }
+
+    @Test void reportsDisabledWhenAppleFlagIsFalse() {
+        var service = appleService(false, true, true);
+        var readiness = service.get();
+        var apple = readiness.providers().stream().filter(provider -> provider.alias().equals("apple")).findFirst().orElseThrow();
+
+        assertThat(apple.enabled()).isFalse();
+        assertThat(apple.configurationState()).isEqualTo("DISABLED");
+        assertThat(apple.failureClassification()).isEqualTo("PROVIDER_DISABLED");
+    }
+
+    @Test void reportsMisconfiguredWhenAppleProviderMissingInKeycloak() {
+        var service = appleService(true, false, true);
+        var readiness = service.get();
+        var apple = readiness.providers().stream().filter(provider -> provider.alias().equals("apple")).findFirst().orElseThrow();
+
+        assertThat(apple.configurationState()).isEqualTo("MISCONFIGURED");
+        assertThat(apple.failureClassification()).isEqualTo("PROVIDER_MISSING");
+    }
+
+    @Test void googleReadinessBehaviorIsUnaffectedByAppleWiring() {
+        server.createContext("/realms/exam-platform/protocol/openid-connect/auth", exchange ->
+                redirect(exchange, "https://accounts.google.com/o/oauth2/v2/auth?client_id=test-client&redirect_uri=" +
+                        urlEncode(issuer() + "/broker/google/endpoint")));
+
+        var service = appleService(true, true, true);
+        var readiness = service.get();
+        var google = readiness.providers().stream().filter(provider -> provider.alias().equals("google")).findFirst().orElseThrow();
+
+        assertThat(google.configurationState()).isEqualTo("CONFIGURED");
+        assertThat(google.operationalState()).isEqualTo("OPERATIONAL");
+    }
+
+    @Test void readinessResponseExposesNoAppleSecrets() {
+        server.createContext("/realms/exam-platform/protocol/openid-connect/auth", exchange ->
+                redirect(exchange, "https://appleid.apple.com/auth/authorize?client_id=test-services-id&redirect_uri=" +
+                        urlEncode(issuer() + "/broker/apple/endpoint")));
+
+        var service = appleService(true, true, true);
+        var readiness = service.get();
+        var apple = readiness.providers().stream().filter(provider -> provider.alias().equals("apple")).findFirst().orElseThrow();
+
+        // Only a short SHA-256 fingerprint of the client id may be exposed; never the raw Services ID, key, or team id.
+        assertThat(apple.clientIdFingerprint()).isNotNull().hasSize(12);
+        assertThat(readiness.toString()).doesNotContain("privateKey").doesNotContain("teamId").doesNotContain("keyId");
+    }
+
     private AuthenticationReadinessService service(boolean googleEnabled) {
         var jdbc = mock(JdbcClient.class);
         var firstStatement = mock(JdbcClient.StatementSpec.class);
@@ -84,7 +159,42 @@ class AuthenticationReadinessServiceTest {
         var keycloak = new KeycloakIdentityAdminClient(new ObjectMapper(), "http://127.0.0.1:" + server.getAddress().getPort(),
                 "exam-platform", "identity-management-bff", "protected-secret", true);
         var probe = new GoogleBrokerOperationalProbe();
-        return new AuthenticationReadinessService(jdbc, keycloak, issuer(), probe, googleEnabled, false);
+        return new AuthenticationReadinessService(jdbc, keycloak, issuer(), probe, new AppleBrokerOperationalProbe(), googleEnabled, false);
+    }
+
+    /**
+     * Builds a service with Google and Apple both wired, controlling whether the
+     * Apple identity provider is enabled at the application level and whether it
+     * is present/enabled in the simulated Keycloak identity-provider/instances response.
+     */
+    private AuthenticationReadinessService appleService(boolean appleFlagEnabled, boolean applePresentInKeycloak, boolean appleEnabledInKeycloak) {
+        var jdbc = mock(JdbcClient.class);
+        var firstStatement = mock(JdbcClient.StatementSpec.class);
+        var secondStatement = mock(JdbcClient.StatementSpec.class);
+        @SuppressWarnings("unchecked") JdbcClient.MappedQuerySpec<Long> firstQuery = (JdbcClient.MappedQuerySpec<Long>) mock(JdbcClient.MappedQuerySpec.class);
+        @SuppressWarnings("unchecked") JdbcClient.MappedQuerySpec<Long> secondQuery = (JdbcClient.MappedQuerySpec<Long>) mock(JdbcClient.MappedQuerySpec.class);
+        when(jdbc.sql("SELECT count(*) FROM identity_management_audit WHERE outcome='FAILED' AND created_at>=now()-interval '24 hours'"))
+                .thenReturn(firstStatement);
+        when(jdbc.sql("SELECT count(*) FROM identity_management_audit WHERE action='UNLINK_PROVIDER' AND outcome='REJECTED' AND created_at>=now()-interval '24 hours'"))
+                .thenReturn(secondStatement);
+        when(firstStatement.query(Long.class)).thenReturn(firstQuery);
+        when(secondStatement.query(Long.class)).thenReturn(secondQuery);
+        when(firstQuery.single()).thenReturn(0L);
+        when(secondQuery.single()).thenReturn(0L);
+
+        StringBuilder instances = new StringBuilder("[{\"alias\":\"google\",\"enabled\":true,\"config\":{\"clientId\":\"configured-google-client\",\"clientSecret\":\"configured-google-secret\"}}");
+        if (applePresentInKeycloak) {
+            instances.append(",{\"alias\":\"apple\",\"enabled\":").append(appleEnabledInKeycloak)
+                    .append(",\"config\":{\"clientId\":\"configured-apple-services-id\",\"clientSecret\":\"configured-apple-client-secret\"}}");
+        }
+        instances.append(']');
+        instancesResponse.set(instances.toString());
+
+        var keycloak = new KeycloakIdentityAdminClient(new ObjectMapper(), "http://127.0.0.1:" + server.getAddress().getPort(),
+                "exam-platform", "identity-management-bff", "protected-secret", true);
+        var googleProbe = new GoogleBrokerOperationalProbe();
+        var appleProbe = new AppleBrokerOperationalProbe();
+        return new AuthenticationReadinessService(jdbc, keycloak, issuer(), googleProbe, appleProbe, true, appleFlagEnabled);
     }
 
     private String issuer() {
