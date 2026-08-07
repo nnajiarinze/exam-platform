@@ -136,7 +136,7 @@ if [[ "${identity_management_enabled}" == true && -n "${identity_bff_client_secr
   fi
   service_account_user="$(kcadm get "clients/${identity_bff_id}/service-account-user" -r exam-platform | jq -er .id)"
   realm_management_id="$(client_id realm-management)"
-  for role in view-users manage-users view-realm; do
+  for role in view-users manage-users view-realm view-identity-providers; do
     role_json="$(kcadm get "clients/${realm_management_id}/roles/${role}" -r exam-platform)"
     if ! kcadm get "users/${service_account_user}/role-mappings/clients/${realm_management_id}" -r exam-platform | jq -e --arg role "${role}" 'any(.name==$role)' >/dev/null; then
       printf '[%s]' "${role_json}" | docker exec -i "${container}" /opt/keycloak/bin/kcadm.sh create \
