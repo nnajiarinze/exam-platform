@@ -17,9 +17,9 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 
 class AuthenticationReadinessServiceTest {
     private HttpServer server;
-    private final java.util.concurrent.atomic.AtomicReference<String> instancesResponse = new java.util.concurrent.atomic.AtomicReference<>("""
-            [{"alias":"google","enabled":true,"config":{"clientId":"configured-google-client","clientSecret":"configured-google-secret"}}]
-            """);
+    private final java.util.concurrent.atomic.AtomicReference<String> googleInstance = new java.util.concurrent.atomic.AtomicReference<>(
+            "{\"alias\":\"google\",\"enabled\":true,\"config\":{\"clientId\":\"configured-google-client\",\"clientSecret\":\"configured-google-secret\"}}");
+    private final java.util.concurrent.atomic.AtomicReference<String> appleInstance = new java.util.concurrent.atomic.AtomicReference<>(null);
 
     @BeforeEach void start() throws IOException {
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
@@ -32,7 +32,16 @@ class AuthenticationReadinessServiceTest {
                 "attributes":{"resendDomainStatus":"verified","resendSpfStatus":"verified",
                 "resendDkimStatus":"verified","emailDmarcStatus":"present","lastSmtpTestAt":"2026-08-03T10:00:00Z"}}
                 """, "application/json"));
-        server.createContext("/admin/realms/exam-platform/identity-provider/instances", exchange -> respond(exchange, 200, instancesResponse.get(), "application/json"));
+        server.createContext("/admin/realms/exam-platform/identity-provider/instances", exchange -> {
+            String path = exchange.getRequestURI().getPath();
+            String alias = path.substring(path.lastIndexOf('/') + 1);
+            String body = "google".equals(alias) ? googleInstance.get() : "apple".equals(alias) ? appleInstance.get() : null;
+            if (body == null) {
+                respond(exchange, 404, "{\"error\":\"not found\"}", "application/json");
+            } else {
+                respond(exchange, 200, body, "application/json");
+            }
+        });
         server.createContext("/authentication/flows", exchange -> respond(exchange, 200, "[{\"id\":\"flow-1\",\"alias\":\"first broker login\"}]", "application/json"));
         server.createContext("/authentication/flows/flow-1/executions", exchange -> respond(exchange, 200, "[]", "application/json"));
         server.start();
@@ -182,13 +191,13 @@ class AuthenticationReadinessServiceTest {
         when(firstQuery.single()).thenReturn(0L);
         when(secondQuery.single()).thenReturn(0L);
 
-        StringBuilder instances = new StringBuilder("[{\"alias\":\"google\",\"enabled\":true,\"config\":{\"clientId\":\"configured-google-client\",\"clientSecret\":\"configured-google-secret\"}}");
+        googleInstance.set("{\"alias\":\"google\",\"enabled\":true,\"config\":{\"clientId\":\"configured-google-client\",\"clientSecret\":\"configured-google-secret\"}}");
         if (applePresentInKeycloak) {
-            instances.append(",{\"alias\":\"apple\",\"enabled\":").append(appleEnabledInKeycloak)
-                    .append(",\"config\":{\"clientId\":\"configured-apple-services-id\",\"clientSecret\":\"configured-apple-client-secret\"}}");
+            appleInstance.set("{\"alias\":\"apple\",\"enabled\":" + appleEnabledInKeycloak
+                    + ",\"config\":{\"clientId\":\"configured-apple-services-id\",\"clientSecret\":\"configured-apple-client-secret\"}}");
+        } else {
+            appleInstance.set(null);
         }
-        instances.append(']');
-        instancesResponse.set(instances.toString());
 
         var keycloak = new KeycloakIdentityAdminClient(new ObjectMapper(), "http://127.0.0.1:" + server.getAddress().getPort(),
                 "exam-platform", "identity-management-bff", "protected-secret", true);

@@ -35,9 +35,16 @@ class KeycloakIdentityAdminClientTest {
                 "attributes":{"resendDomainStatus":"verified","resendSpfStatus":"verified",
                 "resendDkimStatus":"verified","emailDmarcStatus":"present","lastSmtpTestAt":"2026-08-03T10:00:00Z"}}
                 """));
-        server.createContext("/admin/realms/exam-platform/identity-provider/instances", exchange -> respond(exchange, 200, """
-            [{"alias":"google","enabled":true,"config":{"clientId":"configured-google-client","clientSecret":"configured-google-secret"}}]
-            """));
+        server.createContext("/admin/realms/exam-platform/identity-provider/instances", exchange -> {
+            String path = exchange.getRequestURI().getPath();
+            if (path.endsWith("/google")) {
+                respond(exchange, 200, """
+                    {"alias":"google","enabled":true,"config":{"clientId":"configured-google-client","clientSecret":"configured-google-secret"}}
+                    """);
+            } else {
+                respond(exchange, 404, "{\"error\":\"not found\"}");
+            }
+        });
         server.createContext("/authentication/flows", exchange -> respond(exchange, 200, """
             [{"id":"flow-1","alias":"first broker login"}]
             """));
@@ -100,9 +107,16 @@ class KeycloakIdentityAdminClientTest {
 
     @Test void mapsAppleProviderStatusWithoutUsingEmailAsIdentitySignal() {
         server.removeContext("/admin/realms/exam-platform/identity-provider/instances");
-        server.createContext("/admin/realms/exam-platform/identity-provider/instances", exchange -> respond(exchange, 200, """
-            [{"alias":"apple","enabled":true,"config":{"clientId":"apple-services-id","clientSecret":"apple-private-key"}}]
-            """));
+        server.createContext("/admin/realms/exam-platform/identity-provider/instances", exchange -> {
+            String path = exchange.getRequestURI().getPath();
+            if (path.endsWith("/apple")) {
+                respond(exchange, 200, """
+                    {"alias":"apple","enabled":true,"config":{"clientId":"apple-services-id","clientSecret":"apple-private-key"}}
+                    """);
+            } else {
+                respond(exchange, 404, "{\"error\":\"not found\"}");
+            }
+        });
 
         var status = client(true, "protected-secret").providerStatus("apple");
 
@@ -112,6 +126,14 @@ class KeycloakIdentityAdminClientTest {
         assertThat(status.clientIdConfigured()).isTrue();
         assertThat(status.clientSecretConfigured()).isTrue();
         assertThat(status.unsafeAutoLinkPresent()).isFalse();
+    }
+
+    @Test void treatsMissingProviderAsNotPresentWhenPerAliasEndpointReturns404() {
+        var status = client(true, "protected-secret").providerStatus("apple");
+
+        assertThat(status.alias()).isEqualTo("apple");
+        assertThat(status.present()).isFalse();
+        assertThat(status.enabled()).isFalse();
     }
 
     private KeycloakIdentityAdminClient client(boolean enabled, String secret) {

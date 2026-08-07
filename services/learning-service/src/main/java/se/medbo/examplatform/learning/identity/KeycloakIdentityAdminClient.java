@@ -60,15 +60,14 @@ final class KeycloakIdentityAdminClient {
     }
 
     ProviderStatus providerStatus(String alias) {
-        JsonNode providers = json("GET", "admin/realms/" + encode(realm) + "/identity-provider/instances", null, Set.of(200));
-        JsonNode provider = null;
-        for (JsonNode candidate : providers) {
-            if (alias.equals(candidate.path("alias").asText())) {
-                provider = candidate;
-                break;
-            }
-        }
-        if (provider == null || provider.isNull()) {
+        // Query the per-alias resource directly instead of enumerating the full
+        // identity-provider/instances collection. Some Keycloak deployments/proxies
+        // reject or 404 the collection GET even when the fine-grained per-alias
+        // resource is reachable and correctly configured, so treating a 404 here
+        // as "provider not present" avoids a false MISCONFIGURED reading.
+        JsonNode provider = json("GET", "admin/realms/" + encode(realm) + "/identity-provider/instances/" + encode(alias),
+                null, Set.of(200, 404));
+        if (provider == null || provider.isNull() || provider.isMissingNode() || provider.path("alias").isMissingNode()) {
             return new ProviderStatus(alias, false, false, false, false, false);
         }
         JsonNode config = provider.path("config");
