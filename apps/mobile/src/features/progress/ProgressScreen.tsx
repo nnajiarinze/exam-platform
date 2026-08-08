@@ -222,8 +222,7 @@ export function ProgressScreen({
                 label="Practice this topic"
                 variant="accent"
                 onPress={() =>
-                  navigation.navigate("PracticeSetup", {
-                    mode: "TOPIC",
+                  navigation.navigate("TopicPracticeStart", {
                     topicId: weakest[0].topicId,
                     topicName: topicNames[weakest[0].topicId],
                   })

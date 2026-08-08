@@ -5,7 +5,7 @@ import {
   ProfileScreen,
   SettingsScreen,
 } from "../features/settings/SettingsScreen";
-import { PracticeSetupScreen } from "../features/practice/PracticeSetupScreen";
+import { TopicPracticeStartScreen } from "../features/practice/TopicPracticeStartScreen";
 import { QuestionScreen } from "../features/practice/QuestionScreen";
 import { SessionCompleteScreen } from "../features/practice/SessionCompleteScreen";
 import { ProgressScreen } from "../features/progress/ProgressScreen";
@@ -146,9 +146,9 @@ export function RootNavigator() {
         options={{ headerShown: false }}
       />
       <Stack.Screen
-        name="PracticeSetup"
-        component={PracticeSetupScreen}
-        options={{ title: "Practice setup" }}
+        name="TopicPracticeStart"
+        component={TopicPracticeStartScreen}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="Question"

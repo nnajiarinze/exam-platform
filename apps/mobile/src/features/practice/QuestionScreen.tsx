@@ -11,7 +11,7 @@ import { friendlyError } from "../../api/errors";
 import { learningApi } from "../../api/learningApi";
 import { useAppStore } from "../../app/store";
 import { Screen } from "../../components/Screen";
-import { Button, ErrorState, Icon, Loading } from "../../components/ui";
+import { Button, ErrorState, Icon, Loading, ProgressBar } from "../../components/ui";
 import type { RootStackParamList } from "../../navigation/types";
 import { theme } from "../../theme";
 import { QuestionCard } from "./QuestionCard";
@@ -128,8 +128,12 @@ export function QuestionScreen({
           <Text numberOfLines={1} style={styles.category}>
             {category?.toUpperCase() ?? "PRACTICE"}
           </Text>
-          <View style={styles.headerSpacer} />
+          <Text style={styles.position}>{query.data.sequenceNumber} / {query.data.totalQuestionCount}</Text>
         </View>
+        <ProgressBar
+          value={query.data.sequenceNumber / query.data.totalQuestionCount * 100}
+          accessibilityLabel={`Question ${query.data.sequenceNumber} of ${query.data.totalQuestionCount}`}
+        />
         <QuestionCard
           question={query.data}
           category={category}
@@ -190,7 +194,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1.4,
     maxWidth: "70%",
   },
-  headerSpacer: { width: 44 },
+  position: { color: theme.colors.text, minWidth: 44, textAlign: "right", ...theme.typography.label },
   footer: {
     backgroundColor: theme.colors.background,
     borderTopColor: theme.colors.divider,

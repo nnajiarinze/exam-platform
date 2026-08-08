@@ -208,8 +208,7 @@ export function HomeScreen({
             }
             onPress={() =>
               weakest
-                ? navigation.navigate("PracticeSetup", {
-                    mode: "TOPIC",
+                ? navigation.navigate("TopicPracticeStart", {
                     topicId: weakest.topicId,
                     topicName: topicNames[weakest.topicId],
                   })

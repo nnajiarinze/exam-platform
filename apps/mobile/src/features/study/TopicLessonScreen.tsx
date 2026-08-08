@@ -195,8 +195,7 @@ export function TopicLessonScreen({
         label={reviewMode ? "Practice again" : "Practice this topic"}
         variant="secondary"
         onPress={() =>
-          navigation.navigate("PracticeSetup", {
-            mode: "TOPIC",
+          navigation.navigate("TopicPracticeStart", {
             topicId: lesson.topicId,
             topicName: lesson.title,
           })

@@ -159,8 +159,7 @@ export function StudyTopicsScreen({
                   <Button
                     label={practiceLabel(state)}
                     onPress={() =>
-                      navigation.navigate("PracticeSetup", {
-                        mode: "TOPIC",
+                      navigation.navigate("TopicPracticeStart", {
                         topicId: topic.topicId,
                         topicName: topic.title,
                       })

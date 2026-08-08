@@ -3,7 +3,7 @@ import type {
   AnswerResult,
   PracticeQuestion,
 } from "../../api/generated/types.gen";
-import { Icon, ProgressBar, StatusBadge } from "../../components/ui";
+import { Icon, StatusBadge } from "../../components/ui";
 import { AnswerOption } from "../../components/design";
 import { theme } from "../../theme";
 
@@ -22,21 +22,8 @@ export function QuestionCard({
   submitting?: boolean;
   onSelect: (id: string) => void;
 }) {
-  const percent = Math.round(
-    (question.sequenceNumber / question.totalQuestionCount) * 100,
-  );
   return (
     <View style={styles.container}>
-      <View style={styles.progressLabels}>
-        <Text style={styles.progressStrong}>
-          QUESTION {question.sequenceNumber} OF {question.totalQuestionCount}
-        </Text>
-        <Text style={styles.progressText}>{percent}% complete</Text>
-      </View>
-      <ProgressBar
-        value={percent}
-        accessibilityLabel={`Question ${question.sequenceNumber} of ${question.totalQuestionCount}`}
-      />
       <View style={styles.questionBlock}>
         {category && <StatusBadge label={category.toUpperCase()} />}
         <Text accessibilityRole="header" style={styles.prompt}>
@@ -105,17 +92,6 @@ export function QuestionCard({
 }
 const styles = StyleSheet.create({
   container: { gap: theme.spacing.sm },
-  progressLabels: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  progressStrong: {
-    color: theme.colors.primary,
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  progressText: { color: theme.colors.muted, ...theme.typography.label },
   questionBlock: {
     gap: theme.spacing.sm,
     marginBottom: theme.spacing.sm,

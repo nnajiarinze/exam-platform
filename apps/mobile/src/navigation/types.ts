@@ -1,5 +1,3 @@
-import type { PracticeMode } from "../api/generated/types.gen";
-
 export type RootStackParamList = {
   Welcome: undefined;
   Login: undefined;
@@ -20,11 +18,7 @@ export type RootStackParamList = {
     reviewMode?: boolean;
     startAtBeginning?: boolean;
   };
-  PracticeSetup: {
-    mode: Extract<PracticeMode, "TOPIC" | "MIXED">;
-    topicId?: string;
-    topicName?: string;
-  };
+  TopicPracticeStart: { topicId: string; topicName: string };
   Question: { sessionId: string };
   SessionComplete: { total: number };
   Progress: undefined;
