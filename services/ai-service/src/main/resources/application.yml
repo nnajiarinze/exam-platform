@@ -100,5 +100,5 @@ ai:
     paid-model: ${OPENROUTER_PAID_MODEL:}
     paid-default-max-output-tokens: ${OPENROUTER_PAID_DEFAULT_MAX_OUTPUT_TOKENS:4096}
     http-referer: ${OPENROUTER_HTTP_REFERER:}
-    app-title: ${OPENROUTER_APP_TITLE:Svea Study}
+    app-title: ${OPENROUTER_APP_TITLE:Medbo}
     timeout-seconds: ${OPENROUTER_TIMEOUT_SECONDS:45}

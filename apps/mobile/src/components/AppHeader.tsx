@@ -4,7 +4,7 @@ import { Icon } from './ui';
 
 export function AppHeader({ onBack, action = 'profile', onAction }: { onBack?: () => void; action?: 'profile' | 'search' | 'help' | 'none'; onAction?: () => void }) {
   return <View style={styles.header}>
-    <View style={styles.leading}>{onBack && <Pressable accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={onBack} style={styles.iconButton}><Icon name="back" size={36} /></Pressable>}<Text accessibilityRole="header" style={styles.brand}>Svea Study</Text></View>
+    <View style={styles.leading}>{onBack && <Pressable accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={onBack} style={styles.iconButton}><Icon name="back" size={36} /></Pressable>}<Text accessibilityRole="header" style={styles.brand}>Medbo</Text></View>
     {action !== 'none' && <Pressable accessibilityRole="button" accessibilityLabel={action === 'search' ? 'Search' : action === 'help' ? 'Help' : 'Profile'} hitSlop={10} onPress={onAction} style={styles.iconButton}><Icon name={action} size={action === 'help' ? 22 : 28} color={theme.colors.text} /></Pressable>}
   </View>;
 }

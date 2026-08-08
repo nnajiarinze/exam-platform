@@ -27,7 +27,7 @@ import java.util.concurrent.Flow;
 
 class ResendEmailSenderTest {
     private final HttpClient client=mock(HttpClient.class);private final ObjectMapper mapper=new ObjectMapper();
-    private ResendEmailSender sender(int retries){return new ResendEmailSender(client,mapper,Clock.fixed(Instant.parse("2026-07-21T10:00:00Z"),ZoneOffset.UTC),new SimpleMeterRegistry(),"https://api.resend.com","secret-test-key","noreply@example.test","Svea Study","support@example.test",Duration.ofSeconds(2),retries);}
+    private ResendEmailSender sender(int retries){return new ResendEmailSender(client,mapper,Clock.fixed(Instant.parse("2026-07-21T10:00:00Z"),ZoneOffset.UTC),new SimpleMeterRegistry(),"https://api.resend.com","secret-test-key","noreply@example.test","Medbo","support@example.test",Duration.ofSeconds(2),retries);}
     private TransactionalEmail email(){return new TransactionalEmail("learner@example.test","Verify account","Plain text","<p>HTML</p>","verification");}
     @SuppressWarnings("unchecked") private HttpResponse<String> response(int status,String body)throws Exception{var response=(HttpResponse<String>)mock(HttpResponse.class);when(response.statusCode()).thenReturn(status);when(response.body()).thenReturn(body);return response;}
 
@@ -37,7 +37,7 @@ class ResendEmailSenderTest {
         var request=ArgumentCaptor.forClass(HttpRequest.class);verify(client).send(request.capture(),any(HttpResponse.BodyHandler.class));
         assertThat(request.getValue().headers().firstValue("Authorization")).hasValue("Bearer secret-test-key");
         var payload=mapper.readTree(body(request.getValue()));
-        assertThat(payload.path("from").asText()).isEqualTo("Svea Study <noreply@example.test>");
+        assertThat(payload.path("from").asText()).isEqualTo("Medbo <noreply@example.test>");
         assertThat(payload.path("reply_to").asText()).isEqualTo("support@example.test");
         assertThat(payload.path("text").asText()).isEqualTo("Plain text");
         assertThat(payload.path("html").asText()).isEqualTo("<p>HTML</p>");
@@ -59,6 +59,6 @@ class ResendEmailSenderTest {
         assertThatThrownBy(()->new ResendEmailSender(client,mapper,Clock.systemUTC(),new SimpleMeterRegistry(),"https://api.resend.com","","from@example.test","Svea","",Duration.ofSeconds(1),0)).isInstanceOf(IllegalStateException.class).hasMessageContaining("RESEND_API_KEY");
         assertThatThrownBy(()->new TransactionalEmail("invalid","subject","text","<p>html</p>","key")).isInstanceOf(IllegalArgumentException.class);
     }
-    @Test void escapesTemplateVariables(){assertThat(AuthenticationEmailTemplate.verification("a@example.test","<Admin>","https://example.test/?a=1&b=2").htmlBody()).contains("&lt;Admin&gt;").contains("a=1&amp;b=2");}
+    @Test void escapesTemplateVariables(){var email=AuthenticationEmailTemplate.verification("a@example.test","<Admin>","https://example.test/?a=1&b=2");assertThat(email.subject()).contains("Medbo");assertThat(email.htmlBody()).contains("&lt;Admin&gt;").contains("a=1&amp;b=2");}
     private static String body(HttpRequest request){var output=new ByteArrayOutputStream();request.bodyPublisher().orElseThrow().subscribe(new Flow.Subscriber<>(){public void onSubscribe(Flow.Subscription subscription){subscription.request(Long.MAX_VALUE);}public void onNext(ByteBuffer item){var bytes=new byte[item.remaining()];item.get(bytes);output.writeBytes(bytes);}public void onError(Throwable throwable){throw new AssertionError(throwable);}public void onComplete(){}});return output.toString(StandardCharsets.UTF_8);}
 }

@@ -62,7 +62,7 @@ email:
   resend:
     api-key: ${RESEND_API_KEY:}
     from-email: ${RESEND_FROM_EMAIL:}
-    from-name: ${RESEND_FROM_NAME:Svea Study}
+    from-name: ${RESEND_FROM_NAME:Medbo}
     reply-to-email: ${RESEND_REPLY_TO_EMAIL:}
     api-base-url: ${RESEND_API_BASE_URL:https://api.resend.com}
     timeout: ${RESEND_TIMEOUT:10s}

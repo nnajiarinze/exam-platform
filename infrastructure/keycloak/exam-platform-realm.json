@@ -2,7 +2,7 @@
   "realm": "exam-platform",
   "enabled": true,
   "sslRequired": "none",
-  "displayName": "Svea Study",
+  "displayName": "Medbo",
   "loginTheme": "svea-study",
   "internationalizationEnabled": true,
   "supportedLocales": ["sv", "en"],
@@ -16,7 +16,7 @@
   "defaultRoles": ["LEARNER"],
   "smtpServer": {
     "from": "no-reply@svea-study.local",
-    "fromDisplayName": "Svea Study",
+    "fromDisplayName": "Medbo",
     "host": "mailpit",
     "port": "1025",
     "ssl": "false",
@@ -29,7 +29,7 @@
   ]},
   "clients": [
     {
-      "clientId": "mobile-app", "name": "Svea Study mobile", "publicClient": true,
+      "clientId": "mobile-app", "name": "Medbo mobile", "publicClient": true,
       "standardFlowEnabled": true, "directAccessGrantsEnabled": false,
       "redirectUris": [
         "sveastudy://auth/callback",

@@ -14,7 +14,7 @@ class EmailConfiguration {
     @Bean Clock emailClock(){return Clock.systemUTC();}
     @Bean TransactionalEmailSender transactionalEmailSender(ObjectMapper mapper,MeterRegistry metrics,Clock clock,
             @Value("${email.provider:logging}")String provider,@Value("${email.resend.api-key:}")String apiKey,
-            @Value("${email.resend.from-email:}")String fromEmail,@Value("${email.resend.from-name:Svea Study}")String fromName,
+            @Value("${email.resend.from-email:}")String fromEmail,@Value("${email.resend.from-name:Medbo}")String fromName,
             @Value("${email.resend.reply-to-email:}")String replyTo,@Value("${email.resend.api-base-url:https://api.resend.com}")String baseUrl,
             @Value("${email.resend.timeout:10s}")Duration timeout,@Value("${email.resend.max-retries:2}")int maxRetries){
         if("logging".equalsIgnoreCase(provider)||"fake".equalsIgnoreCase(provider))return new LoggingEmailSender(clock);

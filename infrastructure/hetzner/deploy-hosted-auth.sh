@@ -109,9 +109,9 @@ update_release KEYCLOAK_SMTP_HOST smtp.resend.com
 update_release KEYCLOAK_SMTP_PORT 587
 update_release KEYCLOAK_SMTP_USERNAME resend
 update_release KEYCLOAK_SMTP_FROM no-reply@tinkona.com
-update_release KEYCLOAK_SMTP_FROM_DISPLAY_NAME 'Svea Study'
+update_release KEYCLOAK_SMTP_FROM_DISPLAY_NAME 'Medbo'
 update_release KEYCLOAK_SMTP_REPLY_TO support@tinkona.com
-update_release KEYCLOAK_SMTP_REPLY_TO_DISPLAY_NAME 'Svea Study Support'
+update_release KEYCLOAK_SMTP_REPLY_TO_DISPLAY_NAME 'Medbo Support'
 update_release KEYCLOAK_SMTP_STARTTLS true
 update_release KEYCLOAK_SMTP_SSL false
 update_release KEYCLOAK_SMTP_CONFIGURED true
@@ -201,8 +201,8 @@ candidate_active_compose=(docker compose --env-file "${env_file}" --env-file "${
 "${candidate_active_compose[@]}" up -d --no-deps --wait --wait-timeout 120 keycloak
 KEYCLOAK_SECURITY_MODE=HTTPS_HOSTED ADMIN_PORTAL_URL="https://${PUBLIC_DOMAIN}" \
   KEYCLOAK_SMTP_HOST=smtp.resend.com KEYCLOAK_SMTP_PORT=587 KEYCLOAK_SMTP_USERNAME=resend \
-  KEYCLOAK_SMTP_FROM=no-reply@tinkona.com KEYCLOAK_SMTP_FROM_DISPLAY_NAME='Svea Study' \
-  KEYCLOAK_SMTP_REPLY_TO=support@tinkona.com KEYCLOAK_SMTP_REPLY_TO_DISPLAY_NAME='Svea Study Support' \
+  KEYCLOAK_SMTP_FROM=no-reply@tinkona.com KEYCLOAK_SMTP_FROM_DISPLAY_NAME='Medbo' \
+  KEYCLOAK_SMTP_REPLY_TO=support@tinkona.com KEYCLOAK_SMTP_REPLY_TO_DISPLAY_NAME='Medbo Support' \
   KEYCLOAK_SMTP_STARTTLS=true KEYCLOAK_SMTP_SSL=false KEYCLOAK_EMAIL_DMARC_STATUS=present \
   "${HARDEN_KEYCLOAK_SCRIPT}"
 "${candidate_active_compose[@]}" up -d --no-deps --wait --wait-timeout 120 learning-service

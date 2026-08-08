@@ -32,6 +32,8 @@ it('renders a branded, provider-specific, single-session authentication welcome'
   const initial = auth(); mockedUseAuth.mockReturnValue(initial);
   const view = await render(<WelcomeScreen navigation={{} as never} route={{} as never}/>);
   expect(view.getByText('Förbered dig för medborgarskapsprovet')).toBeTruthy();
+  expect(view.getByText('Medbo')).toBeTruthy();
+  expect(view.queryByText(/Svea Study/i)).toBeNull();
   expect(view.getByRole('button', { name: 'Fortsätt med Apple' })).toBeTruthy();
   expect(view.getByRole('button', { name: 'Fortsätt med Google' })).toBeTruthy();
   expect(view.getByRole('button', { name: 'Fortsätt med e-post' })).toBeTruthy();

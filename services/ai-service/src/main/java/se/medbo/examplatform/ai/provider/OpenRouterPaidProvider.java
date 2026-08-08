@@ -21,7 +21,7 @@ final class OpenRouterPaidProvider implements StructuredAiProvider {
   private final HttpClient http;private final String key,base,referer,title;private final Duration timeout;private final int defaultMaximumOutputTokens;private final QuestionBankPaidCompletionPolicy paidCompletion;
   OpenRouterPaidProvider(ObjectMapper mapper,OpenRouterPaidModelDiscoveryService discovery,OpenRouterPaidBudgetService budget,
       @Value("${ai.openrouter.api-key:}")String key,@Value("${ai.openrouter.base-url:https://openrouter.ai/api/v1}")String base,
-      @Value("${ai.openrouter.http-referer:}")String referer,@Value("${ai.openrouter.app-title:Svea Study}")String title,
+      @Value("${ai.openrouter.http-referer:}")String referer,@Value("${ai.openrouter.app-title:Medbo}")String title,
       @Value("${ai.openrouter.timeout-seconds:45}")long timeoutSeconds,
       @Value("${ai.openrouter.paid-default-max-output-tokens:4096}")int defaultMaximumOutputTokens,QuestionBankPaidCompletionPolicy paidCompletion){
     URI uri=URI.create(base);if(!"https".equalsIgnoreCase(uri.getScheme())||!"openrouter.ai".equalsIgnoreCase(uri.getHost())||uri.getUserInfo()!=null||uri.getPort()!=-1)throw new IllegalArgumentException("Provider base URL must be the official HTTPS endpoint");

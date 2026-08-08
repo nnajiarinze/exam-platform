@@ -74,7 +74,7 @@ Keycloak owns account verification and password-reset delivery. Configure its re
 - From display name from `RESEND_FROM_NAME`
 - Reply-To from `RESEND_REPLY_TO_EMAIL` when configured
 
-Verify the sender domain in Resend first. Gojo currently sends from a Gojo-specific address and must not be reused as Svea Study. Use a neutral address on an actually verified domain until a Svea Study domain is verified. Use Keycloak's Admin Console test-connection action as the opt-in email test and then perform a real registration verification. Do not expose a test-mail HTTP endpoint.
+Verify the sender domain in Resend first. Gojo currently sends from a Gojo-specific address and must not be reused as Medbo. Use a neutral address on an actually verified domain until a Medbo domain is verified. Use Keycloak's Admin Console test-connection action as the opt-in email test and then perform a real registration verification. Do not expose a test-mail HTTP endpoint.
 
 Learning Service also has a typed Resend gateway for server-owned transactional workflows. `EMAIL_PROVIDER=logging` is the local/test default; hosted defaults to `resend`. It validates addresses and bounds, sends text and HTML, applies timeouts and bounded transient retries, preserves an idempotency key, captures the provider message ID, records low-cardinality metrics, and never logs the API key or email body. Ordinary tests use mocked transport only.
 

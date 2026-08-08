@@ -65,7 +65,7 @@ class AuthenticationReadinessServiceTest {
 
     @Test void reportsDegradedWhenGoogleRedirectIsNotReached() {
         server.createContext("/realms/exam-platform/protocol/openid-connect/auth", exchange ->
-                respond(exchange, 200, "<html><title>Logga in till Svea Study</title></html>", "text/html"));
+                respond(exchange, 200, "<html><title>Logga in till Medbo</title></html>", "text/html"));
 
         var service = service(true);
         var readiness = service.get();

@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 
 class EmailConfigurationTest {
     @Test void localAndTestProviderNeverConstructResendClient(){
-        var sender=new EmailConfiguration().transactionalEmailSender(new ObjectMapper(),new SimpleMeterRegistry(),Clock.systemUTC(),"logging","","","Svea Study","","https://api.resend.com",Duration.ofSeconds(1),0);
+        var sender=new EmailConfiguration().transactionalEmailSender(new ObjectMapper(),new SimpleMeterRegistry(),Clock.systemUTC(),"logging","","","Medbo","","https://api.resend.com",Duration.ofSeconds(1),0);
         assertThat(sender).isInstanceOf(LoggingEmailSender.class);
     }
 }

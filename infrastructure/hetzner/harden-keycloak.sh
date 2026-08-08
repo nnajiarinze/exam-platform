@@ -53,6 +53,7 @@ kcadm() {
 }
 
 kcadm update realms/exam-platform \
+  -s displayName=Medbo \
   -s "sslRequired=${ssl_required}" \
   -s loginTheme=svea-study \
   -s emailTheme=svea-study \
@@ -124,7 +125,7 @@ identity_bff_client_id="${identity_bff_client_id:-identity-management-bff}"
 identity_bff_matches="$(kcadm get clients -r exam-platform -q "clientId=${identity_bff_client_id}")"
 identity_bff_exists="$(jq -r 'length==1' <<<"${identity_bff_matches}")"
 if [[ "${identity_management_enabled}" == true && -n "${identity_bff_client_secret}" && "${identity_bff_client_secret}" != CHANGE_ME ]]; then
-  identity_bff_json="$(jq -cn --arg id "${identity_bff_client_id}" --arg secret "${identity_bff_client_secret}" '{clientId:$id,name:"Svea Study identity management BFF",enabled:true,publicClient:false,serviceAccountsEnabled:true,standardFlowEnabled:false,directAccessGrantsEnabled:false,implicitFlowEnabled:false,bearerOnly:false,secret:$secret,protocol:"openid-connect",attributes:{"client.secret.creation.time":"0"}}')"
+  identity_bff_json="$(jq -cn --arg id "${identity_bff_client_id}" --arg secret "${identity_bff_client_secret}" '{clientId:$id,name:"Medbo identity management BFF",enabled:true,publicClient:false,serviceAccountsEnabled:true,standardFlowEnabled:false,directAccessGrantsEnabled:false,implicitFlowEnabled:false,bearerOnly:false,secret:$secret,protocol:"openid-connect",attributes:{"client.secret.creation.time":"0"}}')"
   if [[ "${identity_bff_exists}" == true ]]; then
     identity_bff_id="$(jq -er '.[0].id' <<<"${identity_bff_matches}")"
     printf '%s' "${identity_bff_json}" | docker exec -i "${container}" /opt/keycloak/bin/kcadm.sh update \
@@ -219,7 +220,7 @@ smtp_configured=false
 if [[ "${smtp_host}" == smtp.resend.com && "${smtp_port:-587}" == 587 && "${smtp_username}" == resend &&
       -n "${smtp_password}" && "${smtp_password}" != CHANGE_ME && "${smtp_from}" == no-reply@tinkona.com &&
       "${smtp_reply_to}" == support@tinkona.com && "${smtp_starttls:-true}" == true && "${smtp_ssl:-false}" == false ]]; then
-  smtp_json="$(jq -cn --arg host "${smtp_host}" --arg port "${smtp_port:-587}" --arg user "${smtp_username}" --arg password "${smtp_password}" --arg from "${smtp_from}" --arg fromName "${smtp_from_name:-Svea Study}" --arg replyTo "${smtp_reply_to}" --arg replyToName "${smtp_reply_to_name}" --arg starttls "${smtp_starttls:-true}" --arg ssl "${smtp_ssl:-false}" '{host:$host,port:$port,from:$from,fromDisplayName:$fromName,replyTo:$replyTo,replyToDisplayName:$replyToName,starttls:$starttls,ssl:$ssl,auth:"true",user:$user,password:$password}')"
+  smtp_json="$(jq -cn --arg host "${smtp_host}" --arg port "${smtp_port:-587}" --arg user "${smtp_username}" --arg password "${smtp_password}" --arg from "${smtp_from}" --arg fromName "${smtp_from_name:-Medbo}" --arg replyTo "${smtp_reply_to}" --arg replyToName "${smtp_reply_to_name}" --arg starttls "${smtp_starttls:-true}" --arg ssl "${smtp_ssl:-false}" '{host:$host,port:$port,from:$from,fromDisplayName:$fromName,replyTo:$replyTo,replyToDisplayName:$replyToName,starttls:$starttls,ssl:$ssl,auth:"true",user:$user,password:$password}')"
   kcadm update realms/exam-platform -s "smtpServer=${smtp_json}" >/dev/null
   resend_domains="$(printf 'header = "Authorization: Bearer %s"\nheader = "User-Agent: SveaStudy-Keycloak-Provisioning/1.0"\n' "${smtp_password}" | curl --config - --fail --silent --show-error --max-time 15 https://api.resend.com/domains 2>/dev/null || printf '{"data":[]}')"
   resend_domain="$(jq -c '[.data[]? | select(.name=="tinkona.com")][0] // {}' <<<"${resend_domains}")"
@@ -268,7 +269,7 @@ fi
 
 realm_configuration="$(kcadm get realms/exam-platform)"
 jq -e --arg ssl "${ssl_required}" '
-    .sslRequired == $ssl and .loginTheme == "svea-study" and .emailTheme == "svea-study" and
+    .sslRequired == $ssl and .displayName == "Medbo" and .loginTheme == "svea-study" and .emailTheme == "svea-study" and
     .internationalizationEnabled == true and .defaultLocale == "sv" and
     (.supportedLocales | sort) == (["en","sv"] | sort) and
     .registrationAllowed == true and .verifyEmail == true and

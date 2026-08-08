@@ -1,4 +1,4 @@
-# Svea Study mobile authentication
+# Medbo mobile authentication
 
 ## Architecture audit
 
@@ -29,7 +29,7 @@ reject LOCAL or cleartext configuration.
 
 ## Native experience
 
-The unauthenticated entry screen presents Svea Study in Swedish with explicit
+The unauthenticated entry screen presents Medbo in Swedish with explicit
 Apple, Google, email and registration actions. Provider buttons are enabled only
 when the corresponding broker is configured for that build. A system
 authentication sheet is explained before launch. Loading has fixed-size button

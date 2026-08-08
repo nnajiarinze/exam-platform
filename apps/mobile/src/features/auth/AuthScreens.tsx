@@ -19,7 +19,7 @@ const errorCopy: Record<AuthDiagnosticCode, string> = {
 };
 
 function AuthLayout({ children }: { children: ReactNode }) {
-  return <Screen><View style={styles.hero}><View style={styles.mark}><Text style={styles.crown}>S</Text></View><Text style={styles.brand}>Svea Study</Text><Text style={styles.eyebrow}>SVERIGE I FOKUS</Text><Text accessibilityRole="header" style={styles.heroTitle}>Förbered dig för medborgarskapsprovet</Text><Text style={styles.heroCopy}>Lär dig i din takt, öva på viktiga frågor och gör realistiska prov – med dina framsteg tryggt sparade.</Text></View>{children}</Screen>;
+  return <Screen><View style={styles.hero}><View style={styles.mark}><Text style={styles.crown}>M</Text></View><Text style={styles.brand}>Medbo</Text><Text style={styles.eyebrow}>SVERIGE I FOKUS</Text><Text accessibilityRole="header" style={styles.heroTitle}>Förbered dig för medborgarskapsprovet</Text><Text style={styles.heroCopy}>Lär dig i din takt, öva på viktiga frågor och gör realistiska prov – med dina framsteg tryggt sparade.</Text></View>{children}</Screen>;
 }
 
 function ProviderButton({ label, kind, disabled, busy, onPress }: { label: string; kind: 'apple' | 'google' | 'email'; disabled?: boolean; busy?: boolean; onPress: () => void }) {
@@ -40,7 +40,7 @@ export function WelcomeScreen(_: NativeStackScreenProps<RootStackParamList, 'Wel
   const active = auth.activeIntent;
   const isApplePlatform = Platform.OS === 'ios';
   const invoke = (intent: AuthIntent) => intent === 'register' ? auth.register() : auth.login(intent as 'apple' | 'google' | 'email');
-  return <AuthLayout><Card style={styles.authCard}><Text style={styles.cardTitle}>Fortsätt till Svea Study</Text><Text style={styles.secureNote}>Ett säkert inloggningsfönster öppnas och återvänder automatiskt till appen.</Text>
+  return <AuthLayout><Card style={styles.authCard}><Text style={styles.cardTitle}>Fortsätt till Medbo</Text><Text style={styles.secureNote}>Ett säkert inloggningsfönster öppnas och återvänder automatiskt till appen.</Text>
     {auth.diagnosticCode ? <View accessibilityRole="alert" style={styles.errorBox}><Text style={styles.errorText}>{errorCopy[auth.diagnosticCode]}</Text><Pressable onPress={auth.clearError}><Text style={styles.retry}>Försök igen</Text></Pressable></View> : null}
     <View style={styles.actions}>
       {isApplePlatform ? <ProviderButton kind="apple" label={auth.appleEnabled ? 'Fortsätt med Apple' : 'Apple är inte konfigurerat'} disabled={busy || !auth.requestReady || !auth.appleEnabled} busy={active === 'apple'} onPress={() => void invoke('apple')}/> : null}

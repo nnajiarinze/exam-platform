@@ -21,6 +21,11 @@ grep -q 'no-reply@tinkona.com' "${root}/infrastructure/hetzner/deploy-hosted-aut
 grep -q 'support@tinkona.com' "${root}/infrastructure/hetzner/deploy-hosted-auth.sh"
 grep -q 'Verifiera din e-post' "${theme}/messages/messages_sv.properties"
 grep -q 'Verify your email' "${theme}/messages/messages_en.properties"
+grep -Rq 'Medbo' "${theme}"
+if grep -RqiE 'Svea[[:space:]]*Study' "${theme}"; then
+  echo 'The email theme contains legacy user-facing branding' >&2
+  exit 1
+fi
 if grep -RqiE 'sslip\.io|46\.224\.221\.7|localhost|onrender\.com|http://' "${theme}"; then
   echo 'The email theme contains a forbidden production hostname' >&2
   exit 1
