@@ -103,17 +103,17 @@ final class KeycloakIdentityAdminClient {
     private boolean firstBrokerAutoLinkPresent() {
         String authenticationFlows = "admin/realms/" + encode(realm) + "/authentication/flows";
         JsonNode flows = json("GET", authenticationFlows, null, Set.of(200));
-        String flowId = null;
+        String flowAlias = null;
         for (JsonNode flow : flows) {
             if ("first broker login".equals(flow.path("alias").asText())) {
-                flowId = flow.path("id").asText();
+                flowAlias = flow.path("alias").asText();
                 break;
             }
         }
-        if (flowId == null || flowId.isBlank()) {
+        if (flowAlias == null || flowAlias.isBlank()) {
             return true;
         }
-        JsonNode executions = json("GET", authenticationFlows + "/" + encode(flowId) + "/executions", null, Set.of(200));
+        JsonNode executions = json("GET", authenticationFlows + "/" + encode(flowAlias) + "/executions", null, Set.of(200));
         for (JsonNode execution : executions) {
             if ("idp-auto-link".equals(execution.path("providerId").asText())) {
                 return true;
