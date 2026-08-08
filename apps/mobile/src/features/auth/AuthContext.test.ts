@@ -16,11 +16,16 @@ describe('provider-specific authorization routing', () => {
     expect(new URL(providerAuthorizationUrl(base, 'password-reset')).searchParams.get('kc_action')).toBe('UPDATE_PASSWORD');
   });
 
-  it('uses explicit account-link actions and forces recent authentication', () => {
-    expect(new URL(providerAuthorizationUrl(base, 'link-google')).searchParams.get('kc_action')).toBe('idp_link:google');
-    expect(new URL(providerAuthorizationUrl(base, 'link-apple')).searchParams.get('kc_action')).toBe('idp_link:apple');
+  it('links directly while reserving forced authentication for destructive flows', () => {
+    const googleLink = new URL(providerAuthorizationUrl(base, 'link-google'));
+    const appleLink = new URL(providerAuthorizationUrl(base, 'link-apple'));
+    expect(googleLink.searchParams.get('kc_action')).toBe('idp_link:google');
+    expect(appleLink.searchParams.get('kc_action')).toBe('idp_link:apple');
+    expect(googleLink.searchParams.get('prompt')).toBeNull();
+    expect(googleLink.searchParams.get('max_age')).toBeNull();
     const recent = new URL(providerAuthorizationUrl(base, 'reauthenticate'));
     expect(recent.searchParams.get('prompt')).toBe('login');
     expect(recent.searchParams.get('max_age')).toBe('0');
+    expect(recent.searchParams.get('kc_idp_hint')).toBeNull();
   });
 });

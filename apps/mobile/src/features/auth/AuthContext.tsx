@@ -78,7 +78,9 @@ export function providerAuthorizationUrl(url: string, intent: AuthIntent): strin
   if (intent === 'google') parsed.searchParams.set('kc_idp_hint', appConfig.googleIdentityProvider);
   if (intent === 'link-apple') parsed.searchParams.set('kc_action', `idp_link:${appConfig.appleIdentityProvider}`);
   if (intent === 'link-google') parsed.searchParams.set('kc_action', `idp_link:${appConfig.googleIdentityProvider}`);
-  if (intent === 'reauthenticate') { parsed.searchParams.set('prompt', 'login'); parsed.searchParams.set('max_age', '0'); }
+  if (intent === 'reauthenticate') {
+    parsed.searchParams.set('prompt', 'login'); parsed.searchParams.set('max_age', '0');
+  }
   if (intent === 'password-reset' || intent === 'change-password') parsed.searchParams.set('kc_action', 'UPDATE_PASSWORD');
   if (intent === 'register') parsed.pathname = parsed.pathname.replace(/\/protocol\/openid-connect\/auth$/, '/protocol/openid-connect/registrations');
   return parsed.toString();
@@ -183,7 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else if (response?.type === 'error') {
       authCompletion.current?.(false); authCompletion.current = undefined; authInFlight.current = false; setActiveIntent(undefined); setDiagnosticCode('AUTH_CALLBACK_INVALID'); setStatus('error'); rotateNonce();
     }
-  }, [response, currentClaims, discovery, request, redirectUri, nonce, rotateNonce, setSession]);
+  }, [response, currentClaims, discovery, request, redirectUri, nonce, rotateNonce, setSession, activeIntent]);
 
   const start = useCallback(async (intent: AuthIntent) => {
     if (authInFlight.current) return false;
@@ -194,8 +196,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setDiagnosticCode('AUTH_CONFIGURATION_INVALID'); setStatus('error'); return false;
     }
     authInFlight.current = true;
-    expectedLinkedSubject.current = intent.startsWith('link-') ? currentClaims?.sub : undefined;
-    if (intent.startsWith('link-') && !expectedLinkedSubject.current) {
+    const mustPreserveSubject = intent.startsWith('link-') || intent === 'reauthenticate';
+    expectedLinkedSubject.current = mustPreserveSubject ? currentClaims?.sub : undefined;
+    if (mustPreserveSubject && !expectedLinkedSubject.current) {
       authInFlight.current = false; setDiagnosticCode('AUTH_CONFIGURATION_INVALID'); setStatus('error'); return false;
     }
     setActiveIntent(intent); setDiagnosticCode(undefined); if (!currentClaims) setStatus('authenticating');

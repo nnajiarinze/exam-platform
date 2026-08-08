@@ -54,7 +54,7 @@ class IdentityManagementService {
 
     LinkInitiation initiateLink(UUID learnerId, String provider) {
         requireProvider(provider);
-        var claims = currentIdentity.requireRecent();
+        var claims = currentIdentity.claims();
         requireProviderEnabled(provider);
         UUID correlation = UUID.randomUUID();
         audit.record(learnerId, claims.subject(), "LINK_PROVIDER", provider, "INITIATED", correlation,
