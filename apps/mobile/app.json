@@ -28,7 +28,7 @@
     "plugins": [
       "expo-secure-store",
       "expo-web-browser",
-      "expo-notifications"
+      "./plugins/with-local-notifications-only"
     ],
     "web": {
       "favicon": "./assets/favicon.png"
