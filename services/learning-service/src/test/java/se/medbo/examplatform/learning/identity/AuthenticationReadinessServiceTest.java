@@ -42,8 +42,8 @@ class AuthenticationReadinessServiceTest {
                 respond(exchange, 200, body, "application/json");
             }
         });
-        server.createContext("/authentication/flows", exchange -> respond(exchange, 200, "[{\"id\":\"flow-1\",\"alias\":\"first broker login\"}]", "application/json"));
-        server.createContext("/authentication/flows/flow-1/executions", exchange -> respond(exchange, 200, "[]", "application/json"));
+        server.createContext("/admin/realms/exam-platform/authentication/flows", exchange -> respond(exchange, 200, "[{\"id\":\"flow-1\",\"alias\":\"first broker login\"}]", "application/json"));
+        server.createContext("/admin/realms/exam-platform/authentication/flows/flow-1/executions", exchange -> respond(exchange, 200, "[]", "application/json"));
         server.start();
     }
 

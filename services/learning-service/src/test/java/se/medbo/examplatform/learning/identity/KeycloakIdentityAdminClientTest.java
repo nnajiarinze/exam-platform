@@ -45,10 +45,10 @@ class KeycloakIdentityAdminClientTest {
                 respond(exchange, 404, "{\"error\":\"not found\"}");
             }
         });
-        server.createContext("/authentication/flows", exchange -> respond(exchange, 200, """
+        server.createContext("/admin/realms/exam-platform/authentication/flows", exchange -> respond(exchange, 200, """
             [{"id":"flow-1","alias":"first broker login"}]
             """));
-        server.createContext("/authentication/flows/flow-1/executions", exchange -> respond(exchange, 200, "[]"));
+        server.createContext("/admin/realms/exam-platform/authentication/flows/flow-1/executions", exchange -> respond(exchange, 200, "[]"));
         server.start();
     }
 
@@ -96,8 +96,8 @@ class KeycloakIdentityAdminClientTest {
     }
 
     @Test void flagsUnsafeAutoLinkWhenFirstBrokerFlowContainsIdpAutoLink() {
-        server.removeContext("/authentication/flows/flow-1/executions");
-        server.createContext("/authentication/flows/flow-1/executions", exchange -> respond(exchange, 200,
+        server.removeContext("/admin/realms/exam-platform/authentication/flows/flow-1/executions");
+        server.createContext("/admin/realms/exam-platform/authentication/flows/flow-1/executions", exchange -> respond(exchange, 200,
                 "[{\"providerId\":\"idp-auto-link\"}]"));
 
         var status = client(true, "protected-secret").providerStatus("google");

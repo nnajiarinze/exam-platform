@@ -101,7 +101,8 @@ final class KeycloakIdentityAdminClient {
     void deleteUser(String userId) { request("DELETE", adminUser(userId), null, Set.of(204, 404)); }
 
     private boolean firstBrokerAutoLinkPresent() {
-        JsonNode flows = json("GET", "authentication/flows", null, Set.of(200));
+        String authenticationFlows = "admin/realms/" + encode(realm) + "/authentication/flows";
+        JsonNode flows = json("GET", authenticationFlows, null, Set.of(200));
         String flowId = null;
         for (JsonNode flow : flows) {
             if ("first broker login".equals(flow.path("alias").asText())) {
@@ -112,7 +113,7 @@ final class KeycloakIdentityAdminClient {
         if (flowId == null || flowId.isBlank()) {
             return true;
         }
-        JsonNode executions = json("GET", "authentication/flows/" + encode(flowId) + "/executions", null, Set.of(200));
+        JsonNode executions = json("GET", authenticationFlows + "/" + encode(flowId) + "/executions", null, Set.of(200));
         for (JsonNode execution : executions) {
             if ("idp-auto-link".equals(execution.path("providerId").asText())) {
                 return true;
